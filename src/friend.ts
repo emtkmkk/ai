@@ -114,7 +114,7 @@ export default class Friend {
 		}
 
 		// 100を超えるまでは1日に上げられる親愛度は最大15
-		if (this.doc.lastLoveIncrementedAt == today && (this.doc.love < 100 && (this.doc.todayLoveIncrements || 0) >= 15)) return;
+		if (this.doc.lastLoveIncrementedAt == today && ((this.doc.love || 0) < 100 && (this.doc.todayLoveIncrements || 0) >= 15)) return;
 
 		if (this.doc.love == null) this.doc.love = 0;
 		this.doc.love += amount;
@@ -134,10 +134,10 @@ export default class Friend {
 		amount = amount * 5;
 		
 		// 親愛度100以上なら減少速度が上がる
-		if (this.doc.love >= 100) amount = Math.floor(amount * (this.doc.love * 2 / 100 - 1))
+		if ((this.doc.love || 0) >= 100) amount = Math.floor(amount * ((this.doc.love || 0) * 2 / 100 - 1))
 		
 		// 好感度86以下になる場合、86で止まる
-		if (this.doc.love - amount < 86) this.doc.love = 86;
+		if ((this.doc.love || 0) >= 86 && (this.doc.love|| 0) - amount < 86) this.doc.love = 86;
 
 		if (this.doc.love == null) this.doc.love = 0;
 		this.doc.love -= amount;
