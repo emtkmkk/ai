@@ -73,8 +73,8 @@ export default class extends Module {
 			return true;
 		}
 
-		if (!safeForInterpolate(name)) {
-			msg.reply(name + '...? ' + serifs.core.invalidName);
+		if (/[@#\*:\(\)\[\]\s]/.test(name)) {
+			msg.reply(serifs.core.invalidName);
 			return true;
 		}
 
