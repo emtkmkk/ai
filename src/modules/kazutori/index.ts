@@ -65,7 +65,7 @@ export default class extends Module {
 		}
 
 		const post = await this.ai.post({
-			text: serifs.kazutori.intro(limitMinutes)
+			text: serifs.kazutori.intro(7,limitMinutes)
 		});
 
 		this.games.insertOne({
