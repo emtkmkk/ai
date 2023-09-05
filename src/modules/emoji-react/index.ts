@@ -37,7 +37,7 @@ export default class extends Module {
 		};
 
 		let customEmojis = note.text.match(/:([^\n:]+?):/g)?.filter((x) => x.includes("mk"));
-		if (customEmojis) {
+		if (customEmojis && customEmojis.length > 0) {
 			// カスタム絵文字が複数種類ある場合はキャンセル
 			if (!customEmojis.every((val, i, arr) => val === arr[0])) return;
 
