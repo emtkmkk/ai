@@ -65,7 +65,7 @@ export default class extends Module {
 			}
 		}
 
-		const maxnum = recentGame.votes?.length ?? 1;
+		const maxnum = recentGame?.votes?.length ?? 1;
 
 		const post = await this.ai.post({
 			text: serifs.kazutori.intro(maxnum, limitMinutes)
