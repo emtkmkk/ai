@@ -25,7 +25,7 @@ export default class extends Module {
 			setTimeout(() => {
 				this.ai.api('notes/reactions/create', {
 					noteId: note.id,
-					reaction: 'congrats'
+					reaction: ':youkoso:'
 				});
 			}, 5000);
 		}
