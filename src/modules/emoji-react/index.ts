@@ -67,8 +67,9 @@ export default class extends Module {
 		if (includes(note.text, ['ぴざ'])) return react('🍕');
 		if (includes(note.text, ['ぷりん'])) return react('🍮');
 		if (includes(note.text, ['寿司', 'sushi']) || note.text === 'すし') return react('🍣');*/
-		if (includes(note.text, ['ぴざ','ピザ'])) return react(':itspizzatime:');
+		if (includes(note.text, ['ぴざ'])) return react(':itspizzatime:');
 		if (includes(note.text, ['もこ'])) return react(':mk_chicken_t:');
-		if (includes(note.text, ['むいみ','無意味','muimi'])) return react(':osiina:')
+		if (includes(note.text, ['むいみ','無意味','muimi'])) return react(':osiina:');
+		if (includes(note.text, ['うそ','嘘'])) return react(':sonnano_uso:');
 	}
 }
