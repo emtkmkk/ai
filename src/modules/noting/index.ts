@@ -12,10 +12,12 @@ export default class extends Module {
 		if (config.notingEnabled === false) return {};
 
 		setInterval(() => {
-			if (Math.random() < 0.04) {
+			const hours = new Date().getHours()
+			const rnd = hours > 17 && hours < 24 ? 0.09 : 0.03;
+			if (Math.random() < rnd) {
 				this.post();
 			}
-		}, 1000 * 60 * 10);
+		}, 1000 * 60 * 5);
 
 		return {};
 	}
