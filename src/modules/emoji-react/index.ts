@@ -28,7 +28,7 @@ export default class extends Module {
 
 		const react = async (reaction: string, immediate = false) => {
 			if (!immediate) {
-				await delay(4000);
+				await delay(3000);
 			}
 			this.ai.api('notes/reactions/create', {
 				noteId: note.id,
@@ -70,6 +70,7 @@ export default class extends Module {
 		if (includes(note.text, ['ぴざ'])) return react(':itspizzatime:');
 		if (includes(note.text, ['もこ'])) return react(':mk_chicken_t:');
 		if (includes(note.text, ['むいみ','無意味','muimi'])) return react(':osiina:');
-		if (includes(note.text, ['うそ','嘘'])) return react(':sonnano_uso:');
+		if (includes(note.text, ['うそ','嘘','uso'])) return react(':sonnano_uso:');
+		if (includes(note.text, ['つらい','辛い','しんどい','帰りたい','かえりたい'])) return react(':petthex:');
 	}
 }
