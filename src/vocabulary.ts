@@ -207,6 +207,7 @@ export const itemPrefixes = [
 	'異常',
 	'粗挽き',
 	'もこもこした',
+	'道端に落ちている',
 ];
 
 export const items = [
@@ -457,6 +458,8 @@ export const items = [
 	'もこきー',
 	'もこもこチキン',
 	'俺',
+	'軍手',
+	'キー',
 ];
 
 export const and = [
