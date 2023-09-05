@@ -21,6 +21,8 @@ export default class extends Module {
 		const sleepHours = sleepTime / 1000 / 60 / 60;
 
 		if (sleepHours < 0.1) return;
+		
+		const sleepMinutes = sleepHours * 60;
 
 		if (sleepHours >= 1) {
 			this.ai.post({
@@ -28,7 +30,7 @@ export default class extends Module {
 			});
 		} else {
 			this.ai.post({
-				text: serifs.sleepReport.reportUtatane
+				text: serifs.sleepReport.reportUtatane(Math.round(sleepMinutes))
 			});
 		}
 	}
