@@ -3,6 +3,7 @@ import { EventEmitter } from 'events';
 import * as WebSocket from 'ws';
 const ReconnectingWebsocket = require('reconnecting-websocket');
 import config from './config';
+import log from '@/utils/log';
 
 /**
  * Misskey stream connection
@@ -19,11 +20,13 @@ export default class Stream extends EventEmitter {
 		super();
 
 		this.state = 'initializing';
+		log(`stream : ` + this.state);
 		this.buffer = [];
 
 		this.stream = new ReconnectingWebsocket(`${config.wsUrl}/streaming?i=${config.i}`, [], {
 			WebSocket: WebSocket
 		});
+		log(`streamURL : ` + `${config.wsUrl}/streaming?i=${config.i}`);
 		this.stream.addEventListener('open', this.onOpen);
 		this.stream.addEventListener('close', this.onClose);
 		this.stream.addEventListener('message', this.onMessage);
@@ -68,6 +71,7 @@ export default class Stream extends EventEmitter {
 		const isReconnect = this.state == 'reconnecting';
 
 		this.state = 'connected';
+		log(`stream : ` + this.state);
 		this.emit('_connected_');
 
 		// バッファーを処理
@@ -94,6 +98,7 @@ export default class Stream extends EventEmitter {
 	@autobind
 	private onClose() {
 		this.state = 'reconnecting';
+		log(`stream : ` + this.state);
 		this.emit('_disconnected_');
 	}
 
@@ -138,6 +143,7 @@ export default class Stream extends EventEmitter {
 		// まだ接続が確立されていなかったらバッファリングして次に接続した時に送信する
 		if (this.state != 'connected') {
 			this.buffer.push(data);
+			log(`streamBufferPush : ` + payload + " : " + this.state);
 			return;
 		}
 
@@ -205,6 +211,7 @@ class Pool {
 			channel: this.channel,
 			id: this.id
 		});
+		log(`streamConnect : ` + this.channel + " : " +  this.id);
 	}
 
 	@autobind
@@ -212,6 +219,7 @@ class Pool {
 		this.isConnected = false;
 		this.disposeTimerId = null;
 		this.stream.send('disconnect', { id: this.id });
+		log(`streamDisconnect : ` + this.id);
 	}
 }
 
@@ -289,6 +297,7 @@ class NonSharedConnection extends Connection {
 			id: this.id,
 			params: this.params
 		});
+		log(`streamConnectNonShared : ` + this.channel + " : " + this.id + " : " +  this.params);
 	}
 
 	@autobind
@@ -300,6 +309,7 @@ class NonSharedConnection extends Connection {
 	public dispose() {
 		this.removeAllListeners();
 		this.stream.send('disconnect', { id: this.id });
+		log(`streamDisconnectNonShared : ` + this.id);
 		this.stream.disconnectToChannel(this);
 	}
 }
