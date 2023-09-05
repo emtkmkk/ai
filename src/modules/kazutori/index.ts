@@ -113,7 +113,7 @@ export default class extends Module {
 		};
 
 		// 範囲外
-		if (num < 0 || num > 100) return {
+		if (num < 0 || num > 7) return {
 			reaction: 'confused'
 		};
 
@@ -176,7 +176,7 @@ export default class extends Module {
 		let results: string[] = [];
 		let winner: Game['votes'][0]['user'] | null = null;
 
-		for (let i = 100; i >= 0; i--) {
+		for (let i = 7; i >= 0; i--) {
 			const users = game.votes
 				.filter(x => x.number == i)
 				.map(x => x.user);
