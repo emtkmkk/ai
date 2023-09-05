@@ -166,7 +166,7 @@ export default class 藍 {
 			// リアクションする
 			this.api('notes/reactions/create', {
 				noteId: data.id,
-				reaction: 'love'
+				reaction: ':mk_hi:'
 			});
 		});
 
@@ -281,7 +281,7 @@ export default class 藍 {
 			// TODO: リアクション取り消しをよしなにハンドリングする
 			case 'reaction': {
 				const friend = new Friend(this, { user: notification.user });
-				friend.incLove(0.1);
+				friend.incLove(0.5);
 				break;
 			}
 
