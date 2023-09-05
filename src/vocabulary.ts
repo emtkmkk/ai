@@ -208,6 +208,7 @@ export const itemPrefixes = [
 	'粗挽き',
 	'もこもこした',
 	'道端に落ちている',
+	'ココイチの',
 ];
 
 export const items = [
@@ -460,6 +461,7 @@ export const items = [
 	'俺',
 	'軍手',
 	'キー',
+	'メンサ',
 ];
 
 export const and = [
