@@ -274,7 +274,7 @@ export default class 藍 {
 		if (reaction) {
 			this.api('notes/reactions/create', {
 				noteId: msg.id,
-				reaction: reaction
+				reaction: reaction ?? ""
 			});
 		}
 	}
