@@ -36,8 +36,8 @@ export default class extends Module {
 		birthFriends.forEach(f => {
 			const friend = new Friend(this.ai, { doc: f });
 
-			// 親愛度が3以上必要
-			if (friend.love < 3) return;
+			// 親愛度が0以上必要
+			if (friend.love < 0) return;
 
 			const data = friend.getPerModulesData(this);
 
