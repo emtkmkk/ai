@@ -36,8 +36,9 @@ export default class extends Module {
 			});
 		};
 
-		const customEmojis = note.text.match(/:([^\n:]+?):/g);
+		let customEmojis = note.text.match(/:([^\n:]+?):/g);
 		if (customEmojis) {
+			customEmojis = customEmojis.filter((x) => x.includes("mk"));
 			// カスタム絵文字が複数種類ある場合はキャンセル
 			if (!customEmojis.every((val, i, arr) => val === arr[0])) return;
 
@@ -46,7 +47,7 @@ export default class extends Module {
 			return react(customEmojis[0]);
 		}
 
-		const emojis = parse(note.text).map(x => x.text);
+		/*const emojis = parse(note.text).map(x => x.text);
 		if (emojis.length > 0) {
 			// 絵文字が複数種類ある場合はキャンセル
 			if (!emojis.every((val, i, arr) => val === arr[0])) return;
@@ -66,8 +67,8 @@ export default class extends Module {
 
 		if (includes(note.text, ['ぴざ'])) return react('🍕');
 		if (includes(note.text, ['ぷりん'])) return react('🍮');
-		if (includes(note.text, ['寿司', 'sushi']) || note.text === 'すし') return react('🍣');
-
-		if (includes(note.text, ['藍'])) return react('🙌');
+		if (includes(note.text, ['寿司', 'sushi']) || note.text === 'すし') return react('🍣');*/
+		if (includes(note.text, ['ぴざ','ピザ'])) return react(':itspizzatime:');
+		if (includes(note.text, ['もこ'])) return react(':mk_chicken_t:');
 	}
 }
