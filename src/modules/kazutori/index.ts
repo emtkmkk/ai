@@ -136,7 +136,7 @@ export default class extends Module {
 		this.games.update(game);
 
 		return {
-			reaction: ':mk_disco_chicken:'
+			reaction: ':mk_discochicken:'
 		};
 	}
 
