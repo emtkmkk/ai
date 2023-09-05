@@ -20,11 +20,11 @@ export default class extends Module {
 					userId: msg.userId,
 				});
 				return {
-					reaction: msg.friend.love >= 0 ? 'like' : null
+					reaction: msg.friend.love >= 0 ? ':mk_yurayurachicken:' : null
 				};
 			} else {
 				return {
-					reaction: msg.friend.love >= 0 ? 'hmm' : null
+					reaction: msg.friend.love >= 0 ? ':mk_hotchicken:' : null
 				};
 			}
 		} else {
