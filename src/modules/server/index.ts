@@ -41,7 +41,7 @@ export default class extends Module {
 
 		const cpuPercentages = this.statsLogs.map(s => s && (s.cpu_usage || s.cpu) * 100 || 0);
 		const cpuPercentage = average(cpuPercentages);
-		if (cpuPercentage >= 70) {
+		if (cpuPercentage >= 90) {
 			this.warn();
 		} else if (cpuPercentage <= 30) {
 			this.warned = false;
