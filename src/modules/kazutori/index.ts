@@ -104,7 +104,7 @@ export default class extends Module {
 			reaction: ':mk_ultrawidechicken:'
 		};
 
-		const match = msg.extractedText.match(/[0-9]+/);
+		const match = msg.extractedText.match(/[0-9\-\.]+/);
 		if (match == null) return {
 			reaction: ':mk_fly_sliver:'
 		};
