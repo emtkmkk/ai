@@ -61,7 +61,7 @@ export default class extends Module {
 		if (thing === '' && msg.quoteId == null || msg.visibility === 'followers') {
 			msg.reply(serifs.reminder.invalid);
 			return {
-				reaction: '🆖',
+				reaction: ':mk_ultrawidechicken:',
 				immediate: true,
 			};
 		}
@@ -93,7 +93,7 @@ export default class extends Module {
 		});
 
 		return {
-			reaction: '🆗',
+			reaction: ':mk_jumpchicken:',
 			immediate: true,
 		};
 	}
