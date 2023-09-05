@@ -264,6 +264,11 @@ export default class 藍 {
 		if (!immediate) {
 			await delay(1000);
 		}
+		
+		if (reaction === "love") reaction = ":mk_hi:";
+		if (reaction === "like") reaction = ":mk_yurayurachicken:";
+		if (reaction === "hmm") reaction = ":mk_fly_sliver:";
+		if (reaction === "confused") reaction = ":mk_ultrawidechicken:";
 
 		// リアクションする
 		if (reaction) {
