@@ -18,6 +18,7 @@ type Game = {
 	isEnded: boolean;
 	startedAt: number;
 	postId: string;
+	maxnum: number;
 };
 
 const limitMinutes = 10;
@@ -64,15 +65,18 @@ export default class extends Module {
 			}
 		}
 
+		const maxnum = recentGame.votes?.length ?? 1;
+
 		const post = await this.ai.post({
-			text: serifs.kazutori.intro(7,limitMinutes)
+			text: serifs.kazutori.intro(maxnum, limitMinutes)
 		});
 
 		this.games.insertOne({
 			votes: [],
 			isEnded: false,
 			startedAt: Date.now(),
-			postId: post.id
+			postId: post.id,
+			maxnum: maxnum
 		});
 
 		this.subscribeReply(null, post.id);
@@ -85,7 +89,7 @@ export default class extends Module {
 	@autobind
 	private async contextHook(key: any, msg: Message) {
 		if (msg.text == null) return {
-			reaction: 'hmm'
+			reaction: ':mk_fly_sliver:'
 		};
 
 		const game = this.games.findOne({
@@ -97,24 +101,24 @@ export default class extends Module {
 
 		// 既に数字を取っていたら
 		if (game.votes.some(x => x.user.id == msg.userId)) return {
-			reaction: 'confused'
+			reaction: ':mk_ultrawidechicken:'
 		};
 
 		const match = msg.extractedText.match(/[0-9]+/);
 		if (match == null) return {
-			reaction: 'hmm'
+			reaction: ':mk_fly_sliver:'
 		};
 
 		const num = parseInt(match[0], 10);
 
 		// 整数じゃない
 		if (!Number.isInteger(num)) return {
-			reaction: 'hmm'
+			reaction: ':mk_fly_sliver:'
 		};
 
 		// 範囲外
-		if (num < 0 || num > 7) return {
-			reaction: 'confused'
+		if (num < 0 || num > game.maxnum) return {
+			reaction: ':mk_ultrawidechicken:'
 		};
 
 		this.log(`Voted ${num} by ${msg.user.id}`);
@@ -132,7 +136,7 @@ export default class extends Module {
 		this.games.update(game);
 
 		return {
-			reaction: 'like'
+			reaction: ':mk_disco_chicken:'
 		};
 	}
 
@@ -176,7 +180,7 @@ export default class extends Module {
 		let results: string[] = [];
 		let winner: Game['votes'][0]['user'] | null = null;
 
-		for (let i = 7; i >= 0; i--) {
+		for (let i = game.maxnum; i >= 0; i--) {
 			const users = game.votes
 				.filter(x => x.number == i)
 				.map(x => x.user);
