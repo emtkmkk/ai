@@ -388,6 +388,7 @@ export default class 藍 {
 	 */
 	@autobind
 	public api(endpoint: string, param?: any) {
+		if (endpoint === 'notes/reactions/create' && param && !param?.reaction) param.reaction = "";
 		return request.post(`${config.apiUrl}/${endpoint}`, {
 			json: Object.assign({
 				i: config.i
