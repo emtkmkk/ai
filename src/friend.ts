@@ -105,20 +105,22 @@ export default class Friend {
 
 	@autobind
 	public incLove(amount = 1) {
+		amount = amount * 5;
+		
 		const today = getDate();
 
 		if (this.doc.lastLoveIncrementedAt != today) {
 			this.doc.todayLoveIncrements = 0;
 		}
 
-		// 1日に上げられる親愛度は最大3
-		if (this.doc.lastLoveIncrementedAt == today && (this.doc.todayLoveIncrements || 0) >= 3) return;
+		// 100を超えるまでは1日に上げられる親愛度は最大15
+		if (this.doc.lastLoveIncrementedAt == today && (this.doc.love < 100 && (this.doc.todayLoveIncrements || 0) >= 15)) return;
 
 		if (this.doc.love == null) this.doc.love = 0;
 		this.doc.love += amount;
 
-		// 最大 100
-		if (this.doc.love > 100) this.doc.love = 100;
+		/*// 最大 100
+		if (this.doc.love > 100) this.doc.love = 100;*/
 
 		this.doc.lastLoveIncrementedAt = today;
 		this.doc.todayLoveIncrements = (this.doc.todayLoveIncrements || 0) + amount;
@@ -129,8 +131,13 @@ export default class Friend {
 
 	@autobind
 	public decLove(amount = 1) {
-		// 親愛度MAXなら下げない
-		if (this.doc.love === 100) return;
+		amount = amount * 5;
+		
+		// 親愛度100以上なら減少速度が上がる
+		if (this.doc.love >= 100) amount = Math.floor(amount * (this.doc.love * 2 / 100 - 1))
+		
+		// 好感度86以下になる場合、86で止まる
+		if (this.doc.love - amount < 86) this.doc.love = 86;
 
 		if (this.doc.love == null) this.doc.love = 0;
 		this.doc.love -= amount;
