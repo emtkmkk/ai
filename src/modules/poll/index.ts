@@ -12,10 +12,12 @@ export default class extends Module {
 	@autobind
 	public install() {
 		setInterval(() => {
-			if (Math.random() < 0.1) {
+			const hours = new Date().getHours()
+			const rnd = hours > 17 && hours < 24 ? 0.225 : 0.075;
+			if (Math.random() < rnd) {
 				this.post();
 			}
-		}, 1000 * 60 * 60);
+		}, 1000 * 60 * 30);
 
 		return {
 			mentionHook: this.mentionHook,
@@ -25,7 +27,7 @@ export default class extends Module {
 
 	@autobind
 	private async post() {
-		const duration = 1000 * 60 * 15;
+		const duration = 1000 * 60 * 10;
 
 		const polls = [ // TODO: Extract serif
 			['珍しそうなもの', 'みなさんは、どれがいちばん珍しいと思いますか？'],
