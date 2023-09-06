@@ -185,8 +185,10 @@ export default class extends Module {
 
 		let results: string[] = [];
 		let winner: Game['votes'][0]['user'] | null = null;
+		
+		const reverse = Math.random() < 0.15;
 
-		for (let i = game.maxnum; i >= 0; i--) {
+		for (let i = reverse ? 0 : game.maxnum; reverse ? i <= game.maxnum : i >= 0 ; reverse ? i++ : i--) {
 			const users = game.votes
 				.filter(x => x.number == i)
 				.map(x => x.user);
@@ -208,7 +210,7 @@ export default class extends Module {
 		const name = winnerFriend ? winnerFriend.name : null;
 
 		const text = results.join('\n') + '\n\n' + (winner
-			? serifs.kazutori.finishWithWinner(acct(winner), name)
+			? reverse ? serifs.kazutori.finishWithWinnerReverse(acct(winner), name) : serifs.kazutori.finishWithWinner(acct(winner), name)
 			: serifs.kazutori.finishWithNoWinner);
 
 		this.ai.post({
