@@ -105,7 +105,8 @@ export default class Friend {
 
 	@autobind
 	public incLove(amount = 1) {
-		amount = amount * 5;
+		amount = amount * 5
+		if ((this.doc.love || 0) > 100) amount = (Math.ceil(amount / ((this.doc.love || 0) * 2 / 100 - 1) * 100) / 100);
 		
 		const today = getDate();
 
