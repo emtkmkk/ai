@@ -143,7 +143,7 @@ export default class Stream extends EventEmitter {
 		// まだ接続が確立されていなかったらバッファリングして次に接続した時に送信する
 		if (this.state != 'connected') {
 			this.buffer.push(data);
-			log(`streamBufferPush : ` + payload + " : " + this.state);
+			log(`streamBufferPush : ` + JSON.stringify(payload) + " : " + this.state);
 			return;
 		}
 
