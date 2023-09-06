@@ -15,7 +15,7 @@ export default class extends Module {
 
 	@autobind
 	private onLocalNote(note: any) {
-		if (note.isFirstNote) {
+		if (!note.user.isBot && note.isFirstNote) {
 			setTimeout(() => {
 				this.ai.api('notes/create', {
 					renoteId: note.id
