@@ -22,6 +22,7 @@ export default class extends Module {
 
 	@autobind
 	private async onNote(note: Note) {
+		if (note.user.isBot) return;
 		if (note.reply != null) return;
 		if (note.text == null) return;
 		if (note.text.includes('@')) return; // (自分または他人問わず)メンションっぽかったらreject
