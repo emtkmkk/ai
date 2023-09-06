@@ -52,7 +52,9 @@ export default class extends Module {
 			time: str
 		});
 
-		return true;
+		return {
+			reaction:'love'
+		};
 	}
 
 	@autobind
