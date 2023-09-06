@@ -295,7 +295,9 @@ export default {
 
 		finish: 'ゲームの結果発表です！',
 
-		finishWithWinner: (user, name) => name ? `今回は${user}さん(${name})の勝ちです！おめでとう！またやりましょう！` : `今回は${user}さんの勝ちです！おめでとう！またやりましょう！`,
+		finishWithWinner: (user, name) => name ? `今回は${user}さん(${name})の勝ちです！おめでとう！\nまたやりましょう！` : `今回は${user}さんの勝ちです！おめでとう！\nまたやりましょう！`,
+		
+		finishWithWinnerReverse: (user, name) => name ? `……ありゃ？逆順で集計しちゃいました！\n今回は${user}さん(${name})の勝ちです！おめでとう！\nまたやりましょう！` : `……ありゃ？逆順で集計しちゃいました！\n今回は${user}さんの勝ちです！おめでとう！\nまたやりましょう！`,
 
 		finishWithNoWinner: '今回は全員負けです... またやりましょう！',
 
