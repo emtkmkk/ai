@@ -127,7 +127,7 @@ export default class Friend {
 		this.doc.todayLoveIncrements = (this.doc.todayLoveIncrements || 0) + amount;
 		this.save();
 
-		this.ai.log(`💗 ${this.userId} +${amount}`);
+		this.ai.log(`💗 ${this.userId} +${amount} (${this.doc.love || 0})`);
 	}
 
 	@autobind
@@ -153,7 +153,7 @@ export default class Friend {
 
 		this.save();
 
-		this.ai.log(`💢 ${this.userId} -${amount}`);
+		this.ai.log(`💢 ${this.userId} -${amount} (${this.doc.love || 0})`);
 	}
 
 	@autobind
