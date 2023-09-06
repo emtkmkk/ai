@@ -109,7 +109,7 @@ export default class extends Module {
 		love += lovep >= 100 ? "★" : "☆"
 		love += lovep >= 120 ? "+" + (lovep >= 140 ? (lovep/20) - 5 : "") : ""
 		
-		msg.reply(serifs.core.getLove(msg.friend.name,love))
+		msg.reply(serifs.core.getLove(msg.friend.name || 'あなた',love))
 
 		return true;
 	}
