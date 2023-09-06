@@ -74,7 +74,7 @@ promiseRetry(retry => {
 		new ReversiModule(),
 		new TimerModule(),
 		new DiceModule(),
-		//new TalkModule(),
+		new TalkModule(),
 		new PingModule(),
 		new WelcomeModule(),
 		new ServerModule(),
