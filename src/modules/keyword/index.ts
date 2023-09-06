@@ -42,6 +42,7 @@ export default class extends Module {
 		});
 
 		const interestedNotes = tl.filter(note =>
+			!note.user.isBot &&
 			note.userId !== this.ai.account.id &&
 			note.text != null &&
 			note.cw == null);
