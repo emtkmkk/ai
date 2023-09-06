@@ -29,9 +29,8 @@ export default class extends Module {
 		});
 		
 		const hours = new Date().getHours()
-		const cd = hours > 17 && hours < 24 ? 15 : 60;
 
-		setInterval(this.learn, 1000 * 60 * cd);
+		setInterval(this.learn, 1000 * 60 * 20);
 
 		return {};
 	}
