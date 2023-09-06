@@ -52,7 +52,9 @@ export default class extends Module {
 			this.subscribeReply(msg.userId, reply.id);
 		});
 
-		return true;
+		return {
+			reaction:'love'
+		};
 	}
 
 	@autobind
@@ -76,7 +78,9 @@ export default class extends Module {
 			exist.endedAt = Date.now();
 			this.guesses.update(exist);
 			this.unsubscribeReply(key);
-			return;
+			return {
+				reaction:'love'
+			};
 		}
 
 		const guess = msg.extractedText.match(/[0-9]+/);
@@ -85,10 +89,14 @@ export default class extends Module {
 			msg.reply(serifs.guessingGame.nan).then(reply => {
 				this.subscribeReply(msg.userId, reply.id);
 			});
-			return;
+			return {
+				reaction:'hmm'
+			};
 		}
 
-		if (guess.length > 3) return;
+		if (guess.length > 3) return {
+			reaction:'confused'
+		};
 
 		const g = parseInt(guess[0], 10);
 		const firsttime = exist.tries.indexOf(g) === -1;
@@ -124,5 +132,8 @@ export default class extends Module {
 				this.subscribeReply(msg.userId, reply.id);
 			}
 		});
+		return {
+			reaction:'love'
+		}
 	}
 }
