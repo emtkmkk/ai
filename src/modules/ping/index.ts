@@ -18,7 +18,10 @@ export default class extends Module {
 			msg.reply('PONG!', {
 				immediate: true
 			});
-			return true;
+			return {
+				reaction:'love',
+				immediate: true
+			};
 		} else {
 			return false;
 		}
