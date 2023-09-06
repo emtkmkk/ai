@@ -285,6 +285,7 @@ export default class 藍 {
 			// リアクションされたら親愛度を少し上げる
 			// TODO: リアクション取り消しをよしなにハンドリングする
 			case 'mention':
+			case 'reply':
 			case 'quote':
 			case 'pollVote':
 			case 'reaction': {
