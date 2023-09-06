@@ -50,10 +50,16 @@ export default class extends Module {
 			friend.setPerModulesData(this, data);
 
 			const text = serifs.birthday.happyBirthday(friend.name);
-
-			this.ai.post({
-				text: acct(friend.doc.user) + ' ' + text
-			});
+			
+			if (!friend.doc?.user?.host) {
+				this.ai.post({
+					text: acct(friend.doc.user) + ' ' + text
+				});
+			} else {
+				this.ai.sendMessage(friend.userId, {
+					text: acct(friend.doc.user) + ' ' + text
+				});
+			}
 		});
 	}
 }
