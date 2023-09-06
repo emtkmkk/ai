@@ -35,6 +35,8 @@ export default class extends Module {
 
 		msg.reply(serifs.dice.done(results.join(' ')));
 
-		return true;
+		return {
+			reaction:'love'
+		};
 	}
 }
