@@ -23,22 +23,23 @@ export default class extends Module {
 			this.greet(msg) ||
 			this.erait(msg) ||
 			this.omedeto(msg) ||
-			this.nadenade(msg) ||
-			this.kawaii(msg) ||
-			this.suki(msg) ||
-			this.hug(msg) ||
-			this.humu(msg) ||
-			this.batou(msg) ||
-			this.itai(msg) ||
-			this.ote(msg) ||
-			this.ponkotu(msg) ||
-			this.rmrf(msg) ||
-			this.shutdown(msg)
+			//this.nadenade(msg) ||
+			//this.kawaii(msg) ||
+			//this.suki(msg) ||
+			//this.hug(msg) ||
+			//this.humu(msg) ||
+			//this.batou(msg) ||
+			//this.itai(msg) ||
+			//this.ote(msg) ||
+			//this.ponkotu(msg) ||
+			//this.rmrf(msg) ||
+			//this.shutdown(msg) ||
+			false
 		);
 	}
 
 	@autobind
-	private greet(msg: Message): boolean {
+	private greet(msg: Message) {
 		if (msg.text == null) return false;
 
 		const incLove = () => {
@@ -52,7 +53,7 @@ export default class extends Module {
 			data.lastGreetedAt = today;
 			msg.friend.setPerModulesData(this, data);
 
-			msg.friend.incLove();
+			msg.friend.incLove(0.6);
 			//#endregion
 		};
 
@@ -64,82 +65,78 @@ export default class extends Module {
 		if (msg.includes(['こんにちは', 'こんにちわ'])) {
 			msg.reply(serifs.core.hello(msg.friend.name));
 			incLove();
-			return true;
+			return {reaction: 'love'};
 		}
 
 		if (msg.includes(['こんばんは', 'こんばんわ'])) {
 			msg.reply(serifs.core.helloNight(msg.friend.name));
 			incLove();
-			return true;
+			return {reaction: 'love'};
 		}
 
 		if (msg.includes(['おは', 'おっは', 'お早う'])) {
 			msg.reply(serifs.core.goodMorning(tension, msg.friend.name));
 			incLove();
-			return true;
+			return {reaction: ':mk_oha:'};
 		}
 
 		if (msg.includes(['おやすみ', 'お休み'])) {
 			msg.reply(serifs.core.goodNight(msg.friend.name));
 			incLove();
-			return true;
+			return {reaction: ':oyasumi2:'};
 		}
 
 		if (msg.includes(['行ってくる', '行ってきます', 'いってくる', 'いってきます'])) {
 			msg.reply(
-				msg.friend.love >= 7
-					? serifs.core.itterassyai.love(msg.friend.name)
-					: serifs.core.itterassyai.normal(msg.friend.name));
+					serifs.core.itterassyai.normal(msg.friend.name));
 			incLove();
-			return true;
+			return {reaction: 'love'};
 		}
 
 		if (msg.includes(['ただいま'])) {
 			msg.reply(
-				msg.friend.love >= 15 ? serifs.core.okaeri.love2(msg.friend.name) :
-				msg.friend.love >= 7 ? getSerif(serifs.core.okaeri.love(msg.friend.name)) :
 				serifs.core.okaeri.normal(msg.friend.name));
 			incLove();
-			return true;
+			return {reaction: ':otukaresama:'};
 		}
 
 		return false;
 	}
 
 	@autobind
-	private erait(msg: Message): boolean {
+	private erait(msg: Message) {
 		const match = msg.extractedText.match(/(.+?)た(から|ので)(褒|ほ)めて/);
 		if (match) {
 			msg.reply(getSerif(serifs.core.erait.specify(match[1], msg.friend.name)));
-			return true;
+			return {reaction: 'love'};
 		}
 
 		const match2 = msg.extractedText.match(/(.+?)る(から|ので)(褒|ほ)めて/);
 		if (match2) {
 			msg.reply(getSerif(serifs.core.erait.specify(match2[1], msg.friend.name)));
-			return true;
+			return {reaction: 'love'};
 		}
 
 		const match3 = msg.extractedText.match(/(.+?)だから(褒|ほ)めて/);
 		if (match3) {
 			msg.reply(getSerif(serifs.core.erait.specify(match3[1], msg.friend.name)));
-			return true;
+			return {reaction: 'love'};
 		}
 
 		if (!msg.includes(['褒めて', 'ほめて'])) return false;
 
 		msg.reply(getSerif(serifs.core.erait.general(msg.friend.name)));
 
-		return true;
+		return {reaction: 'love'};
 	}
 
 	@autobind
-	private omedeto(msg: Message): boolean {
+	private omedeto(msg: Message) {
 		if (!msg.includes(['おめでと'])) return false;
 
 		msg.reply(serifs.core.omedeto(msg.friend.name));
 
-		return true;
+		return {reaction: ':mk_discochicken:'};
 	}
 
 	@autobind
