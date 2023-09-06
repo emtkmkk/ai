@@ -55,13 +55,17 @@ export default class extends Module {
 				msg.reply(serifs.kazutori.alreadyStarted, {
 					renote: recentGame.postId
 				});
-				return true;
+				return {
+					reaction:'love'
+				};
 			}
 
 			// 直近のゲームから1時間経ってない場合
 			if (Date.now() - recentGame.startedAt < 1000 * 60 * 60) {
 				msg.reply(serifs.kazutori.matakondo);
-				return true;
+				return {
+					reaction:'hmm'
+				};
 			}
 		}
 
@@ -83,13 +87,15 @@ export default class extends Module {
 
 		this.log('New kazutori game started');
 
-		return true;
+		return {
+			reaction:'love'
+		};
 	}
 
 	@autobind
 	private async contextHook(key: any, msg: Message) {
 		if (msg.text == null) return {
-			reaction: ':mk_fly_sliver:'
+			reaction: 'hmm'
 		};
 
 		const game = this.games.findOne({
@@ -101,24 +107,24 @@ export default class extends Module {
 
 		// 既に数字を取っていたら
 		if (game.votes.some(x => x.user.id == msg.userId)) return {
-			reaction: ':mk_ultrawidechicken:'
+			reaction: 'confused'
 		};
 
-		const match = msg.extractedText.match(/[0-9\-\.]+/);
+		const match = msg.extractedText.match(/[0-9]+/);
 		if (match == null) return {
-			reaction: ':mk_fly_sliver:'
+			reaction: 'hmm'
 		};
 
 		const num = parseInt(match[0], 10);
 
 		// 整数じゃない
 		if (!Number.isInteger(num)) return {
-			reaction: ':mk_fly_sliver:'
+			reaction: 'hmm'
 		};
 
 		// 範囲外
 		if (num < 0 || num > game.maxnum) return {
-			reaction: ':mk_ultrawidechicken:'
+			reaction: 'confused'
 		};
 
 		this.log(`Voted ${num} by ${msg.user.id}`);
