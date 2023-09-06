@@ -106,6 +106,8 @@ export default class Friend {
 	@autobind
 	public incLove(amount = 1) {
 		amount = amount * 5
+		
+		// 親愛度100以上の場合、量に応じて上がる量が軽減
 		if ((this.doc.love || 0) > 100) amount = (Math.ceil(amount / ((this.doc.love || 0) * 2 / 100 - 1) * 100) / 100);
 		
 		const today = getDate();
@@ -134,8 +136,8 @@ export default class Friend {
 	public decLove(amount = 1) {
 		amount = amount * 5;
 		
-		// 親愛度100以上なら減少速度が上がる
-		if ((this.doc.love || 0) >= 100) amount = Math.floor(amount * ((this.doc.love || 0) * 2 / 100 - 1))
+		// 親愛度100以上の場合、量に応じて下がる量が軽減
+		if ((this.doc.love || 0) >= 100) amount = (Math.ceil(amount / ((this.doc.love || 0) * 2 / 100 - 1) * 100) / 100);
 		
 		// 好感度86以下になる場合、86で止まる
 		if ((this.doc.love || 0) >= 86 && (this.doc.love|| 0) - amount < 86) this.doc.love = 86;
