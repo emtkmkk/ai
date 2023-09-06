@@ -5,6 +5,7 @@ import Message from '@/message';
 import serifs from '@/serifs';
 import { User } from '@/misskey/user';
 import { acct } from '@/utils/acct';
+import { genItem } from '@/vocabulary';
 
 type Game = {
 	votes: {
@@ -69,7 +70,7 @@ export default class extends Module {
 			}
 		}
 
-		const maxnum = recentGame?.votes?.length ?? 1;
+		const maxnum = recentGame?.votes?.length || 1;
 
 		const post = await this.ai.post({
 			text: serifs.kazutori.intro(maxnum, limitMinutes)
@@ -172,11 +173,13 @@ export default class extends Module {
 		this.games.update(game);
 
 		this.log('Kazutori game finished');
+		
+		const item = genItem();
 
 		// お流れ
 		if (game.votes.length <= 1) {
 			this.ai.post({
-				text: serifs.kazutori.onagare,
+				text: serifs.kazutori.onagare(item),
 				renoteId: game.postId
 			});
 
@@ -210,8 +213,8 @@ export default class extends Module {
 		const name = winnerFriend ? winnerFriend.name : null;
 
 		const text = results.join('\n') + '\n\n' + (winner
-			? reverse ? serifs.kazutori.finishWithWinnerReverse(acct(winner), name) : serifs.kazutori.finishWithWinner(acct(winner), name)
-			: serifs.kazutori.finishWithNoWinner);
+			? reverse ? serifs.kazutori.finishWithWinnerReverse(acct(winner), name, item) : serifs.kazutori.finishWithWinner(acct(winner), name, item)
+			: serifs.kazutori.finishWithNoWinner(item));
 
 		this.ai.post({
 			text: text,
