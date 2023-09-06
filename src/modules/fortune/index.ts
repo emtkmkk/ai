@@ -58,7 +58,9 @@ export default class extends Module {
 			msg.reply(`**${omikuji}🎉**\nラッキーアイテム: ${item}`, {
 				cw: serifs.fortune.cw(msg.friend.name)
 			});
-			return true;
+			return {
+				reaction:'love'
+			};
 		} else {
 			return false;
 		}
