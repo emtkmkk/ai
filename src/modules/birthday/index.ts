@@ -2,6 +2,7 @@ import autobind from 'autobind-decorator';
 import Module from '@/module';
 import Friend from '@/friend';
 import serifs from '@/serifs';
+import { acct } from '@/utils/acct';
 
 function zeroPadding(num: number, length: number): string {
 	return ('0000000000' + num).slice(-length);
@@ -26,6 +27,8 @@ export default class extends Module {
 		const now = new Date();
 		const m = now.getMonth();
 		const d = now.getDate();
+		//8時より前に通知を飛ばさない
+		if (now.getHours() < 8) return;
 		// Misskeyの誕生日は 2018-06-16 のような形式
 		const today = `${zeroPadding(m + 1, 2)}-${zeroPadding(d, 2)}`;
 
@@ -48,8 +51,8 @@ export default class extends Module {
 
 			const text = serifs.birthday.happyBirthday(friend.name);
 
-			this.ai.sendMessage(friend.userId, {
-				text: text
+			this.ai.post({
+				text: acct(friend.doc.user) + ' ' + text
 			});
 		});
 	}
