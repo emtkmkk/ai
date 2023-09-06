@@ -8,6 +8,7 @@ import { User } from '@/misskey/user';
 import includes from '@/utils/includes';
 import or from '@/utils/or';
 import config from '@/config';
+import { acct } from '@/utils/acct';
 
 export default class Message {
 	private ai: 藍;
@@ -85,7 +86,7 @@ export default class Message {
 
 		return await this.ai.post({
 			replyId: this.note.id,
-			text: text,
+			text: acct(this.user) + ' ' + text,
 			fileIds: opts?.file ? [opts?.file.id] : undefined,
 			cw: opts?.cw,
 			renoteId: opts?.renote
