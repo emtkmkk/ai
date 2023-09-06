@@ -25,9 +25,10 @@ export default class extends Module {
 			this.transferBegin(msg) ||
 			this.transferEnd(msg) ||
 			this.setName(msg) ||
+			this.getLove(msg) ||
 			this.modules(msg) ||
 			this.version(msg)
-		);
+		) ? {reaction:"love"} : false;
 	}
 
 	@autobind
@@ -90,6 +91,25 @@ export default class extends Module {
 				});
 			});
 		}
+
+		return true;
+	}
+
+	@autobind
+	private getLove(msg: Message): boolean  {
+		if (!msg.text) return false;
+		if (!msg.text.includes('好感度')) return false;
+		
+		const lovep = msg.friend.love || 0;
+		let love = "";
+		love += lovep >= 0 ? "★" : "☆"
+		love += lovep >= 5 ? "★" : "☆"
+		love += lovep >= 20 ? "★" : "☆"
+		love += lovep >= 50 ? "★" : "☆"
+		love += lovep >= 100 ? "★" : "☆"
+		love += lovep >= 120 ? "+" + (lovep >= 140 ? (lovep/20) - 5 : "") : ""
+		
+		msg.reply(serifs.core.getLove(msg.friend.name,love))
 
 		return true;
 	}
