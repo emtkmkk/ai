@@ -8,7 +8,7 @@ export default {
 
 		yesOrNo: '「はい」か「いいえ」しかわからないです...',
 		
-		getLove: (name, love) => `私の${name}に対する好感度です！ 好感度 : ${love}`
+		getLove: (name, love) => `私の${name}に対する好感度です！ 好感度 : ${love}`,
 
 		hello: name => name ? `こんにちは、${name}！` : `こんにちは！`,
 
