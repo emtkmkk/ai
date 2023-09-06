@@ -27,8 +27,11 @@ export default class extends Module {
 		this.learnedKeywords = this.ai.getCollection('_keyword_learnedKeywords', {
 			indices: ['userId']
 		});
+		
+		const hours = new Date().getHours()
+		const cd = hours > 17 && hours < 24 ? 15 : 60;
 
-		setInterval(this.learn, 1000 * 60 * 60);
+		setInterval(this.learn, 1000 * 60 * cd);
 
 		return {};
 	}
