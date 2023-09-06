@@ -144,7 +144,7 @@ export default class extends Module {
 			const emoji = Array.isArray(hand) ? hand[0] + face + hand[1] : hand + face + hand;
 			msg.reply(serifs.emoji.suggest(emoji));
 			return {
-				reaction:'like'
+				reaction:'love'
 			};
 		} else {
 			return false;
