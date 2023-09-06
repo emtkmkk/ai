@@ -224,7 +224,7 @@ export default class 藍 {
 			noteId: msg.replyId
 		});
 
-		let reaction: string | null = 'love';
+		let reaction: string | null = ':mk_widechicken:';
 		let immediate: boolean = false;
 
 		//#region
