@@ -264,7 +264,7 @@ export default class 藍 {
 		if (!immediate) {
 			await delay(1000);
 		}
-		
+
 		if (reaction === "love") reaction = ":mk_hi:";
 		if (reaction === "like") reaction = ":mk_yurayurachicken:";
 		if (reaction === "hmm") reaction = ":mk_fly_sliver:";
@@ -284,6 +284,9 @@ export default class 藍 {
 		switch (notification.type) {
 			// リアクションされたら親愛度を少し上げる
 			// TODO: リアクション取り消しをよしなにハンドリングする
+			case 'mention':
+			case 'quote':
+			case 'pollVote':
 			case 'reaction': {
 				const friend = new Friend(this, { user: notification.user });
 				friend.incLove(0.1);
