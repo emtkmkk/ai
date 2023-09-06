@@ -119,10 +119,14 @@ export default class extends Module {
 			this.unsubscribeReply(key);
 			this.reminds.remove(remind);
 			msg.reply(done ? getSerif(serifs.reminder.done(msg.friend.name)) : serifs.reminder.cancel);
-			return;
+			return {
+				reaction:'love'
+			};
 		} else if (isOneself === false) {
 			msg.reply(serifs.reminder.doneFromInvalidUser);
-			return;
+			return {
+				reaction:'confused'
+			};
 		} else {
 			return false;
 		}
