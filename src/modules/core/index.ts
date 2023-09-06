@@ -158,13 +158,16 @@ export default class extends Module {
 		if (msg.text.includes('はい')) {
 			msg.friend.updateName(data.name + 'さん');
 			done();
+			return {reaction:'love'}
 		} else if (msg.text.includes('いいえ')) {
 			msg.friend.updateName(data.name);
 			done();
+			return {reaction:'love'}
 		} else {
 			msg.reply(serifs.core.yesOrNo).then(reply => {
 				this.subscribeReply(msg.userId, reply.id, data);
 			});
+			return {reaction:'hmm'}
 		}
 	}
 }
