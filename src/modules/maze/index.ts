@@ -59,10 +59,10 @@ export default class extends Module {
 	private async mentionHook(msg: Message) {
 		if (msg.includes(['迷路'])) {
 			let size: string | null = null;
-			if (msg.includes(['接待'])) size = 'veryEasy';
 			if (msg.includes(['簡単', 'かんたん', '易しい', 'やさしい', '小さい', 'ちいさい'])) size = 'easy';
+			if (msg.includes(['接待','超かんたん'])) size = 'veryEasy';
 			if (msg.includes(['難しい', 'むずかしい', '複雑な', '大きい', 'おおきい'])) size = 'hard';
-			if (msg.includes(['死', '鬼', '地獄'])) size = 'veryHard';
+			if (msg.includes(['死', '鬼', '地獄', '超むずかしい', 'おに'])) size = 'veryHard';
 			if (msg.includes(['もこ']) && msg.includes(['本気'])) size = 'ai';
 			this.log('Maze requested');
 			setTimeout(async () => {
