@@ -2,6 +2,7 @@ import autobind from 'autobind-decorator';
 import Module from '@/module';
 import Message from '@/message';
 import serifs from '@/serifs';
+import { acct } from '@/utils/acct';
 
 export default class extends Module {
 	public readonly name = 'timer';
@@ -64,7 +65,7 @@ export default class extends Module {
 		const text = serifs.timer.notify(data.time, friend.name);
 		this.ai.post({
 			replyId: data.msgId,
-			text: text
+			text: acct(friend.doc.user) + ' ' + text
 		});
 	}
 }
