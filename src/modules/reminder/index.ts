@@ -148,6 +148,7 @@ export default class extends Module {
 		let reply;
 		try {
 			reply = await this.ai.post({
+				replyId: remind.thing == null && remind.quoteId ? remind.quoteId : remind.id,
 				renoteId: remind.thing == null && remind.quoteId ? remind.quoteId : remind.id,
 				text: acct(friend.doc.user) + ' ' + serifs.reminder.notify(friend.name)
 			});
