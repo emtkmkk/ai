@@ -375,7 +375,7 @@ export default {
 	},
 
 	chart: {
-		post: 'インスタンスの投稿数です！',
+		post: 'もこきーの投稿数のグラフです！',
 		foryou: '描きました！'
 	},
 
