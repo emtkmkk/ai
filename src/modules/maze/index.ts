@@ -63,7 +63,7 @@ export default class extends Module {
 			if (msg.includes(['接待','超かんたん'])) size = 'veryEasy';
 			if (msg.includes(['難しい', 'むずかしい', '複雑な', '大きい', 'おおきい'])) size = 'hard';
 			if (msg.includes(['死', '鬼', '地獄', '超むずかしい', 'おに'])) size = 'veryHard';
-			if (msg.includes(['もこ']) && msg.includes(['本気']) || msg.includes(['裏'])) size = 'ai';
+			if (msg.includes(['もこ']) && msg.includes(['本気']) || msg.includes(['裏']) && msg.includes(['おに'])) size = 'ai';
 			this.log('Maze requested');
 			setTimeout(async () => {
 				const file = await this.genMazeFile(Date.now(), size);
