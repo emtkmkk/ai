@@ -4,8 +4,11 @@ import Message from '@/message';
 import serifs from '@/serifs';
 import * as seedrandom from 'seedrandom';
 import { genItem } from '@/vocabulary';
+import { acct } from '@/utils/acct';
 
 export const blessing = [
+	'スーパーもこ吉',
+	'もこもこ吉',
 	'もこ吉',
 	'ヨタ吉',
 	'ゼタ吉',
@@ -56,7 +59,7 @@ export default class extends Module {
 			const omikuji = blessing[Math.floor(rng() * blessing.length)];
 			const item = genItem(rng);
 			msg.reply(`**${omikuji}🎉**\nラッキーアイテム: ${item}`, {
-				cw: serifs.fortune.cw(msg.friend.name)
+				cw: acct(msg.friend.doc.user) + ' ' + serifs.fortune.cw(msg.friend.name)
 			});
 			return {
 				reaction:'love'
