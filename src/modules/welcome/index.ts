@@ -21,13 +21,20 @@ export default class extends Module {
 					renoteId: note.id
 				});
 			}, 3000);
+			
+			setTimeout(() => {
+				this.ai.api('notes/reactions/create', {
+					noteId: note.id,
+					reaction: ':mk_hi:'
+				});
+			}, 5000);
 
 			setTimeout(() => {
 				this.ai.api('notes/reactions/create', {
 					noteId: note.id,
 					reaction: ':youkoso:'
 				});
-			}, 5000);
+			}, 7000);
 		}
 	}
 }
