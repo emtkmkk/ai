@@ -71,8 +71,8 @@ export default class extends Module {
 		if (includes(note.text, ['ぴざ'])) return react(':itspizzatime:');
 		if (includes(note.text, ['かんぴろばくたー','campylobacter'])) return react(':campylobacter_mottenaidesu:');
 		if (includes(note.text, ['taikin', '退勤', 'たいきん'])) return react(':otukaresama:');
-		if (includes(note.text, ['おはよ', 'ohayo', 'おきた', '起きた', 'おっは', 'ぽきた'])) return react(':mk_oha:');
-		if (includes(note.text, ['おやす', 'oyasu', '寝る', 'ねる', '日次再起動', 'ぽやしみ']) && !includes(note.text, ['ちゃんねる'])) return react(':oyasumi2:');
+		if (includes(note.text, ['おはよ', 'ohayo', 'pokita', 'おきた', '起きた', 'おっは', 'ぽきた'])) return react(':mk_oha:');
+		if (includes(note.text, ['おやす', 'oyasu', 'poyasimi', '寝る', 'ねる', '日次再起動', 'ぽやしみ']) && !includes(note.text, ['ちゃんねる'])) return react(':oyasumi2:');
 		if (includes(note.text, ['嘘'])) return react(':sonnano_uso:');
 		if (includes(note.text, ['めつ','滅','metu'])) return react(':metu:');
 		if (includes(note.text, ['つら','辛','しんど','帰りたい','かえりたい'])) return react(':petthex:');
