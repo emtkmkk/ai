@@ -18,7 +18,8 @@ export default class extends Module {
 		if (!note.user.isBot && note.isFirstNote) {
 			setTimeout(() => {
 				this.ai.api('notes/create', {
-					renoteId: note.id
+					renoteId: note.id,
+					localOnly: true
 				});
 			}, 3000);
 			
