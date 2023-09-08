@@ -150,7 +150,8 @@ export default class extends Module {
 			reply = await this.ai.post({
 				replyId: remind.thing == null && remind.quoteId ? remind.quoteId : remind.id,
 				renoteId: remind.thing == null && remind.quoteId ? remind.quoteId : remind.id,
-				text: acct(friend.doc.user) + ' ' + serifs.reminder.notify(friend.name)
+				text: acct(friend.doc.user) + ' ' + serifs.reminder.notify(friend.name),
+				visibility: 'home'
 			});
 		} catch (err) {
 			// renote対象が消されていたらリマインダー解除
