@@ -75,6 +75,8 @@ export default class Message {
 		cw?: string;
 		renote?: string;
 		immediate?: boolean;
+		visibility?: string;
+		localOnly?: boolean;
 	}) {
 		if (text == null) return;
 
@@ -89,7 +91,9 @@ export default class Message {
 			text: acct(this.user) + ' ' + text,
 			fileIds: opts?.file ? [opts?.file.id] : undefined,
 			cw: opts?.cw,
-			renoteId: opts?.renote
+			renoteId: opts?.renote,
+			visibility: opts?.visibility ?? 'home',
+			localOnly: opts?.localOnly || false
 		});
 	}
 
