@@ -17,7 +17,7 @@ export default class extends Module {
 			if (Math.random() < rnd) {
 				this.post();
 			}
-		}, 1000 * 60 * 30);
+		}, 1000 * 60 * 20);
 
 		return {
 			mentionHook: this.mentionHook,
@@ -64,16 +64,44 @@ export default class extends Module {
 			['もこチキの部屋にありそうなもの', 'みなさんは、もこチキの部屋にありそうなものはどれだと思いますか？'],
 			['燃えるゴミ', 'みなさんは、どれが燃えるゴミだと思いますか？'],
 			['好きなおにぎりの具', 'みなさんの好きなおにぎりの具はなんですか？'],
+			['嫌なおにぎりの具', 'みなさんの一番食べたくないおにぎりの具はなんですか？'],
+			['強そうなもの', 'みなさんは、この中でどれが最強だと思いますか？'],
+			['弱そうなもの', 'みなさんは、この中でどれが最弱だと思いますか？'],
+			['強すぎず弱すぎないもの', 'みなさんは、この中で一番強すぎず弱すぎない物はどれだと思いますか？'],
+			['音ゲー', 'みなさんは、この中でいちばん音ゲーに使えそうなのはどれだと思いますか？'],
+			['コンビニ', 'みなさんが、いちばんコンビニで売って欲しいものはどれですか？'],
+			['破壊力がある', 'みなさんは、どれが一番破壊力があると感じますか？'],
+			['人に押し付け', 'みなさんは、どれが一番人に押し付けたいですか？'],
+			['欲しい物を選べ', 'この中から一つ欲しいものを選べって言われました…… みなさんならどれにしますか？'],
+			['アメリカ', 'みなさんがアメリカに持っていくならどれにしますか？'],
+			['村長', 'みなさんが村長になったら村に真っ先に設置したいものはどれですか？'],
+			['もこきー', 'もこきーの新機能で、なにかを生成する機能が付きました。それはどれですか？'],
+			['バランス', 'みなさんは、どれがいちばん栄養バランスがいいと思いますか？'],
+			['安値', 'みなさんは、どれがいちばん安値で取引されると思いますか？'],
+			['いらない', 'みなさんは、どれがいちばんいらないと思いますか？'],
+			['プレゼントしない', 'みなさんは、どれがいちばんプレゼントされたくないと思いますか？'],
+			['流行らないもの', 'みなさんは、どれが絶対はやらなさそうだと思いますか？'],
+			['食べたくないもの', 'みなさんは、どれがいちばん「ギリギリ食べてもいいかも」と思いますか？'],
+			['後世に遺したくないもの', 'みなさんは、どれが一番後世に遺したくないですか？'],
+			['美術館に置いてなさそうなもの', 'みなさんは、この中でいちばん美術館に置いてなさそうなものはどれだと思いますか？'],
+			['教室になさそうなもの', 'みなさんは、いちばん教室になさそうなものってどれだと思いますか？'],
+			['燃えないゴミ', 'みなさんは、どれが燃えないゴミだと思いますか？'],
+			['野菜', 'みなさ～ん！野菜食べてますか？'],
+			['テーマなし', '特にテーマなしのアンケートです！'],
 		];
 
 		const poll = polls[Math.floor(Math.random() * polls.length)];
 
-		const choices = [
+		let choices = [
 			genItem(),
 			genItem(),
 			genItem(),
 			genItem(),
 		];
+		
+		if (Math.random() < 0.3) choices.push(genItem());
+		if (Math.random() < 0.3) choices.push(genItem());
+		if (Math.random() < 0.3) choices.push(genItem());
 
 		const note = await this.ai.post({
 			text: poll[1],
@@ -133,14 +161,14 @@ export default class extends Module {
 		} else if (mostVotedChoices.length === 1) {
 			this.ai.post({ // TODO: Extract serif
 				cw: `${title}アンケートの結果発表です！`,
-				text: `結果は${mostVotedChoice.votes}票の「${mostVotedChoice.text}」でした！`,
+				text: `結果は${mostVotedChoice.votes}票の「${mostVotedChoice.text}」でした！なるほど～！`,
 				renoteId: noteId,
 			});
 		} else {
 			const choices = mostVotedChoices.map(choice => `「${choice.text}」`).join('と');
 			this.ai.post({ // TODO: Extract serif
 				cw: `${title}アンケートの結果発表です！`,
-				text: `結果は${mostVotedChoice.votes}票の${choices}でした！`,
+				text: `結果は${mostVotedChoice.votes}票の${choices}でした！なるほど～！`,
 				renoteId: noteId,
 			});
 		}
