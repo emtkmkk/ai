@@ -176,7 +176,7 @@ export default class extends Module {
 		if (msg.includes(['フォロワー'])) type = 'followers';
 		if (msg.includes(['投稿'])) type = 'userNotes';
 		
-		const title = type === 'random' ? /チャート\s?(\S{1,15})/.exec(msg.extractedText)?.[1] : undefined;
+		const title = type === 'random' ? /チャート\s?(\S{1,25})/.exec(msg.extractedText)?.[1] : undefined;
 
 		const file = await this.genChart(type, {
 			user: msg.user,
