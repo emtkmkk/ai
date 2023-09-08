@@ -17,7 +17,7 @@ export default class extends Module {
 	@autobind
 	private onLocalNote(note: any) {
 		if (!note.user.isBot && note.isFirstNote) {
-			const friend = new Friend(this, { user: note.user });
+			const friend = new Friend(this.ai, { user: note.user });
 			if (!friend.doc.isWelcomeMessageSent){
 				friend.doc.isWelcomeMessageSent = true;
 				friend.save();
