@@ -16,6 +16,7 @@ export type FriendDoc = {
 	perModulesData?: any;
 	married?: boolean;
 	transferCode?: string;
+	isWelcomeMessageSent?: boolean;
 };
 
 export default class Friend {
