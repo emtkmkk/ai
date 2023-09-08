@@ -35,11 +35,46 @@ export default class extends Module {
 
 		this.crawleGameEnd();
 		setInterval(this.crawleGameEnd, 1000);
+		setInterval(() => {
+			const hours = new Date().getHours()
+			const rnd = hours > 17 && hours < 24 ? 0.5 : 0.1;
+			if (Math.random() < rnd) {
+				this.start();
+			}
+		}, 1000 * 60 * 37);
 
 		return {
 			mentionHook: this.mentionHook,
 			contextHook: this.contextHook
 		};
+	}
+	
+	@autobind
+	private async start() {
+
+		const games = this.games.find({});
+
+		const recentGame = games.length == 0 ? null : games[games.length - 1];
+		
+		if (recentGame && (!recentGame.isEnded || Date.now() - recentGame.startedAt < 1000 * 60 * 60)) return
+		
+		const maxnum = recentGame?.votes?.length || 1;
+
+		const post = await this.ai.post({
+			text: serifs.kazutori.intro(maxnum, limitMinutes)
+		});
+
+		this.games.insertOne({
+			votes: [],
+			isEnded: false,
+			startedAt: Date.now(),
+			postId: post.id,
+			maxnum: maxnum
+		});
+
+		this.subscribeReply(null, post.id);
+
+		this.log('New kazutori game started');
 	}
 
 	@autobind
