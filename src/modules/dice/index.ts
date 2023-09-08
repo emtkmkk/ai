@@ -33,7 +33,7 @@ export default class extends Module {
 			results.push(Math.floor(Math.random() * dice) + 1);
 		}
 
-		msg.reply(serifs.dice.done(results.join(' ')));
+		msg.reply(serifs.dice.done(results.join(' ')),{visibility: 'public'});
 
 		return {
 			reaction:'love'
