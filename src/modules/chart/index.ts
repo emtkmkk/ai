@@ -24,7 +24,7 @@ export default class extends Module {
 	@autobind
 	private async post() {
 		const now = new Date();
-		if (now.getHours() !== 23) return;
+		if (now.getHours() !== 23 && now.getMinutes() < 50) return;
 		const date = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
 		const data = this.getData();
 		if (data.lastPosted == date) return;
@@ -32,12 +32,13 @@ export default class extends Module {
 		this.setData(data);
 
 		this.log('Time to chart');
-		const file = await this.genChart('notes');
+		const fileNotes = await this.genChart('notes');
+		const fileUsers = await this.genChart('users');
 
 		this.log('Posting...');
 		this.ai.post({
 			text: serifs.chart.post,
-			fileIds: [file.id]
+			fileIds: [fileNotes.id, fileUsers.id]
 		});
 	}
 
@@ -62,6 +63,8 @@ export default class extends Module {
 					data: data.diffs.reply
 				}, {
 					data: data.diffs.renote
+				}, {
+					data: data.diffs.withFile
 				}]
 			};
 		} else if (type === 'followers') {
@@ -86,12 +89,39 @@ export default class extends Module {
 			});
 
 			chart = {
+				title: `もこきーの投稿数`,
 				datasets: [{
 					data: data.local.diffs.normal
 				}, {
 					data: data.local.diffs.reply
 				}, {
 					data: data.local.diffs.renote
+				}, {
+					data: data.local.diffs.withFile
+				}]
+			};
+		} else if (type === 'users') {
+			const dataA = await this.ai.api('charts/active-users', {
+				span: 'day',
+				limit: 30,
+			});
+			const dataU = await this.ai.api('charts/users', {
+				span: 'day',
+				limit: 30,
+			});
+			
+			const data = dataA.map((x, i) => ({...x,...dataU[i]}))
+
+			chart = {
+				title: `もこきーのユーザ数`,
+				datasets: [{
+					data: data.readWrite
+				}, {
+					data: data.read.map((x, i) => x - data.readWrite[i])
+				}, {
+					data: data.local.total.map((x, i) => x - data.local.inc[i] - data.read[i])
+				}, {
+					data: data.local.inc
 				}]
 			};
 		} else {
