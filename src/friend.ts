@@ -4,6 +4,7 @@ import IModule from '@/module';
 import getDate from '@/utils/get-date';
 import { User } from '@/misskey/user';
 import { genItem } from '@/vocabulary';
+import { acct } from '@/utils/acct';
 
 export type FriendDoc = {
 	userId: string;
@@ -120,6 +121,13 @@ export default class Friend {
 		if (this.doc.lastLoveIncrementedAt == today && ((this.doc.love || 0) < 100 && (this.doc.todayLoveIncrements || 0) >= 15)) return;
 
 		if (this.doc.love == null) this.doc.love = 0;
+		
+		if ((this.doc.love || 0) > 0 && (this.doc.love || 0) % 100 + amount >= 100) {
+			this.ai.sendMessage(this.doc.userId, {
+				text: `${acct(this.doc.user)}\n${this.doc.name ? this.doc.name + "、" : ""}私と${'とっても'.repeat(Math.floor((this.doc.love || 0) / 100))}たくさん遊んでいただいてありがとうございます！\nこれからもよろしくお願いします……！`
+			});
+		}
+		
 		this.doc.love += amount;
 
 		/*// 最大 100
@@ -139,8 +147,8 @@ export default class Friend {
 		// 親愛度100以上の場合、量に応じて下がる量が軽減
 		if ((this.doc.love || 0) >= 100) amount = (Math.ceil(amount / ((this.doc.love || 0) * 2 / 100 - 1) * 100) / 100);
 		
-		// 好感度86以下になる場合、86で止まる
-		if ((this.doc.love || 0) >= 86 && (this.doc.love|| 0) - amount < 86) this.doc.love = 86;
+		// 好感度x00以下になる場合、x00で止まる
+		if ((this.doc.love || 0) >= 100 && (this.doc.love|| 0) % 100 - amount < 0) this.doc.love = (Math.floor((this.doc.love|| 0) / 100) * 100) + amount;
 
 		if (this.doc.love == null) this.doc.love = 0;
 		this.doc.love -= amount;
