@@ -119,9 +119,13 @@ export default class Friend {
 
 		// 100を超えるまでは1日に上げられる親愛度は最大15
 		if (this.doc.lastLoveIncrementedAt == today && ((this.doc.love || 0) < 100 && (this.doc.todayLoveIncrements || 0) >= 15)) return;
+		
+		// 100を超えた後は1日に上げられる親愛度は最大50
+		if (this.doc.lastLoveIncrementedAt == today && ((this.doc.love || 0) >= 100 && (this.doc.todayLoveIncrements || 0) >= 50)) return;
 
 		if (this.doc.love == null) this.doc.love = 0;
 		
+		// x00を超えた時に感謝のメッセージを送信する
 		if ((this.doc.love || 0) > 0 && (this.doc.love || 0) % 100 + amount >= 100) {
 			this.ai.sendMessage(this.doc.userId, {
 				text: `${acct(this.doc.user)}\n${this.doc.name ? this.doc.name + "、" : ""}私と${'とっても'.repeat(Math.floor((this.doc.love || 0) / 100))}たくさん遊んでいただいてありがとうございます！\nこれからもよろしくお願いします……！`
@@ -137,7 +141,7 @@ export default class Friend {
 		this.doc.todayLoveIncrements = (this.doc.todayLoveIncrements || 0) + amount;
 		this.save();
 
-		this.ai.log(`💗 ${this.userId} +${amount} (${this.doc.love || 0})`);
+		this.ai.log(`💗 ${this.userId} +${amount} (${this.doc.love || 0}) <${(this.doc.todayLoveIncrements || 0)} / ${(this.doc.love || 0) < 100 ? 15 : 50}>`);
 	}
 
 	@autobind
