@@ -147,7 +147,7 @@ export default class extends Module {
 			}
 
 			chart = {
-				title: items[Math.floor(Math.random() * items.length)] + suffixes[Math.floor(Math.random() * suffixes.length)],
+				title: params.title ?? items[Math.floor(Math.random() * items.length)] + suffixes[Math.floor(Math.random() * suffixes.length)],
 				datasets: datasets
 			};
 		}
@@ -175,9 +175,12 @@ export default class extends Module {
 		let type = 'random';
 		if (msg.includes(['フォロワー'])) type = 'followers';
 		if (msg.includes(['投稿'])) type = 'userNotes';
+		
+		const title = type = 'random' ? /チャート\s?(\S{1,15})/.exec(msg)?.[1] : undefined;
 
 		const file = await this.genChart(type, {
-			user: msg.user
+			user: msg.user,
+			title: title
 		});
 
 		this.log('Replying...');
