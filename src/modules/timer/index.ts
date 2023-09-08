@@ -66,11 +66,13 @@ export default class extends Module {
 		try {
 			await this.ai.post({
 				replyId: data.msgId,
-				text: acct(friend.doc.user) + ' ' + text
+				text: acct(friend.doc.user) + ' ' + text,
+				visibility: 'home'
 			});
 		} catch (e) {
 			this.ai.post({
-				text: acct(friend.doc.user) + ' ' + text
+				text: acct(friend.doc.user) + ' ' + text,
+				visibility: 'home'
 			});
 		}
 	}
