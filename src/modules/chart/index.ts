@@ -24,7 +24,7 @@ export default class extends Module {
 	@autobind
 	private async post() {
 		const now = new Date();
-		if (now.getHours() !== 23 && now.getMinutes() < 50) return;
+		if (now.getHours() !== 23 || now.getMinutes() < 50) return;
 		const date = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
 		const data = this.getData();
 		if (data.lastPosted == date) return;
@@ -110,7 +110,7 @@ export default class extends Module {
 				limit: 30,
 			});
 			
-			const data = dataA.map((x, i) => ({...x,...dataU[i]}))
+			const data = {...dataA,...dataU};
 
 			chart = {
 				title: `もこきーのユーザ数`,
