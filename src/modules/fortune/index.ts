@@ -59,7 +59,8 @@ export default class extends Module {
 			const omikuji = blessing[Math.floor(rng() * blessing.length)];
 			const item = genItem(rng);
 			msg.reply(`**${omikuji}🎉**\nラッキーアイテム: ${item}`, {
-				cw: acct(msg.friend.doc.user) + ' ' + serifs.fortune.cw(msg.friend.name)
+				cw: acct(msg.friend.doc.user) + ' ' + serifs.fortune.cw(msg.friend.name),
+				visibility: 'public'
 			});
 			return {
 				reaction:'love'
