@@ -37,7 +37,7 @@ export default class extends Module {
 			});
 		};
 
-		let customEmojis = note.text.match(/:([^\n:]+?):/g)?.filter((x) => x.includes("mk"));
+		let customEmojis = note.text.match(/:([^\n:]+?):/g)?.filter((x) => x.includes("mk") && !x.includes("kill"));
 		if (customEmojis && customEmojis.length > 0) {
 			// カスタム絵文字が複数種類ある場合はキャンセル
 			if (!customEmojis.every((val, i, arr) => val === arr[0])) return;
@@ -70,14 +70,14 @@ export default class extends Module {
 		if (includes(note.text, ['寿司', 'sushi']) || note.text === 'すし') return react('🍣');*/
 		if (includes(note.text, ['ぴざ'])) return react(':itspizzatime:');
 		if (includes(note.text, ['かんぴろばくたー','campylobacter'])) return react(':campylobacter_mottenaidesu:');
-		if (includes(note.text, ['おはよ', 'ohayo', 'おきた', '起きた', 'おっは'])) return react(':mk_oha:');
-		if (includes(note.text, ['おやす', 'oyasu', '寝る', 'ねる', '日次再起動'])) return react(':oyasumi2:');
 		if (includes(note.text, ['taikin', '退勤', 'たいきん'])) return react(':otukaresama:');
+		if (includes(note.text, ['おはよ', 'ohayo', 'おきた', '起きた', 'おっは', 'ぽきた'])) return react(':mk_oha:');
+		if (includes(note.text, ['おやす', 'oyasu', '寝る', 'ねる', '日次再起動', 'ぽやしみ']) && !includes(note.text, ['ちゃんねる'])) return react(':oyasumi2:');
 		if (includes(note.text, ['嘘'])) return react(':sonnano_uso:');
 		if (includes(note.text, ['めつ','滅','metu'])) return react(':metu:');
 		if (includes(note.text, ['つら','辛','しんど','帰りたい','かえりたい'])) return react(':petthex:');
-		if (includes(note.text, ['むいみ','無意味','muimi'])) return react(':osiina:');
+		if (includes(note.text, ['むいみ','無意味','muimi']) && includes(note.text, ['もの','mono','物'])) return react(':osiina:');
 		if (includes(note.text, ['もこもこ'])) return react(':mokomoko:');
-		if (includes(note.text, ['もこ'])) return react(':mk_chicken_t:');
+		if (includes(note.text, ['もこ','niwatori_kun']) && !includes(note.text, ['もこみち','おもころ','もこう'])) return react(':mk_chicken_t:');
 	}
 }
