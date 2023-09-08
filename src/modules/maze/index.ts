@@ -68,7 +68,7 @@ export default class extends Module {
 			setTimeout(async () => {
 				const file = await this.genMazeFile(Date.now(), size);
 				this.log('Replying...');
-				msg.reply(serifs.maze.foryou, { file });
+				msg.reply(serifs.maze.foryou, { file,visibility: 'public' });
 			}, 3000);
 			return {
 				reaction: 'like'
