@@ -53,7 +53,8 @@ export default class extends Module {
 			
 			if (!friend.doc?.user?.host) {
 				this.ai.post({
-					text: acct(friend.doc.user) + ' ' + text
+					text: acct(friend.doc.user) + ' ' + text,
+					localOnly: true,
 				});
 			} else {
 				this.ai.sendMessage(friend.userId, {
