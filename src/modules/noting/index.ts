@@ -45,7 +45,8 @@ export default class extends Module {
 		// TODO: 季節に応じたセリフ
 
 		this.ai.post({
-			text: typeof note === 'function' ? note() : note
+			text: typeof note === 'function' ? note() : note,
+			localOnly: true,
 		});
 	}
 }
