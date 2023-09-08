@@ -142,7 +142,7 @@ export default class extends Module {
 			const hand = hands[Math.floor(Math.random() * hands.length)];
 			const face = faces[Math.floor(Math.random() * faces.length)];
 			const emoji = Array.isArray(hand) ? hand[0] + face + hand[1] : hand + face + hand;
-			msg.reply(serifs.emoji.suggest(emoji));
+			msg.reply(serifs.emoji.suggest(emoji),{visibility: 'public'});
 			return {
 				reaction:'love'
 			};
