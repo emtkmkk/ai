@@ -184,7 +184,7 @@ export default class extends Module {
 		});
 
 		this.log('Replying...');
-		msg.reply(serifs.chart.foryou, { file,visibility: 'public', localOnly: !msg.user.host && !!title });
+		msg.reply(serifs.chart.foryou, { file,visibility: 'public', localOnly: msg.user.host && !!title });
 
 		return {
 			reaction: 'like'
