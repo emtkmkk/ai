@@ -183,6 +183,7 @@ export default class extends Module {
 			} else {
 				msg.friend.doc.kazutoriData = {winCount: 0,playCount:1,inventory:[]};	
 			}
+			msg.friend.save()
 		}
 
 		return {
@@ -266,6 +267,7 @@ export default class extends Module {
 			} else {
 				winnerFriend.doc.kazutoriData.inventory = [item];
 			}
+			winnerFriend.save()
 		}
 		
 
