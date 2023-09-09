@@ -10,6 +10,8 @@ export default {
 		
 		getLove: (name, love) => `私の${name}に対する好感度です！ \n\n好感度 : ${love}`,
 		
+		getStatus: (name, love, kazutori) => `\n${name ? '呼び方 : ' + name + '\n' : ''}好感度 : ${love}${kazutori ? '\n数取り : ' + kazutori : ''}`
+		
 		followBack: name => name ? `${name}をフォローしました！${name}、これからよろしくお願いします！` : `あなたをフォローしました！これからよろしくお願いします！`,
 		
 		alreadyFollowBack: name => name ? `私は${name}を既にフォローしているみたいです！` : `私はあなたを既にフォローしているみたいです！`,
