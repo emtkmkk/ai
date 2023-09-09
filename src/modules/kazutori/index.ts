@@ -181,7 +181,7 @@ export default class extends Module {
 			if (msg.friend.doc.kazutoriData){
 					msg.friend.doc.kazutoriData.playCount += 1;			
 			} else {
-				msg.friend.doc.kazutoriData.playCount = 1;	
+				msg.friend.doc.kazutoriData = {winCount: 0,playCount:1,inventory:[]};	
 			}
 		}
 
@@ -190,7 +190,7 @@ export default class extends Module {
 		};
 	}
 
-	/**
+/**
 	 * 終了すべきゲームがないかチェック
 	 */
 	@autobind
@@ -259,7 +259,7 @@ export default class extends Module {
 			if (winnerFriend.doc.kazutoriData.winCount){
 				winnerFriend.doc.kazutoriData.winCount += 1;
 			} else {
-				winnerFriend.doc.kazutoriData.winCount = 1;	
+				winnerFriend.doc.kazutoriData = {winCount: 1,playCount:1,inventory:[]};	
 			}
 			if (winnerFriend.doc.kazutoriData.inventory) {
 				winnerFriend.doc.kazutoriData.inventory.push(item);
