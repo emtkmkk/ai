@@ -11,6 +11,7 @@ export type FriendDoc = {
 	user: User;
 	name?: string | null;
 	love?: number;
+	kazutoriData?: any;
 	lastLoveIncrementedAt?: string;
 	todayLoveIncrements?: number;
 	perModulesData?: any;
