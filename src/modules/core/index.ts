@@ -129,7 +129,7 @@ export default class extends Module {
 		love += lovep >= 100 ? "★" : "☆"
 		love += lovep >= 120 ? "+" + (lovep >= 140 ? (lovep/20) - 5 : "") : ""
 		
-		const kazutori = msg.friend.kazutoriData?.playCount ? msg.friend.kazutoriData?.winCount + ' / ' + msg.friend.kazutoriData?.playCount : undefined;
+		const kazutori = msg.friend.doc.kazutoriData?.playCount ? msg.friend.doc.kazutoriData?.winCount + ' / ' + msg.friend.doc.kazutoriData?.playCount : undefined;
 		
 		msg.reply(serifs.core.getStatus(msg.friend.name || 'あなた',love, kazutori))
 
