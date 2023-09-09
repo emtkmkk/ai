@@ -173,17 +173,19 @@ export default class extends Module {
 				renoteId: noteId,
 			});
 		} else if (mostVotedChoices.length === 1) {
-			const exist = this.pollresult.findOne({
-				key: title
-			});
-			if (exist){
-				exist.keyword = mostVotedChoice.text;
-				this.pollresult.update(exist);
-			} else {
-				this.pollresult.insertOne({
-					key: title,
-					keyword: mostVotedChoice.text
+			if (mostVotedChoice.votes >= 3) {
+				const exist = this.pollresult.findOne({
+					key: title
 				});
+				if (exist){
+					exist.keyword = mostVotedChoice.text;
+					this.pollresult.update(exist);
+				} else {
+					this.pollresult.insertOne({
+						key: title, 
+						keyword: mostVotedChoice.text
+					});
+				}
 			}
 			this.ai.post({ // TODO: Extract serif
 				cw: `${title}アンケートの結果発表です！`,
