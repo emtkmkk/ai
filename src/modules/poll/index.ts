@@ -108,7 +108,7 @@ export default class extends Module {
 		let choices = [
 			genItem(),
 			genItem(),
-			...(exist.keyword ? [exist.keyword] : []),
+			...(exist?.keyword ? [exist.keyword] : []),
 			genItem(),
 			genItem(),
 		];
