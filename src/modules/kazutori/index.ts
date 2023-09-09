@@ -176,6 +176,8 @@ export default class extends Module {
 		});
 
 		this.games.update(game);
+		
+		msg.friend.kazutoriData.playCount += 1;
 
 		return {
 			reaction: ':mk_discochicken:'
@@ -246,6 +248,16 @@ export default class extends Module {
 
 		const winnerFriend = winner ? this.ai.lookupFriend(winner.id) : null;
 		const name = winnerFriend ? winnerFriend.name : null;
+		
+		if (winnerFriend) {
+			winnerFriend.doc.kazutoriData.winCount += 1;
+			if (winnerFriend.doc.kazutoriData.inventory) {
+				winnerFriend.doc.kazutoriData.inventory.push(item);
+			} else {
+				winnerFriend.doc.kazutoriData.inventory = [item];
+			}
+		}
+		
 
 		const text = results.join('\n') + '\n\n' + (winner
 			? reverse ? serifs.kazutori.finishWithWinnerReverse(acct(winner), name, item) : serifs.kazutori.finishWithWinner(acct(winner), name, item)
