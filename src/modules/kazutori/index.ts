@@ -256,7 +256,11 @@ export default class extends Module {
 		const name = winnerFriend ? winnerFriend.name : null;
 		
 		if (winnerFriend) {
-			winnerFriend.doc.kazutoriData.winCount += 1;
+			if (winnerFriend.doc.kazutoriData.winCount){
+				winnerFriend.doc.kazutoriData.winCount += 1;
+			} else {
+				winnerFriend.doc.kazutoriData.winCount = 1;	
+			}
 			if (winnerFriend.doc.kazutoriData.inventory) {
 				winnerFriend.doc.kazutoriData.inventory.push(item);
 			} else {
