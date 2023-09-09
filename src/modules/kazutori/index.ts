@@ -177,11 +177,11 @@ export default class extends Module {
 
 		this.games.update(game);
 		
-		if (msg.friend){
-			if (msg.friend.kazutoriData){
-					msg.friend.kazutoriData.playCount += 1;			
+		if (msg.friend?.doc){
+			if (msg.friend.doc.kazutoriData){
+					msg.friend.doc.kazutoriData.playCount += 1;			
 			} else {
-				msg.friend.kazutoriData.playCount = 1;	
+				msg.friend.doc.kazutoriData.playCount = 1;	
 			}
 		}
 
