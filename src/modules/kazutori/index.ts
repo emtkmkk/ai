@@ -177,7 +177,9 @@ export default class extends Module {
 
 		this.games.update(game);
 		
-		msg.friend.kazutoriData.playCount += 1;
+		if (msg.friend){
+			msg.friend.kazutoriData.playCount += 1;	
+		}
 
 		return {
 			reaction: ':mk_discochicken:'
