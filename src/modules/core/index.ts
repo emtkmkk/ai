@@ -26,6 +26,7 @@ export default class extends Module {
 			this.transferEnd(msg) ||
 			this.setName(msg) ||
 			this.getLove(msg) ||
+			this.getStatus(msg) ||
 			this.modules(msg) ||
 			this.version(msg)
 		) ? {reaction:"love"} : false;
@@ -110,6 +111,27 @@ export default class extends Module {
 		love += lovep >= 120 ? "+" + (lovep >= 140 ? (lovep/20) - 5 : "") : ""
 		
 		msg.reply(serifs.core.getLove(msg.friend.name || 'あなた',love))
+
+		return true;
+	}
+	
+	@autobind
+	private getStatus(msg: Message): boolean  {
+		if (!msg.text) return false;
+		if (!msg.text.includes('ステータス')) return false;
+		
+		const lovep = msg.friend.love || 0;
+		let love = "";
+		love += lovep >= 0 ? "★" : "☆"
+		love += lovep >= 5 ? "★" : "☆"
+		love += lovep >= 20 ? "★" : "☆"
+		love += lovep >= 50 ? "★" : "☆"
+		love += lovep >= 100 ? "★" : "☆"
+		love += lovep >= 120 ? "+" + (lovep >= 140 ? (lovep/20) - 5 : "") : ""
+		
+		const kazutori = msg.friend.kazutoriData?.playCount ? msg.friend.kazutoriData?.winCount + ' / ' + msg.friend.kazutoriData?.playCount : undefined;
+		
+		msg.reply(serifs.core.getStatus(msg.friend.name || 'あなた',love, kazutori))
 
 		return true;
 	}
