@@ -2,15 +2,24 @@ import autobind from 'autobind-decorator';
 import Message from '@/message';
 import Module from '@/module';
 import serifs from '@/serifs';
+import * as loki from 'lokijs';
 import { genItem } from '@/vocabulary';
 import config from '@/config';
 import { Note } from '@/misskey/note';
 
 export default class extends Module {
 	public readonly name = 'poll';
+	
+	private pollresult: loki.Collection<{
+		key: string;
+		keyword: string;
+	}>;
 
 	@autobind
 	public install() {
+		this.pollresult = this.ai.getCollection('_poll_pollresult', {
+			indices: ['userId']
+		});
 		setInterval(() => {
 			const hours = new Date().getHours()
 			const rnd = hours > 17 && hours < 24 ? 0.375 : 0.075;
@@ -91,10 +100,15 @@ export default class extends Module {
 		];
 
 		const poll = polls[Math.floor(Math.random() * polls.length)];
+		
+		const exist = this.pollresult.findOne({
+			key: poll[0]
+		});
 
 		let choices = [
 			genItem(),
 			genItem(),
+			...(exist.keyword ? [exist.keyword] : []),
 			genItem(),
 			genItem(),
 		];
@@ -159,6 +173,18 @@ export default class extends Module {
 				renoteId: noteId,
 			});
 		} else if (mostVotedChoices.length === 1) {
+			const exist = this.pollresult.findOne({
+				key: title
+			});
+			if (exist){
+				exist.keyword = mostVotedChoice.text;
+				this.pollresult.update(exist);
+			} else {
+				this.pollresult.insertOne({
+					key: title,
+					keyword: mostVotedChoice.text
+				});
+			}
 			this.ai.post({ // TODO: Extract serif
 				cw: `${title}アンケートの結果発表です！`,
 				text: `結果は${mostVotedChoice.votes}票の「${mostVotedChoice.text}」でした！なるほど～！`,
