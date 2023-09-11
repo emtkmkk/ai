@@ -25,6 +25,7 @@ export default class extends Module {
 		if (note.user.isBot) return;
 		if (note.reply != null) return;
 		if (note.text == null) return;
+		if (note.cw != null) return;
 		if (note.text.includes('@')) return; // (自分または他人問わず)メンションっぽかったらreject
 
 		const react = async (reaction: string, immediate = false) => {
