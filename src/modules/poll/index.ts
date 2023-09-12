@@ -81,7 +81,7 @@ export default class extends Module {
 			['コンビニで売って欲しいもの', 'みなさんが、いちばんコンビニで売って欲しいものはどれですか？'],
 			['破壊力があるもの', 'みなさんは、どれが一番破壊力があると感じますか？'],
 			['人に押し付けたいもの', 'みなさんは、どれが一番人に押し付けたいですか？'],
-			['欲しい物を選べ', 'この中から一つ欲しいものを選べって言われました…… みなさんならどれにしますか？'],
+			['欲しい物を選べって言われたら', 'この中から一つ欲しいものを選べって言われました…… みなさんならどれにしますか？'],
 			['アメリカに持っていきたいもの', 'みなさんがアメリカに持っていくならどれにしますか？'],
 			['村長になったら設置したいもの', 'みなさんが村長になったら村に真っ先に設置したいものはどれですか？'],
 			['もこきーの新機能', 'もこきーの新機能で、なにかを生成する機能が付きました。それはどれですか？'],
@@ -200,7 +200,7 @@ export default class extends Module {
 			}
 			this.ai.post({ // TODO: Extract serif
 				cw: `${title}アンケートの結果発表です！`,
-				text: `結果は${mostVotedChoice.votes}票の「${mostVotedChoice.text}」でした！なるほど～！`,
+				text: `結果は${mostVotedChoice.votes}票の「${mostVotedChoice.text}」でした！${mostVotedChoice.votes >= 3 || totalVoted > choices.length ? 'なるほど～！覚えておきます！' : 'なるほど～！'}`,
 				renoteId: noteId,
 			});
 		} else {
