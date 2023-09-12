@@ -24,14 +24,6 @@ export default class extends Module {
 				friend.save();
 				setTimeout(() => {
 					this.ai.api('notes/create', {
-						text: `${acct(note.user)}さん\n**もこきーへようこそ！**\nわたしはもこもこチキン、このサーバーのマスコットみたいな存在です！\nお暇な時に挨拶していただいたり、占いや迷路などで遊んでくだされば嬉しいです！\nこれからよろしくお願いします！\n\nこのサーバーには独自機能が沢山あるので、気になったらお知らせの中にあるもこきーTipsを読んでみるといいかもです！\nなにか分からないことや嫌なこと、不便なことがあれば、気軽にもこきーあどみんに声をかけてください！\nそれでは楽しいもこきーライフを～ :mk_hi:`,
-						replyId: note.id,
-						visibility: 'specified',
-						visibleUserIds: [userId],
-					});
-				}, 8000);
-				setTimeout(() => {
-					this.ai.api('notes/create', {
 						renoteId: note.id,
 						localOnly: true
 					});
@@ -49,7 +41,23 @@ export default class extends Module {
 						noteId: note.id,
 						reaction: ':youkoso:'
 					});
-				}, 6000);
+				}, 5500);
+				
+				setTimeout(() => {
+					this.ai.api('notes/reactions/create', {
+						noteId: note.id,
+						reaction: ':supertada:'
+					});
+				}, 6500);
+				
+				setTimeout(() => {
+					this.ai.api('notes/create', {
+						text: `${acct(note.user)}さん\n**もこきーへようこそ！**\nわたしはもこもこチキン、このサーバーのマスコットみたいな存在です！\nお暇な時に挨拶していただいたり、呼び名を教えていただいたり、占いや迷路などで遊んでくださったりしてくれれば嬉しいです！\nこれからよろしくお願いします！\n\nこのサーバーには独自機能が沢山あるので、気になったらお知らせの中にあるもこきーTipsを読んでみるといいかもです！\nなにか分からないことや嫌なこと、不便なことがあれば、気軽にもこきーあどみんに声をかけてください！\nそれでは楽しいもこきーライフを～ :mk_hi:`,
+						replyId: note.id,
+						visibility: 'specified',
+						visibleUserIds: [note.user.id],
+					});
+				}, 8000);
 			}
 		}
 	}
