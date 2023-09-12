@@ -49,11 +49,11 @@ export default class extends Module {
 			data.lastBirthdayChecked = today;
 			friend.setPerModulesData(this, data);
 
-			const text = serifs.birthday.happyBirthday(friend.name);
+			const text = serifs.birthday.happyBirthday(friend.name, acct(friend.doc.user));
 			
 			if (!friend.doc?.user?.host) {
 				this.ai.post({
-					text: acct(friend.doc.user) + ' ' + text,
+					text: text,
 					localOnly: true,
 				});
 			} else {
