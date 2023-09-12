@@ -168,7 +168,8 @@ export default {
 	},
 
 	birthday: {
-		happyBirthday: name => name ? `お誕生日おめでとうございます、${name}🎉` : 'お誕生日おめでとうございます🎉',
+		happyBirthday: (name) => name ? `お誕生日おめでとうございます、${name}🎉` : 'お誕生日おめでとうございます🎉',
+		happyBirthdayLocal: (name, acct) => name ? `今日は${acct}さん(${name})のお誕生日みたいです！\n${name}、お誕生日おめでとうございます🎉` : `今日は${acct}さんのお誕生日みたいです！\nお誕生日おめでとうございます🎉`,
 	},
 
 	/**
