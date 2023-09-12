@@ -232,10 +232,13 @@ export default class extends Module {
 
 		let results: string[] = [];
 		let winner: Game['votes'][0]['user'] | null = null;
+		let reverseResults: string[] = [];
+		let reverseWinner: Game['votes'][0]['user'] | null = null;
 		
-		const reverse = Math.random() < 0.15;
+		let reverse = Math.random() < 0.15;
 
-		for (let i = reverse ? 0 : game.maxnum; reverse ? i <= game.maxnum : i >= 0 ; reverse ? i++ : i--) {
+		// 正常
+		for (let i = game.maxnum; i >= 0 ; i--) {
 			const users = game.votes
 				.filter(x => x.number == i)
 				.map(x => x.user);
@@ -251,6 +254,33 @@ export default class extends Module {
 			} else if (users.length > 1) {
 				results.push(`❌ ${i}: ${users.map(u => acct(u)).join(' ')}`);
 			}
+		}
+
+		// 反転
+		for (let i = 0; i <= game.maxnum; i++) {
+			const users = game.votes
+				.filter(x => x.number == i)
+				.map(x => x.user);
+
+			if (users.length == 1) {
+				if (reverseWinner == null) {
+					reverseWinner = users[0];
+					const icon = i == 100 ? '💯' : '🎉';
+					reverseResults.push(`${icon} **${i}**: $[jelly ${acct(users[0])}]`);
+				} else {
+					reverseResults.push(`➖ ${i}: ${acct(users[0])}`);
+				}
+			} else if (users.length > 1) {
+				reverseResults.push(`❌ ${i}: ${users.map(u => acct(u)).join(' ')}`);
+			}
+		}
+		
+		//そのままでも反転しても結果が同じの場合は反転しない
+		if ((!winner || !reverseWinner) || winner?.id === reverseWinner?.id) reverse = false;
+		
+		if (reverse) {
+			results = reverseResults;
+			winner = reverseWinner;
 		}
 
 		const winnerFriend = winner ? this.ai.lookupFriend(winner.id) : null;
