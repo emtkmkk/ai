@@ -27,6 +27,7 @@ export default class extends Module {
 			this.setName(msg) ||
 			this.getLove(msg) ||
 			this.getStatus(msg) ||
+			this.getEmojiData(msg) ||
 			this.getInventory(msg) ||
 			this.modules(msg) ||
 			this.version(msg)
@@ -147,6 +148,74 @@ export default class extends Module {
 
 		return true;
 	}
+	
+	@autobind
+	private getEmojiData(msg: Message): boolean  {
+		if (!msg.text) return false;
+		if (!msg.text.includes('絵文字情報')) return false;
+		
+		const data = await this.ai.api('users/emoji-stats', {
+			userId: msg.userId,
+			limit: 12,
+			localOnly: false,
+		});
+		const dataL = await this.ai.api('users/emoji-stats', {
+			userId: msg.userId,
+			limit: 12,
+			localOnly: true,
+		});
+		
+		if (!data || !dataL){
+			return false;
+		}
+		
+		if (!msg.user.host){
+			//ローカル
+			msg.reply(`\n
+			${msg.friend.name || 'あなた'}の絵文字情報（リアクション）\n
+			\n
+			送った事がある絵文字の種類 : **${dataL.sentReactionsCount}** (**${data.sentReactionsCount}**)\n
+			受け取った事がある絵文字の種類 : **${dataL.receivedReactionsCount}** (**${data.receivedReactionsCount}**)\n
+			\n
+			よく送る絵文字（累計） : \n
+			${data.sentReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
+			\n
+			よく貰う絵文字（累計） : \n
+			${data.receivedReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
+			\n
+			最近よく送る絵文字 : \n
+			${data.recentlySentReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
+			\n
+			最近よく貰う絵文字 : \n
+			${data.recentlyReceivedReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
+			`)
+		} else {
+			//リモート
+			msg.reply(`\n
+			${msg.friend.name || 'あなた'}の絵文字情報（リアクション）\n
+			※リモートユーザの為、絵文字がうまく表示されない可能性、正しい情報が表示されない可能性があります。\n
+			絵文字がうまく表示されない場合はリモートで表示などのボタンを使用し、もこきーにて確認してください。\n
+			\n
+			送った事がある絵文字の種類 : **${data.sentReactionsCount}**\n
+			受け取った事がある絵文字の種類 : **${data.receivedReactionsCount}**\n
+			\n
+			よく送る絵文字（累計） : \n
+			${data.sentReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
+			\n
+			よく貰う絵文字（累計） : \n
+			${data.receivedReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
+			\n
+			最近よく送る絵文字 : \n
+			${data.recentlySentReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
+			\n
+			最近よく貰う絵文字 : \n
+			${data.recentlyReceivedReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
+			`)
+		}
+
+		return true;
+	}
+
 
 	@autobind
 	private modules(msg: Message): boolean  {
