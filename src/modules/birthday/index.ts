@@ -53,7 +53,7 @@ export default class extends Module {
 			
 			if (!friend.doc?.user?.host) {
 				this.ai.post({
-					text: serifs.birthday.happyBirthday(friend.name, acct(friend.doc.user)),
+					text: serifs.birthday.happyBirthdayLocal(friend.name, acct(friend.doc.user)),
 					localOnly: true,
 				});
 			} else {
