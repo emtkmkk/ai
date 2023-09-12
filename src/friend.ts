@@ -127,20 +127,23 @@ export default class Friend {
 
 		if (this.doc.love == null) this.doc.love = 0;
 		
+		amount = parseFloat(amount.toFixed(2));
+		
 		// x00を超えた時に感謝のメッセージを送信する
 		if ((this.doc.love || 0) > 0 && (this.doc.love || 0) % 100 + amount >= 100) {
 			this.ai.sendMessage(this.doc.userId, {
 				text: `${acct(this.doc.user)}\n${this.doc.name ? this.doc.name + "、" : ""}私と${'とっても'.repeat(Math.floor((this.doc.love || 0) / 100))}たくさん遊んでいただいてありがとうございます！\nこれからもよろしくお願いします……！`
 			});
 		}
-		
 		this.doc.love += amount;
+		this.doc.love = parseFloat((this.doc.love || 0).toFixed(2));
 
 		/*// 最大 100
 		if (this.doc.love > 100) this.doc.love = 100;*/
 
 		this.doc.lastLoveIncrementedAt = today;
 		this.doc.todayLoveIncrements = (this.doc.todayLoveIncrements || 0) + amount;
+		this.doc.todayLoveIncrements = parseFloat((this.doc.todayLoveIncrements || 0).toFixed(2));
 		this.save();
 
 		this.ai.log(`💗 ${this.userId} +${amount} (${this.doc.love || 0}) <${(this.doc.todayLoveIncrements || 0)} / ${(this.doc.love || 0) < 100 ? 15 : 50}>`);
