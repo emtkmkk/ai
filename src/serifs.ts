@@ -12,6 +12,8 @@ export default {
 		
 		getStatus: (name, love, kazutori) => `\n${name ? '呼び方 : ' + name + '\n' : ''}好感度 : ${love}${kazutori ? '\n数取り : ' + kazutori : ''}`,
 		
+		getInventory: (name, inventory) => `\n${name}が私からプレゼントした物の一覧です！\n\n${inventory}`,
+		
 		followBack: name => name ? `${name}をフォローしました！${name}、これからよろしくお願いします！` : `あなたをフォローしました！これからよろしくお願いします！`,
 		
 		alreadyFollowBack: name => name ? `私は${name}を既にフォローしているみたいです！` : `私はあなたを既にフォローしているみたいです！`,
