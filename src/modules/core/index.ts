@@ -143,7 +143,7 @@ export default class extends Module {
 		if (!msg.friend.doc.kazutoriData?.inventory?.length) return false;
 		if (!msg.text.includes('貰った物')) return false;
 
-		msg.reply(serifs.core.getStatus(msg.friend.name || 'あなた', msg.friend.doc.kazutoriData?.inventory.join('\n')))
+		msg.reply(serifs.core.getInventory(msg.friend.name || 'あなた', msg.friend.doc.kazutoriData?.inventory.join('\n')))
 
 		return true;
 	}
