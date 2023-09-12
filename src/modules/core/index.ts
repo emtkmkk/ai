@@ -150,7 +150,7 @@ export default class extends Module {
 	}
 	
 	@autobind
-	private getEmojiData(msg: Message): boolean  {
+	private async getEmojiData(msg: Message)  {
 		if (!msg.text) return false;
 		if (!msg.text.includes('絵文字情報')) return false;
 		
