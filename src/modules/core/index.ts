@@ -27,6 +27,7 @@ export default class extends Module {
 			this.setName(msg) ||
 			this.getLove(msg) ||
 			this.getStatus(msg) ||
+			this.getInventory(msg) ||
 			this.modules(msg) ||
 			this.version(msg)
 		) ? {reaction:"love"} : false;
@@ -132,6 +133,17 @@ export default class extends Module {
 		const kazutori = msg.friend.doc.kazutoriData?.playCount ? msg.friend.doc.kazutoriData?.winCount + ' / ' + msg.friend.doc.kazutoriData?.playCount : undefined;
 		
 		msg.reply(serifs.core.getStatus(msg.friend.name || 'あなた',love, kazutori))
+
+		return true;
+	}
+	
+	@autobind
+	private getInventory(msg: Message): boolean  {
+		if (!msg.text) return false;
+		if (!msg.friend.doc.kazutoriData?.inventory?.length) return false;
+		if (!msg.text.includes('貰った物')) return false;
+
+		msg.reply(serifs.core.getStatus(msg.friend.name || 'あなた', msg.friend.doc.kazutoriData?.inventory.join('\n')))
 
 		return true;
 	}
