@@ -172,45 +172,45 @@ export default class extends Module {
 		if (!msg.user.host){
 			//ローカル
 			msg.reply(`\n
-			${msg.friend.name || 'あなた'}の絵文字情報（リアクション）\n
-			\n
-			送った事がある絵文字の種類 : **${dataL.sentReactionsCount}** (**${data.sentReactionsCount}**)\n
-			受け取った事がある絵文字の種類 : **${dataL.receivedReactionsCount}** (**${data.receivedReactionsCount}**)\n
-			\n
-			よく送る絵文字（累計） : \n
-			${data.sentReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
-			\n
-			よく貰う絵文字（累計） : \n
-			${data.receivedReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
-			\n
-			最近よく送る絵文字 : \n
-			${data.recentlySentReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
-			\n
-			最近よく貰う絵文字 : \n
-			${data.recentlyReceivedReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
-			`)
+${msg.friend.name || 'あなた'}の絵文字情報（リアクション）\n
+\n
+送った事がある絵文字の種類 : **${data.sentReactionsCount}**\n
+受け取った事がある絵文字の種類 : **${data.receivedReactionsCount}**\n
+\n
+よく送る絵文字（累計） : \n
+${data.sentReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
+\n
+よく貰う絵文字（累計） : \n
+${data.receivedReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
+\n
+最近よく送る絵文字 : \n
+${data.recentlySentReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
+\n
+最近よく貰う絵文字 : \n
+${data.recentlyReceivedReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
+`)
 		} else {
 			//リモート
 			msg.reply(`\n
-			${msg.friend.name || 'あなた'}の絵文字情報（リアクション）\n
-			※リモートユーザの為、絵文字がうまく表示されない可能性、正しい情報が表示されない可能性があります。\n
-			絵文字がうまく表示されない場合はリモートで表示などのボタンを使用し、もこきーにて確認してください。\n
-			\n
-			送った事がある絵文字の種類 : **${data.sentReactionsCount}**\n
-			受け取った事がある絵文字の種類 : **${data.receivedReactionsCount}**\n
-			\n
-			よく送る絵文字（累計） : \n
-			${data.sentReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
-			\n
-			よく貰う絵文字（累計） : \n
-			${data.receivedReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
-			\n
-			最近よく送る絵文字 : \n
-			${data.recentlySentReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
-			\n
-			最近よく貰う絵文字 : \n
-			${data.recentlyReceivedReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
-			`)
+${msg.friend.name || 'あなた'}の絵文字情報（リアクション）\n
+※リモートユーザの為、絵文字がうまく表示されない可能性、正しい情報が表示されない可能性があります。\n
+絵文字がうまく表示されない場合はリモートで表示などのボタンを使用し、もこきーにて確認してください。\n
+\n
+送った事がある絵文字の種類 : **${data.sentReactionsCount}**\n
+受け取った事がある絵文字の種類 : **${data.receivedReactionsCount}**\n
+\n
+よく送る絵文字（累計） : \n
+${data.sentReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
+\n
+よく貰う絵文字（累計） : \n
+${data.receivedReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
+\n
+最近よく送る絵文字 : \n
+${data.recentlySentReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
+\n
+最近よく貰う絵文字 : \n
+${data.recentlyReceivedReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
+`)
 		}
 
 		return true;
