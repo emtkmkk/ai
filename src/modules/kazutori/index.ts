@@ -92,7 +92,7 @@ export default class extends Module {
 					renote: recentGame.postId
 				});
 				return {
-					reaction:'love'
+					reaction:'confused'
 				};
 			}
 
