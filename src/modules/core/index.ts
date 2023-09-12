@@ -27,7 +27,7 @@ export default class extends Module {
 			this.setName(msg) ||
 			this.getLove(msg) ||
 			this.getStatus(msg) ||
-			this.getEmojiData(msg) ||
+			(await this.getEmojiData(msg)) ||
 			this.getInventory(msg) ||
 			this.modules(msg) ||
 			this.version(msg)
