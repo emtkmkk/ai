@@ -169,8 +169,8 @@ export default class extends Module {
 			msg.reply(`
 ${msg.friend.name || 'あなた'}の絵文字情報（リアクション）
 
-送った事がある絵文字の種類 : **${data.sentReactionsCount}**
-受け取った事がある絵文字の種類 : **${data.receivedReactionsCount}**
+送った事がある絵文字の種類 : **${data.sentReactionsCount}** 種類
+受け取った事がある絵文字の種類 : **${data.receivedReactionsCount}** 種類
 
 よく送る絵文字（累計） : 
 ${data.sentReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
