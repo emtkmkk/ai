@@ -135,15 +135,21 @@ export default class extends Module {
 
 	@autobind
 	private async mentionHook(msg: Message) {
-		if (!msg.or(['/poll']) || msg.user.username !== config.master) {
-			return false;
+		if (msg.include(['覚えた答'])) {
+			const pollresult = this.pollresult.find();
+			const pollresultstr = pollresult.map((x) => x.key + "\n" + x.keyword).join('\n\n');
+			msg.reply('私が覚えた答えです！\n```\n' + pollresultstr + '\n```');
 		} else {
-			this.log('Manualy poll requested');
+			if (!msg.or(['/poll']) || msg.user.username !== config.master) {
+				return false;
+			} else {
+				this.log('Manualy poll requested');
+			}
+
+			this.post();
+
+			return true;
 		}
-
-		this.post();
-
-		return true;
 	}
 
 	@autobind
@@ -153,8 +159,12 @@ export default class extends Module {
 		const choices = note.poll!.choices;
 
 		let mostVotedChoice;
+		let totalVoted = 0;
 
 		for (const choice of choices) {
+			
+			totalVoted += choice.votes
+			
 			if (mostVotedChoice == null) {
 				mostVotedChoice = choice;
 				continue;
@@ -173,7 +183,7 @@ export default class extends Module {
 				renoteId: noteId,
 			});
 		} else if (mostVotedChoices.length === 1) {
-			if (mostVotedChoice.votes >= 3) {
+			if (mostVotedChoice.votes >= 3 || totalVoted > choices.length) {
 				const exist = this.pollresult.findOne({
 					key: title
 				});
