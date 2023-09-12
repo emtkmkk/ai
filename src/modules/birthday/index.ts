@@ -39,8 +39,8 @@ export default class extends Module {
 		birthFriends.forEach(f => {
 			const friend = new Friend(this.ai, { doc: f });
 
-			// 親愛度が0以上必要
-			if (friend.love < 0) return;
+			// 親愛度が0.5以上必要
+			if (friend.love < 0.5) return;
 
 			const data = friend.getPerModulesData(this);
 
@@ -49,11 +49,11 @@ export default class extends Module {
 			data.lastBirthdayChecked = today;
 			friend.setPerModulesData(this, data);
 
-			const text = serifs.birthday.happyBirthday(friend.name, acct(friend.doc.user));
+			const text = serifs.birthday.happyBirthday(friend.name);
 			
 			if (!friend.doc?.user?.host) {
 				this.ai.post({
-					text: text,
+					text: serifs.birthday.happyBirthday(friend.name, acct(friend.doc.user)),
 					localOnly: true,
 				});
 			} else {
