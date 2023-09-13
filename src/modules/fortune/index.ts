@@ -51,6 +51,9 @@ export default class extends Module {
 
 	@autobind
 	public install() {
+		this.learnedKeywords = this.ai.getCollection('_keyword_learnedKeywords', {
+			indices: ['userId']
+		});
 		return {
 			mentionHook: this.mentionHook
 		};
