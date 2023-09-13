@@ -42,7 +42,10 @@ export default class extends Module {
 
 		const code = msg.friend.generateTransferCode();
 
-		msg.reply(serifs.core.transferCode(code));
+		msg.reply(serifs.core.transferCode(code) , {
+			visibility: 'specified',
+			visibleUserIds: [msg.userId],
+		});
 
 		return true;
 	}
