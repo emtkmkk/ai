@@ -37,7 +37,7 @@ export default class extends Module {
 		setInterval(this.crawleGameEnd, 1000);
 		setInterval(() => {
 			const hours = new Date().getHours()
-			const rnd = hours > 17 && hours < 24 ? 0.5 : 0.1;
+			const rnd = (hours === 12 || (hours > 17 && hours < 24)) ? 0.5 : 0.1;
 			if (Math.random() < rnd) {
 				this.start();
 			}
