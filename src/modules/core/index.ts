@@ -44,7 +44,6 @@ export default class extends Module {
 
 		msg.reply(serifs.core.transferCode(code) , {
 			visibility: 'specified',
-			visibleUserIds: [msg.userId],
 		});
 
 		return true;
