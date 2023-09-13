@@ -136,7 +136,7 @@ export default class extends Module {
 	@autobind
 	private async mentionHook(msg: Message) {
 		if (msg.includes(['覚えた答'])) {
-			const pollresult = this.pollresult.find();
+			const pollresult = this.pollresult.find().filter((x) => !['欲しい物を選べ'].includes(x.key));
 			const pollresultstr = pollresult.map((x) => x.key + "\n" + x.keyword).join('\n\n');
 			msg.reply('私が覚えた答えです！\n```\n' + pollresultstr + '\n```');
 			return true;
