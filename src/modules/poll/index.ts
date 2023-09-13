@@ -139,7 +139,7 @@ export default class extends Module {
 			const pollresult = this.pollresult.find().filter((x) => !['欲しい物を選べ'].includes(x.key));
 			const pollresultstr = pollresult.map((x) => x.key + "\n" + x.keyword).join('\n\n');
 			msg.reply('私が覚えた答えです！\n```\n' + pollresultstr + '\n```');
-			return true;
+			return {reaction: 'love'};
 		} else {
 			if (!msg.or(['/poll']) || msg.user.username !== config.master) {
 				return false;
@@ -149,7 +149,7 @@ export default class extends Module {
 
 			this.post();
 
-			return true;
+			return {reaction: 'love'};
 		}
 	}
 
