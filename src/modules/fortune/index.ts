@@ -1,4 +1,5 @@
 import autobind from 'autobind-decorator';
+import * as loki from 'lokijs';
 import Module from '@/module';
 import Message from '@/message';
 import serifs from '@/serifs';
@@ -43,6 +44,11 @@ export const blessing = [
 export default class extends Module {
 	public readonly name = 'fortune';
 
+	private learnedKeywords: loki.Collection<{
+		keyword: string;
+		learnedAt: number;
+	}>;
+
 	@autobind
 	public install() {
 		return {
@@ -56,9 +62,12 @@ export default class extends Module {
 			const date = new Date();
 			const seed = `${date.getFullYear()}/${date.getMonth()}/${date.getDate()}@${msg.userId}`;
 			const rng = seedrandom(seed);
+			const rngword = seedrandom(seed + ":word");
 			const omikuji = blessing[Math.floor(rng() * blessing.length)];
 			const item = genItem(rng);
-			msg.reply(`**${omikuji}🎉**\nラッキーアイテム: ${item}`, {
+			const words = this.learnedKeywords.find();
+			const word = words ? words[Math.floor(rngword() * words.length)].keyword : undefined;
+			msg.reply(`**${omikuji}🎉**\nラッキーアイテム: ${item}${word ? `\nラッキーワード: ${word}` : ''}`, {
 				cw: acct(msg.friend.doc.user) + ' ' + serifs.fortune.cw(msg.friend.name),
 				visibility: 'public'
 			});
