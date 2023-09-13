@@ -26,7 +26,7 @@ export default class extends Module {
 			if (Math.random() < rnd) {
 				this.post();
 			}
-		}, 1000 * 60 * 20);
+		}, 1000 * 60 * 30);
 
 		return {
 			mentionHook: this.mentionHook,
