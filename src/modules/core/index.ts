@@ -3,6 +3,7 @@ import Module from '@/module';
 import Message from '@/message';
 import serifs from '@/serifs';
 import { safeForInterpolate } from '@/utils/safe-for-interpolate';
+import { acct } from '@/utils/acct';
 
 const titles = ['さん', 'くん', '君', 'ちゃん', '様', '先生'];
 
@@ -167,8 +168,6 @@ export default class extends Module {
 		if (!msg.user.host){
 			//ローカル
 			msg.reply(`
-${msg.friend.name || 'あなた'}の絵文字情報（リアクション）
-
 送った事がある絵文字の種類 : **${data.sentReactionsCount}** 種類
 受け取った事がある絵文字の種類 : **${data.receivedReactionsCount}** 種類
 
@@ -183,11 +182,10 @@ ${data.recentlySentReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.nam
 
 最近よく貰う絵文字 : 
 ${data.recentlyReceivedReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
-`)
+`,{cw: `${acct(msg.user)} ${msg.friend.name || 'さん'}の絵文字情報（リアクション）`})
 		} else {
 			//リモート
 			msg.reply(`
-${msg.friend.name || 'あなた'}の絵文字情報（リアクション）
 ※リモートユーザの為、絵文字がうまく表示されない可能性、正しい情報が表示されない可能性があります。
 絵文字がうまく表示されない場合はリモートで表示などのボタンを使用し、もこきーにて確認してください。
 
@@ -205,7 +203,7 @@ ${data.recentlySentReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.nam
 
 最近よく貰う絵文字 : 
 ${data.recentlyReceivedReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
-`)
+`,{cw: `${acct(msg.user)} ${msg.friend.name || 'さん'}の絵文字情報（リアクション）`})
 		}
 
 		return true;
