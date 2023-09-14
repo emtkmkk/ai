@@ -105,7 +105,9 @@ export default class extends Module {
 			}
 		}
 
-		const maxnum = recentGame?.votes?.length || 1;
+		let maxnum = recentGame?.votes?.length || 1;
+		if (Math.random() < 0.03) maxnum = Math.floor(maxnum * (100 + (Math.random() * 100)));
+		else if (Math.random() < 0.03) maxnum = 1;
 
 		const post = await this.ai.post({
 			text: serifs.kazutori.intro(maxnum, limitMinutes)
@@ -222,6 +224,13 @@ export default class extends Module {
 
 		// お流れ
 		if (game.votes.length <= 1) {
+			if (game.votes.length) {
+				const friend = this.ai.lookupFriend(game.votes[0].user.id)
+				if (friend) {
+					friend.doc.kazutoriData.playCount -= 1;
+					friend.save()
+				}
+			}
 			this.ai.post({
 				text: serifs.kazutori.onagare(item),
 				renoteId: game.postId
