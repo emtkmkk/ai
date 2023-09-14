@@ -7,7 +7,7 @@ export default class extends Module {
 
 	@autobind
 	public install() {
-    	this.schedulePost();
+		this.schedulePost();
 		return {};
 	}
 
@@ -37,35 +37,37 @@ export default class extends Module {
 			this.schedulePost(); // 再帰的にこの関数を再度呼び出すことで、次回の投稿をスケジュール
 		}, timeUntilPost);
 	}
-	
+
 	@autobind
 	private post() {
 		const res = this.ai.post({
 			text: 'よるほー',
 			localOnly: true,
 		});
-		let newErrorInMilliseconds;
-		if (res.createdAt) {
-			const postTime = new Date(res.createdAt).getTime();
-			const targetTime = new Date();
-			if (targetTime.getHours() > 12) {
-				targetTime.setDate(targetTime.getDate() + 1);
+		res.then((res) => {
+			let newErrorInMilliseconds;
+			if (res.createdAt) {
+				const postTime = new Date(res.createdAt).getTime();
+				const targetTime = new Date();
+				if (targetTime.getHours() > 12) {
+					targetTime.setDate(targetTime.getDate() + 1);
+				}
+				targetTime.setHours(0);
+				targetTime.setMinutes(0);
+				targetTime.setSeconds(0);
+				targetTime.setMilliseconds(0);
+				newErrorInMilliseconds = targetTime.getTime() - postTime;
+
+				const previousErrorData = this.ai.moduleData.findOne({ type: 'postTimeError' });
+				const totalError = (previousErrorData?.error != null ? previousErrorData.error : -50) + Math.ceil(newErrorInMilliseconds / 2);
+
+				if (previousErrorData) {
+					previousErrorData.error = totalError;
+					this.ai.moduleData.update(previousErrorData);
+				} else {
+					this.ai.moduleData.insert({ type: 'postTimeError', error: totalError });
+				}
 			}
-			targetTime.setHours(0);
-			targetTime.setMinutes(0);
-			targetTime.setSeconds(0);
-			targetTime.setMilliseconds(0);
-			newErrorInMilliseconds = targetTime.getTime() - postTime;
-	
-			const previousErrorData = this.ai.moduleData.findOne({ type: 'postTimeError' });
-			const totalError = (previousErrorData?.error != null ? previousErrorData.error : -50) + Math.ceil(newErrorInMilliseconds / 2);
-			
-			if (previousErrorData) {
-				previousErrorData.error = totalError;
-				this.ai.moduleData.update(previousErrorData);
-			} else {
-       			this.ai.moduleData.insert({ type: 'postTimeError', error: totalError });
-			}
-		}
+		});
 	}
 }
