@@ -76,7 +76,7 @@ export default class extends Module {
 		if (includes(note.text, ['おはよ', 'ohayo', 'pokita', 'おきた', '起きた', 'おっは', 'ぽきた']) && note.text?.length <= 30) return react(':mk_oha:');
 		if (includes(note.text, ['おやす', 'oyasu', 'poyasimi', '寝る', '日次再起動', 'ぽやしみ']) && note.text?.length <= 30 && !includes(note.text, ['ちゃんねる'])) return react(':oyasumi2:');
 		if (includes(note.text, ['嘘']) && note.text?.length <= 30) return react(':sonnano_uso:');
-		if (includes(note.text, ['めつ', '滅', 'metu']) && !includes(note.text, ['滅茶'])) return react(':metu:');
+		if (includes(note.text, ['めつ', '滅', 'metu']) && !includes(note.text, ['滅茶', '滅多'])) return react(':metu:');
 		if (includes(note.text, ['つら', '辛', 'しんど', '帰りたい', 'かえりたい', 'sad'])) return react(':petthex:');
 		if (includes(note.text, ['むいみ', '無意味', 'muimi']) && includes(note.text, ['もの', 'mono', '物'])) return react(':osiina:');
 		if (includes(note.text, ['もこもこ'])) return react(':mokomoko:');
