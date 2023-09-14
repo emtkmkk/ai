@@ -108,6 +108,8 @@ export default class extends Module {
 		let maxnum = recentGame?.votes?.length || 1;
 		if (Math.random() < 0.03) maxnum = Math.floor(maxnum * (100 + (Math.random() * 100)));
 		else if (Math.random() < 0.03) maxnum = 1;
+		
+		if (maxnum > 1000) maxnum = 1000;
 
 		const post = await this.ai.post({
 			text: serifs.kazutori.intro(maxnum, limitMinutes)
