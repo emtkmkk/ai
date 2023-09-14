@@ -176,7 +176,7 @@ export default class extends Module {
 					this.pollresult.remove(exist)
 				}
 			});
-			const pollresult = this.pollresult.find().filter((x) => ![].includes(x.key));
+			const pollresult = this.pollresult.find();
 			const pollresultstr = pollresult.map((x) => x.key + "\n" + x.keyword).join('\n\n');
 			msg.reply('私が覚えた答えです！\n```\n' + pollresultstr + '\n```');
 			return {reaction: 'love'};
