@@ -41,6 +41,9 @@ export default class extends Module {
 
 			// 親愛度が0.5以上必要
 			if (friend.love < 0.5) return;
+			
+			// リモートユーザなら、親愛度が5以上（☆4）必要
+			if (!friend.doc?.user?.host && friend.love < 5) return;
 
 			const data = friend.getPerModulesData(this);
 
