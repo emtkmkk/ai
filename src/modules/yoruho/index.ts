@@ -14,15 +14,16 @@ export default class extends Module {
 	@autobind
 	private schedulePost() {
 		// 以前の誤差を取得
-		const previousErrorData = this.ai.moduleData.findOne({ type: 'postTimeError' });
-		const previousError = previousErrorData ? previousErrorData.error : -50;  // データがない場合のデフォルト値
+		const previousErrorData = this.ai.moduleData.findOne({ type: 'yoruhoTime' });
+		let previousError = previousErrorData ? previousErrorData.error : -50;  // データがない場合のデフォルト値
+		if (previousError > 0) previousError = -50;
 
 		// 現在の日時を取得
 		const now = new Date();
 
 		// 現在の日時を基に、次の0:00:00の時刻を計算
 		const targetTime = new Date(now);
-		targetTime.setDate(targetTime.getDate() + 1);
+		targetTime.setDate(targetTime.getDate() + (now.getHours() === 23 && now.getMinutes() === 59 ? 2 : 1));
 		targetTime.setHours(0);
 		targetTime.setMinutes(0);
 		targetTime.setSeconds(0);
@@ -30,12 +31,15 @@ export default class extends Module {
 
 		// 次の0:00:00までの残り時間をミリ秒で計算
 		const timeUntilPost = targetTime.getTime() - now.getTime();
-
-		// 残り時間が来たらpost()を呼び出す
-		setTimeout(() => {
-			this.post();
-			this.schedulePost(); // 再帰的にこの関数を再度呼び出すことで、次回の投稿をスケジュール
-		}, timeUntilPost);
+		if (timeUntilPost > 60000) {
+			// 残り時間が来たらpost()を呼び出す
+			setTimeout(() => {
+				this.post();
+				this.schedulePost(); // 再帰的にこの関数を再度呼び出すことで、次回の投稿をスケジュール
+			}, timeUntilPost);
+		} else {
+			this.schedulePost();
+		}
 	}
 
 	@autobind
@@ -58,14 +62,14 @@ export default class extends Module {
 				targetTime.setMilliseconds(0);
 				newErrorInMilliseconds = targetTime.getTime() - postTime;
 
-				const previousErrorData = this.ai.moduleData.findOne({ type: 'postTimeError' });
+				const previousErrorData = this.ai.moduleData.findOne({ type: 'yoruhoTime' });
 				const totalError = (previousErrorData?.error != null ? previousErrorData.error : -50) + Math.ceil(newErrorInMilliseconds / 2);
 
 				if (previousErrorData) {
 					previousErrorData.error = totalError;
 					this.ai.moduleData.update(previousErrorData);
 				} else {
-					this.ai.moduleData.insert({ type: 'postTimeError', error: totalError });
+					this.ai.moduleData.insert({ type: 'YoruhoTime', error: totalError });
 				}
 			}
 		});
