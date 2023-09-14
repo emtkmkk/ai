@@ -180,16 +180,16 @@ export default class extends Module {
 受け取った事がある絵文字の種類 : **${data.receivedReactionsCount}** 種類
 
 よく送る絵文字（累計） : 
-${data.sentReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}`).join('\n')}
+${data.sentReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/,"").replace(":","")})` : ''}`).join('\n')}
 
 よく貰う絵文字（累計） : 
-${data.receivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}`).join('\n')}
+${data.receivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/,"").replace(":","")})` : ''}`).join('\n')}
 
 最近よく送る絵文字 : 
-${data.recentlySentReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}`).join('\n')}
+${data.recentlySentReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/,"").replace(":","")})` : ''}`).join('\n')}
 
 最近よく貰う絵文字 : 
-${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}`).join('\n')}
+${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/,"").replace(":","")})` : ''}`).join('\n')}
 `, { cw: `${acct(msg.user)} ${msg.friend.name || 'さん'}の絵文字情報（リアクション）` })
 		} else {
 			//リモート
@@ -197,20 +197,19 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 ※リモートユーザの為、絵文字がうまく表示されない可能性、正しい情報が表示されない可能性があります。
 絵文字がうまく表示されない場合はリモートで表示などのボタンを使用し、もこきーにて確認してください。
 
-送った事がある絵文字の種類 : **${data.sentReactionsCount}**
-受け取った事がある絵文字の種類 : **${data.receivedReactionsCount}**
+受け取った事がある絵文字の種類 : **${data.receivedReactionsCount}** 種類
 
 よく送る絵文字（累計） : 
-${data.sentReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}`).join('\n')}
+${data.sentReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/,"").replace(":","")})` : ''}`).join('\n')}
 
 よく貰う絵文字（累計） : 
-${data.receivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}`).join('\n')}
+${data.receivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/,"").replace(":","")})` : ''}`).join('\n')}
 
 最近よく送る絵文字 : 
-${data.recentlySentReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}`).join('\n')}
+${data.recentlySentReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/,"").replace(":","")})` : ''}`).join('\n')}
 
 最近よく貰う絵文字 : 
-${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}`).join('\n')}
+${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/,"").replace(":","")})` : ''}`).join('\n')}
 `, { cw: `${acct(msg.user)} ${msg.friend.name || 'さん'}の絵文字情報（リアクション）` })
 		}
 
