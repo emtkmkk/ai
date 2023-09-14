@@ -106,7 +106,7 @@ export default class extends Module {
 		}
 
 		let maxnum = recentGame?.votes?.length || 1;
-		if (Math.random() < 0.02 && recentGame?.maxnum <= 100) maxnum = Math.floor(maxnum * (100 + (Math.random() * 100)));
+		if (Math.random() < 0.02 && recentGame?.maxnum <= 100) maxnum = Math.floor((maxnum || 1) * (100 + (Math.random() * 100)));
 		else if (Math.random() < 0.02 && recentGame?.maxnum !== 1) maxnum = 1;
 		
 		if (maxnum > 1000) maxnum = 1000;
