@@ -3,7 +3,7 @@ import Module from '@/module';
 import * as loki from 'lokijs';
 
 export default class extends Module {
-	public readonly name = 'noting';
+	public readonly name = 'yoruho';
 
 	@autobind
 	public install() {
