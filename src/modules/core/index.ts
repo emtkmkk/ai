@@ -32,17 +32,17 @@ export default class extends Module {
 			this.getInventory(msg) ||
 			this.modules(msg) ||
 			this.version(msg)
-		) ? {reaction:"love"} : false;
+		) ? { reaction: "love" } : false;
 	}
 
 	@autobind
-	private transferBegin(msg: Message): boolean  {
+	private transferBegin(msg: Message): boolean {
 		if (!msg.text) return false;
 		if (!msg.includes(['引継', '引き継ぎ', '引越', '引っ越し'])) return false;
 
 		const code = msg.friend.generateTransferCode();
 
-		msg.reply(serifs.core.transferCode(code) , {
+		msg.reply(serifs.core.transferCode(code), {
 			visibility: 'specified',
 		});
 
@@ -50,7 +50,7 @@ export default class extends Module {
 	}
 
 	@autobind
-	private transferEnd(msg: Message): boolean  {
+	private transferEnd(msg: Message): boolean {
 		if (!msg.text) return false;
 		if (!msg.text.startsWith('「') || !msg.text.endsWith('」')) return false;
 
@@ -68,7 +68,7 @@ export default class extends Module {
 	}
 
 	@autobind
-	private setName(msg: Message): boolean  {
+	private setName(msg: Message): boolean {
 		if (!msg.text) return false;
 		if (!msg.text.includes('って呼んで')) return false;
 		if (msg.text.startsWith('って呼んで')) return false;
@@ -102,47 +102,53 @@ export default class extends Module {
 	}
 
 	@autobind
-	private getLove(msg: Message): boolean  {
+	private getLove(msg: Message): boolean {
 		if (!msg.text) return false;
 		if (!msg.text.includes('好感度')) return false;
-		
+
 		const lovep = msg.friend.love || 0;
 		let love = "";
+		let over = Math.floor(lovep / (100 / 7)) - 7;
+		love += lovep >= -29 ? "★" : "☆"
+		love += lovep >= -10 ? "★" : "☆"
 		love += lovep >= 0 ? "★" : "☆"
 		love += lovep >= 5 ? "★" : "☆"
 		love += lovep >= 20 ? "★" : "☆"
 		love += lovep >= 50 ? "★" : "☆"
 		love += lovep >= 100 ? "★" : "☆"
-		love += lovep >= 120 ? "+" + (lovep >= 140 ? (lovep/20) - 5 : "") : ""
-		
-		msg.reply(serifs.core.getLove(msg.friend.name || 'あなた',love))
+		love += over >= 1 ? "+" + (over >= 2 ? over : "") : ""
+
+		msg.reply(serifs.core.getLove(msg.friend.name || 'あなた', love))
 
 		return true;
 	}
-	
+
 	@autobind
-	private getStatus(msg: Message): boolean  {
+	private getStatus(msg: Message): boolean {
 		if (!msg.text) return false;
 		if (!msg.text.includes('ステータス')) return false;
-		
+
 		const lovep = msg.friend.love || 0;
 		let love = "";
+		let over = Math.floor(lovep / (100 / 7)) - 7;
+		love += lovep >= -29 ? "★" : "☆"
+		love += lovep >= -10 ? "★" : "☆"
 		love += lovep >= 0 ? "★" : "☆"
 		love += lovep >= 5 ? "★" : "☆"
 		love += lovep >= 20 ? "★" : "☆"
 		love += lovep >= 50 ? "★" : "☆"
 		love += lovep >= 100 ? "★" : "☆"
-		love += lovep >= 120 ? "+" + (lovep >= 140 ? (lovep/20) - 5 : "") : ""
-		
+		love += over >= 1 ? "+" + (over >= 2 ? over : "") : ""
+
 		const kazutori = msg.friend.doc.kazutoriData?.playCount ? msg.friend.doc.kazutoriData?.winCount + ' / ' + msg.friend.doc.kazutoriData?.playCount : undefined;
-		
-		msg.reply(serifs.core.getStatus(msg.friend.name || 'あなた',love, kazutori))
+
+		msg.reply(serifs.core.getStatus(msg.friend.name || 'あなた', love, kazutori))
 
 		return true;
 	}
-	
+
 	@autobind
-	private getInventory(msg: Message): boolean  {
+	private getInventory(msg: Message): boolean {
 		if (!msg.text) return false;
 		if (!msg.friend.doc.kazutoriData?.inventory?.length) return false;
 		if (!msg.text.includes('貰った物')) return false;
@@ -151,40 +157,40 @@ export default class extends Module {
 
 		return true;
 	}
-	
+
 	@autobind
-	private async getEmojiData(msg: Message)  {
+	private async getEmojiData(msg: Message) {
 		if (!msg.text) return false;
 		if (!msg.text.includes('絵文字情報')) return false;
-		
+
 		const data = await this.ai.api('users/emoji-stats', {
 			userId: msg.userId,
 			limit: 20,
 			localOnly: false,
 		});
-		
-		if (!data){
+
+		if (!data) {
 			return false;
 		}
-		
-		if (!msg.user.host){
+
+		if (!msg.user.host) {
 			//ローカル
 			msg.reply(`
 送った事がある絵文字の種類 : **${data.sentReactionsCount}** 種類
 受け取った事がある絵文字の種類 : **${data.receivedReactionsCount}** 種類
 
 よく送る絵文字（累計） : 
-${data.sentReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
+${data.sentReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}`).join('\n')}
 
 よく貰う絵文字（累計） : 
-${data.receivedReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
+${data.receivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}`).join('\n')}
 
 最近よく送る絵文字 : 
-${data.recentlySentReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
+${data.recentlySentReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}`).join('\n')}
 
 最近よく貰う絵文字 : 
-${data.recentlyReceivedReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
-`,{cw: `${acct(msg.user)} ${msg.friend.name || 'さん'}の絵文字情報（リアクション）`})
+${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}`).join('\n')}
+`, { cw: `${acct(msg.user)} ${msg.friend.name || 'さん'}の絵文字情報（リアクション）` })
 		} else {
 			//リモート
 			msg.reply(`
@@ -195,17 +201,17 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x
 受け取った事がある絵文字の種類 : **${data.receivedReactionsCount}**
 
 よく送る絵文字（累計） : 
-${data.sentReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
+${data.sentReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}`).join('\n')}
 
 よく貰う絵文字（累計） : 
-${data.receivedReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
+${data.receivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}`).join('\n')}
 
 最近よく送る絵文字 : 
-${data.recentlySentReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
+${data.recentlySentReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}`).join('\n')}
 
 最近よく貰う絵文字 : 
-${data.recentlyReceivedReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x.name}`).join('\n')}
-`,{cw: `${acct(msg.user)} ${msg.friend.name || 'さん'}の絵文字情報（リアクション）`})
+${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}`).join('\n')}
+`, { cw: `${acct(msg.user)} ${msg.friend.name || 'さん'}の絵文字情報（リアクション）` })
 		}
 
 		return true;
@@ -213,7 +219,7 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x
 
 
 	@autobind
-	private modules(msg: Message): boolean  {
+	private modules(msg: Message): boolean {
 		if (!msg.text) return false;
 		if (!msg.or(['modules'])) return false;
 
@@ -233,7 +239,7 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x
 	}
 
 	@autobind
-	private version(msg: Message): boolean  {
+	private version(msg: Message): boolean {
 		if (!msg.text) return false;
 		if (!msg.or(['v', 'version', 'バージョン'])) return false;
 
@@ -256,16 +262,16 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i+1}位 (${x.count}回) ${x
 		if (msg.text.includes('はい')) {
 			msg.friend.updateName(data.name + 'さん');
 			done();
-			return {reaction:'love'}
+			return { reaction: 'love' }
 		} else if (msg.text.includes('いいえ')) {
 			msg.friend.updateName(data.name);
 			done();
-			return {reaction:'love'}
+			return { reaction: 'love' }
 		} else {
 			msg.reply(serifs.core.yesOrNo).then(reply => {
 				this.subscribeReply(msg.userId, reply.id, data);
 			});
-			return {reaction:'hmm'}
+			return { reaction: 'hmm' }
 		}
 	}
 }
