@@ -391,14 +391,38 @@ export default class 藍 {
 	 * APIを呼び出します
 	 */
 	@autobind
-	public api(endpoint: string, param?: any) {
+	public api(endpoint: string, param?: any): Promise<any> {
+		const maxRetries = 5;
+		const retryIntervals = [1000, 5000, 15000, 39000, 60000];
+
 		if (endpoint === 'notes/reactions/create' && param && !param?.reaction) param.reaction = "";
-		return request.post(`${config.apiUrl}/${endpoint}`, {
-			json: Object.assign({
-				i: config.i
-			}, param)
+
+		return new Promise((resolve, reject) => {
+			const attemptRequest = (attempt: number) => {
+				if(attempt !== 0) this.log(`Retry ${attempt} / ${maxRetries} : ${endpoint} : ${param}`)
+				request.post(`${config.apiUrl}/${endpoint}`, {
+					json: Object.assign({
+						i: config.i
+					}, param)
+				})
+				.then(response => {
+					resolve(response);
+				})
+				.catch(error => {
+					this.log(`API Error ${attempt} / ${maxRetries} : ${endpoint} : ${param} : ${error.response}`)
+					if (attempt >= maxRetries - 1) {
+						reject(error);
+					} else {
+						setTimeout(() => {
+							attemptRequest(attempt + 1);
+						}, retryIntervals[attempt]);
+					}
+				});
+			}
+
+			attemptRequest(0);
 		});
-	};
+	}
 
 	/**
 	 * コンテキストを生成し、ユーザーからの返信を待ち受けます
