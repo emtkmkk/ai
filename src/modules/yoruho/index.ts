@@ -16,7 +16,10 @@ export default class extends Module {
 		// 以前の誤差を取得
 		const previousErrorData = this.ai.moduleData.findOne({ type: 'yoruhoTime' });
 		let previousError = previousErrorData ? previousErrorData.error : -50;  // データがない場合のデフォルト値
-		if (previousError > 0) previousError = -50;
+		if (previousError > 0) {
+			this.log("Time Error (previousError > 0)");
+			previousError = -50;
+		}
 
 		// 現在の日時を取得
 		const now = new Date();
@@ -28,16 +31,21 @@ export default class extends Module {
 		targetTime.setMinutes(0);
 		targetTime.setSeconds(0);
 		targetTime.setMilliseconds(previousError); // 誤差を考慮
+		
+		this.log("targetTime : " + targetTime.toLocaleString('ja-JP'));
 
 		// 次の0:00:00までの残り時間をミリ秒で計算
 		const timeUntilPost = targetTime.getTime() - now.getTime();
+		this.log("wait : " + timeUntilPost + " ms");
 		if (timeUntilPost > 60000) {
+			this.log("wait OK");
 			// 残り時間が来たらpost()を呼び出す
 			setTimeout(() => {
 				this.post();
 				this.schedulePost(); // 再帰的にこの関数を再度呼び出すことで、次回の投稿をスケジュール
 			}, timeUntilPost);
 		} else {
+			this.log("wait NG (<= 60000)");
 			this.schedulePost();
 		}
 	}
@@ -48,9 +56,11 @@ export default class extends Module {
 			text: 'よるほー',
 			localOnly: true,
 		});
+		this.log("yoruho");
 		res.then((res) => {
 			let newErrorInMilliseconds;
 			if (res.createdAt) {
+				this.log("yoruho result : " + new Date(res.createdAt).toLocaleString('ja-JP'));
 				const postTime = new Date(res.createdAt).getTime();
 				const targetTime = new Date();
 				if (targetTime.getHours() > 12) {
@@ -61,9 +71,13 @@ export default class extends Module {
 				targetTime.setSeconds(0);
 				targetTime.setMilliseconds(0);
 				newErrorInMilliseconds = targetTime.getTime() - postTime;
+				
+				this.log("error ms : " + (newErrorInMilliseconds * -1));
 
 				const previousErrorData = this.ai.moduleData.findOne({ type: 'yoruhoTime' });
 				const totalError = (previousErrorData?.error != null ? previousErrorData.error : -50) + Math.ceil(newErrorInMilliseconds / 2);
+				
+				this.log("next : " + totalError + " ms");
 
 				if (previousErrorData) {
 					previousErrorData.error = totalError;
