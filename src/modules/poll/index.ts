@@ -13,6 +13,7 @@ export default class extends Module {
 	private pollresult: loki.Collection<{
 		key: string;
 		keyword: string;
+		winCount?: number;
 	}>;
 
 	@autobind
@@ -169,7 +170,8 @@ export default class extends Module {
 				if (exist && !exist2) {
 					this.pollresult.insertOne({
 						key: x[1], 
-						keyword: exist.keyword
+						keyword: exist.keyword,
+						winCount: exist.winCount ?? 1,
 					});
 					this.pollresult.remove(exist)
 				} else if (exist && exist2) {
@@ -224,23 +226,27 @@ export default class extends Module {
 				renoteId: noteId,
 			});
 		} else if (mostVotedChoices.length === 1) {
+			let isStreak = false;
 			if (mostVotedChoice.votes >= 3 || totalVoted > choices.length) {
 				const exist = this.pollresult.findOne({
 					key: title
 				});
 				if (exist){
+					isStreak = exist.keyword === mostVotedChoice.text;
+					exist.winCount = exist.keyword === mostVotedChoice.text ? (exist.winCount ?? 1) + 1 : 1;
 					exist.keyword = mostVotedChoice.text;
 					this.pollresult.update(exist);
 				} else {
 					this.pollresult.insertOne({
 						key: title, 
-						keyword: mostVotedChoice.text
+						keyword: mostVotedChoice.text,
+						winCount: 1,
 					});
 				}
 			}
 			this.ai.post({ // TODO: Extract serif
 				cw: `${title}アンケートの結果発表です！`,
-				text: `結果は${mostVotedChoice.votes}票の「${mostVotedChoice.text}」でした！${mostVotedChoice.votes >= 3 || totalVoted > choices.length ? 'なるほど～！覚えておきます！' : 'なるほど～！'}`,
+				text: `結果は${mostVotedChoice.votes}票の「${mostVotedChoice.text}」でした！なるほど～！${isStreak ? '' : mostVotedChoice.votes >= 3 || totalVoted > choices.length ? '覚えておきます！' : 'なるほど～！'}`,
 				renoteId: noteId,
 			});
 		} else {
