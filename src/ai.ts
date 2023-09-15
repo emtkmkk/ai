@@ -411,7 +411,7 @@ export default class 藍 {
 				.catch(error => {
 					this.log(`API Error ${attempt + 1} / ${maxRetries} : ${endpoint} : ${JSON.stringify(param)} : ${JSON.stringify(error.response)}`)
 					if (error.response?.statusCode >= 400 && error.response?.statusCode < 500) resolve(error);
-					if (attempt >= maxRetries - 1) {
+					else if (attempt >= maxRetries - 1) {
 						resolve(error);
 					} else {
 						setTimeout(() => {
