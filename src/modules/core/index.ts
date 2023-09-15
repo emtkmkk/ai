@@ -151,7 +151,7 @@ export default class extends Module {
 	private getInventory(msg: Message): boolean {
 		if (!msg.text) return false;
 		if (!msg.friend.doc.kazutoriData?.inventory?.length) return false;
-		if (!msg.text.includes('貰った物')) return false;
+		if (!(msg.includes(['貰った物', 'もらった']) && msg.includes(['もの', '物']))) return false;
 
 		msg.reply(serifs.core.getInventory(msg.friend.name || 'あなた', msg.friend.doc.kazutoriData?.inventory.join('\n')))
 
