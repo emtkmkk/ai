@@ -42,7 +42,6 @@ export default class extends Module {
 			// 残り時間が来たらpost()を呼び出す
 			setTimeout(() => {
 				this.post();
-				this.schedulePost(); // 再帰的にこの関数を再度呼び出すことで、次回の投稿をスケジュール
 			}, timeUntilPost);
 		} else {
 			this.log("wait NG (<= 60000)");
@@ -85,6 +84,8 @@ export default class extends Module {
 				} else {
 					this.ai.moduleData.insert({ type: 'yoruhoTime', error: totalError });
 				}
+				
+				this.schedulePost();
 			}
 		});
 	}
