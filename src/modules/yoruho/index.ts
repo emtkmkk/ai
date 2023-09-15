@@ -69,7 +69,7 @@ export default class extends Module {
 					previousErrorData.error = totalError;
 					this.ai.moduleData.update(previousErrorData);
 				} else {
-					this.ai.moduleData.insert({ type: 'YoruhoTime', error: totalError });
+					this.ai.moduleData.insert({ type: 'yoruhoTime', error: totalError });
 				}
 			}
 		});
