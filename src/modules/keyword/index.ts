@@ -46,6 +46,7 @@ export default class extends Module {
 			!note.localOnly &&
 			note.userId !== this.ai.account.id &&
 			note.text != null &&
+			note.text.length <= 500 &&
 			note.cw == null);
 
 		let keywords: string[][] = [];
