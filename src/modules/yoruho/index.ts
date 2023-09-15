@@ -32,7 +32,7 @@ export default class extends Module {
 		targetTime.setSeconds(0);
 		targetTime.setMilliseconds(previousError); // 誤差を考慮
 		
-		this.log("targetTime : " + targetTime.toLocaleString('ja-JP'));
+		this.log("targetTime : " + targetTime.toLocaleString('ja-JP') + "." + targetTime.getMilliseconds());
 
 		// 次の0:00:00までの残り時間をミリ秒で計算
 		const timeUntilPost = targetTime.getTime() - now.getTime();
@@ -60,7 +60,7 @@ export default class extends Module {
 		res.then((res) => {
 			let newErrorInMilliseconds;
 			if (res.createdAt) {
-				this.log("yoruho result : " + new Date(res.createdAt).toLocaleString('ja-JP'));
+				this.log("yoruho result : " + new Date(res.createdAt).toLocaleString('ja-JP') + "." + new Date(res.createdAt).getMilliseconds());
 				const postTime = new Date(res.createdAt).getTime();
 				const targetTime = new Date();
 				if (targetTime.getHours() > 12) {
