@@ -392,14 +392,14 @@ export default class 藍 {
 	 */
 	@autobind
 	public api(endpoint: string, param?: any): Promise<any> {
-		const maxRetries = 5;
-		const retryIntervals = [1000, 5000, 15000, 39000, 60000];
+		const maxRetries = 24;
+		const retryIntervals = [1000, 5000, 15000, 39000, 60000, 120000];
 
 		if (endpoint === 'notes/reactions/create' && param && !param?.reaction) param.reaction = "";
 
 		return new Promise((resolve, reject) => {
 			const attemptRequest = (attempt: number) => {
-				if(attempt !== 0) this.log(`Retry ${attempt} / ${maxRetries} : ${endpoint} : ${param}`)
+				if(attempt !== 0) this.log(`Retry ${attempt} / ${maxRetries} : ${endpoint} : ${JSON.stringify(param)}`)
 				request.post(`${config.apiUrl}/${endpoint}`, {
 					json: Object.assign({
 						i: config.i
@@ -409,13 +409,13 @@ export default class 藍 {
 					resolve(response);
 				})
 				.catch(error => {
-					this.log(`API Error ${attempt} / ${maxRetries} : ${endpoint} : ${param} : ${error.response}`)
+					this.log(`API Error ${attempt + 1} / ${maxRetries} : ${endpoint} : ${JSON.stringify(param)} : ${JSON.stringify(error.response)}`)
 					if (attempt >= maxRetries - 1) {
 						reject(error);
 					} else {
 						setTimeout(() => {
 							attemptRequest(attempt + 1);
-						}, retryIntervals[attempt]);
+						}, retryIntervals[Math.min(attempt,retryIntervals.length-1)]);
 					}
 				});
 			}
