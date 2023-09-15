@@ -392,7 +392,7 @@ export default class 藍 {
 	 */
 	@autobind
 	public api(endpoint: string, param?: any): Promise<any> {
-		const maxRetries = 24;
+		const maxRetries = 33;
 		const retryIntervals = [1000, 5000, 15000, 39000, 60000, 120000];
 
 		if (endpoint === 'notes/reactions/create' && param && !param?.reaction) param.reaction = "";
