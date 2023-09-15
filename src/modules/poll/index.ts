@@ -155,7 +155,7 @@ export default class extends Module {
 
 	@autobind
 	private async mentionHook(msg: Message) {
-		if (msg.includes(['覚えた答'])) {
+		if (msg.includes(['覚えた','おぼえた']) && msg.includes(['答','こたえ'])) {
 			const convertpoll = [
 				['欲しい物を選べ','欲しい物を選べって言われたら'],
 				['食べたくないもの','ギリギリ食べてもいいもの']
@@ -179,7 +179,7 @@ export default class extends Module {
 				}
 			});
 			const pollresult = this.pollresult.find();
-			const pollresultstr = pollresult.map((x) => x.key + "\n" + x.keyword).join('\n\n');
+			const pollresultstr = pollresult.map((x) => x.key + "\n" + x.keyword + (x.winCount && x.winCount > 1 ? "(" + x.winCount + "連勝)" : "")).join('\n\n');
 			msg.reply('私が覚えた答えです！\n```\n' + pollresultstr + '\n```');
 			return {reaction: 'love'};
 		} else {
