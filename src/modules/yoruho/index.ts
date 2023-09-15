@@ -23,7 +23,7 @@ export default class extends Module {
 
 		// 現在の日時を基に、次の0:00:00の時刻を計算
 		const targetTime = new Date(now);
-		targetTime.setDate(targetTime.getDate() + (now.getHours() === 23 && now.getMinutes() === 59 ? 2 : 1));
+		targetTime.setDate(targetTime.getDate() + (now.getHours() > 12 ? 2 : 1));
 		targetTime.setHours(0);
 		targetTime.setMinutes(0);
 		targetTime.setSeconds(0);
