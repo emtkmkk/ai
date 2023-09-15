@@ -269,6 +269,9 @@ export default class 藍 {
 		if (reaction === "like") reaction = ":mk_yurayurachicken:";
 		if (reaction === "hmm") reaction = ":mk_fly_sliver:";
 		if (reaction === "confused") reaction = ":mk_ultrawidechicken:";
+		
+		const friend = new Friend(this, { user: msg.user });
+		if (![":mk_widechicken:",":mk_fly_sliver:",":mk_ultrawidechicken:"].includes(reaction)) friend.incLove(0.1);
 
 		// リアクションする
 		if (reaction) {
@@ -284,8 +287,6 @@ export default class 藍 {
 		switch (notification.type) {
 			// リアクションされたら親愛度を少し上げる
 			// TODO: リアクション取り消しをよしなにハンドリングする
-			case 'mention':
-			case 'reply':
 			case 'quote':
 			case 'pollVote':
 			case 'reaction': {
