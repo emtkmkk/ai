@@ -106,7 +106,7 @@ export default class extends Module {
 		}
 
 		let maxnum = recentGame?.votes?.length || 1;
-		if (Math.random() < 0.02 && recentGame?.maxnum && recentGame.maxnum <= 100) maxnum = Math.floor(maxnum * (100 + (Math.random() * 100)));
+		if (Math.random() < 0.02 && recentGame?.maxnum && recentGame.maxnum <= 50) maxnum = Math.floor(maxnum * (50 + (Math.random() * 50)));
 		else if (Math.random() < 0.02 && recentGame?.maxnum && recentGame.maxnum !== 1) maxnum = 1;
 		
 		if (maxnum > 1000) maxnum = 1000;
@@ -247,7 +247,8 @@ export default class extends Module {
 		let reverseWinner: Game['votes'][0]['user'] | null = null;
 		
 		let reverse = Math.random() < 0.15;
-
+		const now = new Date();
+		
 		// 正常
 		for (let i = game.maxnum; i >= 0 ; i--) {
 			const users = game.votes
@@ -288,6 +289,8 @@ export default class extends Module {
 		
 		//そのままでも反転しても結果が同じの場合は反転しない
 		if ((!winner || !reverseWinner) || winner?.id === reverseWinner?.id) reverse = false;
+		
+		if (now.getMonth() === 3 && now.getDate() === 1) reverse = !reverse;
 		
 		if (reverse) {
 			results = reverseResults;
