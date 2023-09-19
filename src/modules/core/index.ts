@@ -109,6 +109,7 @@ export default class extends Module {
 		const lovep = msg.friend.love || 0;
 		let love = "";
 		let over = Math.floor(lovep / (100 / 7)) - 7;
+		let point = (lovep / (100 / 7)).toFixed(2);
 		love += lovep >= -29 ? "★" : "☆"
 		love += lovep >= -10 ? "★" : "☆"
 		love += lovep >= 0 ? "★" : "☆"
@@ -116,7 +117,7 @@ export default class extends Module {
 		love += lovep >= 20 ? "★" : "☆"
 		love += lovep >= 50 ? "★" : "☆"
 		love += lovep >= 100 ? "★" : "☆"
-		love += over >= 1 ? "+" + (over >= 2 ? over : "") : ""
+		love += over >= 1 ? "★".repeat(over) + "\n(★\\(" + point + "\\))" : ""
 
 		msg.reply(serifs.core.getLove(msg.friend.name || 'あなた', love))
 
