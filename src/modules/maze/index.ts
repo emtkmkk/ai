@@ -61,6 +61,7 @@ export default class extends Module {
 			let size: string | null = null;
 			if (msg.includes(['簡単', 'かんたん', '易しい', 'やさしい', '小さい', 'ちいさい'])) size = 'easy';
 			if (msg.includes(['接待','超かんたん'])) size = 'veryEasy';
+			if (msg.includes(['よっぱらい','酔っぱらい']) && msg.includes(['接待','超かんたん'])) size = 'veryVeryEasy';
 			if (msg.includes(['難しい', 'むずかしい', '複雑な', '大きい', 'おおきい'])) size = 'hard';
 			if (msg.includes(['死', '鬼', '地獄', '超むずかしい', 'おに'])) size = 'veryHard';
 			if (msg.includes(['もこ']) && msg.includes(['本気']) || msg.includes(['裏']) && msg.includes(['おに'])) size = 'ai';
