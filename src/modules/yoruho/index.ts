@@ -7,12 +7,50 @@ export default class extends Module {
 
 	@autobind
 	public install() {
-		this.schedulePost();
+		const now = new Date();
+		if (now.getHours() === 23 && now.getMinutes() >= 57) {
+			this.schedulePost()
+		} else {
+			this.preSchedulePost();
+		}
 		return {};
 	}
 
 	@autobind
+	private preSchedulePost() {
+
+		//waitの誤差を減らすために23:57:00にwaitを再設定する
+
+		// 現在の日時を取得
+		const now = new Date();
+
+		// 現在の日時を基に、次の23:57:00の時刻を計算
+		const targetTime = new Date(now);
+		targetTime.setDate(targetTime.getDate() + (now.getHours() === 23 && now.getMinutes() >= 57 ? 1 : 0));
+		targetTime.setHours(23);
+		targetTime.setMinutes(57);
+		targetTime.setSeconds(0);
+
+		// 次の23:57:00までの残り時間をミリ秒で計算
+		const timeUntilPost = targetTime.getTime() - now.getTime();
+		this.log("prewait : " + timeUntilPost + " ms");
+		if (timeUntilPost > 60000) {
+			this.log("prewait OK");
+			// 残り時間が来たらschedulePost()を呼び出す
+			setTimeout(() => {
+				this.schedulePost();
+			}, timeUntilPost);
+		} else {
+			this.log("wait NG (<= 60000)");
+			this.preSchedulePost();
+		}
+	}
+
+	@autobind
 	private schedulePost() {
+		
+		this.log("yoruho wait");
+		
 		// 以前の誤差を取得
 		const previousErrorData = this.ai.moduleData.findOne({ type: 'yoruhoTime' });
 		let previousError = previousErrorData ? previousErrorData.error : -50;  // データがない場合のデフォルト値
@@ -26,7 +64,7 @@ export default class extends Module {
 
 		// 現在の日時を基に、次の0:00:00の時刻を計算
 		const targetTime = new Date(now);
-		targetTime.setDate(targetTime.getDate() + (now.getHours() === 23 && now.getHours() === 59 ? 2 : 1));
+		targetTime.setDate(targetTime.getDate() + (now.getHours() === 23 && now.getMinutes() === 59 ? 2 : 1));
 		targetTime.setHours(0);
 		targetTime.setMinutes(0);
 		targetTime.setSeconds(0);
@@ -37,16 +75,10 @@ export default class extends Module {
 		// 次の0:00:00までの残り時間をミリ秒で計算
 		const timeUntilPost = targetTime.getTime() - now.getTime();
 		this.log("wait : " + timeUntilPost + " ms");
-		if (timeUntilPost > 60000) {
-			this.log("wait OK");
-			// 残り時間が来たらpost()を呼び出す
-			setTimeout(() => {
-				this.post();
-			}, timeUntilPost);
-		} else {
-			this.log("wait NG (<= 60000)");
-			this.schedulePost();
-		}
+		// 残り時間が来たらpost()を呼び出す
+		setTimeout(() => {
+			this.post();
+		}, timeUntilPost);
 	}
 
 	@autobind
@@ -55,7 +87,7 @@ export default class extends Module {
 			text: 'よるほー',
 			localOnly: true,
 		});
-		this.log("yoruho");
+		this.log("yoruho : " + new Date().toLocaleString('ja-JP') + "." + new Date().getMilliseconds());
 		res.then((res) => {
 			let newErrorInMilliseconds;
 			if (res.createdAt) {
@@ -72,6 +104,9 @@ export default class extends Module {
 				newErrorInMilliseconds = targetTime.getTime() - postTime;
 
 				this.log("error ms : " + (newErrorInMilliseconds * -1));
+				
+				if (newErrorInMilliseconds > 1000) newErrorInMilliseconds = 1000;
+				if (newErrorInMilliseconds < -1000) newErrorInMilliseconds = -1000;
 
 				const previousErrorData = this.ai.moduleData.findOne({ type: 'yoruhoTime' });
 				const totalError = (previousErrorData?.error != null ? previousErrorData.error : -50) + Math.ceil(newErrorInMilliseconds / 2);
@@ -85,8 +120,8 @@ export default class extends Module {
 					this.ai.moduleData.insert({ type: 'yoruhoTime', error: totalError });
 				}
 
-				this.schedulePost();
 			}
+			this.preSchedulePost();
 		});
 	}
 }
