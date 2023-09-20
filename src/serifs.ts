@@ -39,10 +39,12 @@ export default {
 		erait: {
 			general: name => name ? [
 				`${name}、あなたはえらい！`,
-				`${name}、それは偉業だね`
+				`${name}、それは偉業だね`,
+				`${name}、エライわよ！`
 			] : [
 				`あなたはえらい！`,
-				`それは偉業だね`
+				`それは偉業だね`,
+				`エライわよ！`,
 			],
 
 			specify: (thing, name) => name ? [
@@ -164,7 +166,7 @@ export default {
 	},
 
 	dice: {
-		done: res => `${res} です！`
+		done: (res,total) => `${res}\n合計 \\(${total}\\) です！`
 	},
 
 	birthday: {
@@ -298,7 +300,7 @@ export default {
 	kazutori: {
 		alreadyStarted: '今ちょうどやってますよ～',
 
-		matakondo: 'また今度やりましょう！',
+		matakondo: ct => `また今度やりましょう！(クールタイム あと${ct}分)`,
 
 		intro: (max, minutes) => `みなさん、数取りゲームしましょう！\n0~${max}の中で最も大きい数字を取った人が勝ちです。他の人と被ったらだめですよ～\n制限時間は${minutes}分です。数字はこの投稿にリプライで送ってくださいね！`,
 
