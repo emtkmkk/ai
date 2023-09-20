@@ -15,10 +15,20 @@ export default class extends Module {
 		keyword: string;
 		winCount?: number;
 	}>;
+	
+	private pollresultlegend: loki.Collection<{
+		key: string;
+		keyword: string;
+		winCount?: number;
+	}>;
+
 
 	@autobind
 	public install() {
 		this.pollresult = this.ai.getCollection('_poll_pollresult', {
+			indices: ['userId']
+		});
+		this.pollresultlegend = this.ai.getCollection('_poll_pollresultlegend', {
 			indices: ['userId']
 		});
 		setInterval(() => {
@@ -233,11 +243,30 @@ export default class extends Module {
 				});
 				if (exist){
 					isStreak = exist.keyword === mostVotedChoice.text;
-					exist.winCount = exist.keyword === mostVotedChoice.text ? (exist.winCount ?? 1) + 1 : 1;
+					exist.winCount = isStreak ? (exist.winCount ?? 1) + 1 : 1;
 					exist.keyword = mostVotedChoice.text;
 					this.pollresult.update(exist);
+					const legend = this.pollresultlegend.findOne({
+						key: title
+					});
+					if (!legend){
+						this.pollresultlegend.insertOne({
+							key: exist.key, 
+							keyword: exist.keyword,
+							winCount: exist.winCount,
+						});
+					} else if (exist.winCount > legend.winCount) {
+						legend.winCount = exist.winCount;
+						legend.keyword = exist.keyword;
+						this.pollresultlegend.update(legend);
+					}
 				} else {
 					this.pollresult.insertOne({
+						key: title, 
+						keyword: mostVotedChoice.text,
+						winCount: 1,
+					});
+					this.pollresultlegend.insertOne({
 						key: title, 
 						keyword: mostVotedChoice.text,
 						winCount: 1,
