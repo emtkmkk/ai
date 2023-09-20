@@ -31,7 +31,7 @@ export default class extends Module {
 		targetTime.setMinutes(0);
 		targetTime.setSeconds(0);
 		targetTime.setMilliseconds(previousError); // 誤差を考慮
-		
+
 		this.log("targetTime : " + targetTime.toLocaleString('ja-JP') + "." + targetTime.getMilliseconds());
 
 		// 次の0:00:00までの残り時間をミリ秒で計算
@@ -70,12 +70,12 @@ export default class extends Module {
 				targetTime.setSeconds(0);
 				targetTime.setMilliseconds(0);
 				newErrorInMilliseconds = targetTime.getTime() - postTime;
-				
+
 				this.log("error ms : " + (newErrorInMilliseconds * -1));
 
 				const previousErrorData = this.ai.moduleData.findOne({ type: 'yoruhoTime' });
 				const totalError = (previousErrorData?.error != null ? previousErrorData.error : -50) + Math.ceil(newErrorInMilliseconds / 2);
-				
+
 				this.log("next : " + totalError + " ms");
 
 				if (previousErrorData) {
@@ -84,7 +84,7 @@ export default class extends Module {
 				} else {
 					this.ai.moduleData.insert({ type: 'yoruhoTime', error: totalError });
 				}
-				
+
 				this.schedulePost();
 			}
 		});
