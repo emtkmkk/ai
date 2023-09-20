@@ -5,6 +5,7 @@ import getDate from '@/utils/get-date';
 import { User } from '@/misskey/user';
 import { genItem } from '@/vocabulary';
 import { acct } from '@/utils/acct';
+import { checkNgWord } from '@/utils/check-ng-word';
 
 export type FriendDoc = {
 	userId: string;
@@ -63,6 +64,7 @@ export default class Friend {
 			} else {
 				this.doc = exist;
 				this.doc.user = { ...this.doc.user, ...opts.user };
+				if (this.doc.name && !checkNgWord(this.doc.name)) this.doc.name = null;
 				this.save();
 			}
 		} else if (opts.doc) {
