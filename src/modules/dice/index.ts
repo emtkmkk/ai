@@ -24,7 +24,7 @@ export default class extends Module {
 		const times = parseInt(query[1], 10);
 		const dice = parseInt(query[2], 10);
 
-		if (times < 1 || times > 10) return false;
+		if (times < 1 || times > 101) return false;
 		if (dice < 2 || dice > 1000) return false;
 
 		const results: number[] = [];
@@ -33,7 +33,7 @@ export default class extends Module {
 			results.push(Math.floor(Math.random() * dice) + 1);
 		}
 
-		msg.reply(serifs.dice.done(results.join(' ')),{visibility: 'public'});
+		msg.reply(serifs.dice.done(results.join(' '),results.reduce((a, c) => a + c).toLocaleString()),{visibility: 'public'});
 
 		return {
 			reaction:'love'
