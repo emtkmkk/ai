@@ -97,8 +97,9 @@ export default class extends Module {
 			}
 
 			// 直近のゲームから1時間経ってない場合
-			if (Date.now() - recentGame.startedAt < 1000 * 60 * 60) {
-				msg.reply(serifs.kazutori.matakondo);
+			if (Date.now() - recentGame.startedAt < 1000 * 60 * 60)
+				const ct = Math.ceil(60 - ((Date.now() - recentGame.startedAt) / (1000 * 60)));
+				msg.reply(serifs.kazutori.matakondo(ct));
 				return {
 					reaction:'hmm'
 				};
