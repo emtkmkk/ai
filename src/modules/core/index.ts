@@ -77,7 +77,7 @@ export default class extends Module {
 
 		// 好感度が100（★7）を超えている場合、20文字までOK
 
-		if (name.length > 10 || (msg.friend.love >= 100 && name.length > 20)) {
+		if ((msg.friend.love < 100 && name.length > 10) || (msg.friend.love >= 100 && name.length > 20)) {
 			msg.reply(serifs.core.tooLong);
 			return true;
 		}
