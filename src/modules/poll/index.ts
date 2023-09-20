@@ -255,7 +255,7 @@ export default class extends Module {
 							keyword: exist.keyword,
 							winCount: exist.winCount,
 						});
-					} else if (exist.winCount > legend?.winCount) {
+					} else if (exist.winCount > legend.winCount ?? 1) {
 						legend.winCount = exist.winCount;
 						legend.keyword = exist.keyword;
 						this.pollresultlegend.update(legend);
