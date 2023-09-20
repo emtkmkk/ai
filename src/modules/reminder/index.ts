@@ -138,6 +138,14 @@ export default class extends Module {
 			id: data.id
 		});
 		if (remind == null) return;
+		
+		if (new Date().getHours() < 8) {
+			// タイマーセット
+			this.setTimeoutWithPersistence(1000 * 60 * 60 * 8, {
+				id: remind.id,
+			});
+			return;
+		}
 
 		remind.times++;
 		this.reminds.update(remind);
@@ -168,7 +176,7 @@ export default class extends Module {
 		});
 
 		// タイマーセット
-		this.setTimeoutWithPersistence(NOTIFY_INTERVAL, {
+		this.setTimeoutWithPersistence(Math.round(NOTIFY_INTERVAL * (Math.random() + 0.5)), {
 			id: remind.id,
 		});
 	}
