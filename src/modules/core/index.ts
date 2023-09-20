@@ -3,6 +3,7 @@ import Module from '@/module';
 import Message from '@/message';
 import serifs from '@/serifs';
 import { safeForInterpolate } from '@/utils/safe-for-interpolate';
+import { checkNgWord } from '@/utils/check-ng-word';
 import { acct } from '@/utils/acct';
 
 const titles = ['さん', 'くん', '君', 'ちゃん', '様', '先生'];
@@ -82,8 +83,13 @@ export default class extends Module {
 			return true;
 		}
 
-		if (/[@#\*:\(\)\[\]\s　]/.test(name)) {
+		if (!safeForInterpolate(name)) {
 			msg.reply(serifs.core.invalidName);
+			return true;
+		}
+		
+		if (!checkNgWord(name)) {
+			msg.reply(serifs.core.ngName);
 			return true;
 		}
 
