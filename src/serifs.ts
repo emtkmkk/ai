@@ -81,6 +81,8 @@ export default {
 		tooLong: '長すぎるかも...',
 
 		invalidName: '発音が難しいかも',
+		
+		ngName: 'その名前は覚えたくないです...',
 
 		nadenade: {
 			normal: 'ひゃっ…！ びっくりしました',
