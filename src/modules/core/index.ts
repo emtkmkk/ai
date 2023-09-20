@@ -73,9 +73,11 @@ export default class extends Module {
 		if (!msg.text.includes('って呼んで')) return false;
 		if (msg.text.startsWith('って呼んで')) return false;
 
-		const name = msg.text.match(/^(?:@\S+\s)?(.+?)って呼んで/)![1].trim();
+		const name = msg.extractedText.match(/^(.+?)って呼んで/)![1].trim();
 
-		if (name.length > 10) {
+		// 好感度が100（★7）を超えている場合、20文字までOK
+
+		if (name.length > 10 || (msg.friend.love >= 100 && name.length > 20)) {
 			msg.reply(serifs.core.tooLong);
 			return true;
 		}
@@ -152,7 +154,7 @@ export default class extends Module {
 	private getInventory(msg: Message): boolean {
 		if (!msg.text) return false;
 		if (!msg.friend.doc.kazutoriData?.inventory?.length) return false;
-		if (!(msg.includes(['貰った物', 'もらった']) && msg.includes(['もの', '物']))) return false;
+		if (!(msg.includes(['貰った物', 'もらった', 'くれた']) && msg.includes(['もの', '物']))) return false;
 
 		msg.reply(serifs.core.getInventory(msg.friend.name || 'あなた', msg.friend.doc.kazutoriData?.inventory.join('\n')))
 
