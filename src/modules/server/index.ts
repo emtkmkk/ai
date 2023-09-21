@@ -75,7 +75,8 @@ export default class extends Module {
 		//#endregion
 
 		this.ai.post({
-			text: serifs.server.cpu
+			text: serifs.server.cpu,
+			localOnly: true,
 		});
 
 		this.warned = true;
