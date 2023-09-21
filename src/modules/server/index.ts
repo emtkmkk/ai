@@ -40,10 +40,14 @@ export default class extends Module {
 		const average = (arr) => arr.reduce((a, b) => a + b) / arr.length;
 
 		const cpuPercentages = this.statsLogs.map(s => s && (s.cpu_usage || s.cpu) * 100 || 0);
+		const memoryPercentages = this.statsLogs.map(s => s && (s.mem.active / s.mem.used) * 100 || 0);
 		const cpuPercentage = average(cpuPercentages);
+		const memoryPercentage = average(memoryPercentages);
 		if (cpuPercentage >= 85) {
 			this.warn();
-		} else if (cpuPercentage <= 30) {
+		} else if (memoryPercentage >= 87) {
+			this.warn();
+		} else if (cpuPercentage <= 30 && memoryPercentage <= 70) {
 			this.warned = false;
 		}
 	}
