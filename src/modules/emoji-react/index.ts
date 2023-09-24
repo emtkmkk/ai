@@ -69,7 +69,7 @@ export default class extends Module {
 		if (includes(note.text, ['ぴざ'])) return react('🍕');
 		if (includes(note.text, ['ぷりん'])) return react('🍮');
 		if (includes(note.text, ['寿司', 'sushi']) || note.text === 'すし') return react('🍣');*/
-		if (note.text?.length > 80) return
+		if (note.text?.length > 80 || Math.random() < 0.05) return
 		if (includes(note.text, ['ぴざ', 'pizza'])) return react(':itspizzatime:');
 		if (includes(note.text, ['かんぴろばくたー', 'campylobacter'])) return react(':campylobacter_mottenaidesu:');
 		if (includes(note.text, ['taikin', '退勤', 'たいきん', 'しごおわ'])) return react(':otukaresama:');
@@ -81,6 +81,15 @@ export default class extends Module {
 		if (includes(note.text, ['つら', '辛', 'しんど', '帰りたい', 'かえりたい', 'sad'])) return react(':petthex:');
 		if (includes(note.text, ['むいみ', '無意味', 'muimi']) && includes(note.text, ['もの', 'mono', '物'])) return react(':osiina:');
 		if (includes(note.text, ['もこもこ'])) return react(':mokomoko:');
-		if (includes(note.text, ['もこ', 'niwatori_kun']) && !includes(note.text, ['もこみち', 'おもころ', 'もこう'])) return react(':mk_chicken_t:');
+		if (includes(note.text, ['もこ', 'niwatori_kun']) && !includes(note.text, ['もこみち', 'おもころ', 'もこう', 'でもこれ']) && Math.random() < 0.85) {
+			const rnd = Math.random() * 3;
+			if (rnd < 1) {
+				return react(':mk_chicken_t:');
+			} else if (rnd < 2) {
+				return react(':mk_yukkuriface:')
+			} else {
+				return react(':mk_lowpoly:')
+			}
+		}
 	}
 }
