@@ -12,7 +12,7 @@ export default class extends Module {
 	private lastWarnedAt: number;
 
 	/**
-	 * 1秒毎のログ1分間分
+	 * 1秒毎のログ0.5分間分
 	 */
 	private statsLogs: any[] = [];
 
@@ -25,7 +25,7 @@ export default class extends Module {
 
 		setInterval(() => {
 			this.statsLogs.unshift(this.recentStat);
-			if (this.statsLogs.length > 60) this.statsLogs.pop();
+			if (this.statsLogs.length > 30) this.statsLogs.pop();
 		}, 1000);
 
 		setInterval(() => {
