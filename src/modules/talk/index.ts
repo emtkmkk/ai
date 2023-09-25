@@ -48,12 +48,14 @@ export default class extends Module {
 
 			const data = msg.friend.getPerModulesData(this);
 
-			if (data.lastGreetedAt == today) return;
+			if (data.lastGreetedAt == today) return {reaction: 'like'};
 
 			data.lastGreetedAt = today;
 			msg.friend.setPerModulesData(this, data);
 
 			msg.friend.incLove(0.6);
+			
+			return {reaction: 'love'}
 			//#endregion
 		};
 
@@ -64,40 +66,34 @@ export default class extends Module {
 
 		if (msg.includes(['こんにちは', 'こんにちわ'])) {
 			msg.reply(serifs.core.hello(msg.friend.name));
-			incLove();
-			return {reaction: 'love'};
+			return incLove();
 		}
 
 		if (msg.includes(['こんばんは', 'こんばんわ'])) {
 			msg.reply(serifs.core.helloNight(msg.friend.name));
-			incLove();
-			return {reaction: 'love'};
+			return incLove();
 		}
 
 		if (msg.includes(['おは', 'おっは', 'お早う'])) {
 			msg.reply(serifs.core.goodMorning(tension, msg.friend.name));
-			incLove();
-			return {reaction: ':mk_oha:'};
+			return incLove();
 		}
 
 		if (msg.includes(['おやすみ', 'お休み'])) {
 			msg.reply(serifs.core.goodNight(msg.friend.name));
-			incLove();
-			return {reaction: ':oyasumi2:'};
+			return incLove();
 		}
 
 		if (msg.includes(['行ってくる', '行ってきます', 'いってくる', 'いってきます'])) {
 			msg.reply(
 					serifs.core.itterassyai.normal(msg.friend.name));
-			incLove();
-			return {reaction: 'love'};
+			return incLove();
 		}
 
 		if (msg.includes(['ただいま'])) {
 			msg.reply(
 				serifs.core.okaeri.normal(msg.friend.name));
-			incLove();
-			return {reaction: ':otukaresama:'};
+			return incLove();
 		}
 
 		return false;
