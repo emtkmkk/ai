@@ -22,15 +22,47 @@ export default class extends Module {
 
 	@autobind
 	private async onNote(note: Note) {
+		// Botはスルー これで自分自身もスルーする
 		if (note.user.isBot) return;
+		// リプライ先が自分じゃない場合はスルー
 		if (note.reply != null && note.reply.user?.id !== note.user?.id) return;
+		// 中身がなければスルー
 		if (note.text == null) return;
-		if (note.cw != null) return;
-		if (note.text.includes('@')) return; // (自分または他人問わず)メンションっぽかったらreject
+		// (自分または他人問わず)メンションっぽかったらスルー
+		if (note.text.includes('@')) return;
+		
+		// 公開範囲フォロワーでcw付きは深刻な物が多い為開かない
+		if (note.visibility = 'followers' && note.cw != null) return;
+		
+		// そうじゃない場合、もこチキくんは50%の確率でCWを開いてくれる
+		// ただし空白CWは開かない
+		if (note.cw != null && (!note.cw.trim() || Math.random() < 0.5)) return;
 
 		const react = async (reaction: string, immediate = false) => {
 			if (!immediate) {
-				await delay(4000);
+				// 絵文字をつけるまでの時間は2.5 ~ 5.5秒でゆらぎをつける
+				let waitTime = 2500;
+				
+				// 対象ユーザの好感度1につき、-0.01 ~ -0.02秒
+				// 最大 100 (★7) で -1 ~ -2秒
+				const friend = this.ai.lookupFriend(note.userId);
+				if (friend) {
+					waitTime -= Math.round(Math.min(friend.love,100) * 10);
+				}
+				
+				// CWがあるなら、開く時間を考慮して +1 ~ +2秒
+				if (note.cw) {
+					waitTime += 1000;
+				}
+				
+				// 30文字を超えている場合は、長ければ長いほど遅らせる
+				// 1文字につき、+0.03~0.06秒
+				// 最大増加時間は 98文字の +2.04 ~ +4.08秒
+				if (note.text?.length > 30) {
+					waitTime += Math.min(note.text?.length - 30, 68) * 30
+				}
+				
+				await delay(waitTime + Math.round(Math.random() * (waitTime + 500)));
 			}
 			this.ai.api('notes/reactions/create', {
 				noteId: note.id,
@@ -64,24 +96,26 @@ export default class extends Module {
 			}
 
 			return react(reaction);
-		}
+		}*/
 
-		if (includes(note.text, ['ぴざ'])) return react('🍕');
-		if (includes(note.text, ['ぷりん'])) return react('🍮');
-		if (includes(note.text, ['寿司', 'sushi']) || note.text === 'すし') return react('🍣');*/
-		if (note.text?.length > 80 || Math.random() < 0.05) return
+		// キーワード反応
+		// 長い文章には反応しないことがあるようにする
+		// 30-50文字 : スルー率5% / 51文字以降は1文字度にスルー率+2%
+		if (Math.random() < (note.text?.length < 30 ? 0 : note.text?.length < 50 ? 0.05 : 0.05 + (note.text?.length-50) / 50)) return
 		if (includes(note.text, ['ぴざ', 'pizza'])) return react(':itspizzatime:');
 		if (includes(note.text, ['かんぴろばくたー', 'campylobacter'])) return react(':campylobacter_mottenaidesu:');
 		if (includes(note.text, ['taikin', '退勤', 'たいきん', 'しごおわ'])) return react(':otukaresama:');
 		if (includes(note.text, ['おはよ', 'ohayo', 'pokita', 'おきた', '起きた', 'おっは', 'ぽきた']) && note.text?.length <= 30 && !includes(note.text, ['が起きた', 'がおきた'])) return react(':mk_oha:');
 		if (includes(note.text, ['おやす', 'oyasu', 'poyasimi', '寝る', '日次再起動', 'ぽやしみ']) && note.text?.length <= 30 && !includes(note.text, ['ちゃんねる'])) return react(':oyasumi2:');
-		if (includes(note.text, ['伸び'])) return react(':mk_ultrawidechicken:');
+		if (includes(note.text, ['伸び','のび'])) return react(':mk_ultrawidechicken:');
 		if (includes(note.text, ['嘘']) && note.text?.length <= 30) return react(':sonnano_uso:');
 		if (includes(note.text, ['めつ', '滅', 'metu']) && !includes(note.text, ['滅茶', '滅多'])) return react(':metu:');
 		if (includes(note.text, ['つら', '辛', 'しんど', '帰りたい', 'かえりたい', 'sad'])) return react(':petthex:');
 		if (includes(note.text, ['むいみ', '無意味', 'muimi']) && includes(note.text, ['もの', 'mono', '物'])) return react(':osiina:');
 		if (includes(note.text, ['もこもこ'])) return react(':mokomoko:');
-		if (includes(note.text, ['もこ', 'niwatori_kun']) && !includes(note.text, ['もこみち', 'おもころ', 'もこう', 'でもこれ']) && Math.random() < 0.85) {
+		// もこだけ条件がゆるく反応しやすいので追加でスルー率を+10%
+		if (includes(note.text, ['もこ', 'niwatori_kun']) && !includes(note.text, ['もこみち', 'おもころ', 'もこう', 'もこれ']) && Math.random() < 0.9) {
+			//3種類からランダムに選択される
 			const rnd = Math.random() * 3;
 			if (rnd < 1) {
 				return react(':mk_chicken_t:');
