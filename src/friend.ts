@@ -209,7 +209,7 @@ export default class Friend {
 
 	@autobind
 	public generateTransferCode(): string {
-		const code = genItem();
+		const code = genItem() + genItem();
 
 		this.doc.transferCode = code;
 		this.save();
