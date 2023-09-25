@@ -271,7 +271,7 @@ export default class 藍 {
 		if (reaction === "confused") reaction = ":mk_ultrawidechicken:";
 		
 		const friend = new Friend(this, { user: msg.user });
-		if (![":mk_widechicken:",":mk_fly_sliver:",":mk_ultrawidechicken:"].includes(reaction)) friend.incLove(0.1);
+		if (![":mk_widechicken:",":mk_fly_sliver:",":mk_ultrawidechicken:"].includes(reaction)) friend.incLove(0.1, reaction);
 
 		// リアクションする
 		if (reaction) {
@@ -291,7 +291,7 @@ export default class 藍 {
 			case 'pollVote':
 			case 'reaction': {
 				const friend = new Friend(this, { user: notification.user });
-				friend.incLove(0.1);
+				friend.incLove(0.1, notification.type);
 				break;
 			}
 
