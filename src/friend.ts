@@ -229,6 +229,7 @@ export default class Friend {
 		this.doc.love = src.love;
 		this.doc.married = src.married;
 		this.doc.perModulesData = src.perModulesData;
+		this.doc.kazutoriData = src.kazutoriData;
 		this.save();
 
 		// TODO: 合言葉を忘れる
