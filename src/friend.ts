@@ -15,6 +15,8 @@ export type FriendDoc = {
 	kazutoriData?: any;
 	lastLoveIncrementedAt?: string;
 	todayLoveIncrements?: number;
+	lastLoveIncrementedTime?: string;
+	cooldownLoveIncrementKey?: string[];
 	perModulesData?: any;
 	married?: boolean;
 	transferCode?: string;
@@ -109,7 +111,7 @@ export default class Friend {
 	}
 
 	@autobind
-	public incLove(amount = 1) {
+	public incLove(amount = 1, key?) {
 		amount = amount * 5
 		
 		// 親愛度100以上の場合、量に応じて上がる量が軽減
@@ -119,6 +121,23 @@ export default class Friend {
 
 		if (this.doc.lastLoveIncrementedAt != today) {
 			this.doc.todayLoveIncrements = 0;
+		}
+		
+		const now = new Date();
+		
+		// 100を超えている場合、同じ種類の好感度増加は1分間に1回
+		if (key && (this.doc.love || 0) >= 100){
+			if (!this.doc.cooldownLoveIncrementKey || this.doc.lastLoveIncrementedTime !== "" + now.getHours() + now.getMinutes()) {
+				this.doc.cooldownLoveIncrementKey = [];
+				this.doc.lastLoveIncrementedTime = "" + now.getHours() + now.getMinutes();
+			}
+			
+			if (this.doc.cooldownLoveIncrementKey.includes(key)) {
+				this.ai.log(`💗 ${this.userId} +0 (${this.doc.love || 0}) <${this.doc.lastLoveIncrementedTime} : ${key}>`);
+				return;
+			} else {
+				this.doc.cooldownLoveIncrementKey.push(key);
+			}
 		}
 
 		// 100を超えるまでは1日に上げられる親愛度は最大15
