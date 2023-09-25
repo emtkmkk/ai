@@ -88,7 +88,7 @@ export default class Message {
 
 		return await this.ai.post({
 			replyId: this.note.id,
-			text: acct(this.user) + ' ' + text,
+			text: (opts?.cw?.includes('@') ? '' : acct(this.user) + ' ') + text,
 			fileIds: opts?.file ? [opts?.file.id] : undefined,
 			cw: opts?.cw,
 			renoteId: opts?.renote,
