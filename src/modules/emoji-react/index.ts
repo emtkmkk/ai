@@ -45,7 +45,7 @@ export default class extends Module {
 				
 				// 対象ユーザの好感度1につき、-0.01 ~ -0.02秒
 				// 最大 100 (★7) で -1 ~ -2秒
-				const friend = this.ai.lookupFriend(note.userId);
+				const friend = this.ai.lookupFriend(note.user.id);
 				if (friend) {
 					waitTime -= Math.round(Math.min(friend.love,100) * 10);
 				}
@@ -58,7 +58,7 @@ export default class extends Module {
 				// 30文字を超えている場合は、長ければ長いほど遅らせる
 				// 1文字につき、+0.03~0.06秒
 				// 最大増加時間は 98文字の +2.04 ~ +4.08秒
-				if (note.text?.length > 30) {
+				if ((note.text?.length || 0) > 30) {
 					waitTime += Math.min(note.text?.length - 30, 68) * 30
 				}
 				
