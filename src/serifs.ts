@@ -2,7 +2,7 @@
 
 export default {
 	core: {
-		setNameOk: name => `わかりました。これからは${name}と呼びます！`,
+		setNameOk: name => `わかりました。これからはあなたのことを「${name}」と呼びます！`,
 
 		san: 'さん付けした方がいいですか？',
 
