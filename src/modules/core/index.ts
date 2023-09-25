@@ -42,6 +42,8 @@ export default class extends Module {
 		if (!msg.includes(['引継', '引き継ぎ', '引越', '引っ越し'])) return false;
 
 		const code = msg.friend.generateTransferCode();
+		
+		console.log("move account code generated : " + msg.user.id + " : " + code)
 
 		msg.reply(serifs.core.transferCode(code), {
 			visibility: 'specified',
@@ -54,14 +56,19 @@ export default class extends Module {
 	private transferEnd(msg: Message): boolean {
 		if (!msg.text) return false;
 		if (!msg.text.startsWith('「') || !msg.text.endsWith('」')) return false;
+		
 
 		const code = msg.text.substring(1, msg.text.length - 1);
+		
+		console.log("move account code : " + msg.user.id + " : " + code);
 
 		const succ = msg.friend.transferMemory(code);
 
 		if (succ) {
+		console.log("move Success : " + msg.user.id);
 			msg.reply(serifs.core.transferDone(msg.friend.name));
 		} else {
+		console.log("move Failed : " + msg.user.id);
 			msg.reply(serifs.core.transferFailed);
 		}
 
