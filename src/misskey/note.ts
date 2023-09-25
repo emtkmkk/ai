@@ -3,6 +3,7 @@ export type Note = {
 	text: string | null;
 	cw: string | null;
 	reply: any | null;
+	visibility: string;
 	user: any | null;
 	poll?: {
 		choices: {
