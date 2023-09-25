@@ -32,7 +32,7 @@ export default class extends Module {
 		if (note.text.includes('@')) return;
 		
 		// 公開範囲フォロワーでcw付きは深刻な物が多い為開かない
-		if (note.visibility = 'followers' && note.cw != null) return;
+		if (note.visibility === 'followers' && note.cw != null) return;
 		
 		// そうじゃない場合、もこチキくんは50%の確率でCWを開いてくれる
 		// ただし空白CWは開かない
@@ -59,7 +59,7 @@ export default class extends Module {
 				// 1文字につき、+0.03~0.06秒
 				// 最大増加時間は 98文字の +2.04 ~ +4.08秒
 				if ((note.text?.length || 0) > 30) {
-					waitTime += Math.min(note.text?.length - 30, 68) * 30
+					waitTime += Math.min((note.text?.length || 0) - 30, 68) * 30
 				}
 				
 				await delay(waitTime + Math.round(Math.random() * (waitTime + 500)));
