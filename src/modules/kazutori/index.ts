@@ -57,7 +57,7 @@ export default class extends Module {
 		
 		if (recentGame && (!recentGame.isEnded || Date.now() - recentGame.startedAt < 1000 * 60 * 60)) return
 		
-		let maxnum = recentGame?.votes?.length + (Math.random() < 0.5 ? 1 : 0) || 1;
+		let maxnum = (recentGame?.votes?.length || 0) + (Math.random() < 0.5 ? 1 : 0) || 1;
 		
 		if (Math.random() < 0.02 && recentGame?.maxnum && recentGame.maxnum <= 50) maxnum = Math.floor(maxnum * (50 + (Math.random() * 50)));
 		else if (Math.random() < 0.02 && recentGame?.maxnum && recentGame.maxnum !== 1) maxnum = 1;
@@ -198,7 +198,7 @@ export default class extends Module {
 		if (game == null) return;
 
 		// 制限時間が経過していたら
-		if (Date.now() - game.finishedAt >= 0) {
+		if (Date.now() - (game.finishedAt ?? game.startedAt + 1000 * 60 * 10) >= 0) {
 			this.finish(game);
 		}
 	}
