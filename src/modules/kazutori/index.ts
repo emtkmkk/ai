@@ -19,6 +19,7 @@ type Game = {
 	isEnded: boolean;
 	startedAt: number;
 	finishedAt: number;
+	winRank: number;
 	postId: string;
 	maxnum: number;
 };
@@ -57,7 +58,7 @@ export default class extends Module {
 		
 		if (recentGame && (!recentGame.isEnded || Date.now() - recentGame.startedAt < 1000 * 60 * 60)) return
 		
-		let maxnum = (recentGame?.votes?.length || 0) + (Math.random() < 0.5 ? 1 : 0) || 1;
+		let maxnum = ((recentGame?.votes?.length || 0) + (Math.random() < 0.5 ? 1 : 0)) || 1;
 		
 		if (Math.random() < 0.02 && recentGame?.maxnum && recentGame.maxnum <= 50) maxnum = Math.floor(maxnum * (50 + (Math.random() * 50)));
 		else if (Math.random() < 0.02 && recentGame?.maxnum && recentGame.maxnum !== 1) maxnum = 1;
@@ -67,9 +68,11 @@ export default class extends Module {
 		let visibility = Math.random() < 0.05 ? 'followers' : undefined;
 		
 		const limitMinutes = Math.random() < 0.1 ? Math.random() < 0.5 ? 1 : 2 : Math.random() < 0.5 ? 5 : 10;
+		
+		const winRank = Math.random() < 0.25 ? 2 : 1;
 
 		const post = await this.ai.post({
-			text: serifs.kazutori.intro(maxnum, limitMinutes),
+			text: serifs.kazutori.intro(maxnum, limitMinutes, winRank),
 			...(visibility ? {visibility} : {})
 		});
 
@@ -78,6 +81,7 @@ export default class extends Module {
 			isEnded: false,
 			startedAt: Date.now(),
 			finishedAt: Date.now() + 1000 * 60 * limitMinutes,
+			winRank,
 			postId: post.id,
 			maxnum: maxnum
 		});
@@ -186,7 +190,7 @@ export default class extends Module {
 		};
 	}
 
-/**
+	/**
 	 * 終了すべきゲームがないかチェック
 	 */
 	@autobind
@@ -240,6 +244,9 @@ export default class extends Module {
 		let reverse = Math.random() < 0.15;
 		const now = new Date();
 		
+		let winRank = game.winRank ?? 1;
+		let reverseWinRank = game.winRank ?? 1;
+		
 		// 正常
 		for (let i = game.maxnum; i >= 0 ; i--) {
 			const users = game.votes
@@ -248,9 +255,14 @@ export default class extends Module {
 
 			if (users.length == 1) {
 				if (winner == null) {
-					winner = users[0];
-					const icon = i == 100 ? '💯' : '🎉';
-					results.push(`${icon} **${i}**: $[jelly ${acct(users[0])}]`);
+					if (winRank > 1){
+						winRank -= 1;
+						results.push(`➖ ${i}: ${acct(users[0])}`);
+					} else {
+						winner = users[0];
+						const icon = i == 100 ? '💯' : '🎉';
+						results.push(`${icon} **${i}**: $[jelly ${acct(users[0])}]`);
+					}
 				} else {
 					results.push(`➖ ${i}: ${acct(users[0])}`);
 				}
@@ -267,9 +279,14 @@ export default class extends Module {
 
 			if (users.length == 1) {
 				if (reverseWinner == null) {
-					reverseWinner = users[0];
-					const icon = i == 100 ? '💯' : '🎉';
-					reverseResults.push(`${icon} **${i}**: $[jelly ${acct(users[0])}]`);
+					if (reverseWinRank > 1){
+						reverseWinRank -= 1;
+						reverseResults.push(`➖ ${i}: ${acct(users[0])}`);
+					} else {
+						reverseWinner = users[0];
+						const icon = i == 100 ? '💯' : '🎉';
+						reverseResults.push(`${icon} **${i}**: $[jelly ${acct(users[0])}]`);
+					}
 				} else {
 					reverseResults.push(`➖ ${i}: ${acct(users[0])}`);
 				}
