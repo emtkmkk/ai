@@ -18,11 +18,10 @@ type Game = {
 	}[];
 	isEnded: boolean;
 	startedAt: number;
+	finishedAt: number;
 	postId: string;
 	maxnum: number;
 };
-
-const limitMinutes = 10;
 
 export default class extends Module {
 	public readonly name = 'kazutori';
@@ -58,16 +57,27 @@ export default class extends Module {
 		
 		if (recentGame && (!recentGame.isEnded || Date.now() - recentGame.startedAt < 1000 * 60 * 60)) return
 		
-		const maxnum = recentGame?.votes?.length || 1;
+		let maxnum = recentGame?.votes?.length + (Math.random() < 0.5 ? 1 : 0) || 1;
+		
+		if (Math.random() < 0.02 && recentGame?.maxnum && recentGame.maxnum <= 50) maxnum = Math.floor(maxnum * (50 + (Math.random() * 50)));
+		else if (Math.random() < 0.02 && recentGame?.maxnum && recentGame.maxnum !== 1) maxnum = 1;
+
+		if (maxnum > 1000) maxnum = 1000;
+		
+		let visibility = Math.random() < 0.05 ? 'followers' : undefined;
+		
+		const limitMinutes = Math.random() < 0.1 ? Math.random() < 0.5 ? 1 : 2 : Math.random() < 0.5 ? 5 : 10;
 
 		const post = await this.ai.post({
-			text: serifs.kazutori.intro(maxnum, limitMinutes)
+			text: serifs.kazutori.intro(maxnum, limitMinutes),
+			...(visibility ? {visibility} : {})
 		});
 
 		this.games.insertOne({
 			votes: [],
 			isEnded: false,
 			startedAt: Date.now(),
+			finishedAt: Date.now() + 1000 * 60 * limitMinutes,
 			postId: post.id,
 			maxnum: maxnum
 		});
@@ -106,27 +116,7 @@ export default class extends Module {
 			}
 		}
 
-		let maxnum = recentGame?.votes?.length || 1;
-		if (Math.random() < 0.02 && recentGame?.maxnum && recentGame.maxnum <= 50) maxnum = Math.floor(maxnum * (50 + (Math.random() * 50)));
-		else if (Math.random() < 0.02 && recentGame?.maxnum && recentGame.maxnum !== 1) maxnum = 1;
-		
-		if (maxnum > 1000) maxnum = 1000;
-
-		const post = await this.ai.post({
-			text: serifs.kazutori.intro(maxnum, limitMinutes)
-		});
-
-		this.games.insertOne({
-			votes: [],
-			isEnded: false,
-			startedAt: Date.now(),
-			postId: post.id,
-			maxnum: maxnum
-		});
-
-		this.subscribeReply(null, post.id);
-
-		this.log('New kazutori game started');
+		this.start();
 
 		return {
 			reaction:'love'
@@ -208,7 +198,7 @@ export default class extends Module {
 		if (game == null) return;
 
 		// 制限時間が経過していたら
-		if (Date.now() - game.startedAt >= 1000 * 60 * limitMinutes) {
+		if (Date.now() - game.finishedAt >= 0) {
 			this.finish(game);
 		}
 	}
@@ -297,6 +287,8 @@ export default class extends Module {
 			results = reverseResults;
 			winner = reverseWinner;
 		}
+		
+		if (now.getMonth() === 3 && now.getDate() === 1) reverse = !reverse;
 
 		const winnerFriend = winner ? this.ai.lookupFriend(winner.id) : null;
 		const name = winnerFriend ? winnerFriend.name : null;
