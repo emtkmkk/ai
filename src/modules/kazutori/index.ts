@@ -22,6 +22,7 @@ type Game = {
 	winRank: number;
 	postId: string;
 	maxnum: number;
+	triggerUserId: string | undefined;
 };
 
 export default class extends Module {
@@ -50,7 +51,7 @@ export default class extends Module {
 	}
 	
 	@autobind
-	private async start() {
+	private async start(triggerUserId?) {
 
 		const games = this.games.find({});
 
@@ -65,9 +66,9 @@ export default class extends Module {
 
 		if (maxnum > 1000) maxnum = 1000;
 		
-		let visibility = Math.random() < 0.05 ? 'followers' : undefined;
+		let visibility = Math.random() < 0.05 && !triggerUserId ? 'followers' : undefined;
 		
-		const limitMinutes = Math.random() < 0.1 ? Math.random() < 0.5 ? 1 : 2 : Math.random() < 0.5 ? 5 : 10;
+		const limitMinutes = Math.random() < 0.1 ? Math.random() < 0.5 && !triggerUserId ? 1 : 2 : Math.random() < 0.5 ? 5 : 10;
 		
 		const winRank = Math.random() < 0.25 ? 2 : 1;
 
@@ -83,7 +84,8 @@ export default class extends Module {
 			finishedAt: Date.now() + 1000 * 60 * limitMinutes,
 			winRank,
 			postId: post.id,
-			maxnum: maxnum
+			maxnum: maxnum,
+			triggerUserId,
 		});
 
 		this.subscribeReply(null, post.id);
@@ -119,8 +121,10 @@ export default class extends Module {
 				};
 			}
 		}
+		
+		msg.reply("\n分かりました！数取りを開催します！\nあなたは開催1分後から数取りへの投票を行うことができます！");
 
-		this.start();
+		this.start(msg.user.id);
 
 		return {
 			reaction:'love'
@@ -139,12 +143,18 @@ export default class extends Module {
 
 		// 処理の流れ上、実際にnullになることは無さそうだけど一応
 		if (game == null) return;
+		
+		// 数取りトリガー者で、開始から1分以内の場合
+		if (game.triggerUserId === msg.user.id && Date.now() - game.startedAt < 60 * 1000) return {
+			reaction: '⏲'
+		};
 
 		// 既に数字を取っていたら
 		if (game.votes.some(x => x.user.id == msg.userId)) return {
 			reaction: 'confused'
 		};
-
+		
+		// 数字が含まれていない
 		const match = msg.extractedText.match(/[0-9]+/);
 		if (match == null) return {
 			reaction: 'hmm'
@@ -241,11 +251,11 @@ export default class extends Module {
 		let reverseResults: string[] = [];
 		let reverseWinner: Game['votes'][0]['user'] | null = null;
 		
-		let reverse = Math.random() < 0.15;
-		const now = new Date();
-		
 		let winRank = game.winRank ?? 1;
 		let reverseWinRank = game.winRank ?? 1;
+		
+		let reverse = Math.random() < (winRank === 1 ? 0.15 : 0.3);
+		const now = new Date();
 		
 		// 正常
 		for (let i = game.maxnum; i >= 0 ; i--) {
