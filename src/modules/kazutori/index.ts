@@ -57,20 +57,33 @@ export default class extends Module {
 
 		const recentGame = games.length == 0 ? null : games[games.length - 1];
 
-		if (recentGame && (!recentGame.isEnded || Date.now() - recentGame.startedAt < 1000 * 60 * 60)) return
+		// ゲーム開始条件判定
+		// 前回がお流れの場合はランダム発生のクールダウンを120分にする
+		if (recentGame && (!recentGame.isEnded || Date.now() - recentGame.startedAt < 1000 * 60 * ((recentGame?.votes?.length ?? 2) <= 1 && !triggerUserId ? 120 : 60))) return
 
+		// 最大値は前回の参加者に50%で1を足した物
 		let maxnum = ((recentGame?.votes?.length || 0) + (Math.random() < 0.5 ? 1 : 0)) || 1;
 
+		// 2%かつ開催2回目以降かつ前回がMax50以上ではない場合 Maxを50 ~ 100倍にする
 		if (Math.random() < 0.02 && recentGame?.maxnum && recentGame.maxnum <= 50) maxnum = Math.floor(maxnum * (50 + (Math.random() * 50)));
+		// 2%かつ開催2回目以降かつ前回がMax1ではない場合 Max1
 		else if (Math.random() < 0.02 && recentGame?.maxnum && recentGame.maxnum !== 1) maxnum = 1;
 
+		// 1000回以上ループ処理したらおかしくなるかもなので
 		if (maxnum > 1000) maxnum = 1000;
-
+		
+		// 自然発生かつ5%の確率でフォロワー限定になる
+		// 狙い：リプライがすべてフォロ限になる為、フォロワーでない人の投票が不可視になる
 		let visibility = Math.random() < 0.05 && !triggerUserId ? 'followers' : undefined;
 
+		// 10% → 自然発生かつ50%で1分 そうでない場合2分
+		// 90% → 5分 or 10分
+		// 狙い：時間がないと他の人の数字を確認しづらいのでランダム性が高まる
 		const limitMinutes = Math.random() < 0.1 ? Math.random() < 0.5 && !triggerUserId ? 1 : 2 : Math.random() < 0.5 ? 5 : 10;
 
-		const winRank = Math.random() < 0.25 ? 2 : 1;
+		// 前回が2番目勝利モードでないかつ25%で2番目勝利モードになる
+		// 狙い：新しいゲーム性の探求
+		const winRank = recentGame.winRank === 1 && Math.random() < 0.25 ? 2 : 1;
 
 		const post = await this.ai.post({
 			text: serifs.kazutori.intro(maxnum, limitMinutes, winRank),
@@ -147,7 +160,7 @@ export default class extends Module {
 		// 数取りトリガー者で、開始から1分以内の場合
 		const time = Date.now() - game.startedAt
 		if (game.triggerUserId === msg.user.id && time < 60 * 1000 && msg.visibility !== 'specified') {
-			msg.reply(`\n${60 - (time / 1000)}秒後にもう一度送ってください！`, { visibility: 'specified' });
+			msg.reply(`\n${60 - Math.floor(time / 1000)}秒後にもう一度送ってください！`, { visibility: 'specified' });
 			return { reaction: '❌' };
 		}
 
@@ -272,7 +285,7 @@ export default class extends Module {
 						results.push(`➖ ${i}: ${acct(users[0])}`);
 					} else {
 						winner = users[0];
-						const icon = i == 100 ? '💯' : '🎉';
+						const icon = i == 100 ? '💯' : i == 0 ? '0️⃣' : '🎉';
 						results.push(`${icon} **${i}**: $[jelly ${acct(users[0])}]`);
 					}
 				} else {
