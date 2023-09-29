@@ -606,6 +606,7 @@ export const and = [
 	'以外の',
 	'または',
 	'かつ',
+	'メンサの',
 ];
 
 export function genItem(seedOrRng?: (() => number) | string | number) {
@@ -619,9 +620,11 @@ export function genItem(seedOrRng?: (() => number) | string | number) {
 	if (Math.floor(rng() * 5) !== 0) item += itemPrefixes[Math.floor(rng() * itemPrefixes.length)];
 	item += items[Math.floor(rng() * items.length)];
 	if (Math.floor(rng() * 10) === 0) {
-		item += and[Math.floor(rng() * and.length)];
-		if (Math.floor(rng() * 5) !== 0) item += itemPrefixes[Math.floor(rng() * itemPrefixes.length)];
-		item += items[Math.floor(rng() * items.length)];
+		let andItem = "";
+		if (Math.floor(rng() * 3) === 0) andItem += itemPrefixes[Math.floor(rng() * itemPrefixes.length)];
+		andItem += items[Math.floor(rng() * items.length)];
+		andItem += and[Math.floor(rng() * and.length)];
+		item = andItem + item;
 	}
 	return item;
 }
