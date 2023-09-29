@@ -191,7 +191,7 @@ export default class extends Module {
 			});
 			const pollresult = this.pollresult.find().sort((a, b) => {
 				//連勝数が多い順、同じなら文字列コード順
-				if (a.winCount === b.winCount) {
+				if ((a.winCount ?? 1) === (b.winCount ?? 1)) {
 					if (a < b) {
 						return -1;
 					}
@@ -200,7 +200,7 @@ export default class extends Module {
 					}
 					return 0;
 				} else {
-					return b.winCount - a.winCount
+					return (b.winCount ?? 1) - (a.winCount ?? 1)
 				}
 			});
 			const pollresultstr = pollresult.map((x) => x.key + "\n" + x.keyword + (x.winCount && x.winCount > 1 ? "(" + x.winCount + "連勝)" : "")).join('\n\n');
