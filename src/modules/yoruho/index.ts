@@ -105,8 +105,8 @@ export default class extends Module {
 
 				this.log("error ms : " + (newErrorInMilliseconds * -1));
 				
-				if (newErrorInMilliseconds > 1000) newErrorInMilliseconds = 1000;
-				if (newErrorInMilliseconds < -1000) newErrorInMilliseconds = -1000;
+				if (newErrorInMilliseconds > 1000) newErrorInMilliseconds = 0;
+				if (newErrorInMilliseconds < -1000) newErrorInMilliseconds = 0;
 
 				const previousErrorData = this.ai.moduleData.findOne({ type: 'yoruhoTime' });
 				const totalError = (previousErrorData?.error != null ? previousErrorData.error : -50) + Math.ceil(newErrorInMilliseconds / 2);
