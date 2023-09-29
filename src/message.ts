@@ -93,7 +93,8 @@ export default class Message {
 			cw: opts?.cw,
 			renoteId: opts?.renote,
 			visibility: opts?.visibility ?? 'home',
-			localOnly: opts?.localOnly || false
+			localOnly: opts?.localOnly || false,
+			...(opts?.visibility === 'specified' ? {visibleUserIds: [this.userId],} : {})
 		});
 	}
 
