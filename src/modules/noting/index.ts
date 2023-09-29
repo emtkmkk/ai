@@ -2,6 +2,7 @@ import autobind from 'autobind-decorator';
 import Module from '@/module';
 import serifs from '@/serifs';
 import { genItem } from '@/vocabulary';
+import * as loki from 'lokijs';
 import config from '@/config';
 
 export default class extends Module {
