@@ -342,6 +342,7 @@ export default class extends Module {
 				winnerFriend.doc.kazutoriData = { winCount: 1, playCount: 1, inventory: [] };
 			}
 			if (winnerFriend.doc.kazutoriData.inventory) {
+				if (winnerFriend.doc.kazutoriData.inventory.length >= 50) winnerFriend.doc.kazutoriData.inventory.shift();
 				winnerFriend.doc.kazutoriData.inventory.push(item);
 			} else {
 				winnerFriend.doc.kazutoriData.inventory = [item];
