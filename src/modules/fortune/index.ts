@@ -102,8 +102,7 @@ export default class extends Module {
 			const item = genItem(rng);
 			const words = this.learnedKeywords.find();
 			const word = words ? words[Math.floor(rngword() * words.length)].keyword : undefined;
-			msg.reply(`${omikuji}\nラッキーアイテム: ${item}${word ? `\nラッキーワード: ${word}` : ''}`, {
-				cw: acct(msg.friend.doc.user) + ' ' + serifs.fortune.cw(msg.friend.name),
+			msg.reply(`${serifs.fortune.cw(msg.friend.name)}\n${omikuji}\nラッキーアイテム: ${item}${word ? `\nラッキーワード: ${word}` : ''}`, {
 				visibility: 'public'
 			});
 			return {
