@@ -83,7 +83,7 @@ export default class extends Module {
 
 		// 前回が2番目勝利モードでないかつ25%で2番目勝利モードになる
 		// 狙い：新しいゲーム性の探求
-		const winRank = recentGame.winRank === 1 && Math.random() < 0.25 ? 2 : 1;
+		const winRank = (recentGame?.winRank ?? 1) === 1 && Math.random() < 0.25 ? 2 : 1;
 
 		const post = await this.ai.post({
 			text: serifs.kazutori.intro(maxnum, limitMinutes, winRank),
