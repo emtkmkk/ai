@@ -617,7 +617,7 @@ export function genItem(seedOrRng?: (() => number) | string | number) {
 		: Math.random;
 
 	let item = '';
-	if (Math.floor(rng() * 5) !== 0) item += itemPrefixes[Math.floor(rng() * itemPrefixes.length)];
+	if (Math.floor(rng() * 10) !== 0) item += itemPrefixes[Math.floor(rng() * itemPrefixes.length)];
 	item += items[Math.floor(rng() * items.length)];
 	if (Math.floor(rng() * 10) === 0) {
 		let andItem = "";
