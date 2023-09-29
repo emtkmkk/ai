@@ -9,13 +9,13 @@ import { Note } from '@/misskey/note';
 
 export default class extends Module {
 	public readonly name = 'poll';
-	
+
 	private pollresult: loki.Collection<{
 		key: string;
 		keyword: string;
 		winCount?: number;
 	}>;
-	
+
 	private pollresultlegend: loki.Collection<{
 		key: string;
 		keyword: string;
@@ -77,7 +77,7 @@ export default class extends Module {
 			['お味噌汁の具にしたいもの', 'みなさんは、お味噌汁の具にするとしたらどれがいいですか？'],
 			['ふりかけにしたいもの', 'みなさんは、どれをごはんにふりかけたいですか？'],
 			['よく見かけるもの', 'みなさんは、どれをよく見かけますか？'],
-			['道に落ちてそうなもの', 'みなさんは、道端に落ちてそうなものはどれだと思いますか？'],
+			['道端に落ちてそうなもの', 'みなさんは、道端に落ちてそうなものはどれだと思いますか？'],
 			['美術館に置いてそうなもの', 'みなさんは、この中で美術館に置いてありそうなものはどれだと思いますか？'],
 			['教室にありそうなもの', 'みなさんは、教室にありそうなものってどれだと思いますか？'],
 			['絵文字になってほしいもの', '絵文字になってほしいものはどれですか？'],
@@ -130,7 +130,7 @@ export default class extends Module {
 		];
 
 		const poll = polls[Math.floor(Math.random() * polls.length)];
-		
+
 		const exist = this.pollresult.findOne({
 			key: poll[0]
 		});
@@ -142,7 +142,7 @@ export default class extends Module {
 			genItem(),
 			genItem(),
 		];
-		
+
 		if (Math.random() < 0.3) choices.push(genItem());
 		if (Math.random() < 0.3) choices.push(genItem());
 		if (Math.random() < 0.3) choices.push(genItem());
@@ -165,10 +165,11 @@ export default class extends Module {
 
 	@autobind
 	private async mentionHook(msg: Message) {
-		if (msg.includes(['覚えた','おぼえた']) && msg.includes(['答','こたえ'])) {
+		if (msg.includes(['覚えた', 'おぼえた']) && msg.includes(['答', 'こたえ'])) {
 			const convertpoll = [
-				['欲しい物を選べ','欲しい物を選べって言われたら'],
-				['食べたくないもの','ギリギリ食べてもいいもの']
+				['欲しい物を選べ', '欲しい物を選べって言われたら'],
+				['食べたくないもの', 'ギリギリ食べてもいいもの'],
+				['道に落ちてそうなもの', '道端に落ちてそうなもの']
 			]
 			convertpoll.forEach((x) => {
 				const exist = this.pollresult.findOne({
@@ -179,7 +180,7 @@ export default class extends Module {
 				});
 				if (exist && !exist2) {
 					this.pollresult.insertOne({
-						key: x[1], 
+						key: x[1],
 						keyword: exist.keyword,
 						winCount: exist.winCount ?? 1,
 					});
@@ -188,10 +189,23 @@ export default class extends Module {
 					this.pollresult.remove(exist)
 				}
 			});
-			const pollresult = this.pollresult.find();
+			const pollresult = this.pollresult.find().sort((a, b) => {
+				//連勝数が多い順、同じなら文字列コード順
+				if (a.winCount === b.winCount) {
+					if (a < b) {
+						return -1;
+					}
+					if (b > a) {
+						return 1;
+					}
+					return 0;
+				} else {
+					return b.winCount - a.winCount
+				}
+			});
 			const pollresultstr = pollresult.map((x) => x.key + "\n" + x.keyword + (x.winCount && x.winCount > 1 ? "(" + x.winCount + "連勝)" : "")).join('\n\n');
 			msg.reply('私が覚えた答えです！\n```\n' + pollresultstr + '\n```');
-			return {reaction: 'love'};
+			return { reaction: 'love' };
 		} else {
 			if (!msg.or(['/poll']) || msg.user.username !== config.master) {
 				return false;
@@ -201,7 +215,7 @@ export default class extends Module {
 
 			this.post();
 
-			return {reaction: 'love'};
+			return { reaction: 'love' };
 		}
 	}
 
@@ -215,9 +229,9 @@ export default class extends Module {
 		let totalVoted = 0;
 
 		for (const choice of choices) {
-			
+
 			totalVoted += choice.votes
-			
+
 			if (mostVotedChoice == null) {
 				mostVotedChoice = choice;
 				continue;
@@ -241,7 +255,7 @@ export default class extends Module {
 				const exist = this.pollresult.findOne({
 					key: title
 				});
-				if (exist){
+				if (exist) {
 					isStreak = exist.keyword === mostVotedChoice.text;
 					exist.winCount = isStreak ? (exist.winCount ?? 1) + 1 : 1;
 					exist.keyword = mostVotedChoice.text;
@@ -249,9 +263,9 @@ export default class extends Module {
 					const legend = this.pollresultlegend.findOne({
 						key: title
 					});
-					if (!legend){
+					if (!legend) {
 						this.pollresultlegend.insertOne({
-							key: exist.key, 
+							key: exist.key,
 							keyword: exist.keyword,
 							winCount: exist.winCount,
 						});
@@ -262,12 +276,12 @@ export default class extends Module {
 					}
 				} else {
 					this.pollresult.insertOne({
-						key: title, 
+						key: title,
 						keyword: mostVotedChoice.text,
 						winCount: 1,
 					});
 					this.pollresultlegend.insertOne({
-						key: title, 
+						key: title,
 						keyword: mostVotedChoice.text,
 						winCount: 1,
 					});
