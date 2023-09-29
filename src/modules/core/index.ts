@@ -119,7 +119,7 @@ export default class extends Module {
 	@autobind
 	private getLove(msg: Message): boolean {
 		if (!msg.text) return false;
-		if (!msg.text.includes('好感度')) return false;
+		if (!msg.text.includes('好感度') && !msg.text.includes('懐き度')) return false;
 
 		const lovep = msg.friend.love || 0;
 		let love = "";
