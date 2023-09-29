@@ -486,6 +486,7 @@ export default {
 		want: item => `${item}、欲しいかも……`,
 		see: item => `お散歩していたら、道に${item}が落ちているのを見ました！`,
 		expire: item => `気づいたら、${item}の賞味期限が切れてました……`,
+		talkTheme: word => `みなさんで「${word}」の事について話してみるのはどうですか？`
 	},
 };
 
