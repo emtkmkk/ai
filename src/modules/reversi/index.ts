@@ -17,7 +17,7 @@ export default class extends Module {
 
 	@autobind
 	public install() {
-		if (!config.reversiEnabled) return {};
+		if (true || !config.reversiEnabled) return {};
 
 		this.reversiConnection = this.ai.connection.useSharedConnection('gamesReversi');
 
@@ -46,7 +46,7 @@ export default class extends Module {
 	@autobind
 	private async mentionHook(msg: Message) {
 		if (msg.includes(['リバーシ', 'オセロ', 'reversi', 'othello'])) {
-			if (config.reversiEnabled) {
+			if (false && config.reversiEnabled) {
 				msg.reply(serifs.reversi.ok);
 
 				this.ai.api('games/reversi/match', {
