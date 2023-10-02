@@ -58,8 +58,10 @@ export default class extends Module {
 		const recentGame = games.length == 0 ? null : games[games.length - 1];
 
 		// ゲーム開始条件判定
+		const h = new Date().getHours()
+					
 		// 前回がお流れの場合はランダム発生のクールダウンを120分にする
-		if (recentGame && (!recentGame.isEnded || Date.now() - recentGame.startedAt < 1000 * 60 * ((recentGame?.votes?.length ?? 2) <= 1 && !triggerUserId ? 120 : 60))) return
+		if (recentGame && (!recentGame.isEnded || (h > 0 && h < 8) || Date.now() - recentGame.startedAt < 1000 * 60 * ((recentGame?.votes?.length ?? 2) <= 1 && !triggerUserId ? 120 : 60))) return
 
 		// 最大値は前回の参加者に50%で1を足した物
 		let maxnum = ((recentGame?.votes?.length || 0) + (Math.random() < 0.5 ? 1 : 0)) || 1;
@@ -71,7 +73,7 @@ export default class extends Module {
 
 		// 1000回以上ループ処理したらおかしくなるかもなので
 		if (maxnum > 1000) maxnum = 1000;
-		
+
 		// 自然発生かつ5%の確率でフォロワー限定になる
 		// 狙い：リプライがすべてフォロ限になる為、フォロワーでない人の投票が不可視になる
 		let visibility = Math.random() < 0.05 && !triggerUserId ? 'followers' : undefined;
@@ -123,6 +125,15 @@ export default class extends Module {
 				return {
 					reaction: 'confused'
 				};
+			}
+
+			const h = new Date().getHours()
+
+			if (h > 0 && h < 8) {
+				msg.reply("現在、数取り開催不可に指定されている時間です。8時から開催を受け付けます！")
+				return {
+					reaction: 'hmm'
+				}
 			}
 
 			// 直近のゲームから1時間経ってない場合
