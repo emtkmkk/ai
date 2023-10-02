@@ -34,6 +34,7 @@ export default class extends Module {
 		setInterval(() => {
 			const hours = new Date().getHours()
 			const rnd = (hours === 12 || (hours > 17 && hours < 24)) ? 0.25 : 0.05;
+			if ((hours > 0 && hours < 7) || (hours > 13 && hours < 17)) return;
 			if (Math.random() < rnd) {
 				this.post();
 			}
