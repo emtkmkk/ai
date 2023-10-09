@@ -305,6 +305,8 @@ export default {
 		matakondo: ct => `また今度やりましょう！(クールタイム あと${ct}分)`,
 
 		intro: (max, minutes, winRank) => `みなさん、数取りゲームしましょう！\n0~${max}の中で${winRank === 1 ? "最も" : "***" + winRank + "番目に***"}大きい数字を取った人が勝ちです。他の人と被ったらだめですよ～\n制限時間は${minutes < 5 ? `***${minutes}***` : minutes < 10 ? `**${minutes}**` : minutes}分です。数字はこの投稿にリプライで送ってくださいね！`,
+		
+		introPublicOnly: (max, minutes, winRank) => `みなさん、数取りゲームしましょう！\n0~${max}の中で${winRank === 1 ? "最も" : "***" + winRank + "番目に***"}大きい数字を取った人が勝ちです。他の人と被ったらだめですよ～\n制限時間は${minutes < 5 ? `***${minutes}***` : minutes < 10 ? `**${minutes}**` : minutes}分です。\n**今回は公開投稿限定で行います！**この投稿に数字を**公開またはホームに公開範囲を設定して**リプライで送ってくださいね！`,
 
 		finish: 'ゲームの結果発表です！',
 
