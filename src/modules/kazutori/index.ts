@@ -83,7 +83,7 @@ export default class extends Module {
 		
 		if (!visibility) {
 			// 投稿がフォロワー限定でない場合は、10%の確率で公開投稿のみ受付けるモードにする
-			publicOnly = Math.random() < 0.1;
+			publicOnly = !recentGame?.publicOnly && (recentGame.publicOnly == null || Math.random() < 0.1);
 		}
 
 		// 10% → 自然発生かつ50%で1分 そうでない場合2分
