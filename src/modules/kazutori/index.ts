@@ -169,6 +169,7 @@ export default class extends Module {
 			}
 		}
 
+		//TODO : このへんのセリフをserifに移行する
 		msg.reply("\n分かりました！数取りを開催します！\nあなたは開催1分後から数取りへの投票を行うことができます！\n（ダイレクトなら今すぐでも大丈夫です！）", { visibility: 'specified' });
 
 		this.start(msg.user.id);
@@ -205,7 +206,7 @@ export default class extends Module {
 					msg.visibility == 'specified' ? "ダイレクト" :
 						msg.user.host == null ? "もこきー＆フォロワー" : "";
 
-			msg.reply(`\n公開投稿限定です！\n参加するには${visibility ? visibility + "ではなく" : ""}公開またはホームの公開範囲にて返信してください！`);
+			msg.reply(`\n公開投稿限定です！\n参加するには${visibility ? "「" + visibility + "」ではなく、" : ""}「公開」または「ホーム」の公開範囲にてリプライしてくださいね～`);
 			return {
 				reaction: 'confused'
 			};
@@ -222,7 +223,7 @@ export default class extends Module {
 		// 数字が含まれていない
 		const match = msg.extractedText.match(/[0-9]+/);
 		if (match == null) {
-			msg.reply('数字が見つかりませんでした！');
+			msg.reply('リプライの中に数字が見つかりませんでした！');
 			return {
 				reaction: 'hmm'
 			};
@@ -232,7 +233,7 @@ export default class extends Module {
 
 		// 整数じゃない
 		if (!Number.isInteger(num)) {
-			msg.reply('数字が見つかりませんでした！');
+			msg.reply('リプライの中に数字が見つかりませんでした！');
 			return {
 				reaction: 'hmm'
 			};
@@ -240,7 +241,7 @@ export default class extends Module {
 
 		// 範囲外
 		if (num < 0 || num > game.maxnum) {
-			msg.reply(`「${num}」は今回のゲームでは範囲外です！`);
+			msg.reply(`\n「${num}」は今回のゲームでは範囲外です！\n0~${game.maxnum}の範囲で指定してくださいね！`);
 			return {
 				reaction: 'confused'
 			};
