@@ -6,6 +6,7 @@ import serifs from '@/serifs';
 import { User } from '@/misskey/user';
 import { acct } from '@/utils/acct';
 import { genItem } from '@/vocabulary';
+import config from '@/config';
 
 type Game = {
 	votes: {
@@ -57,14 +58,27 @@ export default class extends Module {
 		const games = this.games.find({});
 
 		const recentGame = games.length == 0 ? null : games[games.length - 1];
-		
+
 		let publicOnly = false;
 
 		// ゲーム開始条件判定
 		const h = new Date().getHours()
-					
+
 		// 前回がお流れの場合はランダム発生のクールダウンを120分にする
-		if (recentGame && (!recentGame.isEnded || (h > 0 && h < 8) || Date.now() - recentGame.startedAt < 1000 * 60 * ((recentGame?.votes?.length ?? 2) <= 1 && !triggerUserId ? 120 : 60))) return
+		if (
+			recentGame && (
+				!recentGame.isEnded ||
+				(
+					(h > 0 && h < 8) ||
+					(
+						Date.now() - recentGame.startedAt < 1000 * 60 *
+						(
+							(recentGame?.votes?.length ?? 2) <= 1 && !triggerUserId ? 120 : 60
+						)
+					) && !triggerUserId
+				)
+			)
+		) return
 
 		// 最大値は前回の参加者に50%で1を足した物
 		let maxnum = ((recentGame?.votes?.length || 0) + (Math.random() < 0.5 ? 1 : 0)) || 1;
@@ -80,7 +94,7 @@ export default class extends Module {
 		// 自然発生かつ5%の確率でフォロワー限定になる
 		// 狙い：リプライがすべてフォロ限になる為、フォロワーでない人の投票が不可視になる
 		let visibility = Math.random() < 0.05 && !triggerUserId ? 'followers' : undefined;
-		
+
 		if (!visibility) {
 			// 投稿がフォロワー限定でない場合は、10%の確率で公開投稿のみ受付けるモードにする
 			publicOnly = !recentGame?.publicOnly && (recentGame?.publicOnly == null || Math.random() < 0.1);
@@ -145,8 +159,8 @@ export default class extends Module {
 				}
 			}
 
-			// 直近のゲームから1時間経ってない場合
-			if (Date.now() - recentGame.startedAt < 1000 * 60 * 60) {
+			// トリガー者が管理人でない かつ 直近のゲームから1時間経ってない場合
+			if (msg.user.username !== config.master && Date.now() - recentGame.startedAt < 1000 * 60 * 60) {
 				const ct = Math.ceil(60 - ((Date.now() - recentGame.startedAt) / (1000 * 60)));
 				msg.reply(serifs.kazutori.matakondo(ct));
 				return {
@@ -183,20 +197,20 @@ export default class extends Module {
 			msg.reply(`\n${60 - Math.floor(time / 1000)}秒後にもう一度送ってください！`, { visibility: 'specified' });
 			return { reaction: '❌' };
 		}
-		
+
 		// 公開投稿限定モードで公開投稿じゃない場合
 		if (game.publicOnly && ((msg.visibility != 'public' && msg.visibility != 'home') || msg.localOnly)) {
-			const visibility = 
+			const visibility =
 				msg.visibility == 'followers' ? "フォロワー限定" :
-				msg.visibility == 'specified' ? "ダイレクト" :
-				msg.user.host == null ? "もこきー＆フォロワー" : "";
-				
+					msg.visibility == 'specified' ? "ダイレクト" :
+						msg.user.host == null ? "もこきー＆フォロワー" : "";
+
 			msg.reply(`\n公開投稿限定です！\n参加するには${visibility ? visibility + "ではなく" : ""}公開またはホームの公開範囲にて返信してください！`);
 			return {
 				reaction: 'confused'
 			};
 		}
-		
+
 		// 既に数字を取っていたら
 		if (game.votes.some(x => x.user.id == msg.userId)) {
 			msg.reply('すでに投票済みの様です！');
