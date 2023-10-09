@@ -37,6 +37,10 @@ export default class Message {
 	public get visibility(): string {
 		return this.note.visibility;
 	}
+	
+	public get localOnly(): boolean {
+		return this.note.localOnly ?? false;
+	}
 
 	/**
 	 * メンション部分を除いたテキスト本文
