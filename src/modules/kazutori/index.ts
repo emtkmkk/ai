@@ -23,6 +23,7 @@ type Game = {
 	postId: string;
 	maxnum: number;
 	triggerUserId: string | undefined;
+	publicOnly: boolean;
 };
 
 export default class extends Module {
@@ -56,6 +57,8 @@ export default class extends Module {
 		const games = this.games.find({});
 
 		const recentGame = games.length == 0 ? null : games[games.length - 1];
+		
+		let publicOnly = false;
 
 		// ゲーム開始条件判定
 		const h = new Date().getHours()
@@ -77,6 +80,11 @@ export default class extends Module {
 		// 自然発生かつ5%の確率でフォロワー限定になる
 		// 狙い：リプライがすべてフォロ限になる為、フォロワーでない人の投票が不可視になる
 		let visibility = Math.random() < 0.05 && !triggerUserId ? 'followers' : undefined;
+		
+		if (!visibility) {
+			// 投稿がフォロワー限定でない場合は、10%の確率で公開投稿のみ受付けるモードにする
+			publicOnly = Math.random() < 0.1;
+		}
 
 		// 10% → 自然発生かつ50%で1分 そうでない場合2分
 		// 90% → 5分 or 10分
@@ -88,7 +96,7 @@ export default class extends Module {
 		const winRank = (recentGame?.winRank ?? 1) === 1 && Math.random() < 0.25 ? 2 : 1;
 
 		const post = await this.ai.post({
-			text: serifs.kazutori.intro(maxnum, limitMinutes, winRank),
+			text: !publicOnly ? serifs.kazutori.intro(maxnum, limitMinutes, winRank) : serifs.kazutori.introPublicOnly(maxnum, limitMinutes, winRank),
 			...(visibility ? { visibility } : {})
 		});
 
@@ -101,6 +109,7 @@ export default class extends Module {
 			postId: post.id,
 			maxnum: maxnum,
 			triggerUserId,
+			publicOnly,
 		});
 
 		this.subscribeReply(null, post.id);
@@ -174,29 +183,54 @@ export default class extends Module {
 			msg.reply(`\n${60 - Math.floor(time / 1000)}秒後にもう一度送ってください！`, { visibility: 'specified' });
 			return { reaction: '❌' };
 		}
-
+		
+		// 公開投稿限定モードで公開投稿じゃない場合
+		if (game.publicOnly && ((msg.visibility != 'public' && msg.visibility != 'home') || msg.localOnly)) {
+			const visibility = 
+				msg.visibility == 'followers' ? "フォロワー限定" :
+				msg.visibility == 'specified' ? "ダイレクト" :
+				msg.user.host == null ? "もこきー＆フォロワー" : "";
+				
+			msg.reply(`\n公開投稿限定です！\n参加するには${visibility ? visibility + "ではなく" : ""}公開またはホームの公開範囲にて返信してください！`);
+			return {
+				reaction: 'confused'
+			};
+		}
+		
 		// 既に数字を取っていたら
-		if (game.votes.some(x => x.user.id == msg.userId)) return {
-			reaction: 'confused'
-		};
+		if (game.votes.some(x => x.user.id == msg.userId)) {
+			msg.reply('すでに投票済みの様です！');
+			return {
+				reaction: 'confused'
+			};
+		}
 
 		// 数字が含まれていない
 		const match = msg.extractedText.match(/[0-9]+/);
-		if (match == null) return {
-			reaction: 'hmm'
-		};
+		if (match == null) {
+			msg.reply('数字が見つかりませんでした！');
+			return {
+				reaction: 'hmm'
+			};
+		}
 
 		const num = parseInt(match[0], 10);
 
 		// 整数じゃない
-		if (!Number.isInteger(num)) return {
-			reaction: 'hmm'
-		};
+		if (!Number.isInteger(num)) {
+			msg.reply('数字が見つかりませんでした！');
+			return {
+				reaction: 'hmm'
+			};
+		}
 
 		// 範囲外
-		if (num < 0 || num > game.maxnum) return {
-			reaction: 'confused'
-		};
+		if (num < 0 || num > game.maxnum) {
+			msg.reply(`「${num}」は今回のゲームでは範囲外です！`);
+			return {
+				reaction: 'confused'
+			};
+		}
 
 		this.log(`Voted ${num} by ${msg.user.id}`);
 
