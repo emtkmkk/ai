@@ -82,13 +82,14 @@ export function genMaze(seed, complexity?) {
 
 	let mazeSize;
 	if (complexity) {
-		if (complexity === 'veryVeryEasy') mazeSize = 2 + rand(1);
+		if (complexity === 'veryVeryEasy') mazeSize = 2 + rand(2);
 		if (complexity === 'veryEasy') mazeSize = 3 + rand(3);
 		if (complexity === 'easy') mazeSize = 8 + rand(8);
 		if (complexity === 'normal') mazeSize = 11 + rand(21);
 		if (complexity === 'hard') mazeSize = 22 + rand(13);
 		if (complexity === 'veryHard') mazeSize = 40 + rand(20);
 		if (complexity === 'ai') mazeSize = 100;
+		if (!isNaN(complexity)) mazeSize = Math.floor(complexity);
 	} else {
 		mazeSize = 2 + rand(48);
 		if (rand(10) === 0) mazeSize *= 2;
