@@ -14,6 +14,7 @@ type Game = {
 			id: string;
 			username: string;
 			host: User['host'];
+			winCount: number;
 		};
 		number: number;
 	}[];
@@ -254,7 +255,8 @@ export default class extends Module {
 			user: {
 				id: msg.user.id,
 				username: msg.user.username,
-				host: msg.user.host
+				host: msg.user.host,
+				winCount: msg.friend?.doc?.kazutoriData?.winCount ?? 0,
 			},
 			number: num
 		});
@@ -305,14 +307,14 @@ export default class extends Module {
 		const item = genItem();
 
 		// お流れ
-		if (game.votes.length <= 1) {
-			if (game.votes.length) {
-				const friend = this.ai.lookupFriend(game.votes[0].user.id)
+		if (game.votes?.filter((x) => x.user.winCount < 50).length <= 1) {
+			game.votes.forEach((x) => {
+				const friend = this.ai.lookupFriend(x.user.id)
 				if (friend) {
 					friend.doc.kazutoriData.playCount -= 1;
 					friend.save()
 				}
-			}
+			});
 			this.ai.post({
 				text: serifs.kazutori.onagare(item),
 				renoteId: game.postId
@@ -378,6 +380,12 @@ export default class extends Module {
 			} else if (users.length > 1) {
 				reverseResults.push(`❌ ${i}: ${users.map(u => acct(u)).join(' ')}`);
 			}
+		}
+		
+		if (!reverse && winner.winCount >= 50 && Math.random() < 0.35) {
+			reverse = !reverse;
+		} else if (reverse && reverseWinner.winCount >= 50 && Math.random() < 0.35) {
+			reverse = !reverse;
 		}
 
 		//そのままでも反転しても結果が同じの場合は反転しない
