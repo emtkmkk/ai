@@ -27,13 +27,18 @@ export default class extends Module {
 		if (data.lastPosted == date) return;
 		data.lastPosted = date;
 		this.setData(data);
+		
+		let mazeSize;
+		mazeSize = 2 + Math.floor(Math.random() * 48);
+		if (Math.random() < 0.25) mazeSize *= 2;
+		if (Math.random() < 0.25) mazeSize *= 2;
 
 		this.log('Time to maze');
-		const file = await this.genMazeFile(date);
+		const file = await this.genMazeFile(date,mazeSize);
 
 		this.log('Posting...');
 		this.ai.post({
-			text: serifs.maze.post,
+			text: serifs.maze.post + " 難易度 : " + mazeSize + "%",
 			fileIds: [file.id]
 		});
 	}
