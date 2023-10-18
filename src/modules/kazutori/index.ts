@@ -382,9 +382,9 @@ export default class extends Module {
 			}
 		}
 		
-		if (!reverse && winner?.winCount >= 50 && Math.random() < 0.35) {
+		if (!reverse && winner && winner.winCount >= 50 && Math.random() < 0.35) {
 			reverse = !reverse;
-		} else if (reverse && reverseWinner?.winCount >= 50 && Math.random() < 0.35) {
+		} else if (reverse && reverseWinner && reverseWinner.winCount >= 50 && Math.random() < 0.35) {
 			reverse = !reverse;
 		}
 
