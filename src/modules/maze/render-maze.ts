@@ -5,7 +5,7 @@ import { CellType } from './maze';
 import { themes } from './themes';
 
 const imageSize = 4096; // px
-const margin = 96 * 4;
+const margin = 96;
 const mazeAreaSize = imageSize - (margin * 2);
 
 export function renderMaze(seed, maze: CellType[][]) {
