@@ -59,6 +59,8 @@ export default class extends Module {
 		const games = this.games.find({});
 
 		const recentGame = games.length == 0 ? null : games[games.length - 1];
+		
+		const penultimateGame = recentGame && games.length > 1 ? games[games.length - 2] : null;
 
 		let publicOnly = false;
 
@@ -81,8 +83,8 @@ export default class extends Module {
 			)
 		) return
 
-		// 最大値は前回の参加者に50%で1を足した物
-		let maxnum = ((recentGame?.votes?.length || 0) + (Math.random() < 0.5 ? 1 : 0)) || 1;
+		// 最大値は(前回の参加者＋前々回の参加者/2)に50%で1を足した物
+		let maxnum = (Math.floor(((recentGame?.votes?.length || 0) + (penultimateGame?.votes?.length || 0)) / 2) + (Math.random() < 0.5 ? 1 : 0)) || 1;
 
 		// 2%かつ開催2回目以降かつ前回がMax50以上ではない場合 Maxを50 ~ 100倍にする
 		if (Math.random() < 0.02 && recentGame?.maxnum && recentGame.maxnum <= 50) maxnum = Math.floor(maxnum * (50 + (Math.random() * 50)));
