@@ -59,7 +59,7 @@ export default class extends Module {
 			},
 		]
 
-		let note = null;
+		let note;
 
 		if (Math.random() < 0.33) {
 			note = notes[Math.floor(Math.random() * notes.length)];
