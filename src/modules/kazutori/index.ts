@@ -99,8 +99,8 @@ export default class extends Module {
 		let visibility = Math.random() < 0.05 && !triggerUserId ? 'followers' : undefined;
 
 		if (!visibility) {
-			// 投稿がフォロワー限定でない場合は、10%の確率で公開投稿のみ受付けるモードにする
-			publicOnly = !recentGame?.publicOnly && (recentGame?.publicOnly == null || Math.random() < 0.1);
+			// 投稿がフォロワー限定でない場合は、5%の確率で公開投稿のみ受付けるモードにする
+			publicOnly = !recentGame?.publicOnly && (recentGame?.publicOnly == null || Math.random() < 0.05);
 		}
 
 		// 10% → 自然発生かつ50%で1分 そうでない場合2分
