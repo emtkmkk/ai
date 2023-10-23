@@ -246,10 +246,10 @@ export default class extends Module {
 		const mostVotedChoices = choices.filter(choice => choice.votes === mostVotedChoice.votes);
 
 		if (mostVotedChoice.votes === 0) {
-			this.ai.post({ // TODO: Extract serif
-				text: '投票はありませんでした',
-				renoteId: noteId,
-			});
+			//this.ai.post({ // TODO: Extract serif
+			//	text: '投票はありませんでした',
+			//	renoteId: noteId,
+			//});
 		} else if (mostVotedChoices.length === 1) {
 			let isStreak = false;
 			if (mostVotedChoice.votes >= 3 || totalVoted > choices.length) {
