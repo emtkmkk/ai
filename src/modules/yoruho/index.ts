@@ -83,8 +83,10 @@ export default class extends Module {
 
 	@autobind
 	private post() {
+		const dt = new Date();
+		dt.setMinutes(dt.getMinutes() + 60);
 		const res = this.ai.post({
-			text: 'よるほー',
+			text: (dt.getMonth() + 1) + '/' + dt.getDate() + ' よるほー',
 			localOnly: true,
 		});
 		this.log("yoruho : " + new Date().toLocaleString('ja-JP') + "." + new Date().getMilliseconds());
