@@ -12,11 +12,11 @@ export default class extends Module {
 		keyword: string;
 		learnedAt: number;
 	}>;
-	
+
 	@autobind
 	public install() {
 		if (config.notingEnabled === false) return {};
-		
+
 		this.learnedKeywords = this.ai.getCollection('_keyword_learnedKeywords', {
 			indices: ['userId']
 		});
@@ -36,43 +36,40 @@ export default class extends Module {
 	private post() {
 		const notes = [
 			...serifs.noting.notes,
-			() => {
-				const item = genItem();
-				return serifs.noting.want(item);
-			},
-			() => {
-				const item = genItem();
-				return serifs.noting.see(item);
-			},
-			() => {
-				const item = genItem();
-				return serifs.noting.expire(item);
-			},
-			() => {
-				const words = this.learnedKeywords.find();
-				const word = words ? words[Math.floor(Math.random() * words.length)].keyword : undefined;
-				return serifs.noting.talkTheme(word);
-			},
-			() => {
-				const item = genItem();
-				return serifs.noting.want(item);
-			},
-			() => {
-				const item = genItem();
-				return serifs.noting.see(item);
-			},
-			() => {
-				const item = genItem();
-				return serifs.noting.expire(item);
-			},
-			() => {
-				const words = this.learnedKeywords.find();
-				const word = words ? words[Math.floor(Math.random() * words.length)].keyword : undefined;
-				return serifs.noting.talkTheme(word);
-			},
 		];
+		const itemNotes = [
+			() => {
+				const item = genItem();
+				return serifs.noting.want(item);
+			},
+			() => {
+				const item = genItem();
+				return serifs.noting.see(item);
+			},
+			() => {
+				const item = genItem();
+				return serifs.noting.expire(item);
+			},
+		]
+		const themeNotes = [
+			() => {
+				const words = this.learnedKeywords.find();
+				const word = words ? words[Math.floor(Math.random() * words.length)].keyword : undefined;
+				return serifs.noting.talkTheme(word);
+			},
+		]
 
-		const note = notes[Math.floor(Math.random() * notes.length)];
+		let note = null;
+
+		if (Math.random() < 0.33) {
+			note = notes[Math.floor(Math.random() * notes.length)];
+		} else {
+			if (Math.random() < 0.4) {
+				note = itemNotes[Math.floor(Math.random() * notes.length)];
+			} else {
+				note = themeNotes[0];
+			}
+		}
 
 		// TODO: 季節に応じたセリフ
 
