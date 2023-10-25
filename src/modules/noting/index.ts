@@ -53,7 +53,7 @@ export default class extends Module {
 		]
 		const themeNotes = [
 			() => {
-				const words = this.learnedKeywords.find().fliter((x) => x.keyword.length >= 3);
+				const words = (this.learnedKeywords.find()).fliter((x) => x.keyword.length >= 3);
 				const word = words ? words[Math.floor(Math.random() * words.length)].keyword : undefined;
 				return serifs.noting.talkTheme(word);
 			},
