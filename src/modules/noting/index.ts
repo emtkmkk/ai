@@ -64,8 +64,8 @@ export default class extends Module {
 		if (Math.random() < 0.33) {
 			note = notes[Math.floor(Math.random() * notes.length)];
 		} else {
-			if (Math.random() < 0.4) {
-				note = itemNotes[Math.floor(Math.random() * notes.length)];
+			if (Math.random() < 0.5) {
+				note = itemNotes[Math.floor(Math.random() * itemNotes.length)];
 			} else {
 				note = themeNotes[0];
 			}
