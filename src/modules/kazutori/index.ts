@@ -386,9 +386,9 @@ export default class extends Module {
 		
 		const winDiff = (winner?.winCount ?? 0) - (reverseWinner?.winCount ?? 0);
 		
-		if (!reverse && winner && winDiff > 10 && Math.random() < Math.min((winDiff - 10) * 0.02,0.6) ) {
+		if (!reverse && winner && winDiff > 10 && Math.random() < Math.min((winDiff - 10) * 0.02,0.8) ) {
 			reverse = !reverse;
-		} else if (reverse && reverseWinner && winDiff < -10 && Math.random() < Math.min((winDiff + 10) * -0.02,0.6)) {
+		} else if (reverse && reverseWinner && winDiff < -10 && Math.random() < Math.min((winDiff + 10) * -0.02,0.8)) {
 			reverse = !reverse;
 		}
 
