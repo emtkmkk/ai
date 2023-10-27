@@ -34,6 +34,7 @@ export default class extends Module {
 
 	@autobind
 	private post() {
+		let localOnly = false;
 		const notes = [
 			...serifs.noting.notes,
 		];
@@ -61,7 +62,8 @@ export default class extends Module {
 
 		let note;
 
-		if (Math.random() < 0.33) {
+		if (Math.random() < 0.333) {
+			localOnly = true;
 			note = notes[Math.floor(Math.random() * notes.length)];
 		} else {
 			if (Math.random() < 0.5) {
@@ -75,7 +77,7 @@ export default class extends Module {
 
 		this.ai.post({
 			text: typeof note === 'function' ? note() : note,
-			localOnly: true,
+			localOnly,
 		});
 	}
 }
