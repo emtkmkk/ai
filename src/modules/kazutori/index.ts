@@ -226,7 +226,7 @@ export default class extends Module {
 		// 数字が含まれていない
 		const match = msg.extractedText.match(/[0-9]+/);
 		if (match == null) {
-			msg.reply('リプライの中に数字が見つかりませんでした！');
+			msg.reply('リプライの中に半角の数字が見つかりませんでした！');
 			return {
 				reaction: 'hmm'
 			};
@@ -236,7 +236,7 @@ export default class extends Module {
 
 		// 整数じゃない
 		if (!Number.isInteger(num)) {
-			msg.reply('リプライの中に数字が見つかりませんでした！');
+			msg.reply('リプライの中に半角の数字が見つかりませんでした！');
 			return {
 				reaction: 'hmm'
 			};
