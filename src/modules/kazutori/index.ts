@@ -391,9 +391,14 @@ export default class extends Module {
 		} else if (reverse && reverseWinner && winDiff < -10 && Math.random() < Math.min((winDiff + 10) * -0.02,0.8)) {
 			reverse = !reverse;
 		}
+		
+		let perfect = false;
 
 		//そのままでも反転しても結果が同じの場合は反転しない
-		if ((!winner || !reverseWinner) || winner?.id === reverseWinner?.id) reverse = false;
+		if ((!winner || !reverseWinner) || winner?.id === reverseWinner?.id) {
+			perfect = true;
+			reverse = false;
+		}
 
 		if (now.getMonth() === 3 && now.getDate() === 1) reverse = !reverse;
 
@@ -424,7 +429,7 @@ export default class extends Module {
 
 
 		const text = results.join('\n') + '\n\n' + (winner
-			? reverse ? serifs.kazutori.finishWithWinnerReverse(acct(winner), name, item) : serifs.kazutori.finishWithWinner(acct(winner), name, item)
+			? perfect ? serifs.kazutori.finishWithWinnerPerfect(acct(winner), name, item) : reverse ? serifs.kazutori.finishWithWinnerReverse(acct(winner), name, item) : serifs.kazutori.finishWithWinner(acct(winner), name, item)
 			: serifs.kazutori.finishWithNoWinner(item));
 
 		this.ai.post({
