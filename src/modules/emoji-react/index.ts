@@ -113,8 +113,8 @@ export default class extends Module {
 		if (includes(note.text, ['つら', '辛', 'しんど', '帰りたい', 'かえりたい', 'sad'])) return react(':petthex:');
 		if (includes(note.text, ['むいみ', '無意味', 'muimi']) && includes(note.text, ['もの', 'mono', '物'])) return react(':osiina:');
 		if (includes(note.text, ['もこもこ'])) return react(':mokomoko:');
-		// もこだけ条件がゆるく反応しやすいので追加でスルー率を+10%
-		if (includes(note.text, ['もこ', 'niwatori_kun']) && !includes(note.text, ['もこみち', 'おもころ', 'もこう', 'もこれ']) && Math.random() < 0.9) {
+		// もこだけ条件がゆるく反応しやすいので反応率を2/3に
+		if (includes(note.text, ['もこ', 'niwatori_kun']) && !includes(note.text, ['もこみち', 'おもころ', 'もこう', 'もこれ']) && Math.random() < 0.667) {
 			//3種類からランダムに選択される
 			const rnd = Math.random() * 3;
 			if (rnd < 1) {
