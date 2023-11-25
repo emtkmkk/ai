@@ -74,11 +74,11 @@ export default class extends Module {
 		this.lastWarnedAt = now;
 		//#endregion
 
+		this.warned = true;
+
 		this.ai.post({
 			text: serifs.server.cpu,
 			localOnly: true,
 		});
-
-		this.warned = true;
 	}
 }
