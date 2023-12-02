@@ -2,6 +2,7 @@ import autobind from 'autobind-decorator';
 import Module from '@/module';
 import Friend, { FriendDoc } from '@/friend';
 import { acct } from '@/utils/acct';
+import serifs from '@/serifs';
 
 export default class extends Module {
 	public readonly name = 'welcome';
@@ -28,7 +29,7 @@ export default class extends Module {
 						localOnly: true
 					});
 				}, 3000);
-				
+
 				setTimeout(() => {
 					this.ai.api('notes/reactions/create', {
 						noteId: note.id,
@@ -42,17 +43,17 @@ export default class extends Module {
 						reaction: ':youkoso:'
 					});
 				}, 5500);
-				
+
 				setTimeout(() => {
 					this.ai.api('notes/reactions/create', {
 						noteId: note.id,
 						reaction: ':supertada:'
 					});
 				}, 6500);
-				
+
 				setTimeout(() => {
 					this.ai.api('notes/create', {
-						text: `${acct(note.user)}さん\n**もこきーへようこそ！**\nわたしはもこもこチキン、このサーバーのマスコットみたいな存在です！\nお暇な時に挨拶していただいたり、呼び名を教えていただいたり、占いや迷路などで遊んでくださったりしてくれれば嬉しいです！\nこれからよろしくお願いします！\n\nこのサーバーには独自機能が沢山あるので、気になったらお知らせの中にあるもこきーTipsを読んでみるといいかもです！\nなにか分からないことや嫌なこと、不便なことがあれば、気軽にもこきーあどみんに声をかけてください！\nそれでは楽しいもこきーライフを～ :mk_hi:`,
+						text: serifs.welcome.welcome(acct(note.user)),
 						replyId: note.id,
 						visibility: 'specified',
 						visibleUserIds: [note.user.id],

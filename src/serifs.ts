@@ -7,15 +7,15 @@ export default {
 		san: 'さん付けした方がいいですか？',
 
 		yesOrNo: '「はい」か「いいえ」しかわからないです...',
-		
+
 		getLove: (name, love) => `私の${name}に対する懐き度です！ \n\n懐き度 : ${love}`,
-		
+
 		getStatus: (name, love, kazutori) => `\n${name ? '呼び方 : ' + name + '\n' : ''}懐き度 : ${love}${kazutori ? '\n数取り : ' + kazutori : ''}`,
-		
+
 		getInventory: (name, inventory) => `\n私から${name}へプレゼントした物の一覧です！\n\n${inventory}`,
-		
+
 		followBack: name => name ? `${name}をフォローしました！${name}、これからよろしくお願いします！` : `あなたをフォローしました！これからよろしくお願いします！`,
-		
+
 		alreadyFollowBack: name => name ? `私は${name}を既にフォローしているみたいです！` : `私はあなたを既にフォローしているみたいです！`,
 
 		hello: name => name ? `こんにちは、${name}！` : `こんにちは！`,
@@ -81,7 +81,7 @@ export default {
 		tooLong: '長すぎるかも...',
 
 		invalidName: '発音が難しいかも',
-		
+
 		ngName: 'その名前は覚えたくないです...',
 
 		nadenade: {
@@ -174,6 +174,16 @@ export default {
 	birthday: {
 		happyBirthday: (name) => name ? `お誕生日おめでとうございます、${name}🎉` : 'お誕生日おめでとうございます🎉',
 		happyBirthdayLocal: (name, acct) => name ? `今日は${acct}さん(${name})のお誕生日みたいです！\n${name}、お誕生日おめでとうございます🎉` : `今日は${acct}さんのお誕生日みたいです！\nお誕生日おめでとうございます🎉`,
+	},
+
+	welcome: {
+		welcome: (acct) => `${acct}さん\n**もこきーへようこそ！**\nわたしはもこもこチキン、このサーバーのマスコットみたいな存在です！\nお暇な時に挨拶していただいたり、呼び名を教えていただいたり、占いや迷路などで遊んでくださったりしてくれれば嬉しいです！\nこれからよろしくお願いします！\n\nこのサーバーには独自機能が沢山あるので、気になったらお知らせの中にあるもこきーTipsを読んでみるといいかもです！\nなにか分からないことや嫌なこと、不便なことがあれば、気軽にもこきーあどみんに声をかけてください！\nそれでは楽しいもこきーライフを～ :mk_hi:`
+	},
+
+	yoruho: {
+		yoruho: (date) => `${date.getMonth() + 1}/${date.getDate()} よるほー`,
+		newYear: (year) => `HAPPY NEW YEAR ${year}! あけましておめでとうございます！今年もよろしくお願いいたします！`,
+		aprilFool: (date) => `${date.getMonth() + 1}/${date.getDate()} よるほー 今日はエイプリルフールみたいです！`,
 	},
 
 	/**
@@ -305,15 +315,15 @@ export default {
 		matakondo: ct => `また今度やりましょう！(クールタイム あと${ct}分)`,
 
 		intro: (max, minutes, winRank) => `みなさん、数取りゲームしましょう！\n0~${max}の中で${winRank === 1 ? "最も" : "***" + winRank + "番目に***"}大きい数字を取った人が勝ちです。他の人と被ったらだめですよ～\n制限時間は${minutes < 5 ? `***${minutes}***` : minutes < 10 ? `**${minutes}**` : minutes}分です。数字はこの投稿にリプライで送ってくださいね！`,
-		
+
 		introPublicOnly: (max, minutes, winRank) => `みなさん、数取りゲームしましょう！\n0~${max}の中で${winRank === 1 ? "最も" : "***" + winRank + "番目に***"}大きい数字を取った人が勝ちです。他の人と被ったらだめですよ～\n制限時間は${minutes < 5 ? `***${minutes}***` : minutes < 10 ? `**${minutes}**` : minutes}分です。\n**今回は公開投稿限定で行います！**\nほかの人の数字を見てから数字を決めるといいかもしれませんね！（リモートの方は「リモートで見る」で見てくださいね！）\nそれでは、この投稿に数字を**「公開」または「ホーム」に公開範囲を設定して**リプライで送ってくださいね！`,
 
 		finish: 'ゲームの結果発表です！',
 
 		finishWithWinner: (user, name, item) => name ? `今回は${user}さん(${name})の勝ちです！おめでとう！\n景品として${item}をどうぞ！\nまたやりましょう！` : `今回は${user}さんの勝ちです！おめでとう！\n景品として${item}をどうぞ！\nまたやりましょう！`,
-		
+
 		finishWithWinnerPerfect: (user, name, item) => name ? `今回は${user}さん(${name})のパーフェクト勝ちです！おめでとう！\n景品として${item}をどうぞ！\nまたやりましょう！` : `今回は${user}さんのパーフェクト勝ちです！おめでとう！\n景品として${item}をどうぞ！\nまたやりましょう！`,
-		
+
 		finishWithWinnerReverse: (user, name, item) => name ? `...ありゃ？逆順で集計しちゃいました！\n今回は${user}さん(${name})の勝ちです！おめでとう！\n景品として${item}をどうぞ！\nまたやりましょう！` : `……ありゃ？逆順で集計しちゃいました！\n今回は${user}さんの勝ちです！おめでとう！\n景品として${item}をどうぞ！\nまたやりましょう！`,
 
 		finishWithNoWinner: item => `今回は全員負けです...\n${item}は私がもらっておきますね...\nまたやりましょう！`,
@@ -393,6 +403,7 @@ export default {
 
 	chart: {
 		post: '今日のもこきーの統計のグラフです！\n今日も一日、お疲れ様でした！',
+		nenmatuPost: '今日のもこきーの統計のグラフです！\nみなさん、今年もお疲れ様でした！来年もよろしくお願いします！',
 		foryou: '描きました！'
 	},
 

@@ -33,8 +33,15 @@ export default class extends Module {
 		});
 		setInterval(() => {
 			const hours = new Date().getHours()
-			const rnd = (hours === 12 || (hours > 17 && hours < 24)) ? 0.25 : 0.05;
+			let rnd = (hours === 12 || (hours > 17 && hours < 24)) ? 0.25 : 0.05;
 			if ((hours > 0 && hours < 7) || (hours > 13 && hours < 17)) return;
+			if (new Date().getMonth() === 11 && new Date().getDay() === 31) {
+				if (hours != 20 || new Date().getMinutes() > 30) {
+					return;
+				} else {
+					rnd = 1;
+				}
+			}
 			if (Math.random() < rnd) {
 				this.post();
 			}
@@ -48,7 +55,9 @@ export default class extends Module {
 
 	@autobind
 	private async post() {
-		const duration = 1000 * 60 * 10;
+		const nenmatu = new Date().getMonth() === 11 && new Date().getDay() === 31;
+
+		const duration = nenmatu ? 1000 * 60 * 120 : 1000 * 60 * 10;
 
 		const polls = [ // TODO: Extract serif
 			['珍しそうなもの', 'みなさんは、どれがいちばん珍しいと思いますか？'],
@@ -130,13 +139,22 @@ export default class extends Module {
 			['テーマなし', '特にテーマなしです！適当に答えてください！'],
 		];
 
-		const poll = polls[Math.floor(Math.random() * polls.length)];
+		const poll = nenmatu ? [`${new Date().getFullYear()}年っぽい響きのもの`, `みなさん、${new Date().getFullYear()}年ももうすぐ終わりですね～ みなさんはこの中でいちばん${new Date().getFullYear()}年っぽい響きのものはどれだと思いますか？`] : polls[Math.floor(Math.random() * polls.length)];
 
 		const exist = this.pollresult.findOne({
 			key: poll[0]
 		});
 
-		let choices = [
+		let choices = nenmatu ? [
+			genItem(),
+			genItem(),
+			genItem(),
+			genItem(),
+			genItem(),
+			genItem(),
+			genItem(),
+			genItem(),
+		 ] : [
 			genItem(),
 			genItem(),
 			...(exist?.keyword ? [exist.keyword] : []),
@@ -244,6 +262,7 @@ export default class extends Module {
 		}
 
 		const mostVotedChoices = choices.filter(choice => choice.votes === mostVotedChoice.votes);
+		const nenmatu = new Date().getMonth() === 11 && new Date().getDay() === 31;
 
 		if (mostVotedChoice.votes === 0) {
 			//this.ai.post({ // TODO: Extract serif
@@ -290,14 +309,14 @@ export default class extends Module {
 			}
 			this.ai.post({ // TODO: Extract serif
 				cw: `${title}アンケートの結果発表です！`,
-				text: `結果は${mostVotedChoice.votes}票の「${mostVotedChoice.text}」でした！なるほど～！${isStreak ? '' : mostVotedChoice.votes >= 3 || totalVoted > choices.length ? '覚えておきます！' : ''}`,
+				text: `結果は${mostVotedChoice.votes}票の「${mostVotedChoice.text}」でした！なるほど～！${isStreak ? '' : mostVotedChoice.votes >= 3 || totalVoted > choices.length ? '覚えておきます！' : ''}${nenmatu ? '来年もいい年になりますように！' : ''}`,
 				renoteId: noteId,
 			});
 		} else {
 			const choices = mostVotedChoices.map(choice => `「${choice.text}」`).join('と');
 			this.ai.post({ // TODO: Extract serif
 				cw: `${title}アンケートの結果発表です！`,
-				text: `結果は${mostVotedChoice.votes}票の${choices}でした！なるほど～！`,
+				text: `結果は${mostVotedChoice.votes}票の${choices}でした！なるほど～！${nenmatu ? '来年もいい年になりますように！' : ''}`,
 				renoteId: noteId,
 			});
 		}

@@ -1,6 +1,7 @@
 import autobind from 'autobind-decorator';
 import Module from '@/module';
 import * as loki from 'lokijs';
+import serifs from '@/serifs';
 
 export default class extends Module {
 	public readonly name = 'yoruho';
@@ -48,9 +49,9 @@ export default class extends Module {
 
 	@autobind
 	private schedulePost() {
-		
+
 		this.log("yoruho wait");
-		
+
 		// 以前の誤差を取得
 		const previousErrorData = this.ai.moduleData.findOne({ type: 'yoruhoTime' });
 		let previousError = previousErrorData ? previousErrorData.error : -50;  // データがない場合のデフォルト値
@@ -85,8 +86,15 @@ export default class extends Module {
 	private post() {
 		const dt = new Date();
 		dt.setMinutes(dt.getMinutes() + 60);
+		let text = serifs.yoruho.yoruho(dt);
+		if (dt.getMonth() === 0 && dt.getDate() === 1) {
+			text = serifs.yoruho.newYear(dt.getFullYear());
+		}
+		if (dt.getMonth() === 3 && dt.getDate() === 1) {
+			text = serifs.yoruho.aprilFool(dt);
+		}
 		const res = this.ai.post({
-			text: (dt.getMonth() + 1) + '/' + dt.getDate() + ' よるほー',
+			text,
 			localOnly: true,
 		});
 		this.log("yoruho : " + new Date().toLocaleString('ja-JP') + "." + new Date().getMilliseconds());
@@ -106,7 +114,7 @@ export default class extends Module {
 				newErrorInMilliseconds = targetTime.getTime() - postTime;
 
 				this.log("error ms : " + (newErrorInMilliseconds * -1));
-				
+
 				if (newErrorInMilliseconds > 1000) newErrorInMilliseconds = 0;
 				if (newErrorInMilliseconds < -1000) newErrorInMilliseconds = 0;
 

@@ -59,7 +59,7 @@ export default class extends Module {
 		const games = this.games.find({});
 
 		const recentGame = games.length == 0 ? null : games[games.length - 1];
-		
+
 		const penultimateGame = recentGame && games.length > 1 ? games[games.length - 2] : null;
 
 		let publicOnly = false;
@@ -93,6 +93,12 @@ export default class extends Module {
 
 		// 1000回以上ループ処理したらおかしくなるかもなので
 		if (maxnum > 1000) maxnum = 1000;
+
+		const now = new Date();
+
+		// 今日が1/1の場合 最大値は新年の年数
+		// TODO : 最大値が1000を超える為壊れないか要確認
+		if (now.getMonth() === 0 && now.getDate() === 1) maxnum = now.getFullYear();
 
 		// 自然発生かつ5%の確率でフォロワー限定になる
 		// 狙い：リプライがすべてフォロ限になる為、フォロワーでない人の投票が不可視になる
@@ -383,15 +389,15 @@ export default class extends Module {
 				reverseResults.push(`❌ ${i}: ${users.map(u => acct(u)).join(' ')}`);
 			}
 		}
-		
+
 		const winDiff = (winner?.winCount ?? 0) - (reverseWinner?.winCount ?? 0);
-		
+
 		if (!reverse && winner && winDiff > 10 && Math.random() < Math.min((winDiff - 10) * 0.02,0.8) ) {
 			reverse = !reverse;
 		} else if (reverse && reverseWinner && winDiff < -10 && Math.random() < Math.min((winDiff + 10) * -0.02,0.8)) {
 			reverse = !reverse;
 		}
-		
+
 		let perfect = false;
 
 		//そのままでも反転しても結果が同じの場合は反転しない

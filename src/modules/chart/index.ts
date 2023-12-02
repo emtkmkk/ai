@@ -36,8 +36,9 @@ export default class extends Module {
 		const fileUsers = await this.genChart('users');
 
 		this.log('Posting...');
+		const nenmatu = new Date().getMonth() === 11 && new Date().getDay() === 31;
 		this.ai.post({
-			text: serifs.chart.post,
+			text: nenmatu ? serifs.chart.nenmatuPost : serifs.chart.post,
 			fileIds: [fileNotes.id, fileUsers.id]
 		});
 	}
@@ -109,7 +110,7 @@ export default class extends Module {
 				span: 'day',
 				limit: 30,
 			});
-			
+
 			const data = {...dataA,...dataU};
 
 			chart = {
@@ -175,7 +176,7 @@ export default class extends Module {
 		let type = 'random';
 		if (msg.includes(['フォロワー'])) type = 'followers';
 		if (msg.includes(['投稿'])) type = 'userNotes';
-		
+
 		const title = type === 'random' ? /チャート\s?(\S{1,25})/.exec(msg.extractedText)?.[1] : undefined;
 
 		const file = await this.genChart(type, {

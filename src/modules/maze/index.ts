@@ -27,11 +27,14 @@ export default class extends Module {
 		if (data.lastPosted == date) return;
 		data.lastPosted = date;
 		this.setData(data);
-		
+
 		let mazeSize;
 		mazeSize = 2 + Math.floor(Math.random() * 48);
 		if (Math.random() < 0.25) mazeSize *= 2;
 		if (Math.random() < 0.25) mazeSize *= 2;
+
+		if (now.getMonth() === 11 && now.getDay() === 31) mazeSize = now.getFullYear() - 2000;
+		if (now.getMonth() === 3 && now.getDay() === 1) mazeSize = 500;
 
 		this.log('Time to maze');
 		const file = await this.genMazeFile(date,mazeSize);

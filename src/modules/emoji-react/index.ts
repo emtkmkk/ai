@@ -30,38 +30,38 @@ export default class extends Module {
 		if (note.text == null) return;
 		// (自分または他人問わず)メンションっぽかったらスルー
 		if (note.text.includes('@')) return;
-		
+
 		// 公開範囲フォロワーでcw付きは深刻な物が多い為開かない
 		if (note.visibility === 'followers' && note.cw != null) return;
-		
+
 		// そうじゃない場合、もこチキくんは50%の確率でCWを開いてくれる
 		// ただし空白CWは開かない
 		if (note.cw != null && (!note.cw.trim() || Math.random() < 0.5)) return;
 
 		const react = async (reaction: string, immediate = false) => {
 			if (!immediate) {
-				// 絵文字をつけるまでの時間は2.5 ~ 5.5秒でゆらぎをつける
-				let waitTime = 2500;
-				
+				// 絵文字をつけるまでの時間は3.5 ~ 6.5秒でゆらぎをつける
+				let waitTime = 3500;
+
 				// 対象ユーザの好感度1につき、-0.01 ~ -0.02秒
 				// 最大 100 (★7) で -1 ~ -2秒
 				const friend = this.ai.lookupFriend(note.user.id);
 				if (friend) {
 					waitTime -= Math.round(Math.min(friend.love,100) * 10);
 				}
-				
-				// CWがあるなら、開く時間を考慮して +1 ~ +2秒
+
+				// CWがあるなら、開く時間を考慮して +2 ~ +4秒
 				if (note.cw) {
-					waitTime += 1000;
+					waitTime += 2000;
 				}
-				
+
 				// 30文字を超えている場合は、長ければ長いほど遅らせる
 				// 1文字につき、+0.03~0.06秒
 				// 最大増加時間は 98文字の +2.04 ~ +4.08秒
 				if ((note.text?.length || 0) > 30) {
 					waitTime += Math.min((note.text?.length || 0) - 30, 68) * 30
 				}
-				
+
 				await delay(waitTime + Math.round(Math.random() * (waitTime + 500)));
 			}
 			this.ai.api('notes/reactions/create', {
@@ -99,9 +99,16 @@ export default class extends Module {
 		}*/
 
 		// キーワード反応
+		// 新年
+		const now = new Date();
+		if (now.getMonth() === 0 && now.getDate() === 1) {
+			if (includes(note.text, ['あけ', 'おめ', 'あけまして', 'おめでとう'])) return react(':supertada:');
+		}
+
 		// 長い文章には反応しないことがあるようにする
 		// 30-50文字 : スルー率5% / 51文字以降は1文字度にスルー率+2%
-		if (Math.random() < (note.text?.length < 30 ? 0 : note.text?.length < 50 ? 0.05 : 0.05 + (note.text?.length-50) / 50)) return
+		if (Math.random() < (note.text?.length < 30 ? 0 : note.text?.length < 50 ? 0.05 : 0.05 + (note.text?.length - 50) / 50)) return
+
 		if (includes(note.text, ['ぴざ', 'pizza'])) return react(':itspizzatime:');
 		if (includes(note.text, ['かんぴろばくたー', 'campylobacter'])) return react(':campylobacter_mottenaidesu:');
 		if (includes(note.text, ['taikin', '退勤', 'たいきん', 'しごおわ'])) return react(':otukaresama:');
@@ -110,7 +117,7 @@ export default class extends Module {
 		if (includes(note.text, ['伸び','のび'])) return react(':mk_ultrawidechicken:');
 		if (includes(note.text, ['嘘']) && note.text?.length <= 30) return react(':sonnano_uso:');
 		if (includes(note.text, ['めつ', '滅', 'metu']) && !includes(note.text, ['滅茶', '滅多'])) return react(':metu:');
-		if (includes(note.text, ['つら', '辛', 'しんど', '帰りたい', 'かえりたい', 'sad'])) return react(':petthex:');
+		if (includes(note.text, ['つら', 'しんど', '帰りたい', 'かえりたい', 'sad'])) return react(':petthex:');
 		if (includes(note.text, ['むいみ', '無意味', 'muimi']) && includes(note.text, ['もの', 'mono', '物'])) return react(':osiina:');
 		if (includes(note.text, ['もこもこ'])) return react(':mokomoko:');
 		// もこだけ条件がゆるく反応しやすいので反応率を2/3に
