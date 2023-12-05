@@ -1,6 +1,7 @@
 import autobind from 'autobind-decorator';
 import * as loki from 'lokijs';
 import Module from '@/module';
+import Message from '@/message';
 import config from '@/config';
 import serifs from '@/serifs';
 import { mecab } from './mecab';
