@@ -45,10 +45,12 @@ export default class extends Module {
 		} else {
 			this.log('checkLearnedKeywords...');
 
-			const keywords = learnedKeywords.find();
+			const keywords = this.learnedKeywords.find();
 
-			keywords.foreach((x) => {
+			keywords.foreach(async (x) => {
 					const tokens = await mecab(x.keyword, config.mecab, config.mecabDic);
+				  if (tokens?.length === 1){
+						const token = tokens[0];
 					if (
 						token[2] !== '固有名詞' ||
 						token[3] === '人名' ||
@@ -59,6 +61,7 @@ export default class extends Module {
 					) {
 						this.log(`delete ${token[0]}(${token[8]})...`);
 						learnedKeywords.remove(x);
+					}
 					}
 			});
 
