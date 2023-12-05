@@ -60,7 +60,7 @@ export default class extends Module {
 						!checkNgWord(token[8])
 					) {
 						this.log(`delete ${token[0]}(${token[8]})...`);
-						learnedKeywords.remove(x);
+						this.learnedKeywords.remove(x);
 					}
 					}
 			});
