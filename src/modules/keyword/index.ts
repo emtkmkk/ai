@@ -4,6 +4,7 @@ import Module from '@/module';
 import config from '@/config';
 import serifs from '@/serifs';
 import { mecab } from './mecab';
+import { checkNgWord } from '@/utils/check-ng-word';
 
 function kanaToHira(str: string) {
 	return str.replace(/[\u30a1-\u30f6]/g, match => {
