@@ -47,7 +47,7 @@ export default class extends Module {
 
 			const keywords = this.learnedKeywords.find();
 
-			keywords.foreach(async (x) => {
+			keywords.forEach(async (x) => {
 					const tokens = await mecab(x.keyword, config.mecab, config.mecabDic);
 				  if (tokens?.length === 1){
 						const token = tokens[0];
