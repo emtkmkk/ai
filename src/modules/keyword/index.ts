@@ -33,7 +33,39 @@ export default class extends Module {
 
 		setInterval(this.learn, 1000 * 60 * 20);
 
-		return {};
+		return {
+			mentionHook: this.mentionHook,
+		};
+	}
+
+		@autobind
+	private async mentionHook(msg: Message) {
+		if (!msg.or(['/check']) || msg.user.username !== config.master) {
+				return false;
+		} else {
+			this.log('checkLearnedKeywords...');
+
+			const keywords = learnedKeywords.find();
+
+			keywords.foreach((x) => {
+					const tokens = await mecab(x.keyword, config.mecab, config.mecabDic);
+					if (
+						token[2] !== '固有名詞' ||
+						token[3] === '人名' ||
+						token[8] === null ||
+						kanaToHira(token[0]) === kanaToHira(token[8]) ||
+						!checkNgWord(token[0]) ||
+						!checkNgWord(token[8])
+					) {
+						this.log(`delete ${token[0]}(${token[8]})...`);
+						learnedKeywords.remove(x);
+					}
+			});
+
+			this.log('finish!');
+
+			return { reaction: 'love' };
+		}
 	}
 
 	@autobind
