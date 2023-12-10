@@ -45,8 +45,10 @@ export default class extends Module {
 			// リモートユーザなら、親愛度が5以上（☆4）必要
 			if (!friend.doc?.user?.host && friend.love < 5) return;
 
-			// 最後の好感度増加から31日以上経過している場合は対象外
-			if (friend.doc?.lastLoveIncrementedAt && Date.now() > new Date(friend.doc.lastLoveIncrementedAt)?.valueOf() + (1000 * 60 * 60 * 24 * 31)) return;
+			// 好感度★6以下で最後の好感度増加から31日以上経過している場合は対象外
+			if (friend.love < 100 && friend.doc?.lastLoveIncrementedAt && Date.now() > new Date(friend.doc.lastLoveIncrementedAt)?.valueOf() + (1000 * 60 * 60 * 24 * 31)) return;
+			// 好感度★7以上で最後の好感度増加から364日以上経過している場合は対象外
+			if (friend.love >= 100 && friend.doc?.lastLoveIncrementedAt && Date.now() > new Date(friend.doc.lastLoveIncrementedAt)?.valueOf() + (1000 * 60 * 60 * 24 * 364)) return;
 
 			const data = friend.getPerModulesData(this);
 
