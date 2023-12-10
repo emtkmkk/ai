@@ -46,7 +46,7 @@ export default class extends Module {
 			if (!friend.doc?.user?.host && friend.love < 5) return;
 
 			// 最後の好感度増加から31日以上経過している場合は対象外
-			if (Date.now() > new Date(friend.doc?.lastLoveIncrementedAt).valueOf() + (1000 * 60 * 60 * 24 * 31)) return;
+			if (friend.doc?.lastLoveIncrementedAt && Date.now() > new Date(friend.doc.lastLoveIncrementedAt)?.valueOf() + (1000 * 60 * 60 * 24 * 31)) return;
 
 			const data = friend.getPerModulesData(this);
 
