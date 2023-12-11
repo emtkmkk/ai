@@ -116,7 +116,7 @@ export default class extends Module {
 				learnedAt: Date.now()
 			});
 
-			text = serifs.keyword.learned(keyword[0], kanaToHira(keyword[8]));
+			text = serifs.keyword.learned(keyword[0]?.replaceAll(/\s/g,""), kanaToHira(keyword[8]));
 		}
 
 		this.ai.post({
