@@ -80,7 +80,7 @@ export default {
 			normal: name => name ? `いってらっしゃい、${name}！` : 'いってらっしゃい！',
 		},
 
-		tooLong: (length, max) => `長すぎるかも... (${max}文字まで ${max-length*-1}文字オーバー)`,
+		tooLong: (length, max) => `長すぎるかも... (${max}文字まで ${(max-length)*-1}文字オーバー)`,
 
 		invalidName: '発音が難しいかも (特殊文字は覚えられません)',
 
