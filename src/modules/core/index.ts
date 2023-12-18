@@ -123,6 +123,22 @@ export default class extends Module {
 	}
 
 	@autobind
+	private convertUnixtime(msg: Message): boolean {
+		if (!msg.text) return false;
+		if (!msg.text.includes('のunixtimeは')) return false;
+
+		const time = msg.extractedText.match(/^(.+?)のunixtimeは/)![1].trim();
+
+		if (!isNaN(Date.parse(time))) {
+			msg.reply(serifs.core.unixtime(`${time.toString()} / ${time.toISOString()}`, time.valueOf() / 1000));
+		} else {
+			msg.reply(serifs.core.invalidDate);
+		}
+
+		return true;
+	}
+
+	@autobind
 	private getLove(msg: Message): boolean {
 		if (!msg.text) return false;
 		if (!msg.text.includes('好感度') && !msg.text.includes('懐き度')) return false;
