@@ -243,7 +243,7 @@ export default class extends Module {
 		}
 
 		// 数字が含まれていない
-		const match = msg.extractedText.replace(/[０-９]/g, m=>'０１２３４５６７８９'.indexOf(m)).match(/[0-9]+/);
+		const match = msg.extractedText.replace(/[０-９]/g, m=>'０１２３４５６７８９'.indexOf(m).toString()).match(/[0-9]+/);
 		if (match == null) {
 			msg.reply('リプライの中に数字が見つかりませんでした！').then(reply => {
 				game.replyKey.push(msg.userId);
