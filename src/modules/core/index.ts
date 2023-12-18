@@ -31,6 +31,7 @@ export default class extends Module {
 			this.getStatus(msg) ||
 			(await this.getEmojiData(msg)) ||
 			this.getInventory(msg) ||
+			this.convertUnixtime(msg) ||
 			this.modules(msg) ||
 			this.version(msg)
 		) ? { reaction: "love" } : false;
