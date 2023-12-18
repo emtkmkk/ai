@@ -26,6 +26,7 @@ type Game = {
 	maxnum: number;
 	triggerUserId: string | undefined;
 	publicOnly: boolean;
+	replyKey: string[];
 };
 
 export default class extends Module {
@@ -91,6 +92,13 @@ export default class extends Module {
 		// 2%かつ開催2回目以降かつ前回がMax1ではない場合 Max1
 		else if (Math.random() < 0.02 && recentGame?.maxnum && recentGame.maxnum !== 1) maxnum = 1;
 
+		// 前回が2番目勝利モードでないかつ20%で2番目勝利モードになる
+		// 狙い：新しいゲーム性の探求
+		const winRank = (recentGame?.winRank ?? 1) === 1 && Math.random() < 0.2 ? 2 : 1;
+		
+		// 1番目勝利モードでないかつ66%で最大数値がx倍 (x = x番目勝利モード)
+		if (winRank !== 1 && Math.random() < 0.66) maxnum = maxnum * winRank;
+
 		// 1000回以上ループ処理したらおかしくなるかもなので
 		if (maxnum > 1000) maxnum = 1000;
 
@@ -100,23 +108,19 @@ export default class extends Module {
 		// TODO : 最大値が1000を超える為壊れないか要確認
 		if (now.getMonth() === 0 && now.getDate() === 1) maxnum = now.getFullYear();
 
-		// 自然発生かつ5%の確率でフォロワー限定になる
+		// 自然発生かつ3%の確率でフォロワー限定になる
 		// 狙い：リプライがすべてフォロ限になる為、フォロワーでない人の投票が不可視になる
-		let visibility = Math.random() < 0.05 && !triggerUserId ? 'followers' : undefined;
+		let visibility = Math.random() < 0.03 && !triggerUserId ? 'followers' : undefined;
 
 		if (!visibility) {
-			// 投稿がフォロワー限定でない場合は、5%の確率で公開投稿のみ受付けるモードにする
-			publicOnly = !recentGame?.publicOnly && (recentGame?.publicOnly == null || Math.random() < 0.05);
+			// 投稿がフォロワー限定でない場合は、3%の確率で公開投稿のみ受付けるモードにする
+			publicOnly = !recentGame?.publicOnly && (recentGame?.publicOnly == null || Math.random() < 0.03);
 		}
 
 		// 10% → 自然発生かつ50%で1分 そうでない場合2分
 		// 90% → 5分 or 10分
 		// 狙い：時間がないと他の人の数字を確認しづらいのでランダム性が高まる
 		const limitMinutes = Math.random() < 0.1 ? Math.random() < 0.5 && !triggerUserId ? 1 : 2 : Math.random() < 0.5 ? 5 : 10;
-
-		// 前回が2番目勝利モードでないかつ25%で2番目勝利モードになる
-		// 狙い：新しいゲーム性の探求
-		const winRank = (recentGame?.winRank ?? 1) === 1 && Math.random() < 0.25 ? 2 : 1;
 
 		const post = await this.ai.post({
 			text: !publicOnly ? serifs.kazutori.intro(maxnum, limitMinutes, winRank) : serifs.kazutori.introPublicOnly(maxnum, limitMinutes, winRank),
@@ -204,7 +208,11 @@ export default class extends Module {
 		// 数取りトリガー者で、開始から1分以内の場合
 		const time = Date.now() - game.startedAt
 		if (game.triggerUserId === msg.user.id && time < 60 * 1000 && msg.visibility !== 'specified') {
-			msg.reply(`\n${60 - Math.floor(time / 1000)}秒後にもう一度送ってください！`, { visibility: 'specified' });
+			msg.reply(`\n${60 - Math.floor(time / 1000)}秒後にもう一度送ってください！`, { visibility: 'specified' }).then(reply => {
+				game.replyKey.push(msg.userId);
+				this.games.update(game);
+				this.subscribeReply(msg.userId, reply.id);
+			});
 			return { reaction: '❌' };
 		}
 
@@ -215,7 +223,11 @@ export default class extends Module {
 					msg.visibility == 'specified' ? "ダイレクト" :
 						msg.user.host == null ? "もこきー＆フォロワー" : "";
 
-			msg.reply(`\n公開投稿限定です！\n参加するには${visibility ? "「" + visibility + "」ではなく、" : ""}「公開」または「ホーム」の公開範囲にてリプライしてくださいね～`);
+			msg.reply(`\n公開投稿限定です！\n参加するには${visibility ? "「" + visibility + "」ではなく、" : ""}「公開」または「ホーム」の公開範囲にてリプライしてくださいね～`).then(reply => {
+				game.replyKey.push(msg.userId);
+				this.games.update(game);
+				this.subscribeReply(msg.userId, reply.id);
+			});
 			return {
 				reaction: 'confused'
 			};
@@ -230,9 +242,13 @@ export default class extends Module {
 		}
 
 		// 数字が含まれていない
-		const match = msg.extractedText.match(/[0-9]+/);
+		const match = msg.extractedText.replace(/[０-９]/g, m=>'０１２３４５６７８９'.indexOf(m)).match(/[0-9]+/);
 		if (match == null) {
-			msg.reply('リプライの中に半角の数字が見つかりませんでした！');
+			msg.reply('リプライの中に数字が見つかりませんでした！').then(reply => {
+				game.replyKey.push(msg.userId);
+				this.games.update(game);
+				this.subscribeReply(msg.userId, reply.id);
+			});
 			return {
 				reaction: 'hmm'
 			};
@@ -242,7 +258,11 @@ export default class extends Module {
 
 		// 整数じゃない
 		if (!Number.isInteger(num)) {
-			msg.reply('リプライの中に半角の数字が見つかりませんでした！');
+			msg.reply('リプライの中に数字が見つかりませんでした！').then(reply => {
+				game.replyKey.push(msg.userId);
+				this.games.update(game);
+				this.subscribeReply(msg.userId, reply.id);
+			});
 			return {
 				reaction: 'hmm'
 			};
@@ -250,7 +270,11 @@ export default class extends Module {
 
 		// 範囲外
 		if (num < 0 || num > game.maxnum) {
-			msg.reply(`\n「${num}」は今回のゲームでは範囲外です！\n0~${game.maxnum}の範囲で指定してくださいね！`);
+			msg.reply(`\n「${num}」は今回のゲームでは範囲外です！\n0~${game.maxnum}の範囲で指定してくださいね！`).then(reply => {
+				game.replyKey.push(msg.userId);
+				this.games.update(game);
+				this.subscribeReply(msg.userId, reply.id);
+			});
 			return {
 				reaction: 'confused'
 			};
@@ -392,9 +416,9 @@ export default class extends Module {
 
 		const winDiff = (winner?.winCount ?? 0) - (reverseWinner?.winCount ?? 0);
 
-		if (!reverse && winner && winDiff > 10 && Math.random() < Math.min((winDiff - 10) * 0.02,0.8) ) {
+		if (!reverse && winner && winDiff > 10 && Math.random() < Math.min((winDiff - 10) * 0.02, 0.7)) {
 			reverse = !reverse;
-		} else if (reverse && reverseWinner && winDiff < -10 && Math.random() < Math.min((winDiff + 10) * -0.02,0.8)) {
+		} else if (reverse && reverseWinner && winDiff < -10 && Math.random() < Math.min((winDiff + 10) * -0.02, 0.7)) {
 			reverse = !reverse;
 		}
 
@@ -435,7 +459,7 @@ export default class extends Module {
 
 
 		const text = results.join('\n') + '\n\n' + (winner
-			? perfect ? serifs.kazutori.finishWithWinnerPerfect(acct(winner), name, item) : reverse ? serifs.kazutori.finishWithWinnerReverse(acct(winner), name, item) : serifs.kazutori.finishWithWinner(acct(winner), name, item)
+			? serifs.kazutori.finishWithWinner(acct(winner), name, item, reverse, perfect, winnerFriend.doc.kazutoriData.winCount)
 			: serifs.kazutori.finishWithNoWinner(item));
 
 		this.ai.post({
@@ -445,5 +469,6 @@ export default class extends Module {
 		});
 
 		this.unsubscribeReply(null);
+		game.replyKey.forEach((x) => this.unsubscribeReply(x));
 	}
 }
