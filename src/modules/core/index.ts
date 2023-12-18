@@ -175,7 +175,9 @@ export default class extends Module {
 		if (!msg.friend.doc.kazutoriData?.inventory?.length) return false;
 		if (!(msg.includes(['貰った', 'もらった', 'くれた']) && msg.includes(['もの', '物']))) return false;
 
-		msg.reply(serifs.core.getInventory(msg.friend.name || 'あなた', msg.friend.doc.kazutoriData?.inventory.toReversed().join('\n')) + (
+		const inventory = [...msg.friend.doc.kazutoriData?.inventory].reverse();
+		
+		msg.reply(serifs.core.getInventory(msg.friend.name || 'あなた', inventory.join('\n')) + (
 			msg.friend.doc.kazutoriData?.inventory?.length === 50
 				? `\n\n沢山プレゼントがありますね！\n次に物を入手すると最も古い物が消えてしまうので注意してください！（次は「**${msg.friend.doc.kazutoriData?.inventory[0]}**」が消滅します。）`
 				: msg.friend.doc.kazutoriData?.inventory?.length >= 35
