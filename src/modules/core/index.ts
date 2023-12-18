@@ -132,7 +132,7 @@ export default class extends Module {
 
 		if (!isNaN(Date.parse(timeStr))) {
 			const time = new Date(timeStr);
-			msg.reply(serifs.core.unixtime(`${time.toString()} / ${time.toISOString()}`, time.valueOf() / 1000));
+			msg.reply(serifs.core.unixtime(`${time.toString()}`,`${time.toISOString()}`, time.valueOf() / 1000));
 		} else {
 			msg.reply(serifs.core.invalidDate);
 		}

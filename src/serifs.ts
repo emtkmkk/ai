@@ -86,7 +86,7 @@ export default {
 
 		ngName: 'その名前は覚えたくないです...',
 
-		unixtime: (dateStr, unixtimeStr) => `\n\`${dateStr}\`のunixtimeは、\n\n\`${unixtimeStr}\` です！\n\n$[unixtime ${unixtimeStr}]\n\`$[unixtime ${unixtimeStr}]\``,
+		unixtime: (dateStr, isoStr, unixtimeStr) => `\n\`${dateStr}\` / \`${isoStr}\`のunixtimeは、\n\n\`${unixtimeStr}\` です！\n\n\n\`$[unixtime ${unixtimeStr}]\`\n\n$[unixtime ${unixtimeStr}]`,
 
 		invalidDate: '日付が認識できませんでした...',
 
