@@ -54,11 +54,11 @@ export default class extends Module {
 
 	@autobind
 	private transferEnd(msg: Message): boolean {
-		if (!msg.text) return false;
-		if (!msg.text.startsWith('「') || !msg.text.endsWith('」')) return false;
+		if (!msg.extractedText) return false;
+		if (!msg.extractedText.startsWith('「') || !msg.extractedText.endsWith('」')) return false;
 		
 
-		const code = msg.text.substring(1, msg.text.length - 1);
+		const code = msg.extractedText.substring(1, msg.text.length - 1);
 		
 		console.log("move account code : " + msg.user.id + " : " + code);
 
@@ -78,15 +78,21 @@ export default class extends Module {
 	@autobind
 	private setName(msg: Message): boolean {
 		if (!msg.text) return false;
-		if (!msg.text.includes('って呼んで')) return false;
+		if (!msg.text.includes('って呼んで') && !(msg.includes(['あだ名', '名前', '呼び名']) && msg.includes(['忘れて','忘れろ']))) return false;
 		if (msg.text.startsWith('って呼んで')) return false;
+
+		if ((msg.includes(['あだ名', '名前', '呼び名']) && msg.includes(['忘れて','忘れろ']))) {
+			msg.friend.updateName(null);
+			msg.reply(serifs.core.setNameNull(name));
+			return true;
+		}
 
 		const name = msg.extractedText.match(/^(.+?)って呼んで/)![1].trim();
 
 		// 好感度が100（★7）を超えている場合、20文字までOK
 
 		if ((msg.friend.love < 100 && name.length > 10) || (msg.friend.love >= 100 && name.length > 20)) {
-			msg.reply(serifs.core.tooLong);
+			msg.reply(serifs.core.tooLong(name.length,msg.friend.love >= 100 ? 20 : 10));
 			return true;
 		}
 
@@ -158,7 +164,7 @@ export default class extends Module {
 
 		const kazutori = msg.friend.doc.kazutoriData?.playCount ? msg.friend.doc.kazutoriData?.winCount + ' / ' + msg.friend.doc.kazutoriData?.playCount : undefined;
 
-		msg.reply(serifs.core.getStatus(msg.friend.name || 'あなた', love, kazutori))
+		msg.reply(serifs.core.getStatus(msg.friend.name, love, kazutori))
 
 		return true;
 	}
@@ -167,9 +173,15 @@ export default class extends Module {
 	private getInventory(msg: Message): boolean {
 		if (!msg.text) return false;
 		if (!msg.friend.doc.kazutoriData?.inventory?.length) return false;
-		if (!(msg.includes(['貰った物', 'もらった', 'くれた']) && msg.includes(['もの', '物']))) return false;
+		if (!(msg.includes(['貰った', 'もらった', 'くれた']) && msg.includes(['もの', '物']))) return false;
 
-		msg.reply(serifs.core.getInventory(msg.friend.name || 'あなた', msg.friend.doc.kazutoriData?.inventory.reverse().join('\n')) + (msg.friend.doc.kazutoriData?.inventory?.length >= 35 ? `\n\n沢山プレゼントがありますね！\n**50**個を超えると古い物から消えてしまうので注意してください！（現在**${msg.friend.doc.kazutoriData?.inventory?.length}**個）` : ""))
+		msg.reply(serifs.core.getInventory(msg.friend.name || 'あなた', msg.friend.doc.kazutoriData?.inventory.reverse().join('\n')) + (
+			msg.friend.doc.kazutoriData?.inventory?.length === 50
+				? `\n\n沢山プレゼントがありますね！\n次に物を入手すると最も古い物が消えてしまうので注意してください！（次は「**${msg.friend.doc.kazutoriData?.inventory[0]}**」が消滅します。）`
+				: msg.friend.doc.kazutoriData?.inventory?.length >= 35
+					? `\n\n沢山プレゼントがありますね！\n**50**個を超えると古い物から消えてしまうので注意してください！（現在**${msg.friend.doc.kazutoriData?.inventory?.length}**個）` 
+					: ""
+		))
 
 		return true;
 	}

@@ -4,6 +4,8 @@ export default {
 	core: {
 		setNameOk: name => `わかりました。これからはあなたのことを「${name}」と呼びます！`,
 
+		setNameNull: `わかりました。あなたの呼び方を忘れます！`,
+
 		san: 'さん付けした方がいいですか？',
 
 		yesOrNo: '「はい」か「いいえ」しかわからないです...',
