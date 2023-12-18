@@ -137,7 +137,7 @@ export default class extends Module {
 			maxnum: maxnum,
 			triggerUserId,
 			publicOnly,
-			replyKey: [],
+			replyKey: triggerUserId ? [triggerUserId] : [],
 		});
 
 		this.subscribeReply(null, post.id);
@@ -184,7 +184,9 @@ export default class extends Module {
 		}
 
 		//TODO : このへんのセリフをserifに移行する
-		msg.reply("\n分かりました！数取りを開催します！\nあなたは開催1分後から数取りへの投票を行うことができます！\n（ダイレクトなら今すぐでも大丈夫です！）", { visibility: 'specified' });
+		msg.reply("\n分かりました！数取りを開催します！\nあなたは開催1分後から数取りへの投票を行うことができます！\n（ダイレクトなら今すぐでも大丈夫です！）", { visibility: 'specified' }).then(reply => {
+			this.subscribeReply(msg.userId, reply.id);
+		});
 
 		this.start(msg.user.id);
 
