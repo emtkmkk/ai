@@ -80,9 +80,9 @@ export default {
 			normal: name => name ? `いってらっしゃい、${name}！` : 'いってらっしゃい！',
 		},
 
-		tooLong: '長すぎるかも...',
+		tooLong: (length, max) => `長すぎるかも... (${max}文字まで ${max-length}文字オーバー)`,
 
-		invalidName: '発音が難しいかも',
+		invalidName: '発音が難しいかも (特殊文字は覚えられません)',
 
 		ngName: 'その名前は覚えたくないです...',
 
@@ -351,11 +351,11 @@ export default {
 	 * タイマー
 	 */
 	timer: {
-		set: 'わかりました！',
+		set: time => `わかりました！時間になり次第お知らせします！\n\n$[unixtime.countdown ${time}]`,
 
 		invalid: 'うーん...？ よくわからないです...',
 
-		tooLong: '長すぎます……',
+		tooLong: '長すぎます…… (タイマーの長さは30日まで)',
 
 		notify: (time, name) => name ? `${name}、${time}経ちましたよ！` : `${time}経ちましたよ！`
 	},
