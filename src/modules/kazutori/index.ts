@@ -137,6 +137,7 @@ export default class extends Module {
 			maxnum: maxnum,
 			triggerUserId,
 			publicOnly,
+			replyKey: [],
 		});
 
 		this.subscribeReply(null, post.id);
@@ -459,7 +460,7 @@ export default class extends Module {
 
 
 		const text = results.join('\n') + '\n\n' + (winner
-			? serifs.kazutori.finishWithWinner(acct(winner), name, item, reverse, perfect, winnerFriend.doc.kazutoriData.winCount)
+			? serifs.kazutori.finishWithWinner(acct(winner), name, item, reverse, perfect, winnerFriend?.doc?.kazutoriData?.winCount ?? 0)
 			: serifs.kazutori.finishWithNoWinner(item));
 
 		this.ai.post({

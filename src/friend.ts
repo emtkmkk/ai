@@ -197,7 +197,7 @@ export default class Friend {
 	}
 
 	@autobind
-	public updateName(name: string) {
+	public updateName(name: string | null) {
 		this.doc.name = name;
 		this.save();
 	}

@@ -83,7 +83,7 @@ export default class extends Module {
 
 		if ((msg.includes(['あだ名', '名前', '呼び名']) && msg.includes(['忘れて','忘れろ']))) {
 			msg.friend.updateName(null);
-			msg.reply(serifs.core.setNameNull(name));
+			msg.reply(serifs.core.setNameNull);
 			return true;
 		}
 
