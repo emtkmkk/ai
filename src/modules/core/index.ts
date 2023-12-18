@@ -130,7 +130,7 @@ export default class extends Module {
 		const timeStr = msg.extractedText.match(/^(.+?)のunixtimeは/)![1].trim();
 
 		if (!isNaN(Date.parse(timeStr))) {
-			const time = Date.parse(timeStr);
+			const time = new Date(timeStr);
 			msg.reply(serifs.core.unixtime(`${time.toString()} / ${time.toISOString()}`, time.valueOf() / 1000));
 		} else {
 			msg.reply(serifs.core.invalidDate);
