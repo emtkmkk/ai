@@ -127,9 +127,10 @@ export default class extends Module {
 		if (!msg.text) return false;
 		if (!msg.text.includes('のunixtimeは')) return false;
 
-		const time = msg.extractedText.match(/^(.+?)のunixtimeは/)![1].trim();
+		const timeStr = msg.extractedText.match(/^(.+?)のunixtimeは/)![1].trim();
 
 		if (!isNaN(Date.parse(time))) {
+			const time = Date.parse(time);
 			msg.reply(serifs.core.unixtime(`${time.toString()} / ${time.toISOString()}`, time.valueOf() / 1000));
 		} else {
 			msg.reply(serifs.core.invalidDate);
