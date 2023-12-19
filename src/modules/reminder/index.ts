@@ -93,7 +93,7 @@ export default class extends Module {
 		});
 
 		return {
-			reaction: ':mk_jumpchicken:',
+			reaction: ':mk_muscleok:',
 			immediate: true,
 		};
 	}
