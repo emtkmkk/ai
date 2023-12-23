@@ -102,7 +102,7 @@ export default class extends Module {
 		// 新年
 		const now = new Date();
 		if (now.getMonth() === 0 && now.getDate() === 1) {
-			if (includes(note.text, ['あけ', 'おめ', 'あけまして', 'おめでとう'])) return react(':supertada:');
+			if (includes(note.text, ['あけ', 'おめ', 'あけまして', 'おめでとう', 'happynewyear'])) return react(':supertada:');
 		}
 
 		// 長い文章には反応しないことがあるようにする
