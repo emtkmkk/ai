@@ -18,11 +18,12 @@ export default class extends Module {
 
 	@autobind
 	private onLocalNote(note: any) {
-		if (!note.user?.isBot && note.isFirstNote) {
+		if (!note.user?.isBot && !note.user.host) {
 			const friend = new Friend(this.ai, { user: note.user });
-			if (!friend?.doc?.isWelcomeMessageSent){
+			if (!friend?.doc?.isWelcomeMessageSent && friend.doc.user.notesCount != null && friend.doc.user.notesCount < 50 ){
 				friend.doc.isWelcomeMessageSent = true;
 				friend.save();
+				if (note.isFirstNote) {
 				setTimeout(() => {
 					this.ai.api('notes/create', {
 						renoteId: note.id,
@@ -50,6 +51,8 @@ export default class extends Module {
 						reaction: ':supertada:'
 					});
 				}, 6500);
+
+				}
 
 				setTimeout(() => {
 					this.ai.api('notes/create', {
