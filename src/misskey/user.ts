@@ -5,4 +5,5 @@ export type User = {
 	host?: string | null;
 	isFollowing?: boolean;
 	isBot: boolean;
+	notesCount?: number;
 };
