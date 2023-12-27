@@ -20,7 +20,7 @@ export default class extends Module {
 	private onLocalNote(note: any) {
 		if (!note.user?.isBot && !note.user.host) {
 			const friend = new Friend(this.ai, { user: note.user });
-			if (!friend?.doc?.isWelcomeMessageSent && (note.isFirstNote || (friend.doc.user.notesCount != null && friend.doc.user.notesCount < 50)) ){
+			if (!friend?.doc?.isWelcomeMessageSent && (note.isFirstNote || (friend.doc.user.notesCount && friend.doc.user.notesCount < 50)) ){
 				friend.doc.isWelcomeMessageSent = true;
 				friend.save();
 				if (note.isFirstNote) {
