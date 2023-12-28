@@ -27,11 +27,12 @@ export default class extends Module {
 			}
 			// ノート数キリ番
 			else if ((friend.love || 0) >= 20 && ["public", "home"].includes(note.visibility) && !note.cw && note.user.notesCount >= data.nextNotificationNotesCount) {
+				const nc = data.nextNotificationNotesCount;
 				data.nextNotificationNotesCount = this.getNextNotification(note.user.notesCount);
 				friend.setPerModulesData(this, data);
 				setTimeout(() => {
 					this.ai.api('notes/create', {
-						text: serifs.welcome.kiriban(data.nextNotificationNotesCount, acct(note.user)),
+						text: serifs.welcome.kiriban(nc, acct(note.user)),
 						replyId: note.id,
 						visibility: 'specified',
 						visibleUserIds: [note.user.id],
