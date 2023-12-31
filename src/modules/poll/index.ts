@@ -262,7 +262,7 @@ export default class extends Module {
 		}
 
 		const mostVotedChoices = choices.filter(choice => choice.votes === mostVotedChoice.votes);
-		const nenmatu = new Date().getMonth() === 11 && new Date().getDay() === 31;
+		const nenmatu = new Date().getMonth() === 11 && new Date().getDate() === 31;
 
 		if (mostVotedChoice.votes === 0) {
 			//this.ai.post({ // TODO: Extract serif

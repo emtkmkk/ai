@@ -36,7 +36,7 @@ export default class extends Module {
 		const fileUsers = await this.genChart('users');
 
 		this.log('Posting...');
-		const nenmatu = new Date().getMonth() === 11 && new Date().getDay() === 31;
+		const nenmatu = new Date().getMonth() === 11 && new Date().getDate() === 31;
 		this.ai.post({
 			text: nenmatu ? serifs.chart.nenmatuPost : serifs.chart.post,
 			fileIds: [fileNotes.id, fileUsers.id]
