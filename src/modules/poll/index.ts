@@ -35,7 +35,7 @@ export default class extends Module {
 			const hours = new Date().getHours()
 			let rnd = (hours === 12 || (hours > 17 && hours < 24)) ? 0.25 : 0.05;
 			if ((hours > 0 && hours < 7) || (hours > 13 && hours < 17)) return;
-			if (new Date().getMonth() === 11 && new Date().getDay() === 31) {
+			if (new Date().getMonth() === 11 && new Date().getDate() === 31) {
 				if (hours != 20 || new Date().getMinutes() > 30) {
 					return;
 				} else {
@@ -55,7 +55,7 @@ export default class extends Module {
 
 	@autobind
 	private async post() {
-		const nenmatu = new Date().getMonth() === 11 && new Date().getDay() === 31;
+		const nenmatu = new Date().getMonth() === 11 && new Date().getDate() === 31;
 
 		const duration = nenmatu ? 1000 * 60 * 120 : 1000 * 60 * 10;
 
