@@ -171,6 +171,8 @@ export default class extends Module {
 			return;
 		}
 
+		if (!reply?.id) return;
+		
 		this.subscribeReply(remind.id, reply.id, {
 			id: remind.id
 		});
