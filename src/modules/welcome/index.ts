@@ -22,13 +22,13 @@ export default class extends Module {
 			const friend = new Friend(this.ai, { user: note.user });
 			const data = friend.getPerModulesData(this)
 			if (!data.nextNotificationNotesCount) {
-				data.nextNotificationNotesCount = this.getNextNotification(note.user.notesCount);
+				data.nextNotificationNotesCount = this.getNextNotification(note.user.notesCount + 1);
 				friend.setPerModulesData(this, data);
 			}
 			// ノート数キリ番
-			else if ((friend.love || 0) >= 20 && ["public", "home"].includes(note.visibility) && !note.cw && note.user.notesCount >= data.nextNotificationNotesCount) {
+			else if ((friend.love || 0) >= 20 && ["public", "home"].includes(note.visibility) && !note.cw && note.user.notesCount >= data.nextNotificationNotesCount - 1) {
 				const nc = data.nextNotificationNotesCount;
-				data.nextNotificationNotesCount = this.getNextNotification(note.user.notesCount);
+				data.nextNotificationNotesCount = this.getNextNotification(note.user.notesCount + 1);
 				friend.setPerModulesData(this, data);
 				setTimeout(() => {
 					this.ai.api('notes/create', {
