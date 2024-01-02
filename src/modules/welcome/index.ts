@@ -26,9 +26,9 @@ export default class extends Module {
 				friend.setPerModulesData(this, data);
 			}
 			// ノート数キリ番
-			else if ((friend.love || 0) >= 20 && ["public", "home"].includes(note.visibility) && !note.cw && note.user.notesCount >= data.nextNotificationNotesCount - 1) {
+			else if ((friend.love || 0) >= 20 && ["public", "home"].includes(note.visibility) && !note.cw && note.user.notesCount >= data.nextNotificationNotesCount) {
 				const nc = data.nextNotificationNotesCount;
-				data.nextNotificationNotesCount = this.getNextNotification(note.user.notesCount + 1);
+				data.nextNotificationNotesCount = this.getNextNotification(note.user.notesCount);
 				friend.setPerModulesData(this, data);
 				setTimeout(() => {
 					this.ai.api('notes/create', {
