@@ -26,9 +26,9 @@ export default class extends Module {
 				friend.setPerModulesData(this, data);
 			}
 			// ノート数キリ番
-			else if ((friend.love || 0) >= 20 && ["public", "home"].includes(note.visibility) && !note.cw && note.user.notesCount >= data.nextNotificationNotesCount) {
+			else if ((friend.love || 0) >= 20 && ["public", "home"].includes(note.visibility) && !note.cw && note.user.notesCount >= data.nextNotificationNotesCount - 1) {
 				const nc = data.nextNotificationNotesCount;
-				data.nextNotificationNotesCount = this.getNextNotification(note.user.notesCount);
+				data.nextNotificationNotesCount = this.getNextNotification(note.user.notesCount + 1);
 				friend.setPerModulesData(this, data);
 				setTimeout(() => {
 					this.ai.api('notes/create', {
@@ -40,7 +40,7 @@ export default class extends Module {
 				}, 3000);
 			}
 			// 最初の投稿
-			if (!friend?.doc?.isWelcomeMessageSent && (note.isFirstNote || (note.user.notesCount && note.user.notesCount < 50))) {
+			if (!friend?.doc?.isWelcomeMessageSent && (note.isFirstNote || (note.user.notesCount && note.user.notesCount <= 50))) {
 				friend.doc.isWelcomeMessageSent = true;
 				friend.save();
 				if (note.isFirstNote) {
