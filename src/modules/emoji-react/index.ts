@@ -114,14 +114,14 @@ export default class extends Module {
 		if (includes(note.text, ['taikin', '退勤', 'たいきん', 'しごおわ'])) return react(':otukaresama:');
 		if (includes(note.text, ['おはよ', 'ohayo', 'pokita', 'おきた', '起きた', 'おっは', 'ぽきた']) && note.text?.length <= 30 && !includes(note.text, ['が起きた', 'がおきた'])) return react(':mk_oha:');
 		if (includes(note.text, ['おやす', 'oyasu', 'poyasimi', '寝る', '日次再起動', 'ぽやしみ']) && note.text?.length <= 30 && !includes(note.text, ['ちゃんねる'])) return react(':oyasumi2:');
-		if (includes(note.text, ['伸び','のび'])) return react(':mk_ultrawidechicken:');
-		if (includes(note.text, ['嘘']) && note.text?.length <= 30) return react(':sonnano_uso:');
+		if (includes(note.text, ['伸び','のび']) && Math.random() < 0.7) return react(':mk_ultrawidechicken:');
+		if (includes(note.text, ['嘘']) && Math.random() < 0.5 && note.text?.length <= 30) return react(':sonnano_uso:');
 		if (includes(note.text, ['めつ', '滅', 'metu']) && !includes(note.text, ['滅茶', '滅多'])) return react(':metu:');
 		if (includes(note.text, ['つら', 'しんど', '帰りたい', 'かえりたい', 'sad'])) return react(':petthex:');
 		if (includes(note.text, ['むいみ', '無意味', 'muimi']) && includes(note.text, ['もの', 'mono', '物'])) return react(':osiina:');
 		if (includes(note.text, ['もこもこ'])) return react(':mokomoko:');
 		// もこだけ条件がゆるく反応しやすいので反応率を2/3に
-		if (includes(note.text, ['もこ', 'niwatori_kun']) && !includes(note.text, ['もこみち', 'おもころ', 'もこう', 'もこれ']) && Math.random() < 0.667) {
+		if (includes(note.text, ['もこ', 'niwatori_kun']) && !includes(note.text, ['もこみち', 'おもころ', 'もこう', 'もこれ', 'でもこ']) && Math.random() < 0.667) {
 			//3種類からランダムに選択される
 			const rnd = Math.random() * 3;
 			if (rnd < 1) {
