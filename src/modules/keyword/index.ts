@@ -59,7 +59,7 @@ export default class extends Module {
 						kanaToHira(token[0]) === kanaToHira(token[8]) ||
 						!checkNgWord(token[0]) ||
 						!checkNgWord(token[8]) ||
-						token[8].test(/^\d\d+|\d\d+$/)
+						/^\d\d+|\d\d+$/.test(token[8])
 					) {
 						this.log(`delete ${token[0]}[${token[2]}:${token[3]}](${token[8]})...`);
 						this.learnedKeywords.remove(x);
@@ -112,7 +112,7 @@ export default class extends Module {
 		} else {
 			// NGワードに引っかかる場合、覚えない
 			if (!checkNgWord(keyword[0]) || !checkNgWord(keyword[8])) return;
-			if (keyword[8].test(/^\d\d+|\d\d+$/)) return;
+			if (/^\d\d+|\d\d+$/.test(keyword[8])) return;
 			this.learnedKeywords.insertOne({
 				keyword: keyword[0],
 				learnedAt: Date.now()
