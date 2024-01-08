@@ -43,11 +43,11 @@ export default class extends Module {
 		const memoryPercentages = this.statsLogs.map(s => s && (s.mem.active / s.mem.total) * 100 || 0);
 		const cpuPercentage = average(cpuPercentages);
 		const memoryPercentage = average(memoryPercentages);
-		if (cpuPercentage >= 85) {
+		if (cpuPercentage >= 90) {
 			this.warn();
-		} else if (memoryPercentage >= 87) {
+		} else if (memoryPercentage >= 92) {
 			this.warn();
-		} else if (cpuPercentage <= 30 && memoryPercentage <= 70) {
+		} else if (cpuPercentage <= 30 && memoryPercentage <= 60) {
 			this.warned = false;
 		}
 	}
@@ -78,7 +78,8 @@ export default class extends Module {
 
 		this.ai.post({
 			text: serifs.server.cpu,
-			localOnly: true,
+			visibility: "specified",
+			visibleUserIds: ["9d5ts6in38"],
 		});
 	}
 }
