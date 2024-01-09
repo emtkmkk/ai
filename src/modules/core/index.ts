@@ -255,8 +255,8 @@ export default class extends Module {
 		const words = this.learnedKeywords.find()?.filter((x) => x.keyword.length >= 3 && !/^[0-9]/.test(x.keyword) && !/[0-9]$/.test(x.keyword));
 		const exWords = words?.map((x) => ({...x, keyword: x.keyword.replaceAll(/^[!-\/:-@[-`{-~！？]/g, "").replaceAll(/[!-\/:-@[-`{-~！？]$/g, "")}));
 		const words2 = exWords?.filter((x) => x.keyword.length >= 4);
-		const jpWords = exWords?.filter((x) => !/[a-zA-Z0-9_]/.test(x.keyword));
-		const hirakanaWords = jpWords?.filter((x) => /^[ぁ-んァ-ンヴー]/.test(x.keyword) && /[ぁ-んァ-ンヴー]$/.test(x.keyword));
+		const jpWords = exWords?.filter((x) => !/[a-zA-Z0-9_]$/.test(x.keyword));
+		const hirakanaWords = jpWords?.filter((x) => /[ぁ-んァ-ンヴー]$/.test(x.keyword));
 		const makeBananasu = () : string => {
 			if (!(exWords.length && words2.length && jpWords.length && hirakanaWords.length)) return "";
 			let i = 0;
@@ -400,7 +400,13 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 		if (!msg.or(['もこチキについて','もこもこチキンについて'])) return false;
 
 		const words = this.learnedKeywords.find();
-		msg.reply(`\n\`\`\`\n現在の機嫌 : ${Math.floor(this.ai.activeFactor * 100)}%\n覚えた言葉数 : ${words.length}\n\`\`\``, {
+		const baWords = words?.filter((x) => x.keyword.length >= 3 && !/^[0-9]/.test(x.keyword) && !/[0-9]$/.test(x.keyword));
+		const specialWords = words?.filter((x) => /^[!-\/:-@[-`{-~！？]/.test(x.keyword) || /[!-\/:-@[-`{-~！？]$/.test(x.keyword));
+		const exWords = baWords?.map((x) => ({...x, keyword: x.keyword.replaceAll(/^[!-\/:-@[-`{-~！？]/g, "").replaceAll(/[!-\/:-@[-`{-~！？]$/g, "")}));
+		const words2 = exWords?.filter((x) => x.keyword.length >= 4);
+		const jpWords = exWords?.filter((x) => !/[a-zA-Z0-9_]$/.test(x.keyword));
+		const hirakanaWords = jpWords?.filter((x) => /[ぁ-んァ-ンヴー]$/.test(x.keyword));
+		msg.reply(`\n\`\`\`\n現在の機嫌 : ${Math.floor(this.ai.activeFactor * 100)}%\n\n覚えた言葉数 : ${words.length}\nバナナスに使う言葉数 : ${baWords.length - specialWords.length} + ${specialWords.length}\n英語以外で終わる言葉数 : ${jpWords.length}\n英語・漢字以外で終わる言葉数 : ${hirakanaWords.length}\n\`\`\``, {
 			immediate: true
 		});
 
