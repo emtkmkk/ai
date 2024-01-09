@@ -262,7 +262,7 @@ export default class extends Module {
 			let i = 0;
 			while (words && i < 100) {
 				let word1 = "";
-				if (Math.random() < 0.4) {
+				if (Math.random() < 0.5) {
 					word1 = words[Math.floor(Math.random() * words.length)].keyword;
 				} else {
 					if (Math.random() < 0.5) {
@@ -273,7 +273,8 @@ export default class extends Module {
 				}
 				const word2s = words.filter((x) => x.keyword.toLowerCase().startsWith(word1.toLowerCase().slice(-1)));
 				const longword2s = words2.filter((x) => x.keyword.toLowerCase().startsWith(word1.toLowerCase().slice(-2)));
-				if (word2s.length + longword2s.length === 0) {
+				const pc = word2s.length + longword2s.length
+				if (pc === 0 || (pc <= 2 && Math.random() < (0.66 / pc))) {
 					i += 1;
 					continue;
 				}
