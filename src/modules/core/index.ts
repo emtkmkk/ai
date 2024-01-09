@@ -1,18 +1,28 @@
 import autobind from 'autobind-decorator';
+import * as loki from 'lokijs';
 import Module from '@/module';
 import Message from '@/message';
 import serifs from '@/serifs';
 import { safeForInterpolate } from '@/utils/safe-for-interpolate';
 import { checkNgWord } from '@/utils/check-ng-word';
 import { acct } from '@/utils/acct';
+import { genItem, itemPrefixes } from '@/vocabulary';
 
 const titles = ['さん', 'くん', '君', 'ちゃん', '様', '先生'];
 
 export default class extends Module {
 	public readonly name = 'core';
 
+	private learnedKeywords: loki.Collection<{
+		keyword: string;
+		learnedAt: number;
+	}>;
+
 	@autobind
 	public install() {
+		this.learnedKeywords = this.ai.getCollection('_keyword_learnedKeywords', {
+			indices: ['userId']
+		});
 		return {
 			mentionHook: this.mentionHook,
 			contextHook: this.contextHook
@@ -32,6 +42,8 @@ export default class extends Module {
 			(await this.getEmojiData(msg)) ||
 			this.getInventory(msg) ||
 			this.convertUnixtime(msg) ||
+			this.getAdana(msg) ||
+			this.mkckAbout(msg) ||
 			this.modules(msg) ||
 			this.version(msg)
 		) ? { reaction: "love" } : false;
@@ -207,6 +219,32 @@ export default class extends Module {
 	}
 
 	@autobind
+	private getAdana(msg: Message): boolean {
+		if (!msg.text) return false;
+		if (!(msg.includes(['あだ名', 'あだな']))) return false;
+
+		const genAdana = () : string => {
+			let adana = "";
+			if (Math.random() < 0.5) {
+				adana = genItem();
+			} else {
+				if (Math.random() > 0.1) adana = itemPrefixes[Math.floor(Math.random() * itemPrefixes.length)];
+				const words = this.learnedKeywords.find();
+				const word = words ? words[Math.floor(Math.random() * words.length)].keyword : undefined;
+				adana += word
+			}
+			if (Math.random() < 0.4) {
+				adana += titles[Math.floor(Math.random() * titles.length)]
+			}
+			return adana;
+		}
+		
+		msg.reply(serifs.core.getAdana(genAdana(),genAdana(),genAdana()))
+
+		return true;
+	}
+
+	@autobind
 	private async getEmojiData(msg: Message) {
 		if (!msg.text) return false;
 		if (!msg.text.includes('絵文字情報')) return false;
@@ -291,6 +329,19 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 		if (!msg.or(['v', 'version', 'バージョン'])) return false;
 
 		msg.reply(`\`\`\`\nv${this.ai.version}\n\`\`\``, {
+			immediate: true
+		});
+
+		return true;
+	}
+
+	@autobind
+	private mkckAbout(msg: Message): boolean {
+		if (!msg.text) return false;
+		if (!msg.or(['もこチキについて','もこもこチキンについて'])) return false;
+
+		const words = this.learnedKeywords.find();
+		msg.reply(`\`\`\`\n現在の機嫌 : ${this.ai.activeFactor * 100}%\n覚えた言葉数 : ${words.length}\n\`\`\``, {
 			immediate: true
 		});
 

@@ -16,6 +16,8 @@ export default {
 
 		getInventory: (name, inventory) => `\n私から${name}へプレゼントした物の一覧です！\n\n${inventory}`,
 
+		getAdana: (adana1, adana2, adana3) => `\n\`\`\`\n${adana1}\n${adana2}\n${adana3}\n\`\`\` \nいくつか考えてみました！好きな物を選んでくださいね！`,
+
 		followBack: name => name ? `${name}をフォローしました！${name}、これからよろしくお願いします！` : `あなたをフォローしました！これからよろしくお願いします！`,
 
 		alreadyFollowBack: name => name ? `私は${name}を既にフォローしているみたいです！` : `私はあなたを既にフォローしているみたいです！`,
@@ -73,6 +75,15 @@ export default {
 
 			normal: name => name ? `おかえりなさい、${name}！` : 'おかえりなさい！',
 		},
+
+		arigatou: {
+			normal: [
+				`どういたしまして！`,
+				`こちらこそ遊んでいただいてありがとうございます！`,
+				`いえいえ、また何か有りましたら呼んでください！`,
+			]
+		},
+
 
 		itterassyai: {
 			love: name => name ? `いってらっしゃい、${name}！` : 'いってらっしゃい！',
