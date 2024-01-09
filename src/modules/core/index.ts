@@ -253,36 +253,38 @@ export default class extends Module {
 		if (!(msg.includes(['バナナス']))) return false;
 
 		const words = this.learnedKeywords.find()?.filter((x) => x.keyword.length >= 3);
-		let i = 0;
-		while (words && i < 100) {
-			const word1 = words[Math.floor(Math.random() * words.length)].keyword;
-			const word2s = words.filter((x) => x.keyword.startsWith(word1.slice(-1)));
-			if (word2s.length === 0) {
-				i += 1;
-				continue;
-			}
-			const longword2s = word2s.filter((x) => x.keyword.startsWith(word1.slice(-2)));
-			let word2 = "";
-			let matchStringNum = 1;
-			if (longword2s.length && Math.random() < 0.5) {
-				word2 = longword2s[Math.floor(Math.random() * longword2s.length)].keyword;
-				matchStringNum = 2;
-			} else {
-				word2 = word2s[Math.floor(Math.random() * word2s.length)].keyword;
-				matchStringNum = 1;
-			}
-			while (matchStringNum < Math.min(word1.length,word2.length) && word2.startsWith(word1.slice((matchStringNum + 1) * -1))) {
-				matchStringNum += 1;
-			}
+		const makeBananasu = () : string => {
+			let i = 0;
+			while (words && i < 100) {
+				const word1 = words[Math.floor(Math.random() * words.length)].keyword;
+				const word2s = words.filter((x) => x.keyword.startsWith(word1.slice(-1)));
+				if (word2s.length === 0) {
+					i += 1;
+					continue;
+				}
+				const longword2s = word2s.filter((x) => x.keyword.startsWith(word1.slice(-2)));
+				let word2 = "";
+				let matchStringNum = 1;
+				if (longword2s.length && Math.random() < 0.5) {
+					word2 = longword2s[Math.floor(Math.random() * longword2s.length)].keyword;
+					matchStringNum = 2;
+				} else {
+					word2 = word2s[Math.floor(Math.random() * word2s.length)].keyword;
+					matchStringNum = 1;
+				}
+				while (matchStringNum < Math.min(word1.length,word2.length) && word2.startsWith(word1.slice((matchStringNum + 1) * -1))) {
+					matchStringNum += 1;
+				}
 
-			msg.reply(`${word1} の ${word2}、${word1.slice(0, matchStringNum * -1)}${word2}`, { visibility: "public" });
-
-			return true;
+				return `${word1} の ${word2}、${word1.slice(0, matchStringNum * -1)}${word2}`
+			}
+			return "";
 		}
 
-		msg.reply(`上手く思いつきませんでした、もう一度試してみてください！`);
+		const bananasu = msg.includes(['たくさん','沢山']) ? [makeBananasu,makeBananasu,makeBananasu,makeBananasu,makeBananasu,makeBananasu,makeBananasu,makeBananasu,makeBananasu,makeBananasu].filter((x) => x).join("\n") : makeBananasu;
+		
+		msg.reply("\n" + (bananasu ? bananasu : "上手く思いつきませんでした、もう一度試してみてください！"));
 		return true;
-
 	}
 
 	@autobind
