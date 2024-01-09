@@ -253,7 +253,7 @@ export default class extends Module {
 		if (!(msg.includes(['バナナス', 'バニャニャス']))) return false;
 
 		const words = this.learnedKeywords.find()?.filter((x) => x.keyword.length >= 3 && !/^[0-9]/.test(x.keyword) && !/[0-9]$/.test(x.keyword));
-		const exWords = words?.map((x) => ({...x, keyword: keyword.replaceAll(/^[!-\/:-@[-`{-~！？]/g, "").replaceAll(/[!-\/:-@[-`{-~！？]$/g, "")}));
+		const exWords = words?.map((x) => ({...x, keyword: x.keyword.replaceAll(/^[!-\/:-@[-`{-~！？]/g, "").replaceAll(/[!-\/:-@[-`{-~！？]$/g, "")}));
 		const words2 = exWords?.filter((x) => x.keyword.length >= 4);
 		const jpWords = exWords?.filter((x) => !/[a-zA-Z0-9_]/.test(x.keyword));
 		const hirakanaWords = jpWords?.filter((x) => /^[ぁ-んァ-ンヴー]/.test(x.keyword) && /[ぁ-んァ-ンヴー]$/.test(x.keyword));
