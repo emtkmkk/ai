@@ -515,7 +515,7 @@ export default class 藍 {
 
 	@autobind
 	public incActiveFactor(amount = 0.01) {
-		this.activeFactor = Math.floor(Math.min(this.activeFactor + (amount / Math.max(this.activeFactor,1)), 2) * 1000) / 1000;
+		this.activeFactor = Math.floor(Math.min(this.activeFactor + ((amount / Math.max(this.activeFactor,1)) * (this.activeFactor > 1 ? 0.7 : 1)), 2) * 1000) / 1000;
 		this.setMeta({
 			activeFactor: this.activeFactor,
 		});
