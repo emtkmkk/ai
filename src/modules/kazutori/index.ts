@@ -360,7 +360,7 @@ export default class extends Module {
 				text: serifs.kazutori.onagare(item),
 				renoteId: game.postId
 			});
-			this.ai.decActiveFactor((game.finishedAt.valueOf() - game.startedAt.valueOf()) * (60 / 1000 / 100));
+			this.ai.decActiveFactor((game.finishedAt.valueOf() - game.startedAt.valueOf()) / (60 * 1000 * 100));
 
 			return;
 		}
