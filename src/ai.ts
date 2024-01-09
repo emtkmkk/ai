@@ -276,7 +276,6 @@ export default class 藍 {
 		const friend = new Friend(this, { user: msg.user });
 		if (![":mk_widechicken:", ":mk_fly_sliver:", ":mk_ultrawidechicken:"].includes(reaction)) {
 			// 正しい反応の場合
-			this.incActiveFactor();
 			friend.incLove(0.1, reaction);
 		}
 
@@ -297,7 +296,6 @@ export default class 藍 {
 			case 'quote':
 			case 'pollVote':
 			case 'reaction': {
-				this.incActiveFactor();
 				const friend = new Friend(this, { user: notification.user });
 				friend.incLove(0.1, notification.type);
 				break;

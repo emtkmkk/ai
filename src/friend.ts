@@ -167,6 +167,9 @@ export default class Friend {
 		this.doc.todayLoveIncrements = parseFloat((this.doc.todayLoveIncrements || 0).toFixed(2));
 		this.save();
 
+		// 好感度が上昇した場合、ActiveFactorを増加させる
+		this.ai.incActiveFactor();
+
 		this.ai.log(`💗 ${this.userId} +${amount} (${this.doc.love || 0}) <${(this.doc.todayLoveIncrements || 0)} / ${(this.doc.love || 0) < 100 ? 15 : 50}>`);
 	}
 
