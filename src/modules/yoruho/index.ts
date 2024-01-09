@@ -131,6 +131,7 @@ export default class extends Module {
 				}
 
 			}
+			this.ai.decActiveFactor(0.015);
 			this.preSchedulePost();
 		});
 	}

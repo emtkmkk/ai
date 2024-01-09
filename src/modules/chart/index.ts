@@ -42,6 +42,7 @@ export default class extends Module {
 			text: nenmatu ? serifs.chart.nenmatuPost : serifs.chart.post,
 			fileIds: [fileNotes.id, fileUsers.id]
 		});
+		this.ai.decActiveFactor(0.015);
 	}
 
 	@autobind

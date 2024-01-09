@@ -81,8 +81,6 @@ export default class extends Module {
 			return;
 		}
 
-		this.ai.decActiveFactor(0.015);
-
 		const tl = await this.ai.api('notes/hybrid-timeline', {
 			limit: 50
 		});
@@ -135,6 +133,7 @@ export default class extends Module {
 				return;
 			}
 		}
+		this.ai.decActiveFactor(0.015);
 		this.ai.post({
 			text: text
 		});
