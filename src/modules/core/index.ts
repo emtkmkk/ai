@@ -253,19 +253,27 @@ export default class extends Module {
 		if (!(msg.includes(['バナナス']))) return false;
 
 		const words = this.learnedKeywords.find()?.filter((x) => x.keyword.length >= 3);
+		const words2 = this.learnedKeywords.find()?.filter((x) => x.keyword.length >= 4);
+		const jpWords = this.learnedKeywords.find()?.filter((x) => x.keyword.length >= 3 && !/[a-zA-Z0-9_]/.test(x));
 		const makeBananasu = () : string => {
+			if (!(words.length && words2.length && jpWords.length)) return "";
 			let i = 0;
 			while (words && i < 100) {
-				const word1 = words[Math.floor(Math.random() * words.length)].keyword;
+				let word1 = "";
+				if (Math.random() < 0.5) {
+					word1 = words[Math.floor(Math.random() * words.length)].keyword;
+				} else {
+					word1 = jpWords[Math.floor(Math.random() * jpWords.length)].keyword;
+				}
 				const word2s = words.filter((x) => x.keyword.startsWith(word1.slice(-1)));
-				const longword2s = words.filter((x) => x.keyword.startsWith(word1.slice(-2)));
+				const longword2s = words2.filter((x) => x.keyword.startsWith(word1.slice(-2)));
 				if (word2s.length + longword2s.length === 0) {
 					i += 1;
 					continue;
 				}
 				let word2 = "";
 				let matchStringNum = 1;
-				if (word2s.length === 0 || longword2s.length && Math.random() < 0.5) {
+				if (word2s.length === 0 || longword2s.length && Math.random() < 0.4) {
 					word2 = longword2s[Math.floor(Math.random() * longword2s.length)].keyword;
 					matchStringNum = 2;
 				} else {
