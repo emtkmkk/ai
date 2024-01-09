@@ -240,7 +240,7 @@ export default class extends Module {
 			return adana;
 		}
 
-		const adanas = msg.includes(['たくさん', '沢山']) ? Array(12).fill(genAdana()) : [genAdana(),genAdana(),genAdana()]
+		const adanas = msg.includes(['たくさん', '沢山']) ? [genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana()] : [genAdana(),genAdana(),genAdana()]
 		
 		msg.reply(serifs.core.getAdana(adanas))
 
