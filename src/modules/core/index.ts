@@ -250,7 +250,7 @@ export default class extends Module {
 	@autobind
 	private getBananasu(msg: Message): boolean {
 		if (!msg.text) return false;
-		if (!(msg.includes(['バナナス']))) return false;
+		if (!(msg.includes(['バナナス', 'バニャニャス']))) return false;
 
 		const words = this.learnedKeywords.find()?.filter((x) => x.keyword.length >= 3 && !/^[0-9]/.test(x.keyword) && !/[0-9]$/.test(x.keyword));
 		const words2 = words?.filter((x) => x.keyword.length >= 4);
@@ -289,7 +289,7 @@ export default class extends Module {
 					matchStringNum += 1;
 				}
 
-				const notMatchCase = !word2.startsWith(word1.slice((matchStringNum + 1) * -1));
+				const notMatchCase = !word2.startsWith(word1.slice((matchStringNum) * -1));
 
 				return `${word1} の ${word2}、${word1.slice(0, matchStringNum * -1)}${notMatchCase ? word2.slice(0,matchStringNum).toUpperCase() + word2.slice(matchStringNum) : word2}`
 			}
