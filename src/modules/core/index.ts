@@ -258,14 +258,14 @@ export default class extends Module {
 			while (words && i < 100) {
 				const word1 = words[Math.floor(Math.random() * words.length)].keyword;
 				const word2s = words.filter((x) => x.keyword.startsWith(word1.slice(-1)));
-				if (word2s.length === 0) {
+				const longword2s = words.filter((x) => x.keyword.startsWith(word1.slice(-2)));
+				if (word2s.length + longword2s.length === 0) {
 					i += 1;
 					continue;
 				}
-				const longword2s = word2s.filter((x) => x.keyword.startsWith(word1.slice(-2)));
 				let word2 = "";
 				let matchStringNum = 1;
-				if (longword2s.length && Math.random() < 0.5) {
+				if (word2s.length === 0 || longword2s.length && Math.random() < 0.5) {
 					word2 = longword2s[Math.floor(Math.random() * longword2s.length)].keyword;
 					matchStringNum = 2;
 				} else {
