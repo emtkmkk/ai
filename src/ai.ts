@@ -34,6 +34,7 @@ export type InstallerResult = {
 
 export type Meta = {
 	lastWakingAt: number;
+	activeFactor: number | null;
 };
 
 /**
@@ -49,6 +50,7 @@ export default class 藍 {
 	private timeoutCallbacks: { [moduleName: string]: TimeoutCallback } = {};
 	public db: loki;
 	public lastSleepedAt: number;
+	public activeFactor: number;
 
 	private meta: loki.Collection<Meta>;
 
@@ -132,6 +134,7 @@ export default class 藍 {
 
 		const meta = this.getMeta();
 		this.lastSleepedAt = meta.lastWakingAt;
+		this.activeFactor = meta.activeFactor || 1;
 
 		// Init stream
 		this.connection = new Stream();
@@ -269,9 +272,13 @@ export default class 藍 {
 		if (reaction === "like") reaction = ":mk_yurayurachicken:";
 		if (reaction === "hmm") reaction = ":mk_fly_sliver:";
 		if (reaction === "confused") reaction = ":mk_ultrawidechicken:";
-		
+
 		const friend = new Friend(this, { user: msg.user });
-		if (![":mk_widechicken:",":mk_fly_sliver:",":mk_ultrawidechicken:"].includes(reaction)) friend.incLove(0.1, reaction);
+		if (![":mk_widechicken:", ":mk_fly_sliver:", ":mk_ultrawidechicken:"].includes(reaction)) {
+			// 正しい反応の場合
+			this.incActiveFactor();
+			friend.incLove(0.1, reaction);
+		}
 
 		// リアクションする
 		if (reaction) {
@@ -290,6 +297,7 @@ export default class 藍 {
 			case 'quote':
 			case 'pollVote':
 			case 'reaction': {
+				this.incActiveFactor();
 				const friend = new Friend(this, { user: notification.user });
 				friend.incLove(0.1, notification.type);
 				break;
@@ -400,26 +408,26 @@ export default class 藍 {
 
 		return new Promise((resolve, reject) => {
 			const attemptRequest = (attempt: number) => {
-				if(attempt !== 0) this.log(`Retry ${attempt} / ${maxRetries} : ${endpoint} : ${JSON.stringify(param)}`)
+				if (attempt !== 0) this.log(`Retry ${attempt} / ${maxRetries} : ${endpoint} : ${JSON.stringify(param)}`)
 				request.post(`${config.apiUrl}/${endpoint}`, {
 					json: Object.assign({
 						i: config.i
 					}, param)
 				})
-				.then(response => {
-					resolve(response);
-				})
-				.catch(error => {
-					this.log(`API Error ${attempt + 1} / ${maxRetries} : ${endpoint} : ${JSON.stringify(param)} : ${JSON.stringify(error.response)}`)
-					if (error.response?.statusCode >= 400 && error.response?.statusCode < 500) resolve(error);
-					else if (attempt >= maxRetries - 1) {
-						resolve(error);
-					} else {
-						setTimeout(() => {
-							attemptRequest(attempt + 1);
-						}, retryIntervals[Math.min(attempt,retryIntervals.length-1)]);
-					}
-				});
+					.then(response => {
+						resolve(response);
+					})
+					.catch(error => {
+						this.log(`API Error ${attempt + 1} / ${maxRetries} : ${endpoint} : ${JSON.stringify(param)} : ${JSON.stringify(error.response)}`)
+						if (error.response?.statusCode >= 400 && error.response?.statusCode < 500) resolve(error);
+						else if (attempt >= maxRetries - 1) {
+							resolve(error);
+						} else {
+							setTimeout(() => {
+								attemptRequest(attempt + 1);
+							}, retryIntervals[Math.min(attempt, retryIntervals.length - 1)]);
+						}
+					});
 			}
 
 			attemptRequest(0);
@@ -486,6 +494,7 @@ export default class 藍 {
 		} else {
 			const initial: Meta = {
 				lastWakingAt: Date.now(),
+				activeFactor: 1,
 			};
 
 			this.meta.insertOne(initial);
@@ -502,5 +511,25 @@ export default class 藍 {
 		}
 
 		this.meta.update(rec);
+	}
+
+	@autobind
+	public incActiveFactor(amount = 0.01) {
+		this.activeFactor = Math.floor(Math.min(this.activeFactor + (amount / Math.max(this.activeFactor,1)), 2) * 1000) / 1000;
+		this.setMeta({
+			activeFactor: this.activeFactor,
+		});
+	}
+
+	@autobind
+	public decActiveFactor(amount = 0.05) {
+		if (this.activeFactor <= 1) {
+			this.activeFactor = Math.floor(Math.max(this.activeFactor - (amount * this.activeFactor), 0.1) * 1000) / 1000;
+		} else {
+			this.activeFactor = Math.floor(Math.max(this.activeFactor - (amount * this.activeFactor * 2), 0.97) * 1000) / 1000;
+		}
+		this.setMeta({
+			activeFactor: this.activeFactor,
+		});
 	}
 }
