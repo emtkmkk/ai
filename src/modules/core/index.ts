@@ -256,7 +256,7 @@ export default class extends Module {
 		let i = 0;
 		while (words && i < 100) {
 			const word1 = words[Math.floor(Math.random() * words.length)].keyword;
-			const word2s = words.filter((x) => x.keyword.startWith(word1.slice(-1)));
+			const word2s = words.filter((x) => x.keyword.startsWith(word1.slice(-1)));
 			if (word2s.length === 0) {
 				i += 1;
 				continue;
