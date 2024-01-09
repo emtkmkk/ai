@@ -252,7 +252,7 @@ export default class extends Module {
 		if (!msg.text) return false;
 		if (!(msg.includes(['バナナス']))) return false;
 
-		const words = this.learnedKeywords.find()?.filter((x) => x.keyword.length >= 4);
+		const words = this.learnedKeywords.find()?.filter((x) => x.keyword.length >= 3);
 		let i = 0;
 		while (words && i < 100) {
 			const word1 = words[Math.floor(Math.random() * words.length)].keyword;
