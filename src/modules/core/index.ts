@@ -252,7 +252,7 @@ export default class extends Module {
 		if (!msg.text) return false;
 		if (!(msg.includes(['バナナス']))) return false;
 
-		const words = this.learnedKeywords.find();
+		const words = this.learnedKeywords.find().filter(x.keyword.length >= 4);
 		let i = 0;
 		while (words && i < 100) {
 			const word1 = words[Math.floor(Math.random() * words.length)].keyword;
@@ -262,7 +262,7 @@ export default class extends Module {
 				continue;
 			}
 			const word2 = word2s[Math.floor(Math.random() * word2s.length)].keyword;
-			msg.reply(`${word1}の${word2}、${word1.slice(0, -1)}${word2}`, { visibility: "public" });
+			msg.reply(`${word1} の ${word2}、${word1.slice(0, -1)}${word2}`, { visibility: "public" });
 			return true;
 		}
 
