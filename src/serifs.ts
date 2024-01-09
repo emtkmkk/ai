@@ -16,7 +16,7 @@ export default {
 
 		getInventory: (name, inventory) => `\n私から${name}へプレゼントした物の一覧です！\n\n${inventory}`,
 
-		getAdana: (adana1, adana2, adana3) => `\n\`\`\`\n${adana1}\n${adana2}\n${adana3}\n\`\`\`\nいくつか考えてみました！好きな物を選んでくださいね！`,
+		getAdana: (adanas) => `\n\`\`\`\n${adanas.join("\n")}\n\`\`\`\nいくつか考えてみました！好きな物を選んでくださいね！`,
 
 		followBack: name => name ? `${name}をフォローしました！${name}、これからよろしくお願いします！` : `あなたをフォローしました！これからよろしくお願いします！`,
 
