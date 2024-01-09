@@ -96,6 +96,12 @@ export default class extends Module {
 			return incLove();
 		}
 
+		if (msg.includes(['ありがと'])) {
+			msg.reply(
+				getSerif(serifs.core.arigatou.normal));
+			return incLove();
+		}
+
 		return false;
 	}
 
