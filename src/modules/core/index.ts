@@ -254,7 +254,7 @@ export default class extends Module {
 
 		const words = this.learnedKeywords.find()?.filter((x) => x.keyword.length >= 3);
 		const words2 = this.learnedKeywords.find()?.filter((x) => x.keyword.length >= 4);
-		const jpWords = this.learnedKeywords.find()?.filter((x) => x.keyword.length >= 3 && !/[a-zA-Z0-9_]/.test(x));
+		const jpWords = this.learnedKeywords.find()?.filter((x) => x.keyword.length >= 3 && !/[a-zA-Z0-9_]/.test(x.keyword));
 		const makeBananasu = () : string => {
 			if (!(words.length && words2.length && jpWords.length)) return "";
 			let i = 0;
