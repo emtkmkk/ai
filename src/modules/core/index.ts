@@ -328,7 +328,7 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 		if (!msg.text) return false;
 		if (!msg.or(['v', 'version', 'バージョン'])) return false;
 
-		msg.reply(`\`\`\`\nv${this.ai.version}\n\`\`\``, {
+		msg.reply(`\n\`\`\`\nv${this.ai.version}\n\`\`\``, {
 			immediate: true
 		});
 
@@ -341,7 +341,7 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 		if (!msg.or(['もこチキについて','もこもこチキンについて'])) return false;
 
 		const words = this.learnedKeywords.find();
-		msg.reply(`\`\`\`\n現在の機嫌 : ${this.ai.activeFactor * 100}%\n覚えた言葉数 : ${words.length}\n\`\`\``, {
+		msg.reply(`\n\`\`\`\n現在の機嫌 : ${this.ai.activeFactor * 100}%\n覚えた言葉数 : ${words.length}\n\`\`\``, {
 			immediate: true
 		});
 
