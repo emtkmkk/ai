@@ -261,8 +261,22 @@ export default class extends Module {
 				i += 1;
 				continue;
 			}
-			const word2 = word2s[Math.floor(Math.random() * word2s.length)].keyword;
-			msg.reply(`${word1} の ${word2}、${word1.slice(0, -1)}${word2}`, { visibility: "public" });
+			const longword2s = word2s.filter((x) => x.keyword.startsWith(word1.slice(-2)));
+			let word2 = "";
+			let matchStringNum = 1;
+			if (longword2s.length && Math.random() < 0.5) {
+				word2 = longword2s[Math.floor(Math.random() * longword2s.length)].keyword;
+				matchStringNum = 2;
+			} else {
+				word2 = word2s[Math.floor(Math.random() * word2s.length)].keyword;
+				matchStringNum = 1;
+			}
+			while (matchStringNum < Math.min(word1.length,word2.length) && word2.startsWith(word1.slice((matchStringNum + 1) * -1))) {
+				matchStringNum += 1;
+			}
+
+			msg.reply(`${word1} の ${word2}、${word1.slice(0, matchStringNum * -1)}${word2}`, { visibility: "public" });
+
 			return true;
 		}
 
