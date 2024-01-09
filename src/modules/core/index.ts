@@ -255,6 +255,7 @@ export default class extends Module {
 		const words = this.learnedKeywords.find()?.filter((x) => x.keyword.length >= 3);
 		const words2 = this.learnedKeywords.find()?.filter((x) => x.keyword.length >= 4);
 		const jpWords = this.learnedKeywords.find()?.filter((x) => x.keyword.length >= 3 && !/[a-zA-Z0-9_]/.test(x.keyword));
+		const hirakanaWords = jpWords?.filter((x) => /^[ぁ-んァ-ンヴー]/.test(x.keyword) && /[ぁ-んァ-ンヴー]$/.test(x.keyword));
 		const makeBananasu = () : string => {
 			if (!(words.length && words2.length && jpWords.length)) return "";
 			let i = 0;
@@ -263,10 +264,14 @@ export default class extends Module {
 				if (Math.random() < 0.5) {
 					word1 = words[Math.floor(Math.random() * words.length)].keyword;
 				} else {
-					word1 = jpWords[Math.floor(Math.random() * jpWords.length)].keyword;
+					if (Math.random() < 0.5) {
+						word1 = jpWords[Math.floor(Math.random() * jpWords.length)].keyword;
+					} else {
+						word1 = hirakanaWords[Math.floor(Math.random() * hirakanaWords.length)].keyword;
+					}
 				}
-				const word2s = words.filter((x) => x.keyword.startsWith(word1.slice(-1)));
-				const longword2s = words2.filter((x) => x.keyword.startsWith(word1.slice(-2)));
+				const word2s = words.filter((x) => x.keyword.toLowerCase().startsWith(word1.toLowerCase().slice(-1)));
+				const longword2s = words2.filter((x) => x.keyword.toLowerCase().startsWith(word1.toLowerCase().slice(-2)));
 				if (word2s.length + longword2s.length === 0) {
 					i += 1;
 					continue;
