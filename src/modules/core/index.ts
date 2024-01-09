@@ -43,6 +43,7 @@ export default class extends Module {
 			this.getInventory(msg) ||
 			this.convertUnixtime(msg) ||
 			this.getAdana(msg) ||
+			this.getBananasu(msg) ||
 			this.mkckAbout(msg) ||
 			this.modules(msg) ||
 			this.version(msg)
@@ -238,10 +239,36 @@ export default class extends Module {
 			}
 			return adana;
 		}
+
+		const adanas = msg.includes(['たくさん', '沢山']) ? Array(12).fill(genAdana()) : [genAdana(),genAdana(),genAdana()]
 		
-		msg.reply(serifs.core.getAdana(genAdana(),genAdana(),genAdana()))
+		msg.reply(serifs.core.getAdana(adanas))
 
 		return true;
+	}
+
+	@autobind
+	private getBananasu(msg: Message): boolean {
+		if (!msg.text) return false;
+		if (!(msg.includes(['バナナス']))) return false;
+
+		const words = this.learnedKeywords.find();
+		let i = 0;
+		while (words && i < 100) {
+			const word1 = words[Math.floor(Math.random() * words.length)].keyword;
+			const word2s = words.filter((x) => x.keyword.startWith(word1.slice(-1)));
+			if (word2s.length === 0) {
+				i += 1;
+				continue;
+			}
+			const word2 = word2s[Math.floor(Math.random() * word2s.length)].keyword;
+			msg.reply(`${word1}の${word2}、${word1.slice(0, -1)}${word2}`, { visibility: "public" });
+			return true;
+		}
+
+		msg.reply(`上手く思いつきませんでした、もう一度試してみてください！`);
+		return true;
+
 	}
 
 	@autobind
