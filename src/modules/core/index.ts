@@ -281,7 +281,7 @@ export default class extends Module {
 			return "";
 		}
 
-		const bananasu = msg.includes(['たくさん','沢山']) ? [makeBananasu,makeBananasu,makeBananasu,makeBananasu,makeBananasu,makeBananasu,makeBananasu,makeBananasu,makeBananasu,makeBananasu].filter((x) => x).join("\n") : makeBananasu;
+		const bananasu = msg.includes(['たくさん','沢山']) ? [makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu()].filter((x) => x).join("\n") : makeBananasu();
 		
 		msg.reply("\n" + (bananasu ? bananasu : "上手く思いつきませんでした、もう一度試してみてください！"));
 		return true;
