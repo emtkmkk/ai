@@ -295,7 +295,7 @@ export default class extends Module {
 
 				const notMatchCase = !word2.startsWith(word1.slice((matchStringNum) * -1));
 
-				const info = `\n[${word1.slice(-1)} : ${word2s.length} , ${word1.slice(-2)} : ${longword2s.length}]`
+				const info = `\n[${word1.slice(-1)} : ${word2s.length}${longword2s.length ? ` , ${word1.slice(-2)} : ${longword2s.length}` : ""}]`
 
 				return `${word1} の ${word2}、${word1.slice(0, matchStringNum * -1)}${notMatchCase ? word2.slice(0,matchStringNum).toUpperCase() + word2.slice(matchStringNum) : word2}${debug ? info : ""}`
 			}
