@@ -33,7 +33,7 @@ export default class extends Module {
 		});
 		setInterval(() => {
 			const hours = new Date().getHours()
-			let rnd = (hours === 12 || (hours > 17 && hours < 24)) ? 0.25 : 0.05;
+			let rnd = ((hours === 12 || (hours > 17 && hours < 24)) ? 0.25 : 0.05) * this.ai.activeFactor;
 			if ((hours > 0 && hours < 7) || (hours > 13 && hours < 17)) return;
 			if (new Date().getMonth() === 11 && new Date().getDate() === 31) {
 				if (hours != 20 || new Date().getMinutes() > 30) {
@@ -55,6 +55,8 @@ export default class extends Module {
 
 	@autobind
 	private async post() {
+		this.ai.decActiveFactor(0.05);
+
 		const nenmatu = new Date().getMonth() === 11 && new Date().getDate() === 31;
 
 		const duration = nenmatu ? 1000 * 60 * 120 : 1000 * 60 * 10;
@@ -162,9 +164,11 @@ export default class extends Module {
 			genItem(),
 		];
 
-		if (Math.random() < 0.3) choices.push(genItem());
-		if (Math.random() < 0.3) choices.push(genItem());
-		if (Math.random() < 0.3) choices.push(genItem());
+		if (!nenmatu) {
+			if (Math.random() < 0.3) choices.push(genItem());
+			if (Math.random() < 0.3) choices.push(genItem());
+			if (Math.random() < 0.3) choices.push(genItem());
+		}
 
 		const note = await this.ai.post({
 			text: poll[1],
@@ -269,6 +273,7 @@ export default class extends Module {
 			//	text: '投票はありませんでした',
 			//	renoteId: noteId,
 			//});
+			this.ai.decActiveFactor(0.1);
 		} else if (mostVotedChoices.length === 1) {
 			let isStreak = false;
 			if (mostVotedChoice.votes >= 3 || totalVoted > choices.length) {
@@ -314,9 +319,47 @@ export default class extends Module {
 			});
 		} else {
 			const choices = mostVotedChoices.map(choice => `「${choice.text}」`).join('と');
+			if (mostVotedChoice.votes >= 3 || totalVoted > choices.length) {
+				const exist = this.pollresult.findOne({
+					key: title
+				});
+				if (exist) {
+					const newKeywords = mostVotedChoices.filter((x) => exist.keyword !== x.text);
+					const learnKeyword = newKeywords[Math.floor(Math.random() * newKeywords.length)];
+					exist.keyword = learnKeyword.text;
+					exist.winCount = 1;
+					this.pollresult.update(exist);
+					const legend = this.pollresultlegend.findOne({
+						key: title
+					});
+					if (!legend) {
+						this.pollresultlegend.insertOne({
+							key: exist.key,
+							keyword: exist.keyword,
+							winCount: exist.winCount,
+						});
+					} else if (exist.winCount > (legend.winCount ?? 1)) {
+						legend.winCount = exist.winCount;
+						legend.keyword = exist.keyword;
+						this.pollresultlegend.update(legend);
+					}
+				} else {
+					const learnKeyword = mostVotedChoices[Math.floor(Math.random() * mostVotedChoices.length)];
+					this.pollresult.insertOne({
+						key: title,
+						keyword: learnKeyword.text,
+						winCount: 1,
+					});
+					this.pollresultlegend.insertOne({
+						key: title,
+						keyword: learnKeyword.text,
+						winCount: 1,
+					});
+				}
+			}
 			this.ai.post({ // TODO: Extract serif
 				cw: `${title}アンケートの結果発表です！`,
-				text: `結果は${mostVotedChoice.votes}票の${choices}でした！なるほど～！${nenmatu ? '来年もいい年になりますように！' : ''}`,
+				text: `結果は${mostVotedChoice.votes}票の${choices}でした！なるほど～！${mostVotedChoice.votes >= 3 || totalVoted > choices.length ? '覚えておきます！' : ''}${nenmatu ? '来年もいい年になりますように！' : ''}`,
 				renoteId: noteId,
 			});
 		}

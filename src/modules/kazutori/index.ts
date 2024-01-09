@@ -42,7 +42,7 @@ export default class extends Module {
 		setInterval(this.crawleGameEnd, 1000);
 		setInterval(() => {
 			const hours = new Date().getHours()
-			const rnd = (hours === 12 || (hours > 17 && hours < 24)) ? 0.5 : 0.1;
+			const rnd = ((hours === 12 || (hours > 17 && hours < 24)) ? 0.5 : 0.1) * this.ai.activeFactor;
 			if (Math.random() < rnd) {
 				this.start();
 			}
@@ -56,6 +56,8 @@ export default class extends Module {
 
 	@autobind
 	private async start(triggerUserId?) {
+
+		this.ai.decActiveFactor();
 
 		const games = this.games.find({});
 
@@ -238,7 +240,11 @@ export default class extends Module {
 
 		// 既に数字を取っていたら
 		if (game.votes.some(x => x.user.id == msg.userId)) {
-			msg.reply('すでに投票済みの様です！');
+			msg.reply('すでに投票済みの様です！').then(reply => {
+				game.replyKey.push(msg.userId);
+				this.games.update(game);
+				this.subscribeReply(msg.userId, reply.id);
+			});
 			return {
 				reaction: 'confused'
 			};
@@ -342,7 +348,7 @@ export default class extends Module {
 		const item = genItem();
 
 		// お流れ
-		if (game.votes?.filter((x) => x.user.winCount < 50).length <= 1) {
+		if (game.votes?.filter((x) => x.user.winCount < 50).length <= 1 || (game.votes?.length >= 2 && game.votes?.every((x) => x.user.winCount >= 50))) {
 			game.votes.forEach((x) => {
 				const friend = this.ai.lookupFriend(x.user.id)
 				if (friend) {
@@ -354,6 +360,7 @@ export default class extends Module {
 				text: serifs.kazutori.onagare(item),
 				renoteId: game.postId
 			});
+			this.ai.decActiveFactor((this.games.finishedAt.valueOf() - this.games.startedAt.valueOf()) * (60 / 1000 / 100));
 
 			return;
 		}

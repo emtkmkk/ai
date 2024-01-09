@@ -23,7 +23,7 @@ export default class extends Module {
 
 		setInterval(() => {
 			const hours = new Date().getHours()
-			const rnd = (hours === 12 || (hours > 17 && hours < 24)) ? 0.10 : 0.02;
+			const rnd = ((hours === 12 || (hours > 17 && hours < 24)) ? 0.10 : 0.02) * this.ai.activeFactor;
 			if (Math.random() < rnd) {
 				this.post();
 			}
@@ -64,11 +64,14 @@ export default class extends Module {
 
 		if (Math.random() < 0.333) {
 			localOnly = true;
+			this.ai.decActiveFactor(0.005);
 			note = notes[Math.floor(Math.random() * notes.length)];
 		} else {
 			if (Math.random() < 0.5) {
+				this.ai.decActiveFactor(0.01);
 				note = itemNotes[Math.floor(Math.random() * itemNotes.length)];
 			} else {
+				this.ai.decActiveFactor(0.02);
 				note = themeNotes[0];
 			}
 		}

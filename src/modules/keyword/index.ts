@@ -32,7 +32,7 @@ export default class extends Module {
 		
 		const hours = new Date().getHours()
 
-		setInterval(this.learn, 1000 * 60 * 20);
+		setInterval(this.learn, 1000 * 60 * 10);
 
 		return {
 			mentionHook: this.mentionHook,
@@ -75,6 +75,14 @@ export default class extends Module {
 
 	@autobind
 	private async learn() {
+
+		const learnRnd = (Math.max(this.ai.activeFactor,0.25) / 2);
+		if (Math.random() >= learnRnd) {
+			return;
+		}
+
+		this.ai.decActiveFactor(0.015);
+
 		const tl = await this.ai.api('notes/hybrid-timeline', {
 			limit: 50
 		});
@@ -121,6 +129,12 @@ export default class extends Module {
 			text = serifs.keyword.learned(keyword[0]?.replaceAll(/\s/g,""), kanaToHira(keyword[8]));
 		}
 
+		if (this.ai.activeFactor < 0.25) {
+			const postRnd = (this.ai.activeFactor / 0.25);
+			if (Math.random() >= postRnd) {
+				return;
+			}
+		}
 		this.ai.post({
 			text: text
 		});
