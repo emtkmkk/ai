@@ -285,11 +285,13 @@ export default class extends Module {
 					word2 = word2s[Math.floor(Math.random() * word2s.length)].keyword;
 					matchStringNum = 1;
 				}
-				while (matchStringNum < Math.min(word1.length,word2.length) && word2.startsWith(word1.slice((matchStringNum + 1) * -1))) {
+				while (matchStringNum < Math.min(word1.length,word2.length) && word2.toLowerCase().startsWith(word1.toLowerCase().slice((matchStringNum + 1) * -1))) {
 					matchStringNum += 1;
 				}
 
-				return `${word1} の ${word2}、${word1.slice(0, matchStringNum * -1)}${word2}`
+				const notMatchCase = !word2.startsWith(word1.slice((matchStringNum + 1) * -1));
+
+				return `${word1} の ${word2}、${word1.slice(0, matchStringNum * -1)}${notMatchCase ? word2.slice(0,matchStringNum).toUpperCase() + word2.slice(matchStringNum) : word2}`
 			}
 			return "";
 		}
