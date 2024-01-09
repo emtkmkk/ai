@@ -276,7 +276,7 @@ export default class extends Module {
 				const word2s = words.filter((x) => x.keyword.toLowerCase().startsWith(word1.toLowerCase().slice(-1)));
 				const longword2s = words2.filter((x) => x.keyword.toLowerCase().startsWith(word1.toLowerCase().slice(-2)));
 				const pc = word2s.length + longword2s.length
-				if (pc === 0 || (pc <= 2 && Math.random() < (0.66 / pc))) {
+				if (pc === 0 || (pc <= 3 && Math.random() < (0.75 / pc))) {
 					i += 1;
 					continue;
 				}
