@@ -251,6 +251,8 @@ export default class extends Module {
 	private getBananasu(msg: Message): boolean {
 		if (!msg.text) return false;
 		if (!(msg.includes(['バナナス', 'バニャニャス']))) return false;
+		let debug = false
+		if (msg.includes(['-d'])) debug = true;
 
 		const words = this.learnedKeywords.find()?.filter((x) => x.keyword.length >= 3 && !/^[0-9]/.test(x.keyword) && !/[0-9]$/.test(x.keyword));
 		const exWords = words?.map((x) => ({...x, keyword: x.keyword.replaceAll(/^[!-\/:-@[-`{-~！？]/g, "").replaceAll(/[!-\/:-@[-`{-~！？]$/g, "")}));
@@ -293,7 +295,9 @@ export default class extends Module {
 
 				const notMatchCase = !word2.startsWith(word1.slice((matchStringNum) * -1));
 
-				return `${word1} の ${word2}、${word1.slice(0, matchStringNum * -1)}${notMatchCase ? word2.slice(0,matchStringNum).toUpperCase() + word2.slice(matchStringNum) : word2}`
+				const info = `\n[${word1.slice(0,-1)} : ${word2s.length} , ${word1.slice(0,-2)} : ${longword2s.length}]`
+
+				return `${word1} の ${word2}、${word1.slice(0, matchStringNum * -1)}${notMatchCase ? word2.slice(0,matchStringNum).toUpperCase() + word2.slice(matchStringNum) : word2}${debug ? info : ""}`
 			}
 			return "";
 		}
