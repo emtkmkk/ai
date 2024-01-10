@@ -513,7 +513,7 @@ export default class 藍 {
 
 	@autobind
 	public incActiveFactor(amount = 0.01) {
-		const incNum = ((amount / Math.max(this.activeFactor,1)) * (this.activeFactor >= 1 ? 0.7 : 1));
+		const incNum = ((amount / Math.max(this.activeFactor,1)) * (this.activeFactor >= 1 ? 0.8 : 1));
 		this.activeFactor = Math.floor(Math.min(this.activeFactor + incNum, 2) * 1000) / 1000;
 		this.log(`ActiveFactor: ${(this.activeFactor * 100).toFixed(1)}% (+${(incNum * 100).toFixed(1)}%)`);
 		this.setMeta({
