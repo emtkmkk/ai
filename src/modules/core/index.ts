@@ -255,41 +255,94 @@ export default class extends Module {
 		let debug = false
 		if (msg.includes(['-d'])) debug = true;
 
+		let inputWord;
+		if	(/^[^\s]{1,10}(の|で)(たくさん)?バナナス/.test(msg.extractedText)) {
+			inputWord = /^([^\s]+)(の|で)(たくさん)?バナナス/.exec(msg.extractedText)?.[1];
+		}
+
 		const words = this.learnedKeywords.find()?.filter((x) => x.keyword.length >= 3 && !/^[0-9]/.test(x.keyword) && !/[0-9]$/.test(x.keyword));
 		const exWords = words?.map((x) => ({...x, keyword: x.keyword.replaceAll(/^[!-\/:-@[-`{-~！？]/g, "").replaceAll(/[!-\/:-@[-`{-~！？]$/g, "")}));
 		const words2 = exWords?.filter((x) => x.keyword.length >= 4);
 		const jpWords = exWords?.filter((x) => !/[a-zA-Z0-9_]$/.test(x.keyword));
 		const hirakanaWords = jpWords?.filter((x) => /[ぁ-んァ-ンヴー]$/.test(x.keyword));
+		const word1error = false;
+		const word2error = false;
 		const makeBananasu = () : string => {
 			if (!(exWords.length && words2.length && jpWords.length && hirakanaWords.length)) return "";
 			let i = 0;
-			while (words && i < 100) {
+			while (words && (i < 100 || (word1error && word2error))) {
 				let word1 = "";
-				if (Math.random() < 0.5) {
-					word1 = words[Math.floor(Math.random() * words.length)].keyword;
-				} else {
-					if (Math.random() < 0.5) {
-						word1 = jpWords[Math.floor(Math.random() * jpWords.length)].keyword;
+				let word2 = "";
+				let word2s = [];
+				const longword2s = [];
+				const pc = 0;
+				let matchStringNum = 1;
+				if (inputWord) {
+					if (word2error || (!word1error && Math.random() < 0.5)) {
+						word1 = inputWord;
+						word2s = words.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice(-1)));
+						longword2s = words2.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice(-2)));
+						pc = word2s.length + longword2s.length
+						if (pc === 0) {
+							word1error = true;
+							i += 1;
+							continue;
+						}
+						if (word2s.length === 0 || longword2s.length && Math.random() < 0.4) {
+							word2 = longword2s[Math.floor(Math.random() * longword2s.length)].keyword;
+							matchStringNum = 2;
+						} else {
+							word2 = word2s[Math.floor(Math.random() * word2s.length)].keyword;
+							matchStringNum = 1;
+						}
 					} else {
-						word1 = hirakanaWords[Math.floor(Math.random() * hirakanaWords.length)].keyword;
+						word2 = inputWord;
+						word2s = words.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().endsWith(katakanaToHiragana(hankakuToZenkaku(word2)).toLowerCase().slice(-1)));
+						longword2s = words2.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().endsWith(katakanaToHiragana(hankakuToZenkaku(word2)).toLowerCase().slice(-2)));
+						pc = word2s.length + longword2s.length
+						if (pc === 0) {
+							word2error = true;
+							i += 1;
+							continue;
+						}
+						if (word2s.length === 0 || longword2s.length && Math.random() < 0.4) {
+							word1 = longword2s[Math.floor(Math.random() * longword2s.length)].keyword;
+							matchStringNum = 2;
+						} else {
+							word1 = word2s[Math.floor(Math.random() * word2s.length)].keyword;
+							matchStringNum = 1;
+						}
+					}
+				} else {
+					
+					if (Math.random() < 0.5) {
+						word1 = words[Math.floor(Math.random() * words.length)].keyword;
+					} else {
+						if (Math.random() < 0.5) {
+							word1 = jpWords[Math.floor(Math.random() * jpWords.length)].keyword;
+						} else {
+							word1 = hirakanaWords[Math.floor(Math.random() * hirakanaWords.length)].keyword;
+						}
+					}
+					
+					word2s = words.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice(-1)));
+					longword2s = words2.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice(-2)));
+					pc = word2s.length + longword2s.length
+					
+					if (pc === 0 || (pc <= 3 && Math.random() < (0.75 / pc) + (pc === 1 && word2s.length === 1 ? 0.2 : 0))) {
+						i += 1;
+						continue;
+					}
+					
+					if (word2s.length === 0 || longword2s.length && Math.random() < 0.4) {
+						word2 = longword2s[Math.floor(Math.random() * longword2s.length)].keyword;
+						matchStringNum = 2;
+					} else {
+						word2 = word2s[Math.floor(Math.random() * word2s.length)].keyword;
+						matchStringNum = 1;
 					}
 				}
-				const word2s = words.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice(-1)));
-				const longword2s = words2.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice(-2)));
-				const pc = word2s.length + longword2s.length
-				if (pc === 0 || (pc <= 3 && Math.random() < (0.75 / pc) + (pc === 1 && word2s.length === 1 ? 0.2 : 0))) {
-					i += 1;
-					continue;
-				}
-				let word2 = "";
-				let matchStringNum = 1;
-				if (word2s.length === 0 || longword2s.length && Math.random() < 0.4) {
-					word2 = longword2s[Math.floor(Math.random() * longword2s.length)].keyword;
-					matchStringNum = 2;
-				} else {
-					word2 = word2s[Math.floor(Math.random() * word2s.length)].keyword;
-					matchStringNum = 1;
-				}
+				
 				while (matchStringNum < Math.min(word1.length,word2.length) && katakanaToHiragana(hankakuToZenkaku(word2)).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice((matchStringNum + 1) * -1))) {
 					matchStringNum += 1;
 				}
@@ -303,7 +356,7 @@ export default class extends Module {
 			return "";
 		}
 
-		const bananasu = msg.includes(['たくさん','沢山']) ? [makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu()].filter((x) => x).join("\n") : makeBananasu();
+		const bananasu = msg.includes(['たくさん','沢山']) ? Array.from(new Set([makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu()]).filter((x) => x).join("\n") : makeBananasu();
 		
 		msg.reply("\n" + (bananasu ? bananasu : "上手く思いつきませんでした、後からもう一度試してみてください！"), { visibility: bananasu ? "public" : "home" });
 		return true;
