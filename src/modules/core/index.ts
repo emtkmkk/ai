@@ -277,7 +277,7 @@ export default class extends Module {
 				const word2s = words.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice(-1)));
 				const longword2s = words2.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice(-2)));
 				const pc = word2s.length + longword2s.length
-				if (pc === 0 || (pc <= 3 && Math.random() < (0.75 / pc))) {
+				if (pc === 0 || (pc <= 3 && Math.random() < (0.75 / pc)) + (pc === 1 && word2s.length === 1 ? 0.2 : 0)) {
 					i += 1;
 					continue;
 				}
