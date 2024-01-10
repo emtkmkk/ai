@@ -256,8 +256,8 @@ export default class extends Module {
 		if (msg.includes(['-d'])) debug = true;
 
 		let inputWord;
-		if	(/^[^\s]{1,10}(の|で)(たくさん)?バナナス/.test(msg.extractedText)) {
-			inputWord = /^([^\s]+)(の|で)(たくさん)?バナナス/.exec(msg.extractedText)?.[1];
+		if	(/^[^\s]{1,10}(の|で)(たくさん)?(バナナス|バニャニャス|ばななす|ばにゃにゃす)/.test(msg.extractedText)) {
+			inputWord = /^([^\s]+)(の|で)(たくさん)?(バナナス|バニャニャス|ばななす|ばにゃにゃす)/.exec(msg.extractedText)?.[1];
 		}
 
 		const words = this.learnedKeywords.find()?.filter((x) => x.keyword.length >= 3 && !/^[0-9]/.test(x.keyword) && !/[0-9]$/.test(x.keyword));
@@ -377,8 +377,7 @@ export default class extends Module {
 			return false;
 		}
 
-		if (!msg.user.host) {
-			//ローカル
+		if (!msg.user.host) {			//ローカル
 			msg.reply(`
 送った事がある絵文字の種類 : **${data.sentReactionsCount}** 種類
 受け取った事がある絵文字の種類 : **${data.receivedReactionsCount}** 種類
