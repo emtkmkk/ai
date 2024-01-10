@@ -297,8 +297,8 @@ export default class extends Module {
 						}
 					} else {
 						word2 = inputWord;
-						word2s = words.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().endsWith(katakanaToHiragana(hankakuToZenkaku(word2)).toLowerCase().slice(-1)));
-						longword2s = words2.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().endsWith(katakanaToHiragana(hankakuToZenkaku(word2)).toLowerCase().slice(-2)));
+						word2s = words.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().endsWith(katakanaToHiragana(hankakuToZenkaku(word2)).toLowerCase().slice(0,1)));
+						longword2s = words2.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().endsWith(katakanaToHiragana(hankakuToZenkaku(word2)).toLowerCase().slice(0,2)));
 						pc = word2s.length + longword2s.length
 						if (pc === 0) {
 							word2error = true;
