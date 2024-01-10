@@ -290,7 +290,7 @@ export default class extends Module {
 					word2 = word2s[Math.floor(Math.random() * word2s.length)].keyword;
 					matchStringNum = 1;
 				}
-				while (matchStringNum < Math.min(word1.length,word2.length) && katakanaToHiragana(hankakuToZenkaku(word2).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice((matchStringNum + 1) * -1))) {
+				while (matchStringNum < Math.min(word1.length,word2.length) && katakanaToHiragana(hankakuToZenkaku(word2)).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice((matchStringNum + 1) * -1))) {
 					matchStringNum += 1;
 				}
 
@@ -305,7 +305,7 @@ export default class extends Module {
 
 		const bananasu = msg.includes(['たくさん','沢山']) ? [makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu()].filter((x) => x).join("\n") : makeBananasu();
 		
-		msg.reply("\n" + (bananasu ? bananasu : "上手く思いつきませんでした、もう一度試してみてください！"), { visibility: bananasu ? "public" : "home" });
+		msg.reply("\n" + (bananasu ? bananasu : "上手く思いつきませんでした、後からもう一度試してみてください！"), { visibility: bananasu ? "public" : "home" });
 		return true;
 	}
 
