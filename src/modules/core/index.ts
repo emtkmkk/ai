@@ -273,8 +273,8 @@ export default class extends Module {
 			while (words && (i < 100 || (word1error && word2error))) {
 				let word1 = "";
 				let word2 = "";
-				let word2s = [];
-				const longword2s = [];
+				let word2s;
+				const longword2s;
 				const pc = 0;
 				let matchStringNum = 1;
 				if (inputWord) {
