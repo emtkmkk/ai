@@ -5,6 +5,7 @@ import Message from '@/message';
 import serifs from '@/serifs';
 import { safeForInterpolate } from '@/utils/safe-for-interpolate';
 import { checkNgWord } from '@/utils/check-ng-word';
+import { katakanaToHiragana, hankakuToZenkaku } from '@/utils/japanese';
 import { acct } from '@/utils/acct';
 import { genItem, itemPrefixes } from '@/vocabulary';
 
