@@ -270,7 +270,7 @@ export default class extends Module {
 		const makeBananasu = () : string => {
 			if (!(exWords.length && words2.length && jpWords.length && hirakanaWords.length)) return "";
 			let i = 0;
-			while (words && (i < 100 || (word1error && word2error))) {
+			while (words && (i < 100 && (!word1error || !word2error))) {
 				let word1 = "";
 				let word2 = "";
 				let word2s;
@@ -356,7 +356,7 @@ export default class extends Module {
 			return "";
 		}
 
-		const bananasu = msg.includes(['たくさん','沢山']) ? Array.from(new Set([makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu()])).filter((x) => x).join("\n") : makeBananasu();
+		const bananasu = msg.includes(['たくさん','沢山']) ? Array.from(new Set([makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu()])).filter((x) => x).join("\n") : makeBananasu();
 		
 		msg.reply("\n" + (bananasu ? bananasu : "上手く思いつきませんでした、後からもう一度試してみてください！"), { visibility: bananasu ? "public" : "home" });
 		return true;
