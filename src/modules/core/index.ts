@@ -265,8 +265,8 @@ export default class extends Module {
 		const words2 = exWords?.filter((x) => x.keyword.length >= 4);
 		const jpWords = exWords?.filter((x) => !/[a-zA-Z0-9_]$/.test(x.keyword));
 		const hirakanaWords = jpWords?.filter((x) => /[ぁ-んァ-ンヴー]$/.test(x.keyword));
-		const word1error = false;
-		const word2error = false;
+		let word1error = false;
+		let word2error = false;
 		const makeBananasu = () : string => {
 			if (!(exWords.length && words2.length && jpWords.length && hirakanaWords.length)) return "";
 			let i = 0;
@@ -274,8 +274,8 @@ export default class extends Module {
 				let word1 = "";
 				let word2 = "";
 				let word2s;
-				const longword2s;
-				const pc = 0;
+				let longword2s;
+				let pc = 0;
 				let matchStringNum = 1;
 				if (inputWord) {
 					if (word2error || (!word1error && Math.random() < 0.5)) {
