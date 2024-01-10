@@ -273,8 +273,8 @@ export default class extends Module {
 						word1 = hirakanaWords[Math.floor(Math.random() * hirakanaWords.length)].keyword;
 					}
 				}
-				const word2s = words.filter((x) => x.keyword.toLowerCase().startsWith(word1.toLowerCase().slice(-1)));
-				const longword2s = words2.filter((x) => x.keyword.toLowerCase().startsWith(word1.toLowerCase().slice(-2)));
+				const word2s = words.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice(-1)));
+				const longword2s = words2.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice(-2)));
 				const pc = word2s.length + longword2s.length
 				if (pc === 0 || (pc <= 3 && Math.random() < (0.75 / pc))) {
 					i += 1;
@@ -289,7 +289,7 @@ export default class extends Module {
 					word2 = word2s[Math.floor(Math.random() * word2s.length)].keyword;
 					matchStringNum = 1;
 				}
-				while (matchStringNum < Math.min(word1.length,word2.length) && word2.toLowerCase().startsWith(word1.toLowerCase().slice((matchStringNum + 1) * -1))) {
+				while (matchStringNum < Math.min(word1.length,word2.length) && katakanaToHiragana(hankakuToZenkaku(word2).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice((matchStringNum + 1) * -1))) {
 					matchStringNum += 1;
 				}
 
