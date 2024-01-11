@@ -350,7 +350,7 @@ export default class extends Module {
 		const medal = (game.votes?.length >= 2 && game.votes?.every((x) => x.user.winCount >= 50));
 
 		// お流れ
-		if (game.votes?.filter((x) => x.user.winCount < 50).length <= 1 && !medal )) {
+		if (game.votes?.filter((x) => x.user.winCount < 50).length <= 1 && !medal ) {
 			game.votes.forEach((x) => {
 				const friend = this.ai.lookupFriend(x.user.id)
 				if (friend) {
