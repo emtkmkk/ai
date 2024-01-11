@@ -338,7 +338,7 @@ export default {
 
 		finish: 'ゲームの結果発表です！',
 
-		finishWithWinner: (user, name, item, reverse, perfect, winCount) => `${reverse ? "...ありゃ？逆順で集計しちゃいました！\n" : ""}今回は${user}さん${name ? `(${name})` : ""}の${perfect ? "パーフェクト" : ""}勝ちです！${winCount === 5 || winCount % 10 === 0 ? `\nこれが${winCount}回目の勝利みたいです！` : winCount === 1 ? "\nこれが初勝利みたいです！" : ""}おめでとう！\n景品として${item}をどうぞ！\nまたやりましょう！`,
+		finishWithWinner: (user, name, item, reverse, perfect, winCount, medal) => `${reverse ? "...ありゃ？逆順で集計しちゃいました！\n" : ""}今回は${user}さん${name ? `(${name})` : ""}の${perfect ? "パーフェクト" : ""}勝ちです！${winCount === 5 || winCount % 10 === 0 ? `\nこれが${winCount}回目の勝利みたいです！` : winCount === 1 ? "\nこれが初勝利みたいです！" : ""}おめでとう！\n景品として${item}${medal ? `とメダル(${medal}枚目)` : ""}をどうぞ！\nまたやりましょう！`,
 
 		finishWithNoWinner: item => `今回は全員負けです...\n${item}は私がもらっておきますね...\nまたやりましょう！`,
 
