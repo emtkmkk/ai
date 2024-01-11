@@ -347,7 +347,7 @@ export default class extends Module {
 
 		const item = genItem();
 
-		const medal = (game.votes?.length >= 2 && game.votes?.every((x) => x.user.winCount >= 50);
+		const medal = (game.votes?.length >= 2 && game.votes?.every((x) => x.user.winCount >= 50));
 
 		// お流れ
 		if (game.votes?.filter((x) => x.user.winCount < 50).length <= 1 && !medal )) {
