@@ -277,6 +277,8 @@ export default class 藍 {
 		if (![":mk_widechicken:", ":mk_fly_sliver:", ":mk_ultrawidechicken:"].includes(reaction)) {
 			// 正しい反応の場合
 			friend.incLove(0.1, reaction);
+		} else if (reaction === ":mk_widechicken:") {
+			this.decActiveFactor(0.0005);
 		}
 
 		// リアクションする
@@ -523,6 +525,7 @@ export default class 藍 {
 
 	@autobind
 	public decActiveFactor(amount = 0.05) {
+		const _activeFactor = this.activeFactor
 		let decNum = amount;
 		if (this.activeFactor < 1) {
 			decNum = (amount * this.activeFactor);
@@ -531,7 +534,7 @@ export default class 藍 {
 			decNum = (amount * this.activeFactor * 2);
 			this.activeFactor = Math.floor(Math.max(this.activeFactor - decNum, 1 - (amount * this.activeFactor)) * 1000) / 1000;
 		}
-		this.log(`ActiveFactor: ${(this.activeFactor * 100).toFixed(1)}% (-${(decNum * 100).toFixed(1)}%)`);
+		this.log(`ActiveFactor: ${(this.activeFactor * 100).toFixed(1)}% (-${((this.activeFactor - _activeFactor) * 100).toFixed(1)}%)`);
 		this.setMeta({
 			activeFactor: this.activeFactor,
 		});
