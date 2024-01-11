@@ -347,8 +347,10 @@ export default class extends Module {
 
 		const item = genItem();
 
+		const medal = (game.votes?.length >= 2 && game.votes?.every((x) => x.user.winCount >= 50);
+
 		// お流れ
-		if (game.votes?.filter((x) => x.user.winCount < 50).length <= 1 || (game.votes?.length >= 2 && game.votes?.every((x) => x.user.winCount >= 50))) {
+		if (game.votes?.filter((x) => x.user.winCount < 50).length <= 1 && !medal )) {
 			game.votes.forEach((x) => {
 				const friend = this.ai.lookupFriend(x.user.id)
 				if (friend) {
@@ -424,12 +426,13 @@ export default class extends Module {
 			}
 		}
 
-		const winDiff = (winner?.winCount ?? 0) - (reverseWinner?.winCount ?? 0);
-
-		if (!reverse && winner && winDiff > 10 && Math.random() < Math.min((winDiff - 10) * 0.02, 0.7)) {
-			reverse = !reverse;
-		} else if (reverse && reverseWinner && winDiff < -10 && Math.random() < Math.min((winDiff + 10) * -0.02, 0.7)) {
-			reverse = !reverse;
+		if (!medal) {
+			const winDiff = (winner?.winCount ?? 0) - (reverseWinner?.winCount ?? 0);
+			if (!reverse && winner && winDiff > 10 && Math.random() < Math.min((winDiff - 10) * 0.02, 0.7)) {
+				reverse = !reverse;
+			} else if (reverse && reverseWinner && winDiff < -10 && Math.random() < Math.min((winDiff + 10) * -0.02, 0.7)) {
+				reverse = !reverse;
+			}
 		}
 
 		let perfect = false;
@@ -456,7 +459,10 @@ export default class extends Module {
 			if (winnerFriend.doc.kazutoriData.winCount) {
 				winnerFriend.doc.kazutoriData.winCount += 1;
 			} else {
-				winnerFriend.doc.kazutoriData = { winCount: 1, playCount: 1, inventory: [] };
+				winnerFriend.doc.kazutoriData = { winCount: 1, playCount: 1, inventory: [], ...winnerFriend.doc.kazutoriData };
+			}
+			if (medal) {
+				winnerFriend.doc.kazutoriData.medal = (winnerFriend.doc.kazutoriData.medal || 0) + 1;
 			}
 			if (winnerFriend.doc.kazutoriData.inventory) {
 				if (winnerFriend.doc.kazutoriData.inventory.length >= 50) winnerFriend.doc.kazutoriData.inventory.shift();
@@ -469,7 +475,7 @@ export default class extends Module {
 
 
 		const text = results.join('\n') + '\n\n' + (winner
-			? serifs.kazutori.finishWithWinner(acct(winner), name, item, reverse, perfect, winnerFriend?.doc?.kazutoriData?.winCount ?? 0)
+			? serifs.kazutori.finishWithWinner(acct(winner), name, item, reverse, perfect, winnerFriend?.doc?.kazutoriData?.winCount ?? 0, medal ? winnerFriend?.doc?.kazutoriData?.medal ?? 0 : null)
 			: serifs.kazutori.finishWithNoWinner(item));
 
 		this.ai.post({
