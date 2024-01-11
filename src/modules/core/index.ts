@@ -194,7 +194,7 @@ export default class extends Module {
 		love += lovep >= 100 ? "★" : "☆"
 		love += over >= 1 ? "+" + (over >= 2 ? over : "") : ""
 
-		const kazutori = msg.friend.doc.kazutoriData?.playCount ? msg.friend.doc.kazutoriData?.winCount + ' / ' + msg.friend.doc.kazutoriData?.playCount : undefined;
+		const kazutori = msg.friend.doc.kazutoriData?.playCount ? msg.friend.doc.kazutoriData?.winCount + ' / ' + msg.friend.doc.kazutoriData?.playCount + (msg.friend.doc.kazutoriData?.medal ? "\nメダル : " + msg.friend.doc.kazutoriData?.medal : "") : undefined;
 
 		msg.reply(serifs.core.getStatus(msg.friend.name, love, kazutori))
 
