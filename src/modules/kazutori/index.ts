@@ -456,7 +456,7 @@ export default class extends Module {
 		const name = winnerFriend ? winnerFriend.name : null;
 
 		if (winnerFriend) {
-			if (winnerFriend.doc.kazutoriData.winCount == null) {
+			if (winnerFriend.doc.kazutoriData.winCount != null) {
 				winnerFriend.doc.kazutoriData.winCount += 1;
 			} else {
 				winnerFriend.doc.kazutoriData = { winCount: 1, playCount: 1, inventory: []};
