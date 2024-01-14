@@ -12,9 +12,10 @@ const pipeline = util.promisify(stream.pipeline);
  * @param mecab mecab bin
  * @param dic mecab dictionaly path
  */
-export async function mecab(text: string, mecab = 'mecab', dic?: string): Promise<string[][]> {
+export async function mecab(text: string, mecab = 'mecab', dic?: string, custom?: string): Promise<string[][]> {
 	const args: string[] = [];
 	if (dic) args.push('-d', dic);
+	if (custom) args.push('-u', custom);
 
 	const lines = await cmd(mecab, args, `${text.replace(/[\n\s\t]/g, ' ')}\n`);
 
