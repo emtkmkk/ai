@@ -11,6 +11,7 @@ type Config = {
 	serverMonitoring: boolean;
 	mecab?: string;
 	mecabDic?: string;
+	mecabCustom?: string;
 	memoryDir?: string;
 };
 
