@@ -179,7 +179,7 @@ export default {
 	},
 
 	keyword: {
-		learned: (word, reading) => `($[ruby ${word} ${reading}] ………覚えましたし)`,
+		learned: (word, reading) => `(${reading ? `$[ruby ${word} ${reading}]` : word} ………覚えましたし)`,
 
 		remembered: (word) => `${word}`
 	},
