@@ -56,7 +56,6 @@ export default class extends Module {
 						token[2] !== '固有名詞' ||
 						token[3] === '人名' ||
 						token[8] == null ||
-						kanaToHira(token[0]) === kanaToHira(token[8]) ||
 						!checkNgWord(token[0]) ||
 						!checkNgWord(token[8]) ||
 						/^\d\d+|\d\d+$/.test(token[0])
@@ -98,7 +97,7 @@ export default class extends Module {
 
 		for (const note of interestedNotes) {
 			const tokens = await mecab(note.text, config.mecab, config.mecabDic);
-			const keywordsInThisNote = tokens.filter(token => token[2] == '固有名詞' && token[3] !== '人名' && token[8] != null && kanaToHira(token[0]) !== kanaToHira(token[8]));
+			const keywordsInThisNote = tokens.filter(token => token[2] == '固有名詞' && token[3] !== '人名' && token[8] != null);
 			keywords = keywords.concat(keywordsInThisNote);
 		}
 
@@ -124,7 +123,7 @@ export default class extends Module {
 				learnedAt: Date.now()
 			});
 
-			text = serifs.keyword.learned(keyword[0]?.replaceAll(/\s/g,""), kanaToHira(keyword[8]));
+			text = serifs.keyword.learned(keyword[0]?.replaceAll(/\s/g,""), kanaToHira(keyword[0]) !== kanaToHira(keyword[8]) ? kanaToHira(keyword[8]) : null);
 		}
 
 		if (this.ai.activeFactor < 0.25) {
