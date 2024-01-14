@@ -49,7 +49,7 @@ export default class extends Module {
 			const keywords = this.learnedKeywords.find();
 
 			keywords.forEach(async (x) => {
-					const tokens = await mecab(x.keyword, config.mecab, config.mecabDic);
+					const tokens = await mecab(x.keyword, config.mecab, config.mecabDic, config.mecabCustom);
 				  if (tokens?.length === 1){
 						const token = tokens[0];
 					if (
@@ -96,7 +96,7 @@ export default class extends Module {
 		let keywords: string[][] = [];
 
 		for (const note of interestedNotes) {
-			const tokens = await mecab(note.text, config.mecab, config.mecabDic);
+			const tokens = await mecab(note.text, config.mecab, config.mecabDic, config.mecabCustom);
 			const keywordsInThisNote = tokens.filter(token => token[2] == '固有名詞' && token[3] !== '人名' && token[8] != null);
 			keywords = keywords.concat(keywordsInThisNote);
 		}
