@@ -39,7 +39,7 @@ export default class extends Module {
 		birthFriends.forEach(f => {
 			const friend = new Friend(this.ai, { doc: f });
 
-			if (friend.user.username === "eroflash") return;
+			if (friend.doc?.user?.username === "eroflash") return;
 
 			// 親愛度が1以上必要
 			if (friend.love < 1) return;
