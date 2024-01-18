@@ -194,7 +194,7 @@ export default class extends Module {
 		love += lovep >= 100 ? "★" : "☆"
 		love += over >= 1 ? "+" + (over >= 2 ? over : "") : ""
 
-		const kazutori = msg.friend.doc.kazutoriData?.playCount ? msg.friend.doc.kazutoriData?.winCount + ' / ' + msg.friend.doc.kazutoriData?.playCount + (msg.friend.doc.kazutoriData?.medal ? "\nメダル : " + msg.friend.doc.kazutoriData?.medal : "") : undefined;
+		const kazutori = msg.friend.doc.kazutoriData?.playCount ? msg.friend.doc.kazutoriData?.winCount + ' / ' + msg.friend.doc.kazutoriData?.playCount + (msg.friend.doc.kazutoriData?.medal ? "\nトロフィー : " + msg.friend.doc.kazutoriData?.medal : "") : undefined;
 
 		msg.reply(serifs.core.getStatus(msg.friend.name, love, kazutori))
 
@@ -465,7 +465,7 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 		const jpWords = exWords?.filter((x) => !/[a-zA-Z0-9_]$/.test(x.keyword));
 		const hirakanaWords = jpWords?.filter((x) => /[ぁ-んァ-ンヴー]$/.test(x.keyword));
 		msg.reply(`\n\`\`\`\n現在の機嫌 : ${Math.floor(this.ai.activeFactor * 100)}%\n\n覚えた言葉数 : ${words.length}\nバナナスに使う言葉数 : ${baWords.length - specialWords.length} + ${specialWords.length}\n英語以外で終わる言葉数 : ${jpWords.length}\n英語・漢字以外で終わる言葉数 : ${hirakanaWords.length}\n\`\`\``, {
-			immediate: true
+			immediate: false
 		});
 
 		return true;
