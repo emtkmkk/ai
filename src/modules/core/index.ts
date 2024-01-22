@@ -241,7 +241,7 @@ export default class extends Module {
 			return adana;
 		}
 
-		const adanas = msg.includes(['たくさん', '沢山']) ? [genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana()] : [genAdana(),genAdana(),genAdana()]
+		const adanas = msg.includes(['たくさん', '沢山', 'いっぱい', '大量']) ? [genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana()] : [genAdana(),genAdana(),genAdana()]
 		
 		msg.reply(serifs.core.getAdana(adanas))
 
@@ -290,7 +290,7 @@ export default class extends Module {
 						}
 						if (word2s.length === 0 || longword2s.length && Math.random() < 0.4) {
 							word2 = longword2s[Math.floor(Math.random() * longword2s.length)].keyword;
-							matchStringNum = 2;
+							matchStringNum = 1;
 						} else {
 							word2 = word2s[Math.floor(Math.random() * word2s.length)].keyword;
 							matchStringNum = 1;
@@ -307,7 +307,7 @@ export default class extends Module {
 						}
 						if (word2s.length === 0 || longword2s.length && Math.random() < 0.4) {
 							word1 = longword2s[Math.floor(Math.random() * longword2s.length)].keyword;
-							matchStringNum = 2;
+							matchStringNum = 1;
 						} else {
 							word1 = word2s[Math.floor(Math.random() * word2s.length)].keyword;
 							matchStringNum = 1;
@@ -336,7 +336,7 @@ export default class extends Module {
 					
 					if (word2s.length === 0 || longword2s.length && Math.random() < 0.4) {
 						word2 = longword2s[Math.floor(Math.random() * longword2s.length)].keyword;
-						matchStringNum = 2;
+						matchStringNum = 1;
 					} else {
 						word2 = word2s[Math.floor(Math.random() * word2s.length)].keyword;
 						matchStringNum = 1;
@@ -356,9 +356,9 @@ export default class extends Module {
 			return "";
 		}
 
-		const bananasu = msg.includes(['たくさん','沢山']) ? Array.from(new Set([makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu()])).filter((x) => x).join("\n") : makeBananasu();
+		const bananasu = msg.includes(['たくさん', '沢山', 'いっぱい', '大量']) ? Array.from(new Set([makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu()])).filter((x) => x).join("\n") : makeBananasu();
 		
-		msg.reply("\n" + (bananasu ? bananasu : "上手く思いつきませんでした、後からもう一度試してみてください！"), { visibility: bananasu ? "public" : "home" });
+		msg.reply("\n" + (bananasu ? bananasu : "上手く思いつきませんでした。また今度試してみてください！"), { visibility: bananasu ? "public" : "home" });
 		return true;
 	}
 
