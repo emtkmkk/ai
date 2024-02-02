@@ -53,8 +53,6 @@ export default class extends Module {
 				  if (tokens?.length === 1){
 						const token = tokens[0];
 					if (
-						token[2] !== '固有名詞' ||
-						token[3] === '人名' ||
 						token[8] == null ||
 						!checkNgWord(token[0]) ||
 						!checkNgWord(token[8]) ||
