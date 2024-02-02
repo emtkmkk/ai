@@ -4,6 +4,7 @@ export type User = {
 	username: string;
 	host?: string | null;
 	isFollowing?: boolean;
+	isRenoteMuted?: boolean;
 	isBot: boolean;
 	notesCount?: number;
 };
