@@ -475,6 +475,13 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 	private async contextHook(key: any, msg: Message, data: any) {
 		if (msg.text == null) return;
 
+		if (key !== msg.userId) {
+			msg.reply(serifs.reminder.doneFromInvalidUser);
+			return {
+				reaction:'confused'
+			};
+		}
+
 		const done = () => {
 			msg.reply(serifs.core.setNameOk(msg.friend.name));
 			this.unsubscribeReply(key);
