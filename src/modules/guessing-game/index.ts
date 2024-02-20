@@ -111,6 +111,13 @@ export default class extends Module {
 		};
 
 		const g = parseInt(guess[0], 10);
+		
+		const min = Math.max(...exist.tries.filter((x) => x < exist.secret))
+		const max = Math.min(...exist.tries.filter((x) => x > exist.secret))
+
+		if (g < min) g = min;
+		if (g > max) g = max;
+
 		const firsttime = exist.tries.indexOf(g) === -1;
 
 		if (firsttime) exist.tries.push(g);
