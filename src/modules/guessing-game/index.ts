@@ -18,7 +18,7 @@ export default class extends Module {
 		triggerId: string;
 	}>;
 
-	private MAX_TRY = 5;
+	private MAX_TRY = 6;
 
 	@autobind
 	public install() {
