@@ -3,6 +3,7 @@ import * as loki from 'lokijs';
 import Module from '@/module';
 import Message from '@/message';
 import serifs from '@/serifs';
+import { acct } from '@/utils/acct';
 
 export default class extends Module {
 	public readonly name = 'guessingGame';
@@ -14,7 +15,10 @@ export default class extends Module {
 		isEnded: boolean;
 		startedAt: number;
 		endedAt: number | null;
+		triggerId: string;
 	}>;
+
+	private MAX_TRY = 5;
 
 	@autobind
 	public install() {
@@ -45,10 +49,11 @@ export default class extends Module {
 			tries: [],
 			isEnded: false,
 			startedAt: Date.now(),
-			endedAt: null
+			endedAt: null,
+			triggerId: msg.id,
 		});
 
-		msg.reply(serifs.guessingGame.started).then(reply => {
+		msg.reply(serifs.guessingGame.started(this.MAX_TRY), {visibility: "specified"}).then(reply => {
 			this.subscribeReply(msg.userId, reply.id);
 		});
 
@@ -73,7 +78,14 @@ export default class extends Module {
 		}
 
 		if (msg.text.includes('やめ')) {
-			msg.reply(serifs.guessingGame.cancel);
+			try {
+				this.ai.post({
+					text: acct(msg.user) + ' ' + serifs.guessingGame.cancel,
+					replyId: exist.triggerId,
+				});
+			} catch (err) {
+				msg.reply(serifs.guessingGame.cancel);
+			}
 			exist.isEnded = true;
 			exist.endedAt = Date.now();
 			this.guesses.update(exist);
@@ -106,32 +118,43 @@ export default class extends Module {
 		let text: string;
 		let end = false;
 
-		if (exist.secret < g) {
+		if (exist.secret !== g && exist.tries.length >= this.MAX_TRY) {
+			end = true;
+			text = serifs.guessingGame.fail(exist.secret, exist.tries.length.toString(), exist.tries.join("→"));
+		} else if (exist.secret < g) {
 			text = firsttime
-				? serifs.guessingGame.less(g.toString())
+				? serifs.guessingGame.less(g.toString(), this.MAX_TRY - exist.tries.length)
 				: serifs.guessingGame.lessAgain(g.toString());
 		} else if (exist.secret > g) {
 			text = firsttime
-				? serifs.guessingGame.grater(g.toString())
+				? serifs.guessingGame.grater(g.toString(), this.MAX_TRY - exist.tries.length)
 				: serifs.guessingGame.graterAgain(g.toString());
 		} else {
 			end = true;
-			text = serifs.guessingGame.congrats(exist.tries.length.toString());
+			text = serifs.guessingGame.congrats(exist.secret, exist.tries.length.toString(), exist.tries.join("→"));
 		}
 
 		if (end) {
 			exist.isEnded = true;
 			exist.endedAt = Date.now();
 			this.unsubscribeReply(key);
+			try {
+				this.ai.post({
+					text: acct(msg.user) + ' ' + text,
+					replyId: exist.triggerId,
+				});
+			} catch (err) {
+				msg.reply(text)
+			}
+		} else {
+			msg.reply(text).then(reply => {
+				if (!end) {
+					this.subscribeReply(msg.userId, reply.id);
+				}
+			});
 		}
 
 		this.guesses.update(exist);
-
-		msg.reply(text).then(reply => {
-			if (!end) {
-				this.subscribeReply(msg.userId, reply.id);
-			}
-		});
 		return {
 			reaction:'love'
 		}

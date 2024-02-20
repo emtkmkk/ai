@@ -286,7 +286,7 @@ export default {
 		/**
 		 * ゲーム開始
 		 */
-		started: '0~100の秘密の数を当ててみてください！',
+		started: maxtry => `0~100の秘密の数を${maxtry}回以内に当ててみてください！`,
 
 		/**
 		 * 数字じゃない返信があったとき
@@ -301,7 +301,7 @@ export default {
 		/**
 		 * 小さい数を言われたとき
 		 */
-		grater: num => `${num}より大きいです`,
+		grater: (num, remainingTryes) => `${num}より大きいです(あと${remainingTryes}回)`,
 
 		/**
 		 * 小さい数を言われたとき(2度目)
@@ -311,7 +311,7 @@ export default {
 		/**
 		 * 大きい数を言われたとき
 		 */
-		less: num => `${num}より小さいです`,
+		less: (num, remainingTryes) => `${num}より小さいです(あと${remainingTryes}回)`,
 
 		/**
 		 * 大きい数を言われたとき(2度目)
@@ -321,7 +321,12 @@ export default {
 		/**
 		 * 正解したとき
 		 */
-		congrats: tries => `正解です🎉 (${tries}回目で当てました)`,
+		congrats: (ans, tries, history) => `正解です🎉 ${tries}回で当てました！ 秘密の数は「${ans}」でした！ (履歴: ${history})`,
+
+		/**
+		 * 正解したとき
+		 */
+		fail: (ans, maxtry,  history) => `不正解です、${maxtry}回以内に当てられませんでした…… 秘密の数は「${ans}」でした。 (履歴: ${history})`,
 	},
 
 	/**
