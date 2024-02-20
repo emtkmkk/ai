@@ -110,7 +110,7 @@ export default class extends Module {
 			reaction:'confused'
 		};
 
-		const g = parseInt(guess[0], 10);
+		let g = parseInt(guess[0], 10);
 		
 		const min = Math.max(...exist.tries.filter((x) => x < exist.secret))
 		const max = Math.min(...exist.tries.filter((x) => x > exist.secret))
