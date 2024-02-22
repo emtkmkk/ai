@@ -525,14 +525,14 @@ export default class 藍 {
 
 	@autobind
 	public decActiveFactor(amount = 0.05) {
-		amount = amount * 0.3
+		amount = amount * 0.36;
 		const _activeFactor = this.activeFactor
 		let decNum = amount;
 		if (this.activeFactor < 1) {
 			decNum = (amount * this.activeFactor);
 			this.activeFactor = Math.floor(Math.max(this.activeFactor - decNum, 0.1) * 1000) / 1000;
 		} else {
-			decNum = (amount * this.activeFactor * 2);
+			decNum = (amount * this.activeFactor * 1.67);
 			this.activeFactor = Math.floor(Math.max(this.activeFactor - decNum, 1 - (amount * this.activeFactor)) * 1000) / 1000;
 		}
 		this.log(`ActiveFactor: ${(this.activeFactor * 100).toFixed(1)}% (${((this.activeFactor - _activeFactor) * 100).toFixed(1)}%)`);
