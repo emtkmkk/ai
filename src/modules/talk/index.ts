@@ -53,7 +53,7 @@ export default class extends Module {
 			data.lastGreetedAt = today;
 			msg.friend.setPerModulesData(this, data);
 
-			msg.friend.incLove(0.6);
+			msg.friend.incLove(0.6, "greet");
 			
 			return {reaction: 'love'}
 			//#endregion

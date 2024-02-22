@@ -514,7 +514,7 @@ export default class 藍 {
 	}
 
 	@autobind
-	public incActiveFactor(amount = 0.01) {
+	public incActiveFactor(amount = 0.003) {
 		const incNum = ((amount / Math.max(this.activeFactor,1)));
 		this.activeFactor = Math.floor(Math.min(this.activeFactor + incNum, 2) * 1000) / 1000;
 		this.log(`ActiveFactor: ${(this.activeFactor * 100).toFixed(1)}% (+${(incNum * 100).toFixed(1)}%)`);
@@ -525,6 +525,7 @@ export default class 藍 {
 
 	@autobind
 	public decActiveFactor(amount = 0.05) {
+		amount = amount * 0.3
 		const _activeFactor = this.activeFactor
 		let decNum = amount;
 		if (this.activeFactor < 1) {
