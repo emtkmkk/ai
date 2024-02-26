@@ -118,9 +118,9 @@ export default class extends Module {
 		if (g < min) g = min;
 		if (g > max) g = max;
 
-		const firsttime = exist.tries.indexOf(g) === -1;
+		const firsttime = exist.tries.indexOf(g) === -1 && g !== 101 &&　g !== -1;
 
-		if (firsttime && g <= 100 &&　g >= 0) exist.tries.push(g);
+		if (firsttime) exist.tries.push(g);
 
 		let text: string;
 		let end = false;
