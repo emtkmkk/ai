@@ -3,6 +3,7 @@ import Module from '@/module';
 import Friend from '@/friend';
 import serifs from '@/serifs';
 import { acct } from '@/utils/acct';
+import getDate from '@/utils/get-date';
 
 function zeroPadding(num: number, length: number): string {
 	return ('0000000000' + num).slice(-length);
@@ -39,8 +40,6 @@ export default class extends Module {
 		birthFriends.forEach(f => {
 			const friend = new Friend(this.ai, { doc: f });
 
-			if (friend.doc?.user?.username === "eroflash") return;
-
 			// 親愛度が1以上必要
 			if (friend.love < 1) return;
 
@@ -54,9 +53,11 @@ export default class extends Module {
 
 			const data = friend.getPerModulesData(this);
 
-			if (data.lastBirthdayChecked == today) return;
+			if (data.lastBirthdayChecked == todaydate) return;
+			// 前回のお祝いから364日以上経過していない場合は対象外
+			if (Date.now() > new Date(data.lastBirthdayChecked)?.valueOf() + (1000 * 60 * 60 * 24 * 364)) return
 
-			data.lastBirthdayChecked = today;
+			data.lastBirthdayChecked = todaydate;
 			friend.setPerModulesData(this, data);
 
 			const text = serifs.birthday.happyBirthday(friend.name);
