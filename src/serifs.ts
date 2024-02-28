@@ -335,7 +335,7 @@ export default {
 	kazutori: {
 		alreadyStarted: '今ちょうどやってますよ～',
 
-		matakondo: ct => `また今度やりましょう！(クールタイム あと${ct}分)`,
+		matakondo: ct => `また今度やりましょう！(あと${ct}分後にもう一度送ってください)`,
 
 		intro: (max, minutes, winRank) => `みなさん、数取りゲームしましょう！\n0~${max}の中で${winRank === 1 ? "最も" : "***" + winRank + "番目に***"}大きい数字を取った人が勝ちです。他の人と被ったらだめですよ～\n制限時間は${minutes < 5 ? `***${minutes}***` : minutes < 10 ? `**${minutes}**` : minutes}分です。数字はこの投稿にリプライで送ってくださいね！`,
 
