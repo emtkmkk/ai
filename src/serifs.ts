@@ -321,7 +321,7 @@ export default {
 		/**
 		 * 正解したとき
 		 */
-		congrats: (ans, tries, history) => `正解です🎉 ${tries}回で当てました！ 秘密の数は「${ans}」でした！ (履歴: ${history})`,
+		congrats: (ans, tries, history, comment) => `正解です🎉 ${tries}回で当てました！${comment} 秘密の数は「${ans}」でした！ (履歴: ${history})`,
 
 		/**
 		 * 正解したとき
