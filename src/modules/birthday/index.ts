@@ -32,6 +32,7 @@ export default class extends Module {
 		if (now.getHours() < 8) return;
 		// Misskeyの誕生日は 2018-06-16 のような形式
 		const today = `${zeroPadding(m + 1, 2)}-${zeroPadding(d, 2)}`;
+		const todaydate = getDate();
 
 		const birthFriends = this.ai.friends.find({
 			'user.birthday': { '$regex': new RegExp('-' + today + '$') }
