@@ -41,7 +41,8 @@ export default class extends Module {
 			isEnded: false
 		});
 
-		const secret = Math.floor(Math.random() * 100);
+		let secret = Math.floor(Math.random() * 100);
+		if ([25,50,75].includes(secret)) secret = Math.floor(Math.random() * 100);
 
 		this.guesses.insertOne({
 			userId: msg.userId,
