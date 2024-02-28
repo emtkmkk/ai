@@ -139,7 +139,11 @@ export default class extends Module {
 				: serifs.guessingGame.graterAgain(g.toString());
 		} else {
 			end = true;
-			text = serifs.guessingGame.congrats(exist.secret, exist.tries.length.toString(), exist.tries.join("→"));
+			let comment = "";
+			if (exist.tries.length <= 1) comment = "エスパーですか……！？"
+			if (exist.tries.length <= 3) comment = "すごいです……！"
+			if (exist.tries.length <= 4) comment = "早いです！"
+			text = serifs.guessingGame.congrats(exist.secret, exist.tries.length.toString(), exist.tries.join("→"), comment);
 		}
 
 		if (end) {
