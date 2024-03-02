@@ -347,10 +347,10 @@ export default class extends Module {
 
 		const item = genItem();
 
-		const medal = (game.votes?.length >= 2 && game.votes?.every((x) => x.user.winCount >= 50));
+		const medal = game.votes?.filter((x) => x.user.winCount < 50).length < game.votes?.filter((x) => x.user.winCount >= 50).length;
 
 		// お流れ
-		if (game.votes?.filter((x) => x.user.winCount < 50).length <= 1 && !medal ) {
+		if (game.votes?.filter((x) => x.user.winCount < 50).length <= 1 && !medal) {
 			game.votes.forEach((x) => {
 				const friend = this.ai.lookupFriend(x.user.id)
 				if (friend) {
@@ -358,11 +358,14 @@ export default class extends Module {
 					friend.save()
 				}
 			});
+			this.ai.decActiveFactor((game.finishedAt.valueOf() - game.startedAt.valueOf()) / (60 * 1000 * 100));
+
+			if (this.ai.activeFactor < 0.5) return;
+			
 			this.ai.post({
 				text: serifs.kazutori.onagare(item),
 				renoteId: game.postId
 			});
-			this.ai.decActiveFactor((game.finishedAt.valueOf() - game.startedAt.valueOf()) / (60 * 1000 * 100));
 
 			return;
 		}
@@ -461,7 +464,7 @@ export default class extends Module {
 			} else {
 				winnerFriend.doc.kazutoriData = { winCount: 1, playCount: 1, inventory: []};
 			}
-			if (medal) {
+			if (medal && winnerFriend.doc.kazutoriData.winCount > 50) {
 				winnerFriend.doc.kazutoriData.medal = (winnerFriend.doc.kazutoriData.medal || 0) + 1;
 			}
 			if (winnerFriend.doc.kazutoriData.inventory) {
@@ -475,7 +478,7 @@ export default class extends Module {
 
 
 		const text = results.join('\n') + '\n\n' + (winner
-			? serifs.kazutori.finishWithWinner(acct(winner), name, item, reverse, perfect, winnerFriend?.doc?.kazutoriData?.winCount ?? 0, medal ? winnerFriend?.doc?.kazutoriData?.medal ?? 0 : null)
+			? serifs.kazutori.finishWithWinner(acct(winner), name, item, reverse, perfect, winnerFriend?.doc?.kazutoriData?.winCount ?? 0, medal && winnerFriend.doc.kazutoriData.winCount > 50 ? winnerFriend?.doc?.kazutoriData?.medal ?? 0 : null)
 			: serifs.kazutori.finishWithNoWinner(item));
 
 		this.ai.post({
