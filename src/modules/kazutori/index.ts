@@ -478,7 +478,7 @@ export default class extends Module {
 
 
 		const text = results.join('\n') + '\n\n' + (winner
-			? serifs.kazutori.finishWithWinner(acct(winner), name, item, reverse, perfect, winnerFriend?.doc?.kazutoriData?.winCount ?? 0, medal && winnerFriend.doc.kazutoriData.winCount > 50 ? winnerFriend?.doc?.kazutoriData?.medal ?? 0 : null)
+			? serifs.kazutori.finishWithWinner(acct(winner), name, item, reverse, perfect, winnerFriend?.doc?.kazutoriData?.winCount ?? 0, medal && (winnerFriend.doc.kazutoriData.winCount ?? 0) > 50 ? winnerFriend?.doc?.kazutoriData?.medal ?? 0 : null)
 			: serifs.kazutori.finishWithNoWinner(item));
 
 		this.ai.post({
