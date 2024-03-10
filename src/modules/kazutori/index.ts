@@ -96,14 +96,10 @@ export default class extends Module {
 
 		// 前回が2番目勝利モードでないかつ20%で2番目勝利モードになる
 		// 狙い：新しいゲーム性の探求
-		const winRank = (recentGame?.winRank ?? 1) === 1 && Math.random() < 0.2 ? 2 : 1;
+		const winRank = (recentGame?.winRank ?? 1) === 1 && this.ai.activeFactor >= 0.5 && Math.random() < 0.2 ? 2 : 1;
 		
 		// 1番目勝利モードでないかつ66%で最大数値がx倍 (x = x番目勝利モード)
 		if (winRank !== 1 && Math.random() < 0.66) maxnum = maxnum * winRank;
-
-		// 1000回以上ループ処理したらおかしくなるかもなので
-		if (maxnum > 1000) maxnum = 1000;
-
 		const now = new Date();
 
 		// 今日が1/1の場合 最大値は新年の年数
@@ -116,13 +112,13 @@ export default class extends Module {
 
 		if (!visibility) {
 			// 投稿がフォロワー限定でない場合は、3%の確率で公開投稿のみ受付けるモードにする
-			publicOnly = !recentGame?.publicOnly && (recentGame?.publicOnly == null || Math.random() < 0.03);
+			publicOnly = this.ai.activeFactor >= 0.5 && !recentGame?.publicOnly && (recentGame?.publicOnly == null || Math.random() < 0.005);
 		}
 
 		// 10% → 自然発生かつ50%で1分 そうでない場合2分
 		// 90% → 5分 or 10分
 		// 狙い：時間がないと他の人の数字を確認しづらいのでランダム性が高まる
-		const limitMinutes = Math.random() < 0.1 ? Math.random() < 0.5 && !triggerUserId ? 1 : 2 : Math.random() < 0.5 ? 5 : 10;
+		const limitMinutes = Math.random() < 0.1 && this.ai.activeFactor >= 0.5 ? Math.random() < 0.5 && this.ai.activeFactor >= 0.5 && !triggerUserId ? 1 : 2 : Math.random() < 0.5 ? 5 : 10;
 
 		const post = await this.ai.post({
 			text: !publicOnly ? serifs.kazutori.intro(maxnum, limitMinutes, winRank) : serifs.kazutori.introPublicOnly(maxnum, limitMinutes, winRank),
