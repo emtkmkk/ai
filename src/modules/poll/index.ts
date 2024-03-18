@@ -174,7 +174,7 @@ export default class extends Module {
 			if (Math.random() < 0.28) choices.push(genItem());
 			if (Math.random() < 0.28) choices.push(genItem());
 			if (Math.random() < 0.28) choices.push(genItem());
-			if (poll[0] = '好きな絵文字') {
+			if (poll[0] === '好きな絵文字') {
 				const data = (await this.ai.api('emojis', {})).emojis?.filter((x) => !x.category?.includes("!")).sort(() => Math.random() - 0.5);
 				choices = data.slice(0, choices.length).map((x) => `:${x.name}:`);
 			}
