@@ -215,10 +215,18 @@ export default class extends Module {
 			const pollresult = this.pollresult.find().sort((a, b) => {
 				//連勝数が多い順、同じなら文字列コード順
 				if ((a.winCount ?? 1) === (b.winCount ?? 1)) {
-					if (a < b) {
+					const isYearA = /^\d{4}/.test(a.key);
+					const isYearB = /^\d{4}/.test(b.key);
+					if (isYearA && !isYearB) {
 						return -1;
 					}
-					if (b > a) {
+					if (isYearB && !isYearA) {
+						return 1;
+					}
+					if (a.key < b.key) {
+						return -1;
+					}
+					if (b.key > a.key) {
 						return 1;
 					}
 					return 0;
