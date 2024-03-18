@@ -218,10 +218,10 @@ export default class extends Module {
 					const isYearA = /^\d{4}/.test(a.key);
 					const isYearB = /^\d{4}/.test(b.key);
 					if (isYearA && !isYearB) {
-						return -1;
+						return 1;
 					}
 					if (isYearB && !isYearA) {
-						return 1;
+						return -1;
 					}
 					if (a.key < b.key) {
 						return -1;
