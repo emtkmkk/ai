@@ -45,6 +45,7 @@ export default class extends Module {
 			this.convertUnixtime(msg) ||
 			this.getAdana(msg) ||
 			this.getBananasu(msg) ||
+			this.getActiveFactor(msg) ||
 			this.mkckAbout(msg) ||
 			this.modules(msg) ||
 			this.version(msg)
@@ -456,7 +457,8 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 	private mkckAbout(msg: Message): boolean {
 		if (!msg.text) return false;
 		if (!msg.or(['もこチキについて','もこもこチキンについて'])) return false;
-
+		
+		const friends = this.ai.friends.find();
 		const words = this.learnedKeywords.find();
 		const baWords = words?.filter((x) => x.keyword.length >= 3 && !/^[0-9]/.test(x.keyword) && !/[0-9]$/.test(x.keyword));
 		const specialWords = words?.filter((x) => /^[!-\/:-@[-`{-~！？]/.test(x.keyword) || /[!-\/:-@[-`{-~！？]$/.test(x.keyword));
@@ -464,7 +466,19 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 		const words2 = exWords?.filter((x) => x.keyword.length >= 4);
 		const jpWords = exWords?.filter((x) => !/[a-zA-Z0-9_]$/.test(x.keyword));
 		const hirakanaWords = jpWords?.filter((x) => /[ぁ-んァ-ンヴー]$/.test(x.keyword));
-		msg.reply(`\n\`\`\`\n現在の機嫌 : ${Math.floor(this.ai.activeFactor * 100)}%\n\n覚えた言葉数 : ${words.length}\nバナナスに使う言葉数 : ${baWords.length - specialWords.length} + ${specialWords.length}\n英語以外で終わる言葉数 : ${jpWords.length}\n英語・漢字以外で終わる言葉数 : ${hirakanaWords.length}\n\`\`\``, {
+		msg.reply(`\n\`\`\`\n友達の人数: ${friends.filter((x) => x.love >= 20).length}\n親友の人数: ${friends.filter((x) => x.love >= 100).length}\n合計好感度: ☆${Math.floor(friends.reduce((acc, cur) => acc + cur.love, 0) / (10 / 7)) / 10}\n\n数取り回数: ${friends.filter((x) => x.kazutoriData?.winCount).reduce((acc, cur) => acc + (cur.kazutoriData?.winCount ?? 0), 0)}\nトロフィー発行数: ${friends.filter((x) => x.kazutoriData?.medal).reduce((acc, cur) => acc + (cur.kazutoriData?.medal ?? 0), 0)}\n\n現在の機嫌 : ${Math.floor(this.ai.activeFactor * 100)}%\n\n覚えた言葉数 : ${words.length}\nバナナスに使う言葉数 : ${baWords.length - specialWords.length} + ${specialWords.length}\n英語以外で終わる言葉数 : ${jpWords.length}\n英語・漢字以外で終わる言葉数 : ${hirakanaWords.length}\n\`\`\``, {
+			immediate: false
+		});
+
+		return true;
+	}
+	
+	@autobind
+	private getActiveFactor(msg: Message): boolean {
+		if (!msg.text) return false;
+		if (!msg.or(['機嫌','気持ち'])) return false;
+
+		msg.reply(`\n\`\`\`\n現在の機嫌 : ${Math.floor(this.ai.activeFactor * 1000) / 10}%\n\`\`\``, {
 			immediate: false
 		});
 
