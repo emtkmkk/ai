@@ -54,7 +54,7 @@ export default class extends Module {
 	}
 
 	@autobind
-	private async post() {
+	private async post(key?: string) {
 		this.ai.decActiveFactor(0.05);
 
 		const nenmatu = new Date().getMonth() === 11 && new Date().getDate() === 31;
@@ -139,10 +139,13 @@ export default class extends Module {
 			['面白いもの', 'みなさんは、この中で一番面白いものってどれだと思いますか？'],
 			['野菜食べてますか', 'みなさ～ん！野菜食べてますか？'],
 			['テーマなし', '特にテーマなしです！適当に答えてください！'],
+			['好きな絵文字', 'みなさんは、この中でどの絵文字が一番好きですか？'],
 		];
 
-		const poll = nenmatu ? [`${new Date().getFullYear()}年っぽい響きのもの`, `みなさん、${new Date().getFullYear()}年ももうすぐ終わりですね～ みなさんはこの中でいちばん${new Date().getFullYear()}年っぽい響きのものはどれだと思いますか？`] : polls[Math.floor(Math.random() * polls.length)];
+		const selectedPolls = key ? polls.filter((x) => x[0].includes(key)) : [];
 
+		const poll = nenmatu ? [`${new Date().getFullYear()}年っぽい響きのもの`, `みなさん、${new Date().getFullYear()}年ももうすぐ終わりですね～ みなさんはこの中でいちばん${new Date().getFullYear()}年っぽい響きのものはどれだと思いますか？`] : selectedPolls.length ? selectedPolls[Math.floor(Math.random() * selectedPolls.length)] : polls[Math.floor(Math.random() * polls.length)];
+		
 		const exist = this.pollresult.findOne({
 			key: poll[0]
 		});
@@ -171,6 +174,10 @@ export default class extends Module {
 			if (Math.random() < 0.28) choices.push(genItem());
 			if (Math.random() < 0.28) choices.push(genItem());
 			if (Math.random() < 0.28) choices.push(genItem());
+			if (poll[0] = '好きな絵文字') {
+				const data = await this.ai.api('emojis', {}).emojis?.filter((x) => !x.category.includes("!")).sort(() => Math.random() - 0.5);
+				choices = data.slice(0, choices.length).map((x) => `:${x.name}:`);
+			}
 			if (exist?.keyword) {
 				const randomIndex = Math.floor(Math.random() * (choices.length + 1));
 				choices.splice(randomIndex, 0, exist.keyword);
@@ -246,13 +253,13 @@ export default class extends Module {
 			msg.reply('私が覚えた答えです！\n```\n' + pollresultstr + '\n```');
 			return { reaction: 'love' };
 		} else {
-			if (!msg.or(['/poll']) || msg.user.username !== config.master) {
+			if (!msg.includes(['/poll']) || msg.user.username !== config.master) {
 				return false;
 			} else {
-				this.log('Manualy poll requested');
 			}
-
-			this.post();
+			const key = /\/poll\s(\S+)$/.exec(msg.text)?.[1]
+			this.log('Manualy poll requested key: ' + (key ?? 'null'));
+			this.post(key);
 
 			return { reaction: 'love' };
 		}
