@@ -156,19 +156,27 @@ export default class extends Module {
 			genItem(),
 			genItem(),
 			genItem(),
+			genItem(),
+			genItem(),
 		 ] : [
 			genItem(),
 			genItem(),
-			...(exist?.keyword ? [exist.keyword] : []),
 			genItem(),
 			genItem(),
 		];
 
 		if (!nenmatu) {
-			if (Math.random() < 0.3) choices.push(genItem());
-			if (Math.random() < 0.3) choices.push(genItem());
-			if (Math.random() < 0.3) choices.push(genItem());
+			if (Math.random() < 0.28) choices.push(genItem());
+			if (Math.random() < 0.28) choices.push(genItem());
+			if (Math.random() < 0.28) choices.push(genItem());
+			if (Math.random() < 0.28) choices.push(genItem());
+			if (Math.random() < 0.28) choices.push(genItem());
+			if (exist?.keyword) {
+				const randomIndex = Math.floor(Math.random() * (choices.length + 1));
+				choices.splice(randomIndex, 0, exist.keyword);
+			}
 		}
+
 
 		const note = await this.ai.post({
 			text: poll[1],
