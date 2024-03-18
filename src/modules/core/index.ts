@@ -456,7 +456,7 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 	@autobind
 	private mkckAbout(msg: Message): boolean {
 		if (!msg.text) return false;
-		if (!msg.or(['もこチキについて','もこもこチキンについて'])) return false;
+		if (!msg.includes(['もこチキについて','もこもこチキンについて'])) return false;
 		
 		const friends = this.ai.friends.find() ?? [];
 		const words = this.learnedKeywords.find();
@@ -476,7 +476,7 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 	@autobind
 	private getActiveFactor(msg: Message): boolean {
 		if (!msg.text) return false;
-		if (!msg.or(['機嫌','気持ち'])) return false;
+		if (!msg.includes(['きげん','きもち','機嫌','気持ち'])) return false;
 
 		msg.reply(`\n\`\`\`\n現在の機嫌 : ${Math.floor(this.ai.activeFactor * 1000) / 10}%\n\`\`\``, {
 			immediate: false
