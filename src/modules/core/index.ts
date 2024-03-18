@@ -458,7 +458,7 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 		if (!msg.text) return false;
 		if (!msg.or(['もこチキについて','もこもこチキンについて'])) return false;
 		
-		const friends = this.ai.friends.find();
+		const friends = this.ai.friends.find() ?? [];
 		const words = this.learnedKeywords.find();
 		const baWords = words?.filter((x) => x.keyword.length >= 3 && !/^[0-9]/.test(x.keyword) && !/[0-9]$/.test(x.keyword));
 		const specialWords = words?.filter((x) => /^[!-\/:-@[-`{-~！？]/.test(x.keyword) || /[!-\/:-@[-`{-~！？]$/.test(x.keyword));
