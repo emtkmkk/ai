@@ -59,7 +59,12 @@ export default class extends Module {
 
 		const nenmatu = new Date().getMonth() === 11 && new Date().getDate() === 31;
 
-		const duration = nenmatu ? 1000 * 60 * 120 : 1000 * 60 * 10;
+		let duration = nenmatu ? 1000 * 60 * 120 : 1000 * 60 * 10;
+		
+		// 機嫌が低い場合、受付時間を延長
+		if (!nenmatu && this.ai.activeFactor < 0.75) {
+			duration = Math.floor(1 / (1 - Math.min((0.91 - this.ai.activeFactor) * 1 * (0.5 + Math.random() * 0.5), 0.6)) * duration / 120000) * 120000;
+		}
 
 		const polls = [ // TODO: Extract serif
 			['珍しそうなもの', 'みなさんは、どれがいちばん珍しいと思いますか？'],
@@ -206,6 +211,7 @@ export default class extends Module {
 		this.setTimeoutWithPersistence(duration + 3000, {
 			title: poll[0],
 			noteId: note.id,
+			duration: duration,
 		});
 	}
 
@@ -274,7 +280,7 @@ export default class extends Module {
 	}
 
 	@autobind
-	private async timeoutCallback({ title, noteId }) {
+	private async timeoutCallback({ title, noteId, duration, }) {
 		const note: Note = await this.ai.api('notes/show', { noteId });
 
 		const choices = note.poll!.choices;
@@ -304,7 +310,7 @@ export default class extends Module {
 			//	text: '投票はありませんでした',
 			//	renoteId: noteId,
 			//});
-			this.ai.decActiveFactor(0.1);
+			this.ai.decActiveFactor(0.01 * (duration ?? 60000) / 6000);
 		} else if (mostVotedChoices.length === 1) {
 			let isStreak = false;
 			if (mostVotedChoice.votes >= 3 || totalVoted > choices.length) {
