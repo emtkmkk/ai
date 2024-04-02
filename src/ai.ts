@@ -166,11 +166,10 @@ export default class 藍 {
 			if (data.userId == this.account.id) return; // 自分は弾く
 			if (data.text == null && (data.files || []).length == 0) return;
 
-			// リアクションする
-			this.api('notes/reactions/create', {
-				noteId: data.id,
-				reaction: ':mk_chuchuchicken:'
-			});
+			if (!data.replyId && data.renoteId) data.replyId = data.renoteId;
+
+			// リプライ扱い
+			this.onReceiveMessage(new Message(this, data), ':mk_chuchuchicken:');
 		});
 
 		// メッセージ
@@ -211,7 +210,7 @@ export default class 藍 {
 	 * (メンション、リプライ、トークのメッセージ)
 	 */
 	@autobind
-	private async onReceiveMessage(msg: Message): Promise<void> {
+	private async onReceiveMessage(msg: Message, defaultReaction?: string): Promise<void> {
 		this.log(chalk.gray(`<<< An message received: ${chalk.underline(msg.id)}`));
 
 		// Ignore message if the user is a bot
@@ -227,7 +226,7 @@ export default class 藍 {
 			noteId: msg.replyId
 		});
 
-		let reaction: string | null = ':mk_widechicken:';
+		let reaction: string | null = defaultReaction || ':mk_widechicken:';
 		let immediate: boolean = false;
 
 		//#region
@@ -256,10 +255,10 @@ export default class 藍 {
 				if (res.immediate != null) immediate = res.immediate;
 			}
 
-			if (res === false) {
+			if (res === false && !defaultReaction) {
 				await invokeMentionHooks();
 			}
-		} else {
+		} else if (!defaultReaction) {
 			await invokeMentionHooks();
 		}
 		//#endregion
@@ -274,7 +273,7 @@ export default class 藍 {
 		if (reaction === "confused") reaction = ":mk_ultrawidechicken:";
 
 		const friend = new Friend(this, { user: msg.user });
-		if (![":mk_widechicken:", ":mk_fly_sliver:", ":mk_ultrawidechicken:"].includes(reaction)) {
+		if (![":mk_widechicken:", ":mk_fly_sliver:", ":mk_ultrawidechicken:"].includes(reaction) && !(defaultReaction === reaction)) {
 			// 正しい反応の場合
 			friend.incLove(0.1, reaction);
 		} else if (reaction === ":mk_widechicken:") {
