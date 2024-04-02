@@ -310,7 +310,7 @@ export default class extends Module {
 			//	text: '投票はありませんでした',
 			//	renoteId: noteId,
 			//});
-			this.ai.decActiveFactor(0.01 * (duration ?? 60000) / 6000);
+			this.ai.decActiveFactor(0.01 * (duration ?? 600000) / 60000);
 		} else if (mostVotedChoices.length === 1) {
 			let isStreak = false;
 			if (mostVotedChoice.votes >= 3 || totalVoted > choices.length) {
