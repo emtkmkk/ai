@@ -312,7 +312,7 @@ export default class extends Module {
 				strn += "}\\)"
 				strn = "\\(" + strn
 			}
-			msg.reply(`\n「${num}」は今回のゲームでは範囲外です！\n0~${game.maxnum}の範囲で指定してくださいね！`).then(reply => {
+			msg.reply(`\n「${strn}」は今回のゲームでは範囲外です！\n0~${game.maxnum}の範囲で指定してくださいね！`).then(reply => {
 				game.replyKey.push(msg.userId);
 				this.games.update(game);
 				this.subscribeReply(msg.userId, reply.id);
