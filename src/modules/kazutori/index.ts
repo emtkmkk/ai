@@ -105,10 +105,12 @@ export default class extends Module {
 
 		// 今日が1/1の場合 最大値は新年の年数
 		if (now.getMonth() === 0 && now.getDate() === 1) maxnum = now.getFullYear();
-
+		
+		let visibility
+		
 		if (this.ai.activeFactor >= 0.85) {
 			// 自然発生かつ3%の確率でフォロワー限定になる
-			let visibility = Math.random() < 0.03 && !triggerUserId ? 'followers' : undefined;
+			visibility = Math.random() < 0.03 && !triggerUserId ? 'followers' : undefined;
 
 			if (!visibility) {
 				// 投稿がフォロワー限定でない場合は、3%の確率で公開投稿のみ受付けるモードにする
@@ -463,7 +465,7 @@ export default class extends Module {
 
 		if (now.getMonth() === 3 && now.getDate() === 1) reverse = !reverse;
 
-		const winnerFriend = winner?.id ? this.ai.lookupFriend(winner.id) : null;
+		const winnerFriend = winner && winner?.id ? this.ai.lookupFriend(winner?.id) : null;
 		const name = winnerFriend ? winnerFriend.name : null;
 
 		if (winnerFriend) {
