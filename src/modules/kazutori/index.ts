@@ -527,7 +527,7 @@ export default class extends Module {
 		}
 
 
-		const text = results.join('\n') + '\n\n' + (winner
+		const text = "勝利条件 : " + (winRank > 0 ? winRank === 1 ? "最も大きい" : winRank + "番目に大きい" : "中央値 (" + med + ")") + "\n\n" + results.join('\n') + '\n\n' + (winner
 			? serifs.kazutori.finishWithWinner(acct(winner), name, item, reverse, perfect, winnerFriend?.doc?.kazutoriData?.winCount ?? 0, medal && (winnerFriend?.doc?.kazutoriData?.winCount ?? 0) > 50 ? winnerFriend?.doc?.kazutoriData?.medal ?? 0 : null)
 			: serifs.kazutori.finishWithNoWinner(item));
 
