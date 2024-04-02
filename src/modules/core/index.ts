@@ -5,7 +5,6 @@ import Message from '@/message';
 import serifs from '@/serifs';
 import { safeForInterpolate } from '@/utils/safe-for-interpolate';
 import { checkNgWord } from '@/utils/check-ng-word';
-import { katakanaToHiragana, hankakuToZenkaku } from '@/utils/japanese';
 import { acct } from '@/utils/acct';
 import { genItem, itemPrefixes } from '@/vocabulary';
 
@@ -58,7 +57,7 @@ export default class extends Module {
 		if (!msg.includes(['引継', '引き継ぎ', '引越', '引っ越し'])) return false;
 
 		const code = msg.friend.generateTransferCode();
-		
+
 		console.log("move account code generated : " + msg.user.id + " : " + code)
 
 		msg.reply(serifs.core.transferCode(code), {
@@ -72,19 +71,19 @@ export default class extends Module {
 	private transferEnd(msg: Message): boolean {
 		if (!msg.extractedText) return false;
 		if (!msg.extractedText.startsWith('「') || !msg.extractedText.endsWith('」')) return false;
-		
+
 
 		const code = msg.extractedText.substring(1, msg.text.length - 1);
-		
+
 		console.log("move account code : " + msg.user.id + " : " + code);
 
 		const succ = msg.friend.transferMemory(code);
 
 		if (succ) {
-		console.log("move Success : " + msg.user.id);
+			console.log("move Success : " + msg.user.id);
 			msg.reply(serifs.core.transferDone(msg.friend.name));
 		} else {
-		console.log("move Failed : " + msg.user.id);
+			console.log("move Failed : " + msg.user.id);
 			msg.reply(serifs.core.transferFailed);
 		}
 
@@ -94,10 +93,10 @@ export default class extends Module {
 	@autobind
 	private setName(msg: Message): boolean {
 		if (!msg.text) return false;
-		if (!msg.text.includes('って呼んで') && !(msg.includes(['あだ名', '名前', '呼び名']) && msg.includes(['忘れて','忘れろ']))) return false;
+		if (!msg.text.includes('って呼んで') && !(msg.includes(['あだ名', '名前', '呼び名']) && msg.includes(['忘れて', '忘れろ']))) return false;
 		if (msg.text.startsWith('って呼んで')) return false;
 
-		if ((msg.includes(['あだ名', '名前', '呼び名']) && msg.includes(['忘れて','忘れろ']))) {
+		if ((msg.includes(['あだ名', '名前', '呼び名']) && msg.includes(['忘れて', '忘れろ']))) {
 			msg.friend.updateName(null);
 			msg.reply(serifs.core.setNameNull);
 			return true;
@@ -108,7 +107,7 @@ export default class extends Module {
 		// 好感度が100（★7）を超えている場合、20文字までOK
 
 		if ((msg.friend.love < 100 && name.length > 10) || (msg.friend.love >= 100 && name.length > 20)) {
-			msg.reply(serifs.core.tooLong(name.length,msg.friend.love >= 100 ? 20 : 10));
+			msg.reply(serifs.core.tooLong(name.length, msg.friend.love >= 100 ? 20 : 10));
 			return true;
 		}
 
@@ -116,7 +115,7 @@ export default class extends Module {
 			msg.reply(serifs.core.invalidName);
 			return true;
 		}
-		
+
 		if (!checkNgWord(name)) {
 			msg.reply(serifs.core.ngName);
 			return true;
@@ -147,7 +146,7 @@ export default class extends Module {
 
 		if (!isNaN(Date.parse(timeStr))) {
 			const time = new Date(timeStr);
-			msg.reply(serifs.core.unixtime(`${time.toString()}`,`${time.toISOString()}`, time.valueOf() / 1000));
+			msg.reply(serifs.core.unixtime(`${time.toString()}`, `${time.toISOString()}`, time.valueOf() / 1000));
 		} else {
 			msg.reply(serifs.core.invalidDate);
 		}
@@ -209,12 +208,12 @@ export default class extends Module {
 		if (!(msg.includes(['貰った', 'もらった', 'くれた']) && msg.includes(['もの', '物']))) return false;
 
 		const inventory = [...msg.friend.doc.kazutoriData?.inventory].reverse();
-		
+
 		msg.reply(serifs.core.getInventory(msg.friend.name || 'あなた', inventory.join('\n')) + (
 			msg.friend.doc.kazutoriData?.inventory?.length === 50
 				? `\n\n沢山プレゼントがありますね！\n次に物を入手すると最も古い物が消えてしまうので注意してください！（次は「**${msg.friend.doc.kazutoriData?.inventory[0]}**」が消滅します。）`
 				: msg.friend.doc.kazutoriData?.inventory?.length >= 35
-					? `\n\n沢山プレゼントがありますね！\n**50**個を超えると古い物から消えてしまうので注意してください！（現在**${msg.friend.doc.kazutoriData?.inventory?.length}**個）` 
+					? `\n\n沢山プレゼントがありますね！\n**50**個を超えると古い物から消えてしまうので注意してください！（現在**${msg.friend.doc.kazutoriData?.inventory?.length}**個）`
 					: ""
 		))
 
@@ -226,7 +225,7 @@ export default class extends Module {
 		if (!msg.text) return false;
 		if (!(msg.includes(['あだ名', 'あだな']))) return false;
 
-		const genAdana = () : string => {
+		const genAdana = (): string => {
 			let adana = "";
 			if (Math.random() < 0.5) {
 				adana = genItem();
@@ -242,8 +241,8 @@ export default class extends Module {
 			return adana;
 		}
 
-		const adanas = msg.includes(['たくさん', '沢山', 'いっぱい', '大量']) ? [genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana(),genAdana()] : [genAdana(),genAdana(),genAdana()]
-		
+		const adanas = msg.includes(['たくさん', '沢山', 'いっぱい', '大量']) ? [genAdana(), genAdana(), genAdana(), genAdana(), genAdana(), genAdana(), genAdana(), genAdana(), genAdana(), genAdana(), genAdana(), genAdana()] : [genAdana(), genAdana(), genAdana()]
+
 		msg.reply(serifs.core.getAdana(adanas))
 
 		return true;
@@ -257,108 +256,20 @@ export default class extends Module {
 		if (msg.includes(['-d'])) debug = true;
 
 		let inputWord;
-		if	(/^[^\s]{1,10}(の|で)(たくさん)?(バナナス|バニャニャス|ばななす|ばにゃにゃす)/.test(msg.extractedText)) {
+		if (/^[^\s]{1,10}(の|で)(たくさん)?(バナナス|バニャニャス|ばななす|ばにゃにゃす)/.test(msg.extractedText)) {
 			inputWord = /^([^\s]+)(の|で)(たくさん)?(バナナス|バニャニャス|ばななす|ばにゃにゃす)/.exec(msg.extractedText)?.[1];
 		}
 
 		const words = this.learnedKeywords.find()?.filter((x) => x.keyword.length >= 3 && !/^[0-9]/.test(x.keyword) && !/[0-9]$/.test(x.keyword));
-		const exWords = words?.map((x) => ({...x, keyword: x.keyword.replaceAll(/^[!-\/:-@[-`{-~！？]/g, "").replaceAll(/[!-\/:-@[-`{-~！？]$/g, "")}));
+		const exWords = words?.map((x) => ({ ...x, keyword: x.keyword.replaceAll(/^[!-\/:-@[-`{-~！？]/g, "").replaceAll(/[!-\/:-@[-`{-~！？]$/g, "") }));
 		const words2 = exWords?.filter((x) => x.keyword.length >= 4);
 		const jpWords = exWords?.filter((x) => !/[a-zA-Z0-9_]$/.test(x.keyword));
 		const hirakanaWords = jpWords?.filter((x) => /[ぁ-んァ-ンヴー]$/.test(x.keyword));
 		let word1error = false;
 		let word2error = false;
-		const makeBananasu = () : string => {
-			if (!(exWords.length && words2.length && jpWords.length && hirakanaWords.length)) return "";
-			let i = 0;
-			while (words && (i < 100 && (!word1error || !word2error))) {
-				let word1 = "";
-				let word2 = "";
-				let word2s;
-				let longword2s;
-				let pc = 0;
-				let matchStringNum = 1;
-				if (inputWord) {
-					if (word2error || (!word1error && Math.random() < 0.5)) {
-						word1 = inputWord;
-						word2s = words.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice(-1)));
-						longword2s = words2.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice(-2)));
-						pc = word2s.length + longword2s.length
-						if (pc === 0) {
-							word1error = true;
-							i += 1;
-							continue;
-						}
-						if (word2s.length === 0 || longword2s.length && Math.random() < 0.4) {
-							word2 = longword2s[Math.floor(Math.random() * longword2s.length)].keyword;
-							matchStringNum = 1;
-						} else {
-							word2 = word2s[Math.floor(Math.random() * word2s.length)].keyword;
-							matchStringNum = 1;
-						}
-					} else {
-						word2 = inputWord;
-						word2s = words.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().endsWith(katakanaToHiragana(hankakuToZenkaku(word2)).toLowerCase().slice(0,1)));
-						longword2s = words2.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().endsWith(katakanaToHiragana(hankakuToZenkaku(word2)).toLowerCase().slice(0,2)));
-						pc = word2s.length + longword2s.length
-						if (pc === 0) {
-							word2error = true;
-							i += 1;
-							continue;
-						}
-						if (word2s.length === 0 || longword2s.length && Math.random() < 0.4) {
-							word1 = longword2s[Math.floor(Math.random() * longword2s.length)].keyword;
-							matchStringNum = 1;
-						} else {
-							word1 = word2s[Math.floor(Math.random() * word2s.length)].keyword;
-							matchStringNum = 1;
-						}
-					}
-				} else {
-					
-					if (Math.random() < 0.5) {
-						word1 = words[Math.floor(Math.random() * words.length)].keyword;
-					} else {
-						if (Math.random() < 0.5) {
-							word1 = jpWords[Math.floor(Math.random() * jpWords.length)].keyword;
-						} else {
-							word1 = hirakanaWords[Math.floor(Math.random() * hirakanaWords.length)].keyword;
-						}
-					}
-					
-					word2s = words.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice(-1)));
-					longword2s = words2.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice(-2)));
-					pc = word2s.length + longword2s.length
-					
-					if (pc === 0 || (pc <= 3 && Math.random() < (0.75 / pc) + (pc === 1 && word2s.length === 1 ? 0.2 : 0))) {
-						i += 1;
-						continue;
-					}
-					
-					if (word2s.length === 0 || longword2s.length && Math.random() < 0.4) {
-						word2 = longword2s[Math.floor(Math.random() * longword2s.length)].keyword;
-						matchStringNum = 1;
-					} else {
-						word2 = word2s[Math.floor(Math.random() * word2s.length)].keyword;
-						matchStringNum = 1;
-					}
-				}
-				
-				while (matchStringNum < Math.min(word1.length,word2.length) && katakanaToHiragana(hankakuToZenkaku(word2)).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice((matchStringNum + 1) * -1))) {
-					matchStringNum += 1;
-				}
 
-				const notMatchCase = !word2.startsWith(word1.slice((matchStringNum) * -1));
+		const bananasu = msg.includes(['たくさん', '沢山', 'いっぱい', '大量']) ? Array.from(new Set([this.ai.makeBananasu(inputWord, words, exWords, words2, jpWords, hirakanaWords, word1error, word2error), this.ai.makeBananasu(inputWord, words, exWords, words2, jpWords, hirakanaWords, word1error, word2error), this.ai.makeBananasu(inputWord, words, exWords, words2, jpWords, hirakanaWords, word1error, word2error), this.ai.makeBananasu(inputWord, words, exWords, words2, jpWords, hirakanaWords, word1error, word2error), this.ai.makeBananasu(inputWord, words, exWords, words2, jpWords, hirakanaWords, word1error, word2error), this.ai.makeBananasu(inputWord, words, exWords, words2, jpWords, hirakanaWords, word1error, word2error), this.ai.makeBananasu(inputWord, words, exWords, words2, jpWords, hirakanaWords, word1error, word2error), this.ai.makeBananasu(inputWord, words, exWords, words2, jpWords, hirakanaWords, word1error, word2error), this.ai.makeBananasu(inputWord, words, exWords, words2, jpWords, hirakanaWords, word1error, word2error), this.ai.makeBananasu(inputWord, words, exWords, words2, jpWords, hirakanaWords, word1error, word2error)])).filter((x) => x).join("\n") : this.ai.makeBananasu(inputWord, words, exWords, words2, jpWords, hirakanaWords, word1error, word2error);
 
-				const info = `\n[${word1.slice(-1)} : ${word2s.length}${longword2s.length ? ` , ${word1.slice(-2)} : ${longword2s.length}` : ""}]`
-
-				return `${word1} の ${word2}、${word1.slice(0, matchStringNum * -1)}${notMatchCase ? word2.slice(0,matchStringNum).toUpperCase() + word2.slice(matchStringNum) : word2}${debug ? info : ""}`
-			}
-			return "";
-		}
-
-		const bananasu = msg.includes(['たくさん', '沢山', 'いっぱい', '大量']) ? Array.from(new Set([makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu(),makeBananasu()])).filter((x) => x).join("\n") : makeBananasu();
-		
 		msg.reply("\n" + (bananasu ? bananasu : "上手く思いつきませんでした。また今度試してみてください！"), { visibility: bananasu ? "public" : "home" });
 		return true;
 	}
@@ -384,16 +295,16 @@ export default class extends Module {
 受け取った事がある絵文字の種類 : **${data.receivedReactionsCount}** 種類
 
 よく送る絵文字（累計） : 
-${data.sentReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/,"").replace(":","")})` : ''}`).join('\n')}
+${data.sentReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/, "").replace(":", "")})` : ''}`).join('\n')}
 
 よく貰う絵文字（累計） : 
-${data.receivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/,"").replace(":","")})` : ''}`).join('\n')}
+${data.receivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/, "").replace(":", "")})` : ''}`).join('\n')}
 
 最近よく送る絵文字 : 
-${data.recentlySentReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/,"").replace(":","")})` : ''}`).join('\n')}
+${data.recentlySentReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/, "").replace(":", "")})` : ''}`).join('\n')}
 
 最近よく貰う絵文字 : 
-${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/,"").replace(":","")})` : ''}`).join('\n')}
+${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/, "").replace(":", "")})` : ''}`).join('\n')}
 `, { cw: `${acct(msg.user)} ${msg.friend.name || 'さん'}の絵文字情報（リアクション）` })
 		} else {
 			//リモート
@@ -404,16 +315,16 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 受け取った事がある絵文字の種類 : **${data.receivedReactionsCount}** 種類
 
 よく送る絵文字（累計） : 
-${data.sentReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/,"").replace(":","")})` : ''}`).join('\n')}
+${data.sentReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/, "").replace(":", "")})` : ''}`).join('\n')}
 
 よく貰う絵文字（累計） : 
-${data.receivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/,"").replace(":","")})` : ''}`).join('\n')}
+${data.receivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/, "").replace(":", "")})` : ''}`).join('\n')}
 
 最近よく送る絵文字 : 
-${data.recentlySentReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/,"").replace(":","")})` : ''}`).join('\n')}
+${data.recentlySentReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/, "").replace(":", "")})` : ''}`).join('\n')}
 
 最近よく貰う絵文字 : 
-${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/,"").replace(":","")})` : ''}`).join('\n')}
+${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/, "").replace(":", "")})` : ''}`).join('\n')}
 `, { cw: `${acct(msg.user)} ${msg.friend.name || 'さん'}の絵文字情報（リアクション）` })
 		}
 
@@ -456,27 +367,27 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 	@autobind
 	private mkckAbout(msg: Message): boolean {
 		if (!msg.text) return false;
-		if (!msg.includes(['もこチキについて','もこもこチキンについて'])) return false;
-		
+		if (!msg.includes(['もこチキについて', 'もこもこチキンについて'])) return false;
+
 		const friends = this.ai.friends.find() ?? [];
 		const words = this.learnedKeywords.find();
 		const baWords = words?.filter((x) => x.keyword.length >= 3 && !/^[0-9]/.test(x.keyword) && !/[0-9]$/.test(x.keyword));
 		const specialWords = words?.filter((x) => /^[!-\/:-@[-`{-~！？]/.test(x.keyword) || /[!-\/:-@[-`{-~！？]$/.test(x.keyword));
-		const exWords = baWords?.map((x) => ({...x, keyword: x.keyword.replaceAll(/^[!-\/:-@[-`{-~！？]/g, "").replaceAll(/[!-\/:-@[-`{-~！？]$/g, "")}));
+		const exWords = baWords?.map((x) => ({ ...x, keyword: x.keyword.replaceAll(/^[!-\/:-@[-`{-~！？]/g, "").replaceAll(/[!-\/:-@[-`{-~！？]$/g, "") }));
 		const words2 = exWords?.filter((x) => x.keyword.length >= 4);
 		const jpWords = exWords?.filter((x) => !/[a-zA-Z0-9_]$/.test(x.keyword));
 		const hirakanaWords = jpWords?.filter((x) => /[ぁ-んァ-ンヴー]$/.test(x.keyword));
-		msg.reply(`\n\`\`\`\n友達の人数: ${friends.filter((x) => x.love && x.love >= 20).length}\n親友の人数: ${friends.filter((x) => x.love && x.love >= 100).length}\n合計好感度: ☆${Math.floor(friends.filter((x) => x.love).reduce((acc, cur) => acc + (cur.love ?? 0), 0) / (10 / 7)) / 10}\n\n数取り回数: ${friends.filter((x) => x.kazutoriData?.winCount).reduce((acc, cur) => acc + (cur.kazutoriData?.winCount ?? 0), 0)}\nトロフィー発行数: ${friends.filter((x) => x.kazutoriData?.medal).reduce((acc, cur) => acc + (cur.kazutoriData?.medal ?? 0), 0)}\n\n現在の機嫌 : ${Math.floor(this.ai.activeFactor * 100)}%\n\n覚えた言葉数 : ${words.length}\nバナナスに使う言葉数 : ${baWords.length - specialWords.length} + ${specialWords.length}\n英語以外で終わる言葉数 : ${jpWords.length}\n英語・漢字以外で終わる言葉数 : ${hirakanaWords.length}\n\`\`\``, {
+		msg.reply(`\n\`\`\`\n友達の人数 : ${friends.filter((x) => x.love && x.love >= 20).length}\n親友の人数 : ${friends.filter((x) => x.love && x.love >= 100).length}\n合計好感度 : ☆${Math.floor(friends.filter((x) => x.love).reduce((acc, cur) => acc + (cur.love ?? 0), 0) / (10 / 7)) / 10}\n\n数取り回数 : ${friends.filter((x) => x.kazutoriData?.winCount).reduce((acc, cur) => acc + (cur.kazutoriData?.winCount ?? 0), 0)}\nトロフィー発行数 : ${friends.filter((x) => x.kazutoriData?.medal).reduce((acc, cur) => acc + (cur.kazutoriData?.medal ?? 0), 0)}\n\n現在の機嫌 : ${Math.floor(this.ai.activeFactor * 100)}%\n\n覚えた言葉数 : ${words.length}\nバナナスに使う言葉数 : ${baWords.length - specialWords.length} + ${specialWords.length}\n英語以外で終わる言葉数 : ${jpWords.length}\n英語・漢字以外で終わる言葉数 : ${hirakanaWords.length}\n\`\`\``, {
 			immediate: false
 		});
 
 		return true;
 	}
-	
+
 	@autobind
 	private getActiveFactor(msg: Message): boolean {
 		if (!msg.text) return false;
-		if (!msg.includes(['きげん','きもち','機嫌','気持ち'])) return false;
+		if (!msg.includes(['きげん', 'きもち', '機嫌', '気持ち'])) return false;
 
 		msg.reply(`\n\`\`\`\n現在の機嫌 : ${Math.floor(this.ai.activeFactor * 1000) / 10}%\n\`\`\``, {
 			immediate: false
@@ -492,7 +403,7 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 		if (key !== msg.userId) {
 			msg.reply(serifs.reminder.doneFromInvalidUser);
 			return {
-				reaction:'confused'
+				reaction: 'confused'
 			};
 		}
 

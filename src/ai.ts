@@ -15,6 +15,7 @@ import Friend, { FriendDoc } from '@/friend';
 import { User } from '@/misskey/user';
 import Stream from '@/stream';
 import log from '@/utils/log';
+import { katakanaToHiragana, hankakuToZenkaku } from '@/utils/japanese';
 const pkg = require('../package.json');
 
 type MentionHook = (msg: Message) => Promise<boolean | HandlerResult>;
@@ -72,6 +73,11 @@ export default class 藍 {
 
 	public friends: loki.Collection<FriendDoc>;
 	public moduleData: loki.Collection<any>;
+
+	private learnedKeywords: loki.Collection<{
+		keyword: string;
+		learnedAt: number;
+	}>;
 
 	/**
 	 * 藍インスタンスを生成します
@@ -538,5 +544,102 @@ export default class 藍 {
 		this.setMeta({
 			activeFactor: this.activeFactor,
 		});
+	}
+
+	@autobind
+	public makeBananasu(inputWord, argWords?, argExWords?, argWords2?, argJpWords?, argHirakanaWords?, word1error = false, word2error = false): string {
+
+		const words = argWords || this.learnedKeywords.find()?.filter((x) => x.keyword.length >= 3 && !/^[0-9]/.test(x.keyword) && !/[0-9]$/.test(x.keyword));
+		const exWords = argExWords || words?.map((x) => ({ ...x, keyword: x.keyword.replaceAll(/^[!-\/:-@[-`{-~！？]/g, "").replaceAll(/[!-\/:-@[-`{-~！？]$/g, "") }));
+		const words2 = argWords2 || exWords?.filter((x) => x.keyword.length >= 4);
+		const jpWords = argJpWords || exWords?.filter((x) => !/[a-zA-Z0-9_]$/.test(x.keyword));
+		const hirakanaWords = argHirakanaWords || jpWords?.filter((x) => /[ぁ-んァ-ンヴー]$/.test(x.keyword));
+		
+		if (!(exWords.length && words2.length && jpWords.length && hirakanaWords.length)) return "";
+		let i = 0;
+		while (words && (i < 100 && (!word1error || !word2error))) {
+			let word1 = "";
+			let word2 = "";
+			let word2s;
+			let longword2s;
+			let pc = 0;
+			let matchStringNum = 1;
+			if (inputWord) {
+				if (word2error || (!word1error && Math.random() < 0.5)) {
+					word1 = inputWord;
+					word2s = words.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice(-1)));
+					longword2s = words2.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice(-2)));
+					pc = word2s.length + longword2s.length
+					if (pc === 0) {
+						word1error = true;
+						i += 1;
+						continue;
+					}
+					if (word2s.length === 0 || longword2s.length && Math.random() < 0.4) {
+						word2 = longword2s[Math.floor(Math.random() * longword2s.length)].keyword;
+						matchStringNum = 1;
+					} else {
+						word2 = word2s[Math.floor(Math.random() * word2s.length)].keyword;
+						matchStringNum = 1;
+					}
+				} else {
+					word2 = inputWord;
+					word2s = words.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().endsWith(katakanaToHiragana(hankakuToZenkaku(word2)).toLowerCase().slice(0, 1)));
+					longword2s = words2.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().endsWith(katakanaToHiragana(hankakuToZenkaku(word2)).toLowerCase().slice(0, 2)));
+					pc = word2s.length + longword2s.length
+					if (pc === 0) {
+						word2error = true;
+						i += 1;
+						continue;
+					}
+					if (word2s.length === 0 || longword2s.length && Math.random() < 0.4) {
+						word1 = longword2s[Math.floor(Math.random() * longword2s.length)].keyword;
+						matchStringNum = 1;
+					} else {
+						word1 = word2s[Math.floor(Math.random() * word2s.length)].keyword;
+						matchStringNum = 1;
+					}
+				}
+			} else {
+
+				if (Math.random() < 0.5) {
+					word1 = words[Math.floor(Math.random() * words.length)].keyword;
+				} else {
+					if (Math.random() < 0.5) {
+						word1 = jpWords[Math.floor(Math.random() * jpWords.length)].keyword;
+					} else {
+						word1 = hirakanaWords[Math.floor(Math.random() * hirakanaWords.length)].keyword;
+					}
+				}
+
+				word2s = words.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice(-1)));
+				longword2s = words2.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice(-2)));
+				pc = word2s.length + longword2s.length
+
+				if (pc === 0 || (pc <= 3 && Math.random() < (0.75 / pc) + (pc === 1 && word2s.length === 1 ? 0.2 : 0))) {
+					i += 1;
+					continue;
+				}
+
+				if (word2s.length === 0 || longword2s.length && Math.random() < 0.4) {
+					word2 = longword2s[Math.floor(Math.random() * longword2s.length)].keyword;
+					matchStringNum = 1;
+				} else {
+					word2 = word2s[Math.floor(Math.random() * word2s.length)].keyword;
+					matchStringNum = 1;
+				}
+			}
+
+			while (matchStringNum < Math.min(word1.length, word2.length) && katakanaToHiragana(hankakuToZenkaku(word2)).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice((matchStringNum + 1) * -1))) {
+				matchStringNum += 1;
+			}
+
+			const notMatchCase = !word2.startsWith(word1.slice((matchStringNum) * -1));
+
+			const info = `\n[${word1.slice(-1)} : ${word2s.length}${longword2s.length ? ` , ${word1.slice(-2)} : ${longword2s.length}` : ""}]`
+
+			return `${word1} の ${word2}、${word1.slice(0, matchStringNum * -1)}${notMatchCase ? word2.slice(0, matchStringNum).toUpperCase() + word2.slice(matchStringNum) : word2}${debug ? info : ""}`
+		}
+		return "";
 	}
 }
