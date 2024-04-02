@@ -638,7 +638,7 @@ export default class 藍 {
 
 			const info = `\n[${word1.slice(-1)} : ${word2s.length}${longword2s.length ? ` , ${word1.slice(-2)} : ${longword2s.length}` : ""}]`
 
-			return `${word1} の ${word2}、${word1.slice(0, matchStringNum * -1)}${notMatchCase ? word2.slice(0, matchStringNum).toUpperCase() + word2.slice(matchStringNum) : word2}${debug ? info : ""}`
+			return `${word1} の ${word2}、${word1.slice(0, matchStringNum * -1)}${notMatchCase ? word2.slice(0, matchStringNum).toUpperCase() + word2.slice(matchStringNum) : word2}`
 		}
 		return "";
 	}
