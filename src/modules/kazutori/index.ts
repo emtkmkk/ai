@@ -190,7 +190,7 @@ export default class extends Module {
 				};
 			}
 
-			if (msg.user.username !== config.master && msg.includes(['inf'])) flg = "inf";
+			if (msg.user.username === config.master && msg.includes(['inf'])) flg = "inf";
 		}
 
 		//TODO : このへんのセリフをserifに移行する
