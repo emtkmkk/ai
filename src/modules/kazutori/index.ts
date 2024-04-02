@@ -415,7 +415,7 @@ export default class extends Module {
 				results.push(`❌ ${n}: ${users.map(u => acct(u)).join(' ')}`);
 			}
 		}
-
+		useNumbers.reverse()
 		// 反転
 		for (let i = 0; i < useNumbers.length; i++) {
 			const n = useNumbers[i];
