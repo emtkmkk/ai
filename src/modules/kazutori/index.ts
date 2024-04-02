@@ -96,11 +96,14 @@ export default class extends Module {
 		// 3%かつ開催2回目以降かつ前回が無限モードではない場合 Maxを無限にする
 		if ((Math.random() < 0.03 && recentGame?.maxnum && recentGame.maxnum != -1) || flg?.includes("inf")) maxnum = -1;
 
-		// 前回が2番目勝利モードでないかつ20%で2番目勝利モードになる
-		const winRank = (recentGame?.winRank ?? 1) === 1 && this.ai.activeFactor >= 0.5 && Math.random() < 0.2 ? 2 : 1;
+		// 前回が2番目勝利モードでないかつ15%で2番目勝利モードになる
+		let winRank = (recentGame?.winRank ?? 1) <= 1 && this.ai.activeFactor >= 0.5 && Math.random() < (maxnum === -1 ? 0.3 : 0.15) ? 2 : 1;
+
+		// 前回が中央値勝利モードでないかつ15%で中央値勝利モードになる
+		if (((recentGame?.winRank ?? 1) > 0 && this.ai.activeFactor >= 0.5 && Math.random() < (maxnum === -1 ? 0.3 : 0.15)) || flg?.includes("med")) winRank = -1;
 
 		// 1番目勝利モードでないかつ75%で最大数値がx倍 (x = x番目勝利モード)
-		if (maxnum > 0 && winRank !== 1 && Math.random() < 0.75) maxnum = maxnum * winRank;
+		if (maxnum > 0 && winRank != 1 && Math.random() < 0.75) maxnum = maxnum * 2;
 		const now = new Date();
 
 		// 今日が1/1の場合 最大値は新年の年数
@@ -191,6 +194,7 @@ export default class extends Module {
 			}
 
 			if (msg.user.username === config.master && msg.includes(['inf'])) flg = "inf";
+			if (msg.user.username === config.master && msg.includes(['med'])) flg += " med";
 		}
 
 		//TODO : このへんのセリフをserifに移行する
@@ -391,6 +395,27 @@ export default class extends Module {
 
 		let useNumbers = Array.from(new Set(game.votes.map((x) => x.number))).sort((a, b) => b - a);
 
+		let med;
+
+		if (winRank === -1) {
+			function median(arr) {
+				let inOrderArr = arr.sort((a, b) => a - b);
+				let result;
+				if (inOrderArr.length % 2 === 0) {
+					result = (inOrderArr[inOrderArr.length / 2 - 1] + inOrderArr[inOrderArr.length / 2]) / 2;
+				} else {
+					result = inOrderArr[(inOrderArr.length + 1) / 2 - 1];
+				}
+				return result;
+			}
+			med = median(useNumbers.filter((n) => {
+				const users = game.votes
+					.filter(x => x.number == n)
+					.map(x => x.user);
+				return users.length == 1;
+			}));
+		}
+
 		// 正常
 		for (let i = 0; i < useNumbers.length; i++) {
 			const n = useNumbers[i];
@@ -400,7 +425,15 @@ export default class extends Module {
 
 			if (users.length == 1) {
 				if (winner == null) {
-					if (winRank > 1) {
+					if (winRank == -1) {
+						if (n === med) {
+							winner = users[0];
+							const icon = n == 100 ? '💯' : n == 0 ? '0️⃣' : '🎉';
+							results.push(`${icon} **${n}**: $[jelly ${acct(users[0])}]`);
+						} else {
+							results.push(`➖ ${n}: ${acct(users[0])}`);
+						}
+					} else if (winRank > 1) {
 						winRank -= 1;
 						results.push(`➖ ${n}: ${acct(users[0])}`);
 					} else {
@@ -415,30 +448,35 @@ export default class extends Module {
 				results.push(`❌ ${n}: ${users.map(u => acct(u)).join(' ')}`);
 			}
 		}
-		useNumbers.reverse()
-		// 反転
-		for (let i = 0; i < useNumbers.length; i++) {
-			const n = useNumbers[i];
-			const users = game.votes
-				.filter(x => x.number == n)
-				.map(x => x.user);
+		if (winRank != -1) {
+			useNumbers.reverse()
+			// 反転
+			for (let i = 0; i < useNumbers.length; i++) {
+				const n = useNumbers[i];
+				const users = game.votes
+					.filter(x => x.number == n)
+					.map(x => x.user);
 
-			if (users.length == 1) {
-				if (reverseWinner == null) {
-					if (reverseWinRank > 1) {
-						reverseWinRank -= 1;
-						reverseResults.push(`➖ ${n}: ${acct(users[0])}`);
+				if (users.length == 1) {
+					if (reverseWinner == null) {
+						if (reverseWinRank > 1) {
+							reverseWinRank -= 1;
+							reverseResults.push(`➖ ${n}: ${acct(users[0])}`);
+						} else {
+							reverseWinner = users[0];
+							const icon = n == 100 ? '💯' : n == 0 ? '0️⃣' : '🎉';
+							reverseResults.push(`${icon} **${n}**: $[jelly ${acct(users[0])}]`);
+						}
 					} else {
-						reverseWinner = users[0];
-						const icon = n == 100 ? '💯' : n == 0 ? '0️⃣' : '🎉';
-						reverseResults.push(`${icon} **${n}**: $[jelly ${acct(users[0])}]`);
+						reverseResults.push(`➖ ${n}: ${acct(users[0])}`);
 					}
-				} else {
-					reverseResults.push(`➖ ${n}: ${acct(users[0])}`);
+				} else if (users.length > 1) {
+					reverseResults.push(`❌ ${n}: ${users.map(u => acct(u)).join(' ')}`);
 				}
-			} else if (users.length > 1) {
-				reverseResults.push(`❌ ${n}: ${users.map(u => acct(u)).join(' ')}`);
 			}
+		} else {
+			reverseResults = results;
+			reverseWinner = winner;
 		}
 
 		if (!medal) {
@@ -454,7 +492,7 @@ export default class extends Module {
 
 		//そのままでも反転しても結果が同じの場合は反転しない
 		if ((!winner || !reverseWinner) || winner?.id === reverseWinner?.id) {
-			perfect = true;
+			perfect = winRank != -1;
 			reverse = false;
 		}
 
