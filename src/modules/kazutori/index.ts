@@ -419,6 +419,14 @@ export default class extends Module {
 		// 正常
 		for (let i = 0; i < useNumbers.length; i++) {
 			const n = useNumbers[i];
+			let strn = String(n);
+			if (strn.includes("e+")) {
+				strn = strn.replace(/^1e/,"");
+				strn = strn.replace("e","×");
+				strn = strn.replace("+","10^{");
+				strn += "}\\)"
+				strn = "\\(" + strn
+			}
 			const users = game.votes
 				.filter(x => x.number == n)
 				.map(x => x.user);
@@ -429,23 +437,23 @@ export default class extends Module {
 						if (n === med) {
 							winner = users[0];
 							const icon = n == 100 ? '💯' : n == 0 ? '0️⃣' : '🎉';
-							results.push(`${icon} **${n}**: $[jelly ${acct(users[0])}]`);
+							results.push(`${icon} **${strn}**: $[jelly ${acct(users[0])}]`);
 						} else {
-							results.push(`➖ ${n}: ${acct(users[0])}`);
+							results.push(`➖ ${strn}: ${acct(users[0])}`);
 						}
 					} else if (winRank > 1) {
 						winRank -= 1;
-						results.push(`➖ ${n}: ${acct(users[0])}`);
+						results.push(`➖ ${strn}: ${acct(users[0])}`);
 					} else {
 						winner = users[0];
 						const icon = n == 100 ? '💯' : n == 0 ? '0️⃣' : '🎉';
-						results.push(`${icon} **${n}**: $[jelly ${acct(users[0])}]`);
+						results.push(`${icon} **${strn}**: $[jelly ${acct(users[0])}]`);
 					}
 				} else {
-					results.push(`➖ ${n}: ${acct(users[0])}`);
+					results.push(`➖ ${strn}: ${acct(users[0])}`);
 				}
 			} else if (users.length > 1) {
-				results.push(`❌ ${n}: ${users.map(u => acct(u)).join(' ')}`);
+				results.push(`❌ ${strn}: ${users.map(u => acct(u)).join(' ')}`);
 			}
 		}
 		if (winRank != -1) {
@@ -453,6 +461,14 @@ export default class extends Module {
 			// 反転
 			for (let i = 0; i < useNumbers.length; i++) {
 				const n = useNumbers[i];
+				let strn = String(n);
+				if (strn.includes("e+")) {
+					strn = strn.replace(/^1e/,"");
+					strn = strn.replace("e","×");
+					strn = strn.replace("+","10^{");
+					strn += "}\\)"
+					strn = "\\(" + strn
+				}
 				const users = game.votes
 					.filter(x => x.number == n)
 					.map(x => x.user);
@@ -461,17 +477,17 @@ export default class extends Module {
 					if (reverseWinner == null) {
 						if (reverseWinRank > 1) {
 							reverseWinRank -= 1;
-							reverseResults.push(`➖ ${n}: ${acct(users[0])}`);
+							reverseResults.push(`➖ ${strn}: ${acct(users[0])}`);
 						} else {
 							reverseWinner = users[0];
 							const icon = n == 100 ? '💯' : n == 0 ? '0️⃣' : '🎉';
-							reverseResults.push(`${icon} **${n}**: $[jelly ${acct(users[0])}]`);
+							reverseResults.push(`${icon} **${strn}**: $[jelly ${acct(users[0])}]`);
 						}
 					} else {
-						reverseResults.push(`➖ ${n}: ${acct(users[0])}`);
+						reverseResults.push(`➖ ${strn}: ${acct(users[0])}`);
 					}
 				} else if (users.length > 1) {
-					reverseResults.push(`❌ ${n}: ${users.map(u => acct(u)).join(' ')}`);
+					reverseResults.push(`❌ ${strn}: ${users.map(u => acct(u)).join(' ')}`);
 				}
 			}
 		} else {
@@ -527,7 +543,7 @@ export default class extends Module {
 		}
 
 
-		const text = "勝利条件 : " + (winRank > 0 ? winRank === 1 ? "最も大きい" : winRank + "番目に大きい" : "中央値 (" + med + ")") + "\n\n" + results.join('\n') + '\n\n' + (winner
+		const text = "勝利条件 : " + (winRank > 0 ? winRank === 1 ? "最も大きい値" : winRank + "番目に大きい値" : "中央値 (" + med + ")") + "\n\n" + results.join('\n') + '\n\n' + (winner
 			? serifs.kazutori.finishWithWinner(acct(winner), name, item, reverse, perfect, winnerFriend?.doc?.kazutoriData?.winCount ?? 0, medal && (winnerFriend?.doc?.kazutoriData?.winCount ?? 0) > 50 ? winnerFriend?.doc?.kazutoriData?.medal ?? 0 : null)
 			: serifs.kazutori.finishWithNoWinner(item));
 
