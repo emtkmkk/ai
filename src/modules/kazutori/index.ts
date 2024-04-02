@@ -392,7 +392,8 @@ export default class extends Module {
 		let useNumbers = Array.from(new Set(game.votes.map((x) => x.number))).sort((a, b) => b - a);
 
 		// 正常
-		useNumbers.forEach((n) => {
+		for (let i = 0; i < useNumbers.length; i++) {
+			const n = useNumbers[i];
 			const users = game.votes
 				.filter(x => x.number == n)
 				.map(x => x.user);
@@ -413,10 +414,11 @@ export default class extends Module {
 			} else if (users.length > 1) {
 				results.push(`❌ ${n}: ${users.map(u => acct(u)).join(' ')}`);
 			}
-		});
+		}
 
 		// 反転
-		useNumbers.reverse().forEach((n) => {
+		for (let i = 0; i < useNumbers.length; i++) {
+			const n = useNumbers[i];
 			const users = game.votes
 				.filter(x => x.number == n)
 				.map(x => x.user);
@@ -437,7 +439,7 @@ export default class extends Module {
 			} else if (users.length > 1) {
 				reverseResults.push(`❌ ${n}: ${users.map(u => acct(u)).join(' ')}`);
 			}
-		});
+		}
 
 		if (!medal) {
 			const winDiff = (winner?.winCount ?? 0) - (reverseWinner?.winCount ?? 0);
@@ -465,7 +467,7 @@ export default class extends Module {
 
 		if (now.getMonth() === 3 && now.getDate() === 1) reverse = !reverse;
 
-		const winnerFriend = winner && winner?.id ? this.ai.lookupFriend(winner?.id) : null;
+		const winnerFriend = winner?.id ? this.ai.lookupFriend(winner.id) : null;
 		const name = winnerFriend ? winnerFriend.name : null;
 
 		if (winnerFriend) {
