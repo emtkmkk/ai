@@ -55,7 +55,7 @@ export default class extends Module {
 	}
 
 	@autobind
-	private async start(triggerUserId?) {
+	private async start(triggerUserId?, flg?) {
 
 		this.ai.decActiveFactor();
 
@@ -89,39 +89,45 @@ export default class extends Module {
 		// 最大値は(前回の参加者＋前々回の参加者/2)に50%で1を足した物
 		let maxnum = (Math.floor(((recentGame?.votes?.length || 0) + (penultimateGame?.votes?.length || 0)) / 2) + (Math.random() < 0.5 ? 1 : 0)) || 1;
 
-		// 2%かつ開催2回目以降かつ前回がMax50以上ではない場合 Maxを50 ~ 100倍にする
-		if (Math.random() < 0.02 && recentGame?.maxnum && recentGame.maxnum <= 50) maxnum = Math.floor(maxnum * (50 + (Math.random() * 50)));
+		// 3%かつ開催2回目以降かつ前回がMax50以上ではない場合 Maxを50 ~ 500倍にする
+		if (Math.random() < 0.03 && recentGame?.maxnum && recentGame.maxnum <= 50) maxnum = Math.floor(maxnum * (50 + (Math.random() * 450)));
 		// 2%かつ開催2回目以降かつ前回がMax1ではない場合 Max1
 		else if (Math.random() < 0.02 && recentGame?.maxnum && recentGame.maxnum !== 1) maxnum = 1;
+		// 3%かつ開催2回目以降かつ前回が無限モードではない場合 Maxを無限にする
+		if ((Math.random() < 0.03 && recentGame?.maxnum && recentGame.maxnum != -1) || flg?.includes("inf")) maxnum = -1;
 
 		// 前回が2番目勝利モードでないかつ20%で2番目勝利モードになる
-		// 狙い：新しいゲーム性の探求
 		const winRank = (recentGame?.winRank ?? 1) === 1 && this.ai.activeFactor >= 0.5 && Math.random() < 0.2 ? 2 : 1;
-		
-		// 1番目勝利モードでないかつ66%で最大数値がx倍 (x = x番目勝利モード)
-		if (winRank !== 1 && Math.random() < 0.66) maxnum = maxnum * winRank;
+
+		// 1番目勝利モードでないかつ75%で最大数値がx倍 (x = x番目勝利モード)
+		if (maxnum > 0 && winRank !== 1 && Math.random() < 0.75) maxnum = maxnum * winRank;
 		const now = new Date();
 
 		// 今日が1/1の場合 最大値は新年の年数
-		// TODO : 最大値が1000を超える為壊れないか要確認
 		if (now.getMonth() === 0 && now.getDate() === 1) maxnum = now.getFullYear();
 
-		// 自然発生かつ3%の確率でフォロワー限定になる
-		// 狙い：リプライがすべてフォロ限になる為、フォロワーでない人の投票が不可視になる
-		let visibility = Math.random() < 0.03 && !triggerUserId ? 'followers' : undefined;
+		if (this.ai.activeFactor >= 0.85) {
+			// 自然発生かつ3%の確率でフォロワー限定になる
+			let visibility = Math.random() < 0.03 && !triggerUserId ? 'followers' : undefined;
 
-		if (!visibility) {
-			// 投稿がフォロワー限定でない場合は、3%の確率で公開投稿のみ受付けるモードにする
-			publicOnly = this.ai.activeFactor >= 0.5 && !recentGame?.publicOnly && (recentGame?.publicOnly == null || Math.random() < 0.005);
+			if (!visibility) {
+				// 投稿がフォロワー限定でない場合は、3%の確率で公開投稿のみ受付けるモードにする
+				publicOnly = this.ai.activeFactor >= 0.5 && !recentGame?.publicOnly && (recentGame?.publicOnly == null || Math.random() < 0.005);
+			}
 		}
+
 
 		// 10% → 自然発生かつ50%で1分 そうでない場合2分
 		// 90% → 5分 or 10分
-		// 狙い：時間がないと他の人の数字を確認しづらいのでランダム性が高まる
-		const limitMinutes = Math.random() < 0.1 && this.ai.activeFactor >= 0.5 ? Math.random() < 0.5 && this.ai.activeFactor >= 0.5 && !triggerUserId ? 1 : 2 : Math.random() < 0.5 ? 5 : 10;
+		let limitMinutes = Math.random() < 0.1 && this.ai.activeFactor >= 0.75 ? Math.random() < 0.5 && !triggerUserId ? 1 : 2 : Math.random() < 0.5 ? 5 : 10;
+
+		// 機嫌が低い場合、受付時間を延長
+		if (this.ai.activeFactor < 0.75) {
+			limitMinutes = Math.floor(1 / (1 - Math.min((1 - this.ai.activeFactor) * 1.1, 0.8)) * 10 / 5) * 5;
+		}
 
 		const post = await this.ai.post({
-			text: !publicOnly ? serifs.kazutori.intro(maxnum, limitMinutes, winRank) : serifs.kazutori.introPublicOnly(maxnum, limitMinutes, winRank),
+			text: !publicOnly ? serifs.kazutori.intro(maxnum > 0 ? maxnum : "∞", limitMinutes, winRank) : serifs.kazutori.introPublicOnly(maxnum, limitMinutes, winRank),
 			...(visibility ? { visibility } : {})
 		});
 
@@ -151,6 +157,8 @@ export default class extends Module {
 
 		const recentGame = games.length == 0 ? null : games[games.length - 1];
 
+		let flg = "";
+
 		if (recentGame) {
 			// 現在アクティブなゲームがある場合
 			if (!recentGame.isEnded) {
@@ -179,6 +187,8 @@ export default class extends Module {
 					reaction: 'hmm'
 				};
 			}
+
+			if (msg.user.username !== config.master && msg.includes(['inf'])) flg = "inf";
 		}
 
 		//TODO : このへんのセリフをserifに移行する
@@ -186,7 +196,7 @@ export default class extends Module {
 			this.subscribeReply(msg.userId, reply.id);
 		});
 
-		this.start(msg.user.id);
+		this.start(msg.user.id, flg);
 
 		return {
 			reaction: 'love'
@@ -247,7 +257,7 @@ export default class extends Module {
 		}
 
 		// 数字が含まれていない
-		const match = msg.extractedText.replace(/[０-９]/g, m=>'０１２３４５６７８９'.indexOf(m).toString()).match(/[0-9]+/);
+		const match = msg.extractedText.replace(/[０-９]/g, m => '０１２３４５６７８９'.indexOf(m).toString()).match(/[0-9]+/);
 		if (match == null) {
 			msg.reply('リプライの中に数字が見つかりませんでした！').then(reply => {
 				game.replyKey.push(msg.userId);
@@ -274,7 +284,7 @@ export default class extends Module {
 		}
 
 		// 範囲外
-		if (num < 0 || num > game.maxnum) {
+		if (game.maxnum > 0 && (num < 0 || num > game.maxnum)) {
 			msg.reply(`\n「${num}」は今回のゲームでは範囲外です！\n0~${game.maxnum}の範囲で指定してくださいね！`).then(reply => {
 				game.replyKey.push(msg.userId);
 				this.games.update(game);
@@ -357,7 +367,7 @@ export default class extends Module {
 			this.ai.decActiveFactor((game.finishedAt.valueOf() - game.startedAt.valueOf()) / (60 * 1000 * 100));
 
 			if (this.ai.activeFactor < 0.5) return;
-			
+
 			this.ai.post({
 				text: serifs.kazutori.onagare(item),
 				renoteId: game.postId
@@ -377,53 +387,55 @@ export default class extends Module {
 		let reverse = Math.random() < (winRank === 1 ? 0.15 : 0.3);
 		const now = new Date();
 
+		let useNumbers = Array.from(new Set(game.votes.map((x) => x.number))).sort((a, b) => b - a);
+
 		// 正常
-		for (let i = game.maxnum; i >= 0; i--) {
+		useNumbers.forEach((n) => {
 			const users = game.votes
-				.filter(x => x.number == i)
+				.filter(x => x.number == n)
 				.map(x => x.user);
 
 			if (users.length == 1) {
 				if (winner == null) {
 					if (winRank > 1) {
 						winRank -= 1;
-						results.push(`➖ ${i}: ${acct(users[0])}`);
+						results.push(`➖ ${n}: ${acct(users[0])}`);
 					} else {
 						winner = users[0];
-						const icon = i == 100 ? '💯' : i == 0 ? '0️⃣' : '🎉';
-						results.push(`${icon} **${i}**: $[jelly ${acct(users[0])}]`);
+						const icon = n == 100 ? '💯' : n == 0 ? '0️⃣' : '🎉';
+						results.push(`${icon} **${n}**: $[jelly ${acct(users[0])}]`);
 					}
 				} else {
-					results.push(`➖ ${i}: ${acct(users[0])}`);
+					results.push(`➖ ${n}: ${acct(users[0])}`);
 				}
 			} else if (users.length > 1) {
-				results.push(`❌ ${i}: ${users.map(u => acct(u)).join(' ')}`);
+				results.push(`❌ ${n}: ${users.map(u => acct(u)).join(' ')}`);
 			}
-		}
+		});
 
 		// 反転
-		for (let i = 0; i <= game.maxnum; i++) {
+		useNumbers.reverse().forEach((n) => {
 			const users = game.votes
-				.filter(x => x.number == i)
+				.filter(x => x.number == n)
 				.map(x => x.user);
 
 			if (users.length == 1) {
 				if (reverseWinner == null) {
 					if (reverseWinRank > 1) {
 						reverseWinRank -= 1;
-						reverseResults.push(`➖ ${i}: ${acct(users[0])}`);
+						reverseResults.push(`➖ ${n}: ${acct(users[0])}`);
 					} else {
 						reverseWinner = users[0];
-						const icon = i == 100 ? '💯' : i == 0 ? '0️⃣' : '🎉';
-						reverseResults.push(`${icon} **${i}**: $[jelly ${acct(users[0])}]`);
+						const icon = n == 100 ? '💯' : n == 0 ? '0️⃣' : '🎉';
+						reverseResults.push(`${icon} **${n}**: $[jelly ${acct(users[0])}]`);
 					}
 				} else {
-					reverseResults.push(`➖ ${i}: ${acct(users[0])}`);
+					reverseResults.push(`➖ ${n}: ${acct(users[0])}`);
 				}
 			} else if (users.length > 1) {
-				reverseResults.push(`❌ ${i}: ${users.map(u => acct(u)).join(' ')}`);
+				reverseResults.push(`❌ ${n}: ${users.map(u => acct(u)).join(' ')}`);
 			}
-		}
+		});
 
 		if (!medal) {
 			const winDiff = (winner?.winCount ?? 0) - (reverseWinner?.winCount ?? 0);
@@ -451,14 +463,14 @@ export default class extends Module {
 
 		if (now.getMonth() === 3 && now.getDate() === 1) reverse = !reverse;
 
-		const winnerFriend = winner ? this.ai.lookupFriend(winner.id) : null;
+		const winnerFriend = winner?.id ? this.ai.lookupFriend(winner.id) : null;
 		const name = winnerFriend ? winnerFriend.name : null;
 
 		if (winnerFriend) {
 			if (winnerFriend.doc.kazutoriData.winCount != null) {
 				winnerFriend.doc.kazutoriData.winCount += 1;
 			} else {
-				winnerFriend.doc.kazutoriData = { winCount: 1, playCount: 1, inventory: []};
+				winnerFriend.doc.kazutoriData = { winCount: 1, playCount: 1, inventory: [] };
 			}
 			if (medal && winnerFriend.doc.kazutoriData.winCount > 50) {
 				winnerFriend.doc.kazutoriData.medal = (winnerFriend.doc.kazutoriData.medal || 0) + 1;
