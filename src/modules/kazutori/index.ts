@@ -125,7 +125,7 @@ export default class extends Module {
 
 		// 機嫌が低い場合、受付時間を延長
 		if (this.ai.activeFactor < 0.75) {
-			limitMinutes = Math.floor(1 / (1 - Math.min((1 - this.ai.activeFactor) * 1.1, 0.8)) * 10 / 5) * 5;
+			limitMinutes = Math.floor(1 / (1 - Math.min((1 - this.ai.activeFactor) * 1.2 * (0.7 + Math.random() * 0.3), 0.8)) * 10 / 5) * 5;
 		}
 
 		const post = await this.ai.post({
