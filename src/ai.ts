@@ -136,6 +136,10 @@ export default class 藍 {
 		this.moduleData = this.getCollection('moduleData', {
 			indices: ['module']
 		});
+
+		this.learnedKeywords = this.getCollection('_keyword_learnedKeywords', {
+			indices: ['userId']
+		});
 		//#endregion
 
 		const meta = this.getMeta();
