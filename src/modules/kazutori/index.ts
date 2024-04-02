@@ -542,7 +542,7 @@ export default class extends Module {
 			winnerFriend.save()
 		}
 
-		let strmed = String(med);
+		let strmed = med ? String(med) : "";
 		if (strmed.includes("e+")) {
 			strmed = strmed.replace(/^1e/,"");
 			strmed = strmed.replace("e","×");
