@@ -108,9 +108,9 @@ export default class extends Module {
 
 		// 今日が1/1の場合 最大値は新年の年数
 		if (now.getMonth() === 0 && now.getDate() === 1) maxnum = now.getFullYear();
-		
+
 		let visibility
-		
+
 		if (this.ai.activeFactor >= 0.85) {
 			// 自然発生かつ3%の確率でフォロワー限定になる
 			visibility = Math.random() < 0.03 && !triggerUserId ? 'followers' : undefined;
@@ -262,35 +262,56 @@ export default class extends Module {
 			};
 		}
 
-		// 数字が含まれていない
-		const match = msg.extractedText.replace(/[０-９]/g, m => '０１２３４５６７８９'.indexOf(m).toString()).match(/[0-9]+/);
-		if (match == null) {
-			msg.reply('リプライの中に数字が見つかりませんでした！').then(reply => {
-				game.replyKey.push(msg.userId);
-				this.games.update(game);
-				this.subscribeReply(msg.userId, reply.id);
-			});
-			return {
-				reaction: 'hmm'
-			};
+		let num;
+
+		if (!msg.extractedText.includes("∞")) {
+			// 数字が含まれていない
+			const match = msg.extractedText.replace(/[０-９]/g, m => '０１２３４５６７８９'.indexOf(m).toString()).match(/[0-9]+/);
+			if (match == null) {
+				msg.reply('リプライの中に数字が見つかりませんでした！').then(reply => {
+					game.replyKey.push(msg.userId);
+					this.games.update(game);
+					this.subscribeReply(msg.userId, reply.id);
+				});
+				return {
+					reaction: 'hmm'
+				};
+			}
+
+			num = parseInt(match[0], 10);
+
+			if (num === Number.POSITIVE_INFINITY) {
+				num = Number.POSITIVE_INFINITY;
+			} else {
+				// 整数じゃない
+				if (!Number.isInteger(num)) {
+					msg.reply('リプライの中に数字が見つかりませんでした！').then(reply => {
+						game.replyKey.push(msg.userId);
+						this.games.update(game);
+						this.subscribeReply(msg.userId, reply.id);
+					});
+					return {
+						reaction: 'hmm'
+					};
+				}
+			}
+		} else {
+			num = Number.POSITIVE_INFINITY;
 		}
 
-		const num = parseInt(match[0], 10);
 
-		// 整数じゃない
-		if (!Number.isInteger(num)) {
-			msg.reply('リプライの中に数字が見つかりませんでした！').then(reply => {
-				game.replyKey.push(msg.userId);
-				this.games.update(game);
-				this.subscribeReply(msg.userId, reply.id);
-			});
-			return {
-				reaction: 'hmm'
-			};
-		}
 
 		// 範囲外
 		if (game.maxnum > 0 && (num < 0 || num > game.maxnum)) {
+			let strn = String(num);
+			if (strn == "Infinity") strn = "∞"
+			if (strn.includes("e+")) {
+				strn = strn.replace(/^1e/, "");
+				strn = strn.replace("e", "×");
+				strn = strn.replace("+", "10^{");
+				strn += "}\\)"
+				strn = "\\(" + strn
+			}
 			msg.reply(`\n「${num}」は今回のゲームでは範囲外です！\n0~${game.maxnum}の範囲で指定してくださいね！`).then(reply => {
 				game.replyKey.push(msg.userId);
 				this.games.update(game);
@@ -420,10 +441,11 @@ export default class extends Module {
 		for (let i = 0; i < useNumbers.length; i++) {
 			const n = useNumbers[i];
 			let strn = String(n);
+			if (strn == "Infinity") strn = "∞"
 			if (strn.includes("e+")) {
-				strn = strn.replace(/^1e/,"");
-				strn = strn.replace("e","×");
-				strn = strn.replace("+","10^{");
+				strn = strn.replace(/^1e/, "");
+				strn = strn.replace("e", "×");
+				strn = strn.replace("+", "10^{");
 				strn += "}\\)"
 				strn = "\\(" + strn
 			}
@@ -462,10 +484,11 @@ export default class extends Module {
 			for (let i = 0; i < useNumbers.length; i++) {
 				const n = useNumbers[i];
 				let strn = String(n);
+				if (strn == "Infinity") strn = "∞"
 				if (strn.includes("e+")) {
-					strn = strn.replace(/^1e/,"");
-					strn = strn.replace("e","×");
-					strn = strn.replace("+","10^{");
+					strn = strn.replace(/^1e/, "");
+					strn = strn.replace("e", "×");
+					strn = strn.replace("+", "10^{");
 					strn += "}\\)"
 					strn = "\\(" + strn
 				}
@@ -544,9 +567,10 @@ export default class extends Module {
 
 		let strmed = med ? String(med) : "";
 		if (strmed.includes("e+")) {
-			strmed = strmed.replace(/^1e/,"");
-			strmed = strmed.replace("e","×");
-			strmed = strmed.replace("+","10^{");
+			if (strmed == "Infinity") strmed = "∞"
+			strmed = strmed.replace(/^1e/, "");
+			strmed = strmed.replace("e", "×");
+			strmed = strmed.replace("+", "10^{");
 			strmed += "}\\)"
 			strmed = "\\(" + strmed
 		}
