@@ -61,7 +61,7 @@ export default class extends Module {
 			const text = serifs.birthday.happyBirthday(friend.name);
 
 			// ローカルユーザで、親愛度が20以上（☆5）の場合、公開で祝う
-			if (!friend.doc?.user?.host && friend.love < 20) {
+			if (!friend.doc?.user?.host && friend.love >= 20) {
 				this.ai.post({
 					text: serifs.birthday.happyBirthdayLocal(friend.name, acct(friend.doc.user)),
 					localOnly: true,
