@@ -49,7 +49,7 @@ export default class extends Module {
 			// 好感度★7以上で最後の好感度増加から364日以上経過している場合は対象外
 			if (friend.love >= 100 && friend.doc?.lastLoveIncrementedAt && Date.now() > new Date(friend.doc.lastLoveIncrementedAt)?.valueOf() + (1000 * 60 * 60 * 24 * 364)) return;
 
-			const data = friend.getPerModulesData(hthis);
+			const data = friend.getPerModulesData(this);
 
 			if (data.lastBirthdayChecked == todaydate) return;
 			// 前回のお祝いから364日以上経過していない場合は対象外
