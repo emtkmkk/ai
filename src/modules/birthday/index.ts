@@ -43,27 +43,25 @@ export default class extends Module {
 
 			// 親愛度が1以上必要
 			if (friend.love < 1) return;
-
-			// リモートユーザなら、親愛度が5以上（☆4）必要
-			if (!friend.doc?.user?.host && friend.love < 5) return;
-
+			
 			// 好感度★6以下で最後の好感度増加から31日以上経過している場合は対象外
 			if (friend.love < 100 && friend.doc?.lastLoveIncrementedAt && Date.now() > new Date(friend.doc.lastLoveIncrementedAt)?.valueOf() + (1000 * 60 * 60 * 24 * 31)) return;
 			// 好感度★7以上で最後の好感度増加から364日以上経過している場合は対象外
 			if (friend.love >= 100 && friend.doc?.lastLoveIncrementedAt && Date.now() > new Date(friend.doc.lastLoveIncrementedAt)?.valueOf() + (1000 * 60 * 60 * 24 * 364)) return;
 
-			const data = friend.getPerModulesData(this);
+			const data = friend.getPerModulesData(hthis);
 
 			if (data.lastBirthdayChecked == todaydate) return;
 			// 前回のお祝いから364日以上経過していない場合は対象外
-			if (Date.now() > new Date(data.lastBirthdayChecked)?.valueOf() + (1000 * 60 * 60 * 24 * 364)) return
+			if (Date.now() < new Date(data.lastBirthdayChecked)?.valueOf() + (1000 * 60 * 60 * 24 * 364)) return
 
 			data.lastBirthdayChecked = todaydate;
 			friend.setPerModulesData(this, data);
 
 			const text = serifs.birthday.happyBirthday(friend.name);
 
-			if (!friend.doc?.user?.host) {
+			// ローカルユーザで、親愛度が20以上（☆5）の場合、公開で祝う
+			if (!friend.doc?.user?.host && friend.love < 20) {
 				this.ai.post({
 					text: serifs.birthday.happyBirthdayLocal(friend.name, acct(friend.doc.user)),
 					localOnly: true,
