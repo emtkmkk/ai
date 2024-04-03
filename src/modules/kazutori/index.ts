@@ -565,7 +565,7 @@ export default class extends Module {
 			winnerFriend.save()
 		}
 
-		let strmed = med ? String(med) : "";
+		let strmed = med != null ? String(med) : "";
 		if (strmed.includes("e+")) {
 			if (strmed == "Infinity") strmed = "∞"
 			strmed = strmed.replace(/^1e/, "");
