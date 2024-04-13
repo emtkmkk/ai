@@ -125,11 +125,11 @@ export default class Friend {
 		
 		const now = new Date();
 		
-		// 100を超えている場合、同じ種類の好感度増加は1分間に1回
+		// 100を超えている場合、同じ種類の好感度増加は10分間に1回
 		if (key && (this.doc.love || 0) >= 100){
-			if (!this.doc.cooldownLoveIncrementKey || this.doc.lastLoveIncrementedTime !== "" + now.getHours() + now.getMinutes()) {
+			if (!this.doc.cooldownLoveIncrementKey || this.doc.lastLoveIncrementedTime !== "" + (now.getHours() + now.getMinutes()).slice(3)) {
 				this.doc.cooldownLoveIncrementKey = [];
-				this.doc.lastLoveIncrementedTime = "" + now.getHours() + now.getMinutes();
+				this.doc.lastLoveIncrementedTime = "" + (now.getHours() + now.getMinutes()).slice(3);
 			}
 			
 			if (this.doc.cooldownLoveIncrementKey.includes(key)) {
