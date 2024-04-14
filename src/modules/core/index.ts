@@ -351,7 +351,7 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 			immediate: true
 		});
 
-		return { reaction: "mk_moyochicken" };
+		return { reaction: ":mk_moyochicken:" };
 	}
 
 	@autobind
@@ -363,7 +363,7 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 			immediate: true
 		});
 
-		return { reaction: "mk_moyochicken" };
+		return { reaction: ":mk_moyochicken:" };
 	}
 
 	@autobind
@@ -383,7 +383,7 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 			immediate: false
 		});
 
-		return { reaction: "mk_moyochicken" };
+		return { reaction: ":mk_moyochicken:" };
 	}
 
 	@autobind
@@ -395,7 +395,7 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 			immediate: false
 		});
 
-		return { reaction: "mk_moyochicken" };
+		return { reaction: ":mk_moyochicken:" };
 	}
 
 	@autobind
