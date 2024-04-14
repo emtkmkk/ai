@@ -51,6 +51,7 @@ export default class extends Module {
 		);
 
 		return ret.reaction ? ret : !!ret ? { reaction: "love" } : false;
+	}
 
 	@autobind
 	private transferBegin(msg: Message): boolean {
