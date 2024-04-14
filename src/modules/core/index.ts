@@ -50,7 +50,7 @@ export default class extends Module {
 			this.version(msg)
 		);
 
-		return !ret || ret.reaction ? ret : { reaction: "love" };
+		return ret === true ? { reaction: "love" } : ret;
 	}
 
 	@autobind
