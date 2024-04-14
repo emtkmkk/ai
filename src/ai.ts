@@ -283,7 +283,7 @@ export default class 藍 {
 		if (reaction === "confused") reaction = ":mk_ultrawidechicken:";
 
 		const friend = new Friend(this, { user: msg.user });
-		if (![":mk_widechicken:", ":mk_fly_sliver:", ":mk_ultrawidechicken:"].includes(reaction) && !(defaultReaction === reaction)) {
+		if (![":mk_widechicken:", ":mk_fly_sliver:", ":mk_ultrawidechicken:", "mk_moyochicken"].includes(reaction) && !(defaultReaction === reaction)) {
 			// 正しい反応の場合
 			friend.incLove(0.1, reaction);
 		} else if (reaction === ":mk_widechicken:") {
