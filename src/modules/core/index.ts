@@ -33,7 +33,7 @@ export default class extends Module {
 	private async mentionHook(msg: Message) {
 		if (!msg.text) return false;
 
-		return (
+		const ret = (
 			this.transferBegin(msg) ||
 			this.transferEnd(msg) ||
 			this.setName(msg) ||
@@ -48,8 +48,9 @@ export default class extends Module {
 			this.mkckAbout(msg) ||
 			this.modules(msg) ||
 			this.version(msg)
-		) ? { reaction: "love" } : false;
-	}
+		);
+
+		return ret.reaction ? ret : !!ret ? { reaction: "love" } : false;
 
 	@autobind
 	private transferBegin(msg: Message): boolean {
@@ -349,7 +350,7 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 			immediate: true
 		});
 
-		return true;
+		return { reaction: "mk_moyochicken" };
 	}
 
 	@autobind
@@ -361,7 +362,7 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 			immediate: true
 		});
 
-		return true;
+		return { reaction: "mk_moyochicken" };
 	}
 
 	@autobind
@@ -381,7 +382,7 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 			immediate: false
 		});
 
-		return true;
+		return { reaction: "mk_moyochicken" };
 	}
 
 	@autobind
@@ -393,7 +394,7 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 			immediate: false
 		});
 
-		return true;
+		return { reaction: "mk_moyochicken" };
 	}
 
 	@autobind
