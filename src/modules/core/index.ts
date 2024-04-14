@@ -335,7 +335,7 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 
 
 	@autobind
-	private modules(msg: Message): boolean {
+	private modules(msg: Message) {
 		if (!msg.text) return false;
 		if (!msg.or(['modules'])) return false;
 
@@ -355,7 +355,7 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 	}
 
 	@autobind
-	private version(msg: Message): boolean {
+	private version(msg: Message) {
 		if (!msg.text) return false;
 		if (!msg.or(['v', 'version', 'バージョン'])) return false;
 
@@ -367,7 +367,7 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 	}
 
 	@autobind
-	private mkckAbout(msg: Message): boolean {
+	private mkckAbout(msg: Message) {
 		if (!msg.text) return false;
 		if (!msg.includes(['もこチキについて', 'もこもこチキンについて'])) return false;
 
@@ -387,7 +387,7 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 	}
 
 	@autobind
-	private getActiveFactor(msg: Message): boolean {
+	private getActiveFactor(msg: Message) {
 		if (!msg.text) return false;
 		if (!msg.includes(['きげん', 'きもち', '機嫌', '気持ち'])) return false;
 
