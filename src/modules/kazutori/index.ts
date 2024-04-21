@@ -574,7 +574,7 @@ export default class extends Module {
 			strmed += "}\\)"
 			strmed = "\\(" + strmed
 		}
-		const text = "勝利条件 : " + (winRank > 0 ? winRank === 1 ? "最も大きい値" : winRank + "番目に大きい値" : "中央値 (" + strmed + ")") + "\n\n" + results.join('\n') + '\n\n' + (winner
+		const text = (game.winRank > 0 ? game.winRank === 1 ? "" : "勝利条件 : "　+ game.winRank + "番目に大きい値\n\n" : "勝利条件 : 中央値 (" + strmed + ")\n\n") + results.join('\n') + '\n\n' + (winner
 			? serifs.kazutori.finishWithWinner(acct(winner), name, item, reverse, perfect, winnerFriend?.doc?.kazutoriData?.winCount ?? 0, medal && (winnerFriend?.doc?.kazutoriData?.winCount ?? 0) > 50 ? winnerFriend?.doc?.kazutoriData?.medal ?? 0 : null)
 			: serifs.kazutori.finishWithNoWinner(item));
 
