@@ -62,13 +62,21 @@ export default class extends Module {
 					waitTime += Math.min((note.text?.length || 0) - 30, 68) * 30
 				}
 
-				await delay(waitTime + Math.round(Math.random() * (waitTime + 500)));
+				waittime = waittime * Math.max(0.6 / this.ai.activeFactor, 1);
+
+				await delay(waitTime + Math.round(Math.random() * Math.max(1 / this.ai.activeFactor, 1) * (waitTime + 500)));
 			}
 			this.ai.api('notes/reactions/create', {
 				noteId: note.id,
 				reaction: reaction
 			});
 		};
+
+	  if (includes(note.text, ['taikin', '退勤', 'たいきん', 'しごおわ'])) return react(':otukaresama:');
+		if (includes(note.text, ['おはよ', 'ohayo', 'pokita', 'おきた', '起きた', 'おっは', 'ぽきた']) && note.text?.length <= 30 && !includes(note.text, ['が起きた', 'がおきた'])) return react(':mk_oha:');
+		if (includes(note.text, ['おやす', 'oyasu', 'poyasimi', '寝る', 'ぽやしみ']) && note.text?.length <= 30 && !includes(note.text, ['ちゃんねる'])) return react(':oyasumi2:');
+
+		if (Math.random() < this.ai.activeFactor * 1.2) return
 
 		let customEmojis = note.text.match(/:([^\n:]+?):/g)?.filter((x) => (x.includes("mk") || x.includes("pizza_")) && !x.includes("rank") && !x.includes("kill"));
 		if (customEmojis && customEmojis.length > 0) {
@@ -111,9 +119,6 @@ export default class extends Module {
 
 		if (includes(note.text, ['ぴざ', 'pizza'])) return react(':itspizzatime:');
 		if (includes(note.text, ['かんぴろばくたー', 'campylobacter'])) return react(':campylobacter_mottenaidesu:');
-		if (includes(note.text, ['taikin', '退勤', 'たいきん', 'しごおわ'])) return react(':otukaresama:');
-		if (includes(note.text, ['おはよ', 'ohayo', 'pokita', 'おきた', '起きた', 'おっは', 'ぽきた']) && note.text?.length <= 30 && !includes(note.text, ['が起きた', 'がおきた'])) return react(':mk_oha:');
-		if (includes(note.text, ['おやす', 'oyasu', 'poyasimi', '寝る', '日次再起動', 'ぽやしみ']) && note.text?.length <= 30 && !includes(note.text, ['ちゃんねる'])) return react(':oyasumi2:');
 		if (includes(note.text, ['つら', 'しんど', '帰りたい', 'かえりたい', 'sad'])) return react(':mkchicken_petthex:');
 		if (includes(note.text, ['むいみ', '無意味', 'muimi']) && includes(note.text, ['もの', 'mono', '物'])) return react(':osiina:');
 		if (includes(note.text, ['もこもこ'])) return react(':mokomoko:');
