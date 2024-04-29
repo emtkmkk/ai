@@ -62,7 +62,7 @@ export default class extends Module {
 					waitTime += Math.min((note.text?.length || 0) - 30, 68) * 30
 				}
 
-				waittime = waittime * Math.max(0.6 / this.ai.activeFactor, 1);
+				waitTime = waitTime * Math.max(0.6 / this.ai.activeFactor, 1);
 
 				await delay(waitTime + Math.round(Math.random() * Math.max(1 / this.ai.activeFactor, 1) * (waitTime + 500)));
 			}
