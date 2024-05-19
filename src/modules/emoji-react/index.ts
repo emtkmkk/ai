@@ -76,7 +76,7 @@ export default class extends Module {
 		if (includes(note.text, ['おはよ', 'ohayo', 'pokita', 'おきた', '起きた', 'おっは', 'ぽきた']) && note.text?.length <= 30 && !includes(note.text, ['が起きた', 'がおきた'])) return react(':mk_oha:');
 		if (includes(note.text, ['おやす', 'oyasu', 'poyasimi', '寝る', 'ぽやしみ']) && note.text?.length <= 30 && !includes(note.text, ['ちゃんねる'])) return react(':oyasumi2:');
 
-		if (Math.random() < this.ai.activeFactor * 1.2) return
+		if (Math.random() > this.ai.activeFactor * 1.2) return
 
 		let customEmojis = note.text.match(/:([^\n:]+?):/g)?.filter((x) => (x.includes("mk") || x.includes("pizza_")) && !x.includes("rank") && !x.includes("kill"));
 		if (customEmojis && customEmojis.length > 0) {
