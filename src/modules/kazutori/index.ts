@@ -132,7 +132,7 @@ export default class extends Module {
 		}
 
 		const post = await this.ai.post({
-			text: !publicOnly ? serifs.kazutori.intro(maxnum > 0 ? maxnum : "∞", limitMinutes, winRank) : serifs.kazutori.introPublicOnly(maxnum, limitMinutes, winRank),
+			text: !publicOnly ? serifs.kazutori.intro(maxnum > 0 ? maxnum : "∞", limitMinutes, winRank, Math.ceil((Date.now() + 1000 * 60 * limitMinutes) / 1000)) : serifs.kazutori.introPublicOnly(maxnum, limitMinutes, winRank, Math.ceil((Date.now() + 1000 * 60 * limitMinutes) / 1000)),
 			...(visibility ? { visibility } : {})
 		});
 
@@ -187,7 +187,7 @@ export default class extends Module {
 			// トリガー者が管理人でない かつ 直近のゲームから1時間経ってない場合
 			if (msg.user.username !== config.master && Date.now() - recentGame.startedAt < 1000 * 60 * 60) {
 				const ct = Math.ceil(60 - ((Date.now() - recentGame.startedAt) / (1000 * 60)));
-				msg.reply(serifs.kazutori.matakondo(ct));
+				msg.reply(serifs.kazutori.matakondo(ct, Math.ceil((recentGame.startedAt + 1000 * 60 * 60) / 1000)));
 				return {
 					reaction: 'hmm'
 				};
@@ -340,8 +340,9 @@ export default class extends Module {
 		if (msg.friend?.doc) {
 			if (msg.friend.doc.kazutoriData) {
 				msg.friend.doc.kazutoriData.playCount += 1;
+				msg.friend.doc.kazutoriData.rate = (msg.friend.doc.kazutoriData.rate ?? 0) - 1;
 			} else {
-				msg.friend.doc.kazutoriData = { winCount: 0, playCount: 1, inventory: [] };
+				msg.friend.doc.kazutoriData = { winCount: 0, playCount: 1, rate: -1, inventory: [] };
 			}
 			msg.friend.save()
 		}
@@ -388,6 +389,7 @@ export default class extends Module {
 				const friend = this.ai.lookupFriend(x.user.id)
 				if (friend) {
 					friend.doc.kazutoriData.playCount -= 1;
+					friend.doc.kazutoriData.rate = (friend.doc.kazutoriData.rate ?? 0) + 1;
 					friend.save()
 				}
 			});
@@ -519,7 +521,7 @@ export default class extends Module {
 		}
 
 		if (!medal) {
-			const winDiff = (winner?.winCount ?? 0) - (reverseWinner?.winCount ?? 0);
+			const winDiff = (Math.min(winner?.winCount ?? 0, 50)) - (Math.min(reverseWinner?.winCount ?? 0, 50));
 			if (!reverse && winner && winDiff > 10 && Math.random() < Math.min((winDiff - 10) * 0.02, 0.7)) {
 				reverse = !reverse;
 			} else if (reverse && reverseWinner && winDiff < -10 && Math.random() < Math.min((winDiff + 10) * -0.02, 0.7)) {
@@ -550,8 +552,9 @@ export default class extends Module {
 		if (winnerFriend) {
 			if (winnerFriend.doc.kazutoriData.winCount != null) {
 				winnerFriend.doc.kazutoriData.winCount += 1;
+				winnerFriend.doc.kazutoriData.rate += game.votes.length
 			} else {
-				winnerFriend.doc.kazutoriData = { winCount: 1, playCount: 1, inventory: [] };
+				winnerFriend.doc.kazutoriData = { winCount: 1, playCount: 1, rate: game.votes.length, inventory: [] };
 			}
 			if (medal && winnerFriend.doc.kazutoriData.winCount > 50) {
 				winnerFriend.doc.kazutoriData.medal = (winnerFriend.doc.kazutoriData.medal || 0) + 1;

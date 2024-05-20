@@ -335,11 +335,11 @@ export default {
 	kazutori: {
 		alreadyStarted: '今ちょうどやってますよ～',
 
-		matakondo: ct => `また今度やりましょう！(あと${ct}分後にもう一度送ってください)`,
+		matakondo: (ct, time) => `また今度やりましょう！(あと${ct}分後にもう一度送ってください)\n\n$[unixtime.countdown ${time}]`,
 
-		intro: (max, minutes, winRank) => `みなさん、数取りゲームしましょう！\n0~${max}の中で${winRank === 1 ? "最も大きい" : winRank > 1 ? "***" + winRank + "番目に***大きい" : "***中央値となる***"}数字を取った人が勝ちです。他の人と被ったらだめですよ～\n制限時間は${minutes < 5 ? `***${minutes}***` : minutes < 10 ? `**${minutes}**` : minutes}分です。数字はこの投稿にリプライで送ってくださいね！`,
+		intro: (max, minutes, winRank, time) => `みなさん、数取りゲームしましょう！\n0~${max}の中で${winRank === 1 ? "最も大きい" : winRank > 1 ? "***" + winRank + "番目に***大きい" : "***中央値となる***"}数字を取った人が勝ちです。他の人と被ったらだめですよ～\n制限時間は${minutes < 5 ? `***${minutes}***` : minutes < 10 ? `**${minutes}**` : minutes}分です。数字はこの投稿にリプライで送ってくださいね！\n\n$[unixtime.countdown ${time}]`,
 
-		introPublicOnly: (max, minutes, winRank) => `みなさん、数取りゲームしましょう！\n0~${max}の中で${winRank === 1 ? "最も大きい" : winRank > 1 ? "***" + winRank + "番目に***大きい" : "***中央値となる***"}数字を取った人が勝ちです。他の人と被ったらだめですよ～\n制限時間は${minutes < 5 ? `***${minutes}***` : minutes < 10 ? `**${minutes}**` : minutes}分です。\n**今回は公開投稿限定で行います！**\nほかの人の数字を見てから数字を決めるといいかもしれませんね！（リモートの方は「リモートで見る」で見てくださいね！）\nそれでは、この投稿に数字を**「公開」または「ホーム」に公開範囲を設定して**リプライで送ってくださいね！`,
+		introPublicOnly: (max, minutes, winRank, time) => `みなさん、数取りゲームしましょう！\n0~${max}の中で${winRank === 1 ? "最も大きい" : winRank > 1 ? "***" + winRank + "番目に***大きい" : "***中央値となる***"}数字を取った人が勝ちです。他の人と被ったらだめですよ～\n制限時間は${minutes < 5 ? `***${minutes}***` : minutes < 10 ? `**${minutes}**` : minutes}分です。\n**今回は公開投稿限定で行います！**\nほかの人の数字を見てから数字を決めるといいかもしれませんね！（リモートの方は「リモートで見る」で見てくださいね！）\nそれでは、この投稿に数字を**「公開」または「ホーム」に公開範囲を設定して**リプライで送ってくださいね！\n\n$[unixtime.countdown ${time}]`,
 
 		finish: 'ゲームの結果発表です！',
 
@@ -347,7 +347,7 @@ export default {
 
 		finishWithNoWinner: item => `今回は全員負けです...\n${item}は私がもらっておきますね...\nまたやりましょう！`,
 
-		onagare: item => `参加者が集まらなかったのでお流れになりました...\n${item}は私がもらっておきますね...`
+		onagare: item => `参加者が集まらなかったのでお流れになりました...\n${item}は私がもらっておきますね...\nまたやりましょう！`
 	},
 
 	/**
