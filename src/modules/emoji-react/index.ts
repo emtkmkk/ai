@@ -43,23 +43,23 @@ export default class extends Module {
 				// 絵文字をつけるまでの時間は3.5 ~ 6.5秒でゆらぎをつける
 				let waitTime = 3500;
 
-				// 対象ユーザの好感度1につき、-0.01 ~ -0.02秒
-				// 最大 100 (★7) で -1 ~ -2秒
-				const friend = this.ai.lookupFriend(note.user.id);
-				if (friend) {
-					waitTime -= Math.round(Math.min(friend.love,100) * 10);
-				}
-
 				// CWがあるなら、開く時間を考慮して +2 ~ +4秒
 				if (note.cw) {
 					waitTime += 2000;
 				}
 
 				// 30文字を超えている場合は、長ければ長いほど遅らせる
-				// 1文字につき、+0.03~0.06秒
-				// 最大増加時間は 98文字の +2.04 ~ +4.08秒
+				// 1文字につき、+0.1~0.2秒
+				// 最大増加時間は 98文字の +6.8 ~ +13.6秒
 				if ((note.text?.length || 0) > 30) {
-					waitTime += Math.min((note.text?.length || 0) - 30, 68) * 30
+					waitTime += Math.min((note.text?.length || 0) - 30, 68) * 100
+				}
+
+				// 対象ユーザの好感度1につき、0.2%短縮
+				// 最大 100 (★7) で 20%
+				const friend = this.ai.lookupFriend(note.user.id);
+				if (friend) {
+					waitTime = Math.round(waitTime * (1 - (0.002 * Math.min(friend.love,100))));
 				}
 
 				waitTime = waitTime * Math.max(0.6 / this.ai.activeFactor, 1);
@@ -72,7 +72,7 @@ export default class extends Module {
 			});
 		};
 
-	  if (includes(note.text, ['taikin', '退勤', 'たいきん', 'しごおわ'])) return react(':otukaresama:');
+	  	if (includes(note.text, ['taikin', '退勤', 'たいきん', 'しごおわ'])) return react(':otukaresama:');
 		if (includes(note.text, ['おはよ', 'ohayo', 'pokita', 'おきた', '起きた', 'おっは', 'ぽきた']) && note.text?.length <= 30 && !includes(note.text, ['が起きた', 'がおきた'])) return react(':mk_oha:');
 		if (includes(note.text, ['おやす', 'oyasu', 'poyasimi', '寝る', 'ぽやしみ']) && note.text?.length <= 30 && !includes(note.text, ['ちゃんねる'])) return react(':oyasumi2:');
 
@@ -80,12 +80,14 @@ export default class extends Module {
 
 		let customEmojis = note.text.match(/:([^\n:]+?):/g)?.filter((x) => (x.includes("mk") || x.includes("pizza_")) && !x.includes("rank") && !x.includes("kill"));
 		if (customEmojis && customEmojis.length > 0) {
-			// カスタム絵文字が複数種類ある場合はキャンセル
-			if (!customEmojis.every((val, i, arr) => val === arr[0])) return;
+			// カスタム絵文字が複数種類ある場合はランダム
+			customEmojis = customEmojis.sort(() => Math.random() - 0.5);
 
-			this.log(`Custom emoji detected - ${customEmojis[0]}`);
+			let emoji = customEmojis[0];
 
-			return react(customEmojis[0]);
+			this.log(`Custom emoji detected - ${emoji}`);
+
+			return react(emoji);
 		}
 
 		/*const emojis = parse(note.text).map(x => x.text);
@@ -123,10 +125,10 @@ export default class extends Module {
 		if (includes(note.text, ['むいみ', '無意味', 'muimi']) && includes(note.text, ['もの', 'mono', '物'])) return react(':osiina:');
 		if (includes(note.text, ['もこもこ'])) return react(':mokomoko:');
 		if (includes(note.text, ['めつ', '滅', 'metu']) && !includes(note.text, ['滅茶', '滅多'])) return react(':metu:');
-		if ((note.text?.includes('伸び') || note.text?.includes('のび') || note.text?.includes('ノビ'))) return react(':mk_ultrawidechicken:');
+		if ((note.text?.includes('伸び') || includes(note.text, ['のび'])) && note.text?.length > 3) return react(':mk_ultrawidechicken:');
 		if (includes(note.text, ['嘘']) && Math.random() < 0.5 && note.text?.length <= 30) return react(':sonnano_uso:');
 		// もこだけ条件がゆるく反応しやすいので反応率を2/3に
-		if (includes(note.text, ['もこ', 'niwatori_kun']) && !includes(note.text, ['もこみち', 'おもころ', 'もこう', 'もこれ', 'でもこ']) && Math.random() < 0.667) {
+		if (includes(note.text, ['もこ', 'niwatori_kun']) && !includes(note.text, ['もこみち', 'おもころ', 'もこう', 'もこれ', 'でもこ']) && Math.random() < 0.667 && note.text?.length > 3) {
 			//3種類からランダムに選択される
 			const rnd = Math.random() * 3;
 			if (rnd < 1) {
