@@ -52,7 +52,7 @@ export default class extends Module {
 				// 1文字につき、+0.1~0.2秒
 				// 最大増加時間は 98文字の +6.8 ~ +13.6秒
 				if ((note.text?.length || 0) > 30) {
-					waitTime += Math.min((note.text?.length || 0) - 30, 68) * 100
+					waitTime += Math.min((note.text?.replaceAll(/:\w+:/,"☆").length || 0) - 30, 68) * 100
 				}
 
 				// 対象ユーザの好感度1につき、0.2%短縮
@@ -117,7 +117,7 @@ export default class extends Module {
 
 		// 長い文章には反応しないことがあるようにする
 		// 30-50文字 : スルー率5% / 51文字以降は1文字度にスルー率+2%
-		if (Math.random() < (note.text?.length < 30 ? 0 : note.text?.length < 50 ? 0.05 : 0.05 + (note.text?.length - 50) / 50)) return
+		if (Math.random() < (note.text?.replaceAll(/:\w+:/,"☆").length < 30 ? 0 : note.text?.replaceAll(/:\w+:/,"☆").length < 50 ? 0.05 : 0.05 + (note.text?.length - 50) / 50)) return
 
 		if (includes(note.text, ['ぴざ', 'pizza'])) return react(':itspizzatime:');
 		if (includes(note.text, ['かんぴろばくたー', 'campylobacter'])) return react(':campylobacter_mottenaidesu:');
