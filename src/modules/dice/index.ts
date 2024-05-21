@@ -27,7 +27,7 @@ export default class extends Module {
 		if (times < 1) return false;
 		if (dice < 2) return false;
 
-		if ((dice.toString().length + 1) * times > 7000) return
+		if ((dice.toString().length + 1) * times > 7000) return false;
 
 		const results: number[] = [];
 
