@@ -25,7 +25,7 @@ export default class extends Module {
 		const dice = parseInt(query[2], 10);
 
 		if (times < 1) return false;
-		if (dice < 2) return false;
+		if (dice < 2 || dice > Number.MAX_SAFE_INTEGER) return false;
 
 		if ((dice.toString().length + 1) * times > 7000) return false;
 
