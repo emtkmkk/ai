@@ -185,7 +185,7 @@ export default {
 	},
 
 	dice: {
-		done: (res,total) => `${res}\n合計 \\(${total}\\) です！`
+		done: (res,total) => `${res}${total ? `\n合計 \\(${total}\\)` : ""} です！`
 	},
 
 	birthday: {
