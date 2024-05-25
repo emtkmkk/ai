@@ -125,7 +125,7 @@ export default class extends Module {
 		if (includes(note.text, ['むいみ', '無意味', 'muimi']) && includes(note.text, ['もの', 'mono', '物'])) return react(':osiina:');
 		if (includes(note.text, ['もこもこ'])) return react(':mokomoko:');
 		if (includes(note.text, ['めつ', '滅', 'metu']) && !includes(note.text, ['滅茶', '滅多'])) return react(':metu:');
-		if (((note.text?.includes('伸び') || note.text?.includes('のび') || note.text?.includes('ノビ')))) && note.text?.length > 3) return react(':mk_ultrawidechicken:');
+		if ((note.text?.includes('伸び') || note.text?.includes('のび') || note.text?.includes('ノビ')) && note.text?.length > 3) return react(':mk_ultrawidechicken:');
 		if (includes(note.text, ['嘘']) && Math.random() < 0.5 && note.text?.length <= 30) return react(':sonnano_uso:');
 		// もこだけ条件がゆるく反応しやすいので反応率を2/3に
 		if (includes(note.text, ['もこ', 'niwatori_kun']) && !includes(note.text, ['もこみち', 'おもころ', 'もこう', 'もこれ', 'でもこ']) && Math.random() < 0.667 && note.text?.length > 3) {
