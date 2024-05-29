@@ -393,9 +393,9 @@ export default class extends Module {
 					friend.save()
 				}
 			});
-			this.ai.decActiveFactor((game.finishedAt.valueOf() - game.startedAt.valueOf()) / (60 * 1000 * 100));
+			this.ai.decActiveFactor((game.finishedAt.valueOf() - game.startedAt.valueOf()) / (60 * 1000 * 100) * Math.max(1 - (game.votes.length / 3), 0));
 
-			if (this.ai.activeFactor < 0.5) return;
+			if (this.ai.activeFactor < 0.5 || game.votes.length < 1) return;
 
 			this.ai.post({
 				text: serifs.kazutori.onagare(item),
