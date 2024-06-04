@@ -69,14 +69,15 @@ export default class extends Module {
 
 		if (doc == null) return { reaction: ":mk_hotchicken:" };
 
+		const json = { ...doc }
 
-		for (let key in doc.user as any) {
-            if (typeof doc.user[key] === 'object' && doc.user[key] !== null) {
-                doc.user[key] = "[Object]";
+		for (let key in json.user as any) {
+            if (typeof json.user[key] === 'object' && json.user[key] !== null) {
+                json.user[key] = "[Object]";
             }
         }
 
-		const text = JSON.stringify(doc, null, 2);
+		const text = JSON.stringify(json, null, 2);
 
 		if (text.length >= 7999) {
 			console.log(text);
