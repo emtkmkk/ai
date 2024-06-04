@@ -188,9 +188,13 @@ export default class extends Module {
 		doc2.doc.kazutoriData = this.mergeAndSum(doc1.doc.kazutoriData, doc2.doc.kazutoriData)
 		doc2.save();
 
-		const text = JSON.stringify(doc2, null, 2);
+		let json = JSON.parse(JSON.stringify(doc2.doc));
 
-		if (text.length >= 7999) {
+		delete json.user
+
+		const text = JSON.stringify(json, null, 2);
+
+		if (text.length >= 7899) {
 			console.log(text);
 			return { reaction: ":mk_moyochicken:" };
 		}
