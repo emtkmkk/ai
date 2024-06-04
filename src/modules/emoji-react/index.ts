@@ -36,7 +36,10 @@ export default class extends Module {
 
 		// そうじゃない場合、もこチキくんは50%の確率でCWを開いてくれる
 		// ただし空白CWは開かない
-		if (note.cw != null && (!note.cw.trim() || Math.random() < 0.5)) return;
+		if (note.cw != null && (!note.cw.trim() || note.cw.trim().toLowerCase() == "cw" || Math.random() < 0.5)) return;
+
+		// 公開範囲フォロワーの場合、50%でリアクションしない
+		if (note.visibility === 'followers' && Math.random() < 0.5) return;
 
 		const react = async (reaction: string, immediate = false) => {
 			if (!immediate) {
