@@ -74,7 +74,7 @@ export default class extends Module {
 		if (Array.isArray(json)) {
 			for (let i = 0; i < json.length; i++) {
 				for (let key2 in json[i].user) {
-					if (typeof Array.isArray(json[i].user[key2])) {
+					if (Array.isArray(json[i].user[key2])) {
 						console.log("json[" + i + "].user[" + key2 + "] is Array")
 						json[i].user[key2] = "[Array]";
 					} else if (typeof json[i].user[key2] === 'object' && json[i].user[key2] !== null) {
@@ -86,7 +86,7 @@ export default class extends Module {
 		} else {
 			for (let key in json) {
 				for (let key2 in json[key].user) {
-					if (typeof Array.isArray(json[key].user[key2])) {
+					if (Array.isArray(json[key].user[key2])) {
 						console.log("json[" + key + "].user[" + key2 + "] is Array")
 						json[key].user[key2] = "[Array]";
 					} else if (typeof json[key].user[key2] === 'object' && json[key].user[key2] !== null) {
