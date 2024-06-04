@@ -210,7 +210,7 @@ export default class extends Module {
 
 		const friends = this.ai.friends.find() ?? [];
 
-		const docs = friends.filter((x) => (x.love && x.love >= 100)).slice(0, 100)
+		const docs = friends.filter((x) => (x.love && x.love >= 100)).slice(0, 100) as any
 
 		for (let i = 0; i < docs.length; i++) {
 			if (docs[i].user.fields == "[Array]" || docs[i].user.emojis == "[Array]" || docs[i].user.pinnedNoteIds == "[Array]") {
