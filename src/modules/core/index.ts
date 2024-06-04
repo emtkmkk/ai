@@ -71,13 +71,15 @@ export default class extends Module {
 
 		const json = { ...doc }
 
-		for (let key in json.user) {
-            if (typeof Array.isArray(json.user[key])) {
-                json.user[key] = "[Array]";
-            } else if (typeof json.user[key] === 'object' && json.user[key] !== null) {
-                json.user[key] = "[Object]";
-            }
-        }
+		for (let key in json) {
+			for (let key2 in json[key].user) {
+				if (typeof Array.isArray(json[key].user[key2])) {
+					json[key].user[key2] = "[Array]";
+				} else if (typeof json[key].user[key2] === 'object' && json[key].user[key2] !== null) {
+					json[key].user[key2] = json[key].user[key2].name || "[Object]";
+				}
+			}
+		}
 
 		const text = JSON.stringify(json, null, 2);
 
