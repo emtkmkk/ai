@@ -69,9 +69,10 @@ export default class extends Module {
 
 		if (doc == null) return { reaction: ":mk_hotchicken:" };
 
-		for (let key in doc.user) {
-            if (typeof doc.user[key] === 'object' && doc.user[key] !== null) {
-                doc.user[key] = "[Object]";
+
+		for (let key in doc.user!) {
+            if (typeof doc.user![key] === 'object' && doc.user![key] !== null) {
+                doc.user![key] = "[Object]";
             }
         }
 
