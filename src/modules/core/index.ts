@@ -65,14 +65,14 @@ export default class extends Module {
 
 		const doc = this.ai.friends.find({
 			'user.username': { '$regex': new RegExp(msg.extractedText.replace("データ照会 ","")) }
-		} as any);
+		} as any) as any;
 
 		if (doc == null) return { reaction: ":mk_hotchicken:" };
 
 
-		for (let key in doc.user!) {
-            if (typeof doc.user![key] === 'object' && doc.user![key] !== null) {
-                doc.user![key] = "[Object]";
+		for (let key in doc.user as any) {
+            if (typeof doc.user[key] === 'object' && doc.user[key] !== null) {
+                doc.user[key] = "[Object]";
             }
         }
 
