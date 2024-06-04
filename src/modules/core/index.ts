@@ -7,6 +7,8 @@ import { safeForInterpolate } from '@/utils/safe-for-interpolate';
 import { checkNgWord } from '@/utils/check-ng-word';
 import { acct } from '@/utils/acct';
 import { genItem, itemPrefixes } from '@/vocabulary';
+import Friend, { FriendDoc } from '@/friend';
+import config from '@/config';
 
 const titles = ['さん', 'くん', '君', 'ちゃん', '様', '先生'];
 
@@ -34,6 +36,8 @@ export default class extends Module {
 		if (!msg.text) return false;
 
 		const ret = (
+			this.findData(msg) ||
+			this.mergeData(msg) ||
 			this.transferBegin(msg) ||
 			this.transferEnd(msg) ||
 			this.setName(msg) ||
@@ -51,6 +55,106 @@ export default class extends Module {
 		);
 
 		return ret === true ? { reaction: "love" } : ret;
+	}
+
+	@autobind
+	private findData(msg: Message) {
+		if (msg.user.username !== config.master) return false
+		if (!msg.text) return false;
+		if (!msg.includes(['データ照会'])) return false;
+
+		const doc = this.ai.friends.find({
+			'user.username': { '$regex': msg.extractedText.replace("データ照会 ","") }
+		});
+
+		if (doc == null) return { reaction: ":mk_hotchicken:" };
+
+		const text = JSON.stringify(doc, null, 2);
+
+		if (text.length >= 7999) {
+			console.log(text);
+			return { reaction: ":mk_moyochicken:" };
+		}
+
+		msg.reply(`\`\`\`\n${text.length}\n\`\`\``, {
+			visibility: 'specified',
+		});
+
+		return true;
+	}
+
+	@autobind
+	private mergeAndSum(obj1, obj2) {
+		// 結果を格納する新しいオブジェクト
+		const result = { ...obj1 };
+	
+		// obj2のキーと値を結果に追加、同じキーがあれば値を足し合わせる
+		for (const key in obj2) {
+		  if (result[key] != undefined) {
+			if (Array.isArray(result[key]) && Array.isArray(obj2[key])) {
+			  // 配列の場合は結合する
+			  result[key] = result[key].concat(obj2[key]);
+			} else if (typeof result[key] === 'number' && typeof obj2[key] === 'number') {
+			  // 数値の場合は足し合わせる
+			  result[key] += obj2[key];
+			} else if (result[key] instanceof Date && obj2[key] instanceof Date) {
+			  // 日付の場合は未来の日付を採用する
+			  result[key] = result[key] > obj2[key] ? result[key] : obj2[key];
+			} else if (typeof result[key] === 'object' && typeof obj2[key] === 'object' && !Array.isArray(result[key])) {
+			  // オブジェクトの場合は再帰的にマージする
+			  result[key] = this.mergeAndSum(result[key], obj2[key]);
+			} else {
+			  // 他の型の場合は後の方を採用する（ここでは単純に上書きするようにしています）
+			  result[key] = obj2[key];
+			}
+		  } else {
+			result[key] = obj2[key];
+		  }
+		}
+	
+		return result;
+	}
+
+	@autobind
+	private mergeData(msg: Message) {
+		if (msg.user.username !== config.master) return false
+		if (!msg.text) return false;
+		if (!msg.includes(['データ合体'])) return false;
+
+		const ids = /データ合体 (\w{10}) (\w{10})/.exec(msg.extractedText)
+
+		if (!ids?.[1]) return { reaction: ":mk_hotchicken:" };
+		if (!ids?.[2]) return { reaction: ":mk_hotchicken:" };
+
+		const doc1 = this.ai.lookupFriend(ids?.[1])
+
+		if (doc1 == null) return { reaction: ":mk_hotchicken:" };
+
+		const doc2 = this.ai.lookupFriend(ids?.[2])
+
+		if (doc2 == null) return { reaction: ":mk_hotchicken:" };
+
+		doc2.doc.name = doc2.name || doc1.name;
+		for (let i = 0; i < ((doc1.love ?? 0) / 0.5); i++) {
+			doc2.incLove(0.1, "merge")
+		}
+		doc2.doc.married = doc1.married || doc2.married;
+		doc2.doc.perModulesData = this.mergeAndSum(doc1.doc.perModulesData, doc2.doc.perModulesData);
+		doc2.doc.kazutoriData = this.mergeAndSum(doc1.doc.kazutoriData, doc2.doc.kazutoriData)
+		doc2.save();
+
+		const text = JSON.stringify(doc2, null, 2);
+
+		if (text.length >= 7999) {
+			console.log(text);
+			return { reaction: ":mk_moyochicken:" };
+		}
+
+		msg.reply(`合体完了\n\`\`\`\n${text.length}\n\`\`\``, {
+			visibility: 'specified',
+		});
+
+		return true;
 	}
 
 	@autobind

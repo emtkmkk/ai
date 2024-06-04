@@ -126,7 +126,7 @@ export default class Friend {
 		const now = new Date();
 		
 		// 100を超えている場合、同じ種類の好感度増加は10分間に1回
-		if (key && (this.doc.love || 0) >= 100){
+		if (key && key != "merge" && (this.doc.love || 0) >= 100){
 			if (!this.doc.cooldownLoveIncrementKey || this.doc.lastLoveIncrementedTime !== ("" + now.getHours() + now.getMinutes()).slice(0,3)) {
 				this.doc.cooldownLoveIncrementKey = [];
 				this.doc.lastLoveIncrementedTime = ("" + now.getHours() + now.getMinutes()).slice(0,3);
@@ -141,10 +141,10 @@ export default class Friend {
 		}
 
 		// 100を超えるまでは1日に上げられる親愛度は最大15
-		if (this.doc.lastLoveIncrementedAt == today && ((this.doc.love || 0) < 100 && (this.doc.todayLoveIncrements || 0) >= 15)) return;
+		if (key != "merge" && this.doc.lastLoveIncrementedAt == today && ((this.doc.love || 0) < 100 && (this.doc.todayLoveIncrements || 0) >= 15)) return;
 		
 		// 100を超えた後は1日に上げられる親愛度は最大50
-		if (this.doc.lastLoveIncrementedAt == today && ((this.doc.love || 0) >= 100 && (this.doc.todayLoveIncrements || 0) >= 50)) return;
+		if (key != "merge" && this.doc.lastLoveIncrementedAt == today && ((this.doc.love || 0) >= 100 && (this.doc.todayLoveIncrements || 0) >= 50)) return;
 
 		if (this.doc.love == null) this.doc.love = 0;
 		
@@ -162,15 +162,17 @@ export default class Friend {
 		/*// 最大 100
 		if (this.doc.love > 100) this.doc.love = 100;*/
 
-		this.doc.lastLoveIncrementedAt = today;
-		this.doc.todayLoveIncrements = (this.doc.todayLoveIncrements || 0) + amount;
-		this.doc.todayLoveIncrements = parseFloat((this.doc.todayLoveIncrements || 0).toFixed(2));
+		if (key != "merge") {
+			this.doc.lastLoveIncrementedAt = today;
+			this.doc.todayLoveIncrements = (this.doc.todayLoveIncrements || 0) + amount;
+			this.doc.todayLoveIncrements = parseFloat((this.doc.todayLoveIncrements || 0).toFixed(2));	
+		}
 		this.save();
 
 		// 好感度が上昇した場合、ActiveFactorを増加させる
-		if (!key || key !== "greet") this.ai.incActiveFactor();
+		if (!key || (key !== "greet" && key != "merge")) this.ai.incActiveFactor();
 
-		this.ai.log(`💗 ${this.userId} +${amount} (${this.doc.love || 0}) <${(this.doc.todayLoveIncrements || 0)} / ${(this.doc.love || 0) < 100 ? 15 : 50}>`);
+		if (key != "merge") this.ai.log(`💗 ${this.userId} +${amount} (${this.doc.love || 0}) <${(this.doc.todayLoveIncrements || 0)} / ${(this.doc.love || 0) < 100 ? 15 : 50}>`);
 	}
 
 	@autobind
