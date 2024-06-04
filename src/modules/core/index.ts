@@ -69,7 +69,7 @@ export default class extends Module {
 
 		if (doc == null) return { reaction: ":mk_hotchicken:" };
 
-		const json = { ...doc }
+		const json = JSON.parse(JSON.stringify(doc))
 
 		for (let key in json) {
 			for (let key2 in json[key].user) {
