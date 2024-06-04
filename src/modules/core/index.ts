@@ -71,8 +71,10 @@ export default class extends Module {
 
 		const json = { ...doc }
 
-		for (let key in json.user as any) {
-            if (typeof json.user[key] === 'object' && json.user[key] !== null) {
+		for (let key in json.user) {
+            if (typeof Array.isArray(json.user[key])) {
+                json.user[key] = "[Array]";
+            } else if (typeof json.user[key] === 'object' && json.user[key] !== null) {
                 json.user[key] = "[Object]";
             }
         }
