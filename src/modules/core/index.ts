@@ -38,6 +38,7 @@ export default class extends Module {
 		const ret = (
 			(await this.findData(msg)) ||
 			this.mergeData(msg) ||
+			this.ranking(msg) ||
 			this.transferBegin(msg) ||
 			this.transferEnd(msg) ||
 			this.setName(msg) ||
@@ -195,6 +196,23 @@ export default class extends Module {
 		}
 
 		msg.reply(`合体完了\n\`\`\`\n${text}\n\`\`\``, {
+			visibility: 'specified',
+		});
+
+		return true;
+	}
+
+	@autobind
+	private ranking(msg: Message) {
+		if (msg.user.username !== config.master) return false
+		if (!msg.text) return false;
+		if (!msg.includes(['ランキング'])) return false;
+
+		const friends = this.ai.friends.find() ?? [];
+
+		const rank = friends.filter((x) => (x.love && x.love >= 100)).slice(0, 100).sort((a,b) => b.love - a.love).map((x) => `@${x.doc.user.username}${x.doc.user.host ? `@${x.doc.user.host}` : ""} : ★${((x.love ?? 0) / (100 / 7)).toFixed(2)}` )
+
+		msg.reply(`ランキング\n\n${rank.join("\n")}`, {
 			visibility: 'specified',
 		});
 
