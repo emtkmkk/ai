@@ -69,13 +69,15 @@ export default class extends Module {
 
 		if (doc == null) return { reaction: ":mk_hotchicken:" };
 
-		const json = { ...doc }
+		let json = { ...doc }
 
 		for (let key in json) {
 			for (let key2 in json[key].user) {
 				if (typeof Array.isArray(json[key].user[key2])) {
+					console.log("json[" + key + "].user[" + key2 + "] is Array")
 					json[key].user[key2] = "[Array]";
 				} else if (typeof json[key].user[key2] === 'object' && json[key].user[key2] !== null) {
+					console.log("json[" + key + "].user[" + key2 + "] is Object")
 					json[key].user[key2] = json[key].user[key2].name || "[Object]";
 				}
 			}
