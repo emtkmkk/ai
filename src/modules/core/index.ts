@@ -69,13 +69,15 @@ export default class extends Module {
 
 		if (doc == null || (Array.isArray(doc) && !doc.length)) return { reaction: ":mk_hotchicken:" };
 
-		if (doc.user.fields == "[Array]" || doc.user.pinnedNoteIds == "[Array]") {
-			const user = await this.ai.api('users/show', {
-				userId: doc.userId
-			});
-			const friend = new Friend(this.ai, { doc: doc });
-			friend.updateUser(user);
-			console.log("fix userdata : " + doc.userId);
+		for (let i = 0; i < doc.length; i++) {
+			if (doc[i].user.fields == "[Array]" || doc[i].user.emojis == "[Array]" || doc[i].user.pinnedNoteIds == "[Array]") {
+				const user = await this.ai.api('users/show', {
+					userId: doc[i].userId
+				});
+				const friend = new Friend(this.ai, { doc: doc[i] });
+				friend.updateUser(user);
+				console.log("fix userdata : " + doc[i].userId);
+			}
 		}
 
 		let json = JSON.parse(JSON.stringify(doc));
