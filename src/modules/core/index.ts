@@ -208,7 +208,7 @@ export default class extends Module {
 		if (!msg.text) return false;
 		if (!msg.includes(['ランキング'])) return false;
 
-		const friends = this.ai.friends.find() ?? [] as any;
+		const friends = (this.ai.friends.find() ?? []) as any;
 
 		const rank = friends.filter((x) => (x.love && x.love >= 100)).slice(0, 100).sort((a,b) => (b.love ?? 0) - (a.love ?? 0)).map((x) => `@${x.doc.user.username}${x.doc.user.host ? `@${x.doc.user.host}` : ""} : ★${((x.love ?? 0) / (100 / 7)).toFixed(2)}` )
 
