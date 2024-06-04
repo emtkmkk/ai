@@ -38,7 +38,7 @@ export default class extends Module {
 		const ret = (
 			(await this.findData(msg)) ||
 			this.mergeData(msg) ||
-			this.ranking(msg) ||
+			(await this.ranking(msg)) ||
 			this.transferBegin(msg) ||
 			this.transferEnd(msg) ||
 			this.setName(msg) ||
@@ -203,14 +203,27 @@ export default class extends Module {
 	}
 
 	@autobind
-	private ranking(msg: Message) {
+	private async ranking(msg: Message) {
 		if (msg.user.username !== config.master) return false
 		if (!msg.text) return false;
 		if (!msg.includes(['ランキング'])) return false;
 
-		const friends = (this.ai.friends.find() ?? []) as any;
+		const friends = this.ai.friends.find() ?? [];
 
-		const rank = friends.filter((x) => (x.love && x.love >= 100)).slice(0, 100).sort((a,b) => (b.love ?? 0) - (a.love ?? 0)).map((x) => `${x.doc?.user ? `@${x.doc?.user?.username}${x.doc?.user?.host ? `@${x.doc.user.host}` : ""}` : x.userId} : ★${((x.love ?? 0) / (100 / 7)).toFixed(2)}` )
+		const docs = friends.filter((x) => (x.love && x.love >= 100)).slice(0, 100)
+
+		for (let i = 0; i < docs.length; i++) {
+			if (docs[i].user.fields == "[Array]" || docs[i].user.emojis == "[Array]" || docs[i].user.pinnedNoteIds == "[Array]") {
+				const user = await this.ai.api('users/show', {
+					userId: docs[i].userId
+				});
+				const friend = new Friend(this.ai, { doc: docs[i] });
+				friend.updateUser(user);
+				console.log("fix userdata : " + docs[i].userId);
+			}
+		}
+
+		const rank = docs.sort((a,b) => (b.love ?? 0) - (a.love ?? 0)).map((x) => `${x.user ? `@${x.user?.username}${x.user?.host ? `@${x.user.host}` : ""}` : x.userId} : ★${((x.love ?? 0) / (100 / 7)).toFixed(2)}` )
 
 		msg.reply(`ランキング\n\n${rank.join("\n")}`, {
 			visibility: 'specified',
