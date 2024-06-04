@@ -36,7 +36,7 @@ export default class extends Module {
 		if (!msg.text) return false;
 
 		const ret = (
-			this.findData(msg) ||
+			(await this.findData(msg)) ||
 			this.mergeData(msg) ||
 			this.transferBegin(msg) ||
 			this.transferEnd(msg) ||
@@ -58,7 +58,7 @@ export default class extends Module {
 	}
 
 	@autobind
-	private findData(msg: Message) {
+	private async findData(msg: Message) {
 		if (msg.user.username !== config.master) return false
 		if (!msg.text) return false;
 		if (!msg.includes(['データ照会'])) return false;
@@ -67,9 +67,18 @@ export default class extends Module {
 			'user.username': { '$regex': new RegExp(msg.extractedText.replace("データ照会 ",""), "i") }
 		} as any) as any;
 
-		if (doc == null) return { reaction: ":mk_hotchicken:" };
+		if (doc == null || (Array.isArray(doc) && !doc.length)) return { reaction: ":mk_hotchicken:" };
 
-		let json = Array.isArray(doc) ? [ ...doc ] : { ...doc }
+		if (doc.user.fields == "[Array]" || doc.user.pinnedNoteIds == "[Array]") {
+			const user = await this.ai.api('users/show', {
+				userId: doc.userId
+			});
+			const friend = new Friend(this.ai, { doc: doc });
+			friend.updateUser(user);
+			console.log("fix userdata : " + doc.userId);
+		}
+
+		let json = JSON.parse(JSON.stringify(doc));
 		console.log("json : " + JSON.stringify(json, null, 2).length)
 		try {
 			if (Array.isArray(json)) {
