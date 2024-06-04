@@ -88,7 +88,7 @@ export default class extends Module {
 			return { reaction: ":mk_moyochicken:" };
 		}
 
-		msg.reply(`\`\`\`\n${text.length}\n\`\`\``, {
+		msg.reply(`\n\`\`\`\n${text}\n\`\`\``, {
 			visibility: 'specified',
 		});
 
@@ -162,7 +162,7 @@ export default class extends Module {
 			return { reaction: ":mk_moyochicken:" };
 		}
 
-		msg.reply(`合体完了\n\`\`\`\n${text.length}\n\`\`\``, {
+		msg.reply(`合体完了\n\`\`\`\n${text}\n\`\`\``, {
 			visibility: 'specified',
 		});
 
