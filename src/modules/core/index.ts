@@ -71,32 +71,35 @@ export default class extends Module {
 
 		let json = Array.isArray(doc) ? [ ...doc ] : { ...doc }
 
-		if (Array.isArray(json)) {
-			for (let i = 0; i < json.length; i++) {
-				for (let key2 in json[i].user) {
-					if (Array.isArray(json[i].user[key2])) {
-						console.log("json[" + i + "].user[" + key2 + "] is Array")
-						json[i].user[key2] = "[Array]";
-					} else if (typeof json[i].user[key2] === 'object' && json[i].user[key2] !== null) {
-						console.log("json[" + i + "].user[" + key2 + "] is Object")
-						json[i].user[key2] = json[i].user[key2].name || "[Object]";
+		try {
+			if (Array.isArray(json)) {
+				for (let i = 0; i < json.length; i++) {
+					for (let key2 in json[i].user) {
+						if (json[i].user[key2] !== null && Array.isArray(json[i].user[key2])) {
+							console.log("json[" + i + "].user[" + key2 + "] is Array")
+							json[i].user[key2] = "[Array]";
+						} else if (typeof json[i].user[key2] === 'object' && json[i].user[key2] !== null) {
+							console.log("json[" + i + "].user[" + key2 + "] is Object")
+							json[i].user[key2] = json[i].user[key2].name || "[Object]";
+						}
+					}
+				}
+			} else {
+				for (let key in json) {
+					for (let key2 in json[key].user) {
+						if (Array.isArray(json[key].user[key2])) {
+							console.log("json[" + key + "].user[" + key2 + "] is Array")
+							json[key].user[key2] = "[Array]";
+						} else if (typeof json[key].user[key2] === 'object' && json[key].user[key2] !== null) {
+							console.log("json[" + key + "].user[" + key2 + "] is Object")
+							json[key].user[key2] = json[key].user[key2].name || "[Object]";
+						}
 					}
 				}
 			}
-		} else {
-			for (let key in json) {
-				for (let key2 in json[key].user) {
-					if (Array.isArray(json[key].user[key2])) {
-						console.log("json[" + key + "].user[" + key2 + "] is Array")
-						json[key].user[key2] = "[Array]";
-					} else if (typeof json[key].user[key2] === 'object' && json[key].user[key2] !== null) {
-						console.log("json[" + key + "].user[" + key2 + "] is Object")
-						json[key].user[key2] = json[key].user[key2].name || "[Object]";
-					}
-				}
-			}
+		} catch (e) {
+			console.log(e)
 		}
-
 
 		const text = JSON.stringify(json, null, 2);
 
