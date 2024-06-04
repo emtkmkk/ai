@@ -65,7 +65,7 @@ export default class extends Module {
 
 		const doc = this.ai.friends.find({
 			'user.username': { '$regex': new RegExp(msg.extractedText.replace("データ照会 ","")) }
-		});
+		} as any);
 
 		if (doc == null) return { reaction: ":mk_hotchicken:" };
 
