@@ -69,7 +69,7 @@ export default class extends Module {
 
 		if (doc == null) return { reaction: ":mk_hotchicken:" };
 
-		const json = JSON.parse(JSON.stringify(doc))
+		const json = { ...doc }
 
 		for (let key in json) {
 			for (let key2 in json[key].user) {
@@ -83,12 +83,13 @@ export default class extends Module {
 
 		const text = JSON.stringify(json, null, 2);
 
-		if (text.length >= 7999) {
+		if (text.length >= 7899) {
 			console.log(text);
 			return { reaction: ":mk_moyochicken:" };
 		}
 
-		msg.reply(`\n\`\`\`\n${text}\n\`\`\``, {
+		console.log(text);
+		msg.reply(`\n\`\`\`\n${text}\n\`\`\`\n${text.length}`, {
 			visibility: 'specified',
 		});
 
