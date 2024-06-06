@@ -63,3 +63,11 @@ MIT
 
 ## Awards
 <img src="./WorksOnMyMachine.png" alt="Works on my machine" height="120">
+
+## 独自の変更
+ - 阨ちゃん（村独自のキャラ）
+ - リバーシ削除（Firefishなので）
+ - チャート機能削除（生成されないので）
+ - よるほーは未搭載
+ - Node22系対応
+ - 村向けお遊び機能
