@@ -1,12 +1,12 @@
-import { bindThis } from '@/decorators.js';
-import Module from '@/module.js';
-import Message from '@/message.js';
-import serifs from '@/serifs.js';
+import autobind from 'autobind-decorator';
+import Module from '@/module';
+import Message from '@/message';
+import serifs from '@/serifs';
 
 export default class extends Module {
 	public readonly name = 'timer';
 
-	@bindThis
+	@autobind
 	public install() {
 		return {
 			mentionHook: this.mentionHook,
@@ -14,7 +14,7 @@ export default class extends Module {
 		};
 	}
 
-	@bindThis
+	@autobind
 	private async mentionHook(msg: Message) {
 		const secondsQuery = (msg.text || '').match(/([0-9]+)秒/);
 		const minutesQuery = (msg.text || '').match(/([0-9]+)分/);
@@ -55,7 +55,7 @@ export default class extends Module {
 		return true;
 	}
 
-	@bindThis
+	@autobind
 	private timeoutCallback(data) {
 		const friend = this.ai.lookupFriend(data.userId);
 		if (friend == null) return; // 処理の流れ上、実際にnullになることは無さそうだけど一応

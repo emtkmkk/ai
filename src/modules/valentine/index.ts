@@ -1,12 +1,12 @@
-import { bindThis } from '@/decorators.js';
-import Module from '@/module.js';
-import Friend from '@/friend.js';
-import serifs from '@/serifs.js';
+import autobind from 'autobind-decorator';
+import Module from '@/module';
+import Friend from '@/friend';
+import serifs from '@/serifs';
 
 export default class extends Module {
 	public readonly name = 'valentine';
 
-	@bindThis
+	@autobind
 	public install() {
 		this.crawleValentine();
 		setInterval(this.crawleValentine, 1000 * 60 * 3);
@@ -17,7 +17,7 @@ export default class extends Module {
 	/**
 	 * チョコ配り
 	 */
-	@bindThis
+	@autobind
 	private crawleValentine() {
 		const now = new Date();
 

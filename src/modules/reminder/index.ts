@@ -1,169 +1,227 @@
-import { bindThis } from '@/decorators.js';
-import loki from 'lokijs';
-import Module from '@/module.js';
-import Message from '@/message.js';
-import serifs, { getSerif } from '@/serifs.js';
-import { acct } from '@/utils/acct.js';
-import config from '@/config.js';
+import autobind from "autobind-decorator";
+import * as loki from "lokijs";
+import Module from "@/module";
+import Message from "@/message";
+import serifs, { getSerif } from "@/serifs";
+import { acct } from "@/utils/acct";
+import config from "@/config";
 
 const NOTIFY_INTERVAL = 1000 * 60 * 60 * 12;
 
 export default class extends Module {
-	public readonly name = 'reminder';
+  public readonly name = "reminder";
 
-	private reminds: loki.Collection<{
-		userId: string;
-		id: string;
-		thing: string | null;
-		quoteId: string | null;
-		times: number; // 催促した回数(使うのか？)
-		createdAt: number;
-	}>;
+  private reminds: loki.Collection<{
+    userId: string;
+    id: string;
+    thing: string | null;
+    quoteId: string | null;
+    times: number; // 催促した回数(使うのか？)
+    createdAt: number;
+  }>;
 
-	@bindThis
-	public install() {
-		this.reminds = this.ai.getCollection('reminds', {
-			indices: ['userId', 'id']
-		});
+  @autobind
+  public install() {
+    this.reminds = this.ai.getCollection("reminds", {
+      indices: ["userId", "id"],
+    });
 
-		return {
-			mentionHook: this.mentionHook,
-			contextHook: this.contextHook,
-			timeoutCallback: this.timeoutCallback,
-		};
-	}
+    return {
+      mentionHook: this.mentionHook,
+      contextHook: this.contextHook,
+      timeoutCallback: this.timeoutCallback,
+    };
+  }
 
-	@bindThis
-	private async mentionHook(msg: Message) {
-		let text = msg.extractedText.toLowerCase();
-		if (!text.startsWith('remind') && !text.startsWith('todo')) return false;
+  @autobind
+  private async mentionHook(msg: Message) {
+    let text = msg.extractedText.toLowerCase();
+    if (
+      !text.startsWith("remind") &&
+      !text.startsWith("リマインド") &&
+      !text.startsWith("todo")
+    )
+      return false;
 
-		if (text.startsWith('reminds') || text.startsWith('todos')) {
-			const reminds = this.reminds.find({
-				userId: msg.userId,
-			});
+    if (
+      text.startsWith("reminds") ||
+      text.startsWith("todos") ||
+      text.startsWith("リマインド一覧")
+    ) {
+      const reminds = this.reminds.find({
+        userId: msg.userId,
+      });
 
-			const getQuoteLink = id => `[${id}](${config.host}/notes/${id})`;
+      const getQuoteLink = (id) => `[${id}](${config.host}/notes/${id})`;
 
-			msg.reply(serifs.reminder.reminds + '\n' + reminds.map(remind => `・${remind.thing ? remind.thing : getQuoteLink(remind.quoteId)}`).join('\n'));
-			return true;
-		}
+      msg.reply(
+        serifs.reminder.reminds +
+          "\n" +
+          reminds
+            .map(
+              (remind) =>
+                `・${
+                  remind.thing ? remind.thing : getQuoteLink(remind.quoteId)
+                }`
+            )
+            .join("\n")
+      );
+      return true;
+    }
 
-		if (text.match(/^(.+?)\s(.+)/)) {
-			text = text.replace(/^(.+?)\s/, '');
-		} else {
-			text = '';
-		}
+    if (text.match(/^(.+?)\s(.+)/)) {
+      text = text.replace(/^(.+?)\s/, "");
+    } else {
+      text = "";
+    }
 
-		const separatorIndex = text.indexOf(' ') > -1 ? text.indexOf(' ') : text.indexOf('\n');
-		const thing = text.substr(separatorIndex + 1).trim();
+    const separatorIndex =
+      text.indexOf(" ") > -1 ? text.indexOf(" ") : text.indexOf("\n");
+    const thing = text.substr(separatorIndex + 1).trim();
 
-		if (thing === '' && msg.quoteId == null || msg.visibility === 'followers') {
-			msg.reply(serifs.reminder.invalid);
-			return {
-				reaction: '🆖',
-				immediate: true,
-			};
-		}
+    if (
+      (thing === "" && msg.quoteId == null) ||
+      msg.visibility === "followers"
+    ) {
+      msg.reply(serifs.reminder.invalid);
+      return {
+        reaction: ":neofox_think_googly:",
+        immediate: true,
+      };
+    }
 
-		const remind = this.reminds.insertOne({
-			id: msg.id,
-			userId: msg.userId,
-			thing: thing === '' ? null : thing,
-			quoteId: msg.quoteId,
-			times: 0,
-			createdAt: Date.now(),
-		});
+    const remind = this.reminds.insertOne({
+      id: msg.id,
+      userId: msg.userId,
+      thing: thing === "" ? null : thing,
+      quoteId: msg.quoteId,
+      times: 0,
+      createdAt: Date.now(),
+    });
 
-		// メンションをsubscribe
-		this.subscribeReply(remind!.id, msg.id, {
-			id: remind!.id
-		});
+    // メンションをsubscribe
+    this.subscribeReply(remind!.id, msg.id, {
+      id: remind!.id,
+    });
 
-		if (msg.quoteId) {
-			// 引用元をsubscribe
-			this.subscribeReply(remind!.id, msg.quoteId, {
-				id: remind!.id
-			});
-		}
+    if (msg.quoteId) {
+      // 引用元をsubscribe
+      this.subscribeReply(remind!.id, msg.quoteId, {
+        id: remind!.id,
+      });
+    }
 
-		// タイマーセット
-		this.setTimeoutWithPersistence(NOTIFY_INTERVAL, {
-			id: remind!.id,
-		});
+    // タイマーセット
+    this.setTimeoutWithPersistence(NOTIFY_INTERVAL, {
+      id: remind!.id,
+    });
 
-		return {
-			reaction: '🆗',
-			immediate: true,
-		};
-	}
+    return {
+      reaction: ":neofox_thumbsup:",
+      immediate: true,
+    };
+  }
 
-	@bindThis
-	private async contextHook(key: any, msg: Message, data: any) {
-		if (msg.text == null) return;
+  @autobind
+  private async contextHook(key: any, msg: Message, data: any) {
+    if (msg.text == null) return;
 
-		const remind = this.reminds.findOne({
-			id: data.id,
-		});
+    const remind = this.reminds.findOne({
+      id: data.id,
+    });
 
-		if (remind == null) {
-			this.unsubscribeReply(key);
-			return;
-		}
+    if (remind == null) {
+      this.unsubscribeReply(key);
+      return;
+    }
 
-		const done = msg.includes(['done', 'やった', 'やりました', 'はい']);
-		const cancel = msg.includes(['やめる', 'やめた', 'キャンセル']);
-		const isOneself = msg.userId === remind.userId;
+    const done = msg.includes([
+      "done",
+      "やった",
+      "やりました",
+      "はい",
+      "おわった",
+      "終わった",
+    ]);
+    const cancel = msg.includes(["やめる", "やめた", "キャンセル"]);
+    const isOneself = msg.userId === remind.userId;
 
-		if ((done || cancel) && isOneself) {
-			this.unsubscribeReply(key);
-			this.reminds.remove(remind);
-			msg.reply(done ? getSerif(serifs.reminder.done(msg.friend.name)) : serifs.reminder.cancel);
-			return;
-		} else if (isOneself === false) {
-			msg.reply(serifs.reminder.doneFromInvalidUser);
-			return;
-		} else {
-			return false;
-		}
-	}
+    if ((done || cancel) && isOneself) {
+      this.unsubscribeReply(key);
+      this.reminds.remove(remind);
+      msg.reply(
+        done
+          ? getSerif(serifs.reminder.done(msg.friend.name))
+          : serifs.reminder.cancel
+      );
+      return {
+        reaction: "love",
+      };
+    } else if (isOneself === false) {
+      msg.reply(serifs.reminder.doneFromInvalidUser);
+      return {
+        reaction: "confused",
+      };
+    } else {
+      return false;
+    }
+  }
 
-	@bindThis
-	private async timeoutCallback(data) {
-		const remind = this.reminds.findOne({
-			id: data.id
-		});
-		if (remind == null) return;
+  @autobind
+  private async timeoutCallback(data) {
+    const remind = this.reminds.findOne({
+      id: data.id,
+    });
+    if (remind == null) return;
 
-		remind.times++;
-		this.reminds.update(remind);
+    if (new Date().getHours() < 8) {
+      // タイマーセット
+      this.setTimeoutWithPersistence(1000 * 60 * 60 * 8, {
+        id: remind.id,
+      });
+      return;
+    }
 
-		const friend = this.ai.lookupFriend(remind.userId);
-		if (friend == null) return; // 処理の流れ上、実際にnullになることは無さそうだけど一応
+    remind.times++;
+    this.reminds.update(remind);
 
-		let reply;
-		try {
-			reply = await this.ai.post({
-				renoteId: remind.thing == null && remind.quoteId ? remind.quoteId : remind.id,
-				text: acct(friend.doc.user) + ' ' + serifs.reminder.notify(friend.name)
-			});
-		} catch (err) {
-			// renote対象が消されていたらリマインダー解除
-			if (err.statusCode === 400) {
-				this.unsubscribeReply(remind.thing == null && remind.quoteId ? remind.quoteId : remind.id);
-				this.reminds.remove(remind);
-				return;
-			}
-			return;
-		}
+    const friend = this.ai.lookupFriend(remind.userId);
+    if (friend == null) return; // 処理の流れ上、実際にnullになることは無さそうだけど一応
 
-		this.subscribeReply(remind.id, reply.id, {
-			id: remind.id
-		});
+    let reply;
+    try {
+      reply = await this.ai.post({
+        replyId:
+          remind.thing == null && remind.quoteId ? remind.quoteId : remind.id,
+        renoteId:
+          remind.thing == null && remind.quoteId ? remind.quoteId : remind.id,
+        text: acct(friend.doc.user) + " " + serifs.reminder.notify(friend.name),
+        visibility: "home",
+      });
+    } catch (err) {
+      // renote対象が消されていたらリマインダー解除
+      if (err.statusCode === 400) {
+        this.unsubscribeReply(
+          remind.thing == null && remind.quoteId ? remind.quoteId : remind.id
+        );
+        this.reminds.remove(remind);
+        return;
+      }
+      return;
+    }
 
-		// タイマーセット
-		this.setTimeoutWithPersistence(NOTIFY_INTERVAL, {
-			id: remind.id,
-		});
-	}
+    if (!reply?.id) return;
+
+    this.subscribeReply(remind.id, reply.id, {
+      id: remind.id,
+    });
+
+    // タイマーセット
+    this.setTimeoutWithPersistence(
+      Math.round(NOTIFY_INTERVAL * (Math.random() + 0.5)),
+      {
+        id: remind.id,
+      }
+    );
+  }
 }

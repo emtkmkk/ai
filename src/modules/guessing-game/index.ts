@@ -1,128 +1,195 @@
-import { bindThis } from '@/decorators.js';
-import loki from 'lokijs';
-import Module from '@/module.js';
-import Message from '@/message.js';
-import serifs from '@/serifs.js';
+import autobind from "autobind-decorator";
+import * as loki from "lokijs";
+import Module from "@/module";
+import Message from "@/message";
+import serifs from "@/serifs";
+import { acct } from "@/utils/acct";
 
 export default class extends Module {
-	public readonly name = 'guessingGame';
+  public readonly name = "guessingGame";
 
-	private guesses: loki.Collection<{
-		userId: string;
-		secret: number;
-		tries: number[];
-		isEnded: boolean;
-		startedAt: number;
-		endedAt: number | null;
-	}>;
+  private guesses: loki.Collection<{
+    userId: string;
+    secret: number;
+    tries: number[];
+    isEnded: boolean;
+    startedAt: number;
+    endedAt: number | null;
+    triggerId: string;
+  }>;
 
-	@bindThis
-	public install() {
-		this.guesses = this.ai.getCollection('guessingGame', {
-			indices: ['userId']
-		});
+  private MAX_TRY = 6;
 
-		return {
-			mentionHook: this.mentionHook,
-			contextHook: this.contextHook
-		};
-	}
+  @autobind
+  public install() {
+    this.guesses = this.ai.getCollection("guessingGame", {
+      indices: ["userId"],
+    });
 
-	@bindThis
-	private async mentionHook(msg: Message) {
-		if (!msg.includes(['数当て', '数あて'])) return false;
+    return {
+      mentionHook: this.mentionHook,
+      contextHook: this.contextHook,
+    };
+  }
 
-		const exist = this.guesses.findOne({
-			userId: msg.userId,
-			isEnded: false
-		});
+  @autobind
+  private async mentionHook(msg: Message) {
+    if (!msg.includes(["数当て", "数あて"])) return false;
 
-		const secret = Math.floor(Math.random() * 100);
+    const exist = this.guesses.findOne({
+      userId: msg.userId,
+      isEnded: false,
+    });
 
-		this.guesses.insertOne({
-			userId: msg.userId,
-			secret: secret,
-			tries: [],
-			isEnded: false,
-			startedAt: Date.now(),
-			endedAt: null
-		});
+    let secret = Math.floor(Math.random() * 100);
+    if ([25, 50, 75].includes(secret)) secret = Math.floor(Math.random() * 100);
 
-		msg.reply(serifs.guessingGame.started).then(reply => {
-			this.subscribeReply(msg.userId, reply.id);
-		});
+    this.guesses.insertOne({
+      userId: msg.userId,
+      secret: secret,
+      tries: [],
+      isEnded: false,
+      startedAt: Date.now(),
+      endedAt: null,
+      triggerId: msg.id,
+    });
 
-		return true;
-	}
+    msg
+      .reply(serifs.guessingGame.started(this.MAX_TRY), {
+        visibility: "specified",
+      })
+      .then((reply) => {
+        this.subscribeReply(msg.userId, reply.id);
+      });
 
-	@bindThis
-	private async contextHook(key: any, msg: Message) {
-		if (msg.text == null) return;
+    return {
+      reaction: "love",
+    };
+  }
 
-		const exist = this.guesses.findOne({
-			userId: msg.userId,
-			isEnded: false
-		});
+  @autobind
+  private async contextHook(key: any, msg: Message) {
+    if (msg.text == null) return;
 
-		 // 処理の流れ上、実際にnullになることは無さそうだけど一応
-		if (exist == null) {
-			this.unsubscribeReply(key);
-			return;
-		}
+    const exist = this.guesses.findOne({
+      userId: msg.userId,
+      isEnded: false,
+    });
 
-		if (msg.text.includes('やめ')) {
-			msg.reply(serifs.guessingGame.cancel);
-			exist.isEnded = true;
-			exist.endedAt = Date.now();
-			this.guesses.update(exist);
-			this.unsubscribeReply(key);
-			return;
-		}
+    // 処理の流れ上、実際にnullになることは無さそうだけど一応
+    if (exist == null) {
+      this.unsubscribeReply(key);
+      return;
+    }
 
-		const guess = msg.extractedText.match(/[0-9]+/);
+    if (msg.text.includes("やめ")) {
+      try {
+        this.ai.post({
+          text: acct(msg.user) + " " + serifs.guessingGame.cancel,
+          replyId: exist.triggerId,
+        });
+      } catch (err) {
+        msg.reply(serifs.guessingGame.cancel);
+      }
+      exist.isEnded = true;
+      exist.endedAt = Date.now();
+      this.guesses.update(exist);
+      this.unsubscribeReply(key);
+      return {
+        reaction: "love",
+      };
+    }
 
-		if (guess == null) {
-			msg.reply(serifs.guessingGame.nan).then(reply => {
-				this.subscribeReply(msg.userId, reply.id);
-			});
-			return;
-		}
+    const guess = msg.extractedText.match(/[0-9]+/);
 
-		if (guess.length > 3) return;
+    if (guess == null) {
+      msg.reply(serifs.guessingGame.nan).then((reply) => {
+        this.subscribeReply(msg.userId, reply.id);
+      });
+      return {
+        reaction: "hmm",
+      };
+    }
 
-		const g = parseInt(guess[0], 10);
-		const firsttime = exist.tries.indexOf(g) === -1;
+    if (guess.length > 3)
+      return {
+        reaction: "confused",
+      };
 
-		exist.tries.push(g);
+    let g = parseInt(guess[0], 10);
 
-		let text: string;
-		let end = false;
+    const min = Math.max(...exist.tries.filter((x) => x < exist.secret), -1);
+    const max = Math.min(...exist.tries.filter((x) => x > exist.secret), 101);
 
-		if (exist.secret < g) {
-			text = firsttime
-				? serifs.guessingGame.less(g.toString())
-				: serifs.guessingGame.lessAgain(g.toString());
-		} else if (exist.secret > g) {
-			text = firsttime
-				? serifs.guessingGame.grater(g.toString())
-				: serifs.guessingGame.graterAgain(g.toString());
-		} else {
-			end = true;
-			text = serifs.guessingGame.congrats(exist.tries.length.toString());
-		}
+    if (g < min) g = min;
+    if (g > max) g = max;
 
-		if (end) {
-			exist.isEnded = true;
-			exist.endedAt = Date.now();
-			this.unsubscribeReply(key);
-		}
+    const firsttime = exist.tries.indexOf(g) === -1 && g !== 101 && g !== -1;
 
-		this.guesses.update(exist);
+    if (firsttime) exist.tries.push(g);
 
-		msg.reply(text).then(reply => {
-			if (!end) {
-				this.subscribeReply(msg.userId, reply.id);
-			}
-		});
-	}
+    let text: string;
+    let end = false;
+
+    if (exist.secret !== g && exist.tries.length >= this.MAX_TRY) {
+      end = true;
+      text = serifs.guessingGame.fail(
+        exist.secret,
+        exist.tries.length.toString(),
+        exist.tries.join("→")
+      );
+    } else if (exist.secret < g) {
+      text = firsttime
+        ? serifs.guessingGame.less(
+            g.toString(),
+            this.MAX_TRY - exist.tries.length
+          )
+        : serifs.guessingGame.lessAgain(g.toString());
+    } else if (exist.secret > g) {
+      text = firsttime
+        ? serifs.guessingGame.grater(
+            g.toString(),
+            this.MAX_TRY - exist.tries.length
+          )
+        : serifs.guessingGame.graterAgain(g.toString());
+    } else {
+      end = true;
+      let comment = "";
+      if (exist.tries.length <= 1)
+        comment = "ななっ！？妖術でも使ったのかぁ…！？";
+      else if (exist.tries.length <= 3) comment = "すごいのじゃ！";
+      else if (exist.tries.length <= 4) comment = "早いのじゃ！";
+      text = serifs.guessingGame.congrats(
+        exist.secret,
+        exist.tries.length.toString(),
+        exist.tries.join("→"),
+        comment
+      );
+    }
+
+    if (end) {
+      exist.isEnded = true;
+      exist.endedAt = Date.now();
+      this.unsubscribeReply(key);
+      try {
+        this.ai.post({
+          text: acct(msg.user) + " " + text,
+          replyId: exist.triggerId,
+        });
+      } catch (err) {
+        msg.reply(text);
+      }
+    } else {
+      msg.reply(text).then((reply) => {
+        if (!end) {
+          this.subscribeReply(msg.userId, reply.id);
+        }
+      });
+    }
+
+    this.guesses.update(exist);
+    return {
+      reaction: "love",
+    };
+  }
 }

@@ -1,104 +1,121 @@
-import { bindThis } from '@/decorators.js';
-import chalk from 'chalk';
+import autobind from "autobind-decorator";
+import chalk from "chalk";
+const delay = require("timeout-as-promise");
 
-import 藍 from '@/ai.js';
-import Friend from '@/friend.js';
-import type { User } from '@/misskey/user.js';
-import includes from '@/utils/includes.js';
-import or from '@/utils/or.js';
-import config from '@/config.js';
-import { sleep } from '@/utils/sleep.js';
+import 藍 from "@/ai";
+import Friend from "@/friend";
+import { User } from "@/misskey/user";
+import includes from "@/utils/includes";
+import or from "@/utils/or";
+import config from "@/config";
+import { acct } from "@/utils/acct";
 
 export default class Message {
-	private ai: 藍;
-	private note: any;
+  private ai: 藍;
+  private note: any;
 
-	public get id(): string {
-		return this.note.id;
-	}
+  public get id(): string {
+    return this.note.id;
+  }
 
-	public get user(): User {
-		return this.note.user;
-	}
+  public get user(): User {
+    return this.note.user;
+  }
 
-	public get userId(): string {
-		return this.note.userId;
-	}
+  public get userId(): string {
+    return this.note.userId;
+  }
 
-	public get text(): string {
-		return this.note.text;
-	}
+  public get text(): string {
+    return this.note.text;
+  }
 
-	public get quoteId(): string | null {
-		return this.note.renoteId;
-	}
+  public get quoteId(): string | null {
+    return this.note.renoteId;
+  }
 
-	public get visibility(): string {
-		return this.note.visibility;
-	}
+  public get visibility(): string {
+    return this.note.visibility;
+  }
 
-	/**
-	 * メンション部分を除いたテキスト本文
-	 */
-	public get extractedText(): string {
-		const host = new URL(config.host).host.replace(/\./g, '\\.');
-		return this.text
-			.replace(new RegExp(`^@${this.ai.account.username}@${host}\\s`, 'i'), '')
-			.replace(new RegExp(`^@${this.ai.account.username}\\s`, 'i'), '')
-			.trim();
-	}
+  public get localOnly(): boolean {
+    return this.note.localOnly ?? false;
+  }
 
-	public get replyId(): string {
-		return this.note.replyId;
-	}
+  /**
+   * メンション部分を除いたテキスト本文
+   */
+  public get extractedText(): string {
+    const host = new URL(config.host).host.replace(/\./g, "\\.");
+    return this.text
+      .replace(new RegExp(`^@${this.ai.account.username}@${host}\\s`, "i"), "")
+      .replace(new RegExp(`^@${this.ai.account.username}\\s`, "i"), "")
+      .trim();
+  }
 
-	public friend: Friend;
+  public get replyId(): string {
+    return this.note.replyId;
+  }
 
-	constructor(ai: 藍, note: any) {
-		this.ai = ai;
-		this.note = note;
+  public friend: Friend;
 
-		this.friend = new Friend(ai, { user: this.user });
+  constructor(ai: 藍, note: any) {
+    this.ai = ai;
+    this.note = note;
 
-		// メッセージなどに付いているユーザー情報は省略されている場合があるので完全なユーザー情報を持ってくる
-		this.ai.api('users/show', {
-			userId: this.userId
-		}).then(user => {
-			this.friend.updateUser(user);
-		});
-	}
+    this.friend = new Friend(ai, { user: this.user });
 
-	@bindThis
-	public async reply(text: string | null, opts?: {
-		file?: any;
-		cw?: string;
-		renote?: string;
-		immediate?: boolean;
-	}) {
-		if (text == null) return;
+    // メッセージなどに付いているユーザー情報は省略されている場合があるので完全なユーザー情報を持ってくる
+    this.ai
+      .api("users/show", {
+        userId: this.userId,
+      })
+      .then((user) => {
+        this.friend.updateUser(user);
+      });
+  }
 
-		this.ai.log(`>>> Sending reply to ${chalk.underline(this.id)}`);
+  @autobind
+  public async reply(
+    text: string | null,
+    opts?: {
+      file?: any;
+      cw?: string;
+      renote?: string;
+      immediate?: boolean;
+      visibility?: string;
+      localOnly?: boolean;
+    }
+  ) {
+    if (text == null) return;
 
-		if (!opts?.immediate) {
-			await sleep(2000);
-		}
+    this.ai.log(`>>> Sending reply to ${chalk.underline(this.id)}`);
 
-		return await this.ai.post({
-			replyId: this.note.id,
-			text: text,
-			fileIds: opts?.file ? [opts?.file.id] : undefined,
-			cw: opts?.cw,
-			renoteId: opts?.renote
-		});
-	}
+    if (!opts?.immediate) {
+      await delay(2000);
+    }
 
-	@bindThis
-	public includes(words: string[]): boolean {
-		return includes(this.text, words);
-	}
+    return await this.ai.post({
+      replyId: this.note.id,
+      text: (opts?.cw?.includes("@") ? "" : acct(this.user) + " ") + text,
+      fileIds: opts?.file ? [opts?.file.id] : undefined,
+      cw: opts?.cw,
+      renoteId: opts?.renote,
+      visibility: opts?.visibility ?? "home",
+      localOnly: opts?.localOnly || false,
+      ...(opts?.visibility === "specified"
+        ? { visibleUserIds: [this.userId] }
+        : {}),
+    });
+  }
 
-	@bindThis
-	public or(words: (string | RegExp)[]): boolean {
-		return or(this.text, words);
-	}
+  @autobind
+  public includes(words: string[]): boolean {
+    return includes(this.text, words);
+  }
+
+  @autobind
+  public or(words: (string | RegExp)[]): boolean {
+    return or(this.text, words);
+  }
 }

@@ -1,40 +1,52 @@
-import { bindThis } from '@/decorators.js';
-import Module from '@/module.js';
-import Message from '@/message.js';
-import serifs from '@/serifs.js';
+import autobind from "autobind-decorator";
+import Module from "@/module";
+import Message from "@/message";
+import serifs from "@/serifs";
 
 export default class extends Module {
-	public readonly name = 'dice';
+  public readonly name = "dice";
 
-	@bindThis
-	public install() {
-		return {
-			mentionHook: this.mentionHook
-		};
-	}
+  @autobind
+  public install() {
+    return {
+      mentionHook: this.mentionHook,
+    };
+  }
 
-	@bindThis
-	private async mentionHook(msg: Message) {
-		if (msg.text == null) return false;
+  @autobind
+  private async mentionHook(msg: Message) {
+    if (msg.text == null) return false;
 
-		const query = msg.text.match(/([0-9]+)[dD]([0-9]+)/);
+    const query = msg.text.match(/([0-9]+)[dD]([0-9]+)/);
 
-		if (query == null) return false;
+    if (query == null) return false;
 
-		const times = parseInt(query[1], 10);
-		const dice = parseInt(query[2], 10);
+    const times = parseInt(query[1], 10);
+    const dice = parseInt(query[2], 10);
 
-		if (times < 1 || times > 10) return false;
-		if (dice < 2 || dice > 1000) return false;
+    if (times < 1) return false;
+    if (dice < 2 || dice > Number.MAX_SAFE_INTEGER) return false;
 
-		const results: number[] = [];
+    if ((dice.toString().length + 1) * times > 7000) return false;
 
-		for (let i = 0; i < times; i++) {
-			results.push(Math.floor(Math.random() * dice) + 1);
-		}
+    const results: number[] = [];
 
-		msg.reply(serifs.dice.done(results.join(' ')));
+    for (let i = 0; i < times; i++) {
+      results.push(Math.floor(Math.random() * dice) + 1);
+    }
 
-		return true;
-	}
+    msg.reply(
+      serifs.dice.done(
+        results.join(" "),
+        results.length > 1
+          ? results.reduce((a, c) => a + c).toLocaleString()
+          : null
+      ),
+      { visibility: "public" }
+    );
+
+    return {
+      reaction: "love",
+    };
+  }
 }
