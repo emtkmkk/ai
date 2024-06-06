@@ -1,6 +1,7 @@
 {
 	"compilerOptions": {
-	        "esModuleInterop": true,
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true,
 
 		"noEmitOnError": true,
 		"noImplicitAny": false,
@@ -11,7 +12,7 @@
 		"experimentalDecorators": true,
 		"sourceMap": false,
 		"target": "es2021",
-	        "resolveJsonModule": true,
+		"resolveJsonModule": true,
 		"module": "commonjs",
 		"removeComments": false,
 		"noLib": false,
@@ -21,10 +22,8 @@
 		"baseUrl": ".",
 		"paths": {
 			"@/*": ["src/*"]
-		},
+		}
 	},
 	"compileOnSave": false,
-	"include": [
-		"./src/**/*.ts"
-	]
+	"include": ["./src/**/*.ts"]
 }

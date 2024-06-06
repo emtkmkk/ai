@@ -2,7 +2,6 @@
 
 import "module-alias/register";
 
-import chalk from "chalk";
 import * as request from "request-promise-native";
 const promiseRetry = require("promise-retry");
 
@@ -39,59 +38,59 @@ console.log(" /(__)\\  _)(_  )(_)( \\__ \\");
 console.log("(__)(__)(____)(_____)(___/\n");
 
 function log(msg: string): void {
-  _log(`[Boot]: ${msg}`);
+	_log(`[Boot]: ${msg}`);
 }
 
-log(chalk.bold(`Ai v${pkg._v}`));
+log(`Ai v${pkg._v}`);
 
 promiseRetry(
-  (retry) => {
-    log(`Account fetching... ${chalk.gray(config.host)}`);
+	(retry) => {
+		log(`Account fetching... ${config.host}`);
 
-    // アカウントをフェッチ
-    return request
-      .post(`${config.apiUrl}/i`, {
-        json: {
-          i: config.i,
-        },
-      })
-      .catch(retry);
-  },
-  {
-    retries: 3,
-  }
+		// アカウントをフェッチ
+		return request
+			.post(`${config.apiUrl}/i`, {
+				json: {
+					i: config.i,
+				},
+			})
+			.catch(retry);
+	},
+	{
+		retries: 3,
+	}
 )
-  .then((account) => {
-    const acct = `@${account.username}`;
-    log(chalk.green(`Account fetched successfully: ${chalk.underline(acct)}`));
+	.then((account) => {
+		const acct = `@${account.username}`;
+		log(`Account fetched successfully: ${acct}`);
 
-    log("Starting AiOS...");
+		log("Starting AiOS...");
 
-    // 藍起動
-    new 藍(account, [
-      new CoreModule(),
-      new EmojiModule(),
-      new EmojiReactModule(),
-      new FortuneModule(),
-      new GuessingGameModule(),
-      new KazutoriModule(),
-      new TimerModule(),
-      new DiceModule(),
-      new TalkModule(),
-      new PingModule(),
-      new WelcomeModule(),
-      new ServerModule(),
-      new FollowModule(),
-      new BirthdayModule(),
-      //new ValentineModule(),
-      new KeywordModule(),
-      new MazeModule(),
-      new SleepReportModule(),
-      new NotingModule(),
-      new PollModule(),
-      new ReminderModule(),
-    ]);
-  })
-  .catch((e) => {
-    log(chalk.red("Failed to fetch the account"));
-  });
+		// 藍起動
+		new 藍(account, [
+			new CoreModule(),
+			new EmojiModule(),
+			new EmojiReactModule(),
+			new FortuneModule(),
+			new GuessingGameModule(),
+			new KazutoriModule(),
+			new TimerModule(),
+			new DiceModule(),
+			new TalkModule(),
+			new PingModule(),
+			new WelcomeModule(),
+			new ServerModule(),
+			new FollowModule(),
+			new BirthdayModule(),
+			//new ValentineModule(),
+			new KeywordModule(),
+			new MazeModule(),
+			new SleepReportModule(),
+			new NotingModule(),
+			new PollModule(),
+			new ReminderModule(),
+		]);
+	})
+	.catch((e) => {
+		log("Failed to fetch the account");
+	});
