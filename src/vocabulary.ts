@@ -1,4 +1,7 @@
 import * as seedrandom from 'seedrandom';
+import getDate from '@/utils/get-date';
+
+export let rng = seedrandom(getDate());
 
 export const itemPrefixes = [
 	'銅の',
@@ -19,7 +22,7 @@ export const itemPrefixes = [
 	'生の',
 	'もこチキ謹製',
 	'ポケットサイズ',
-	'3日前の',
+	`${Math.floor(rng() * 3) + 3}日前の`,
 	'そこらへんの',
 	'偽の',
 	'使用済み',
@@ -31,13 +34,10 @@ export const itemPrefixes = [
 	'Microsoft製',
 	'Apple製',
 	'人類の技術を結集して作った',
-	'2018年製', // TODO ランダム
-	'2020年製',
-	'2022年製',
-	'2024年製',
-	'2026年製',
+	`${new Date().getFullYear() - 1 - Math.floor(rng() * 10)}年製`,
+	`${new Date().getFullYear() + 1 + Math.floor(rng() * 10)}年製`,
 	'9999年製',
-	'500kgくらいある',
+	`${Math.floor(rng() * 11)}00kgくらいある`,
 	'高級',
 	'腐った',
 	'人工知能搭載',
@@ -196,6 +196,7 @@ export const itemPrefixes = [
 	'当たり判定のない',
 	'めり込んだ',
 	'100年に一度の',
+	'1000年に一度の',
 	'ジューシーな',
 	'確変',
 	'食用',
@@ -238,7 +239,7 @@ export const itemPrefixes = [
 	'アルミホイルの',
 	'超高校級の',
 	'トップバリュブランドの',
-	'１００均の',
+	'100均の',
 	'ハイリアの',
 	'カスの',
 	'ダブルアックス',
@@ -344,7 +345,7 @@ export const items = [
 	'リップクリーム',
 	'人生',
 	'パン無し食パン',
-	'食パンの耳100年分',
+	`食パンの耳${Math.floor(rng() * 100) + 1}年分`,
 	'麺無しラーメン',
 	'カレー無しカレーパン',
 	'クリーム無しクリームパン',
@@ -422,7 +423,8 @@ export const items = [
 	'TNT',
 	'ポリゴン',
 	'空気',
-	'RTX 3090',
+	`GTX ${Math.floor(rng() * 9) + 1}${Math.floor(rng() * 5) + 5}0`,
+	`RTX ${Math.floor(rng() * 9) + 1}0${Math.floor(rng() * 5) + 5}0`,
 	'[R]で所持金MAX の秘技コード',
 	'[L]長押しで浮遊 の秘技コード',
 	'シャーペンの芯',
@@ -598,14 +600,14 @@ export const and = [
 ];
 
 export function genItem(seedOrRng?: (() => number) | string | number) {
-	const rng = seedOrRng
+	rng = seedOrRng
 		? typeof seedOrRng === 'function'
 			? seedOrRng
 			: seedrandom(seedOrRng.toString())
 		: Math.random;
 
 	let item = '';
-	if (Math.floor(rng() * 10) !== 0) item += itemPrefixes[Math.floor(rng() * itemPrefixes.length)];
+	if (Math.floor(rng() * 20) !== 0) item += itemPrefixes[Math.floor(rng() * itemPrefixes.length)];
 	item += items[Math.floor(rng() * items.length)];
 	if (Math.floor(rng() * 10) === 0) {
 		let andItem = "";
