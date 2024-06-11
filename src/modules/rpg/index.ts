@@ -73,7 +73,7 @@ export default class extends Module {
             }
 
             if (ehp <= 0) {
-                message += "\n" + data.enemy.winmsg
+                message += "\n" + data.enemy.winmsg + "\n\n勝利！おめでとう！"
                 data.enemy = null;
                 data.count = 1;
                 data.winCount = (data.winCount ?? 0) + 1
