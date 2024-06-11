@@ -395,16 +395,17 @@ export default class extends Module {
 		const lovemsg = `懐き度 : ${love}`;
 
 		const kazutori = msg.friend.doc.kazutoriData?.playCount 
-		? `${msg.friend.doc.kazutoriData?.winCount} / ${msg.friend.doc.kazutoriData?.playCount}${msg.friend.doc.kazutoriData?.rate ? ` (${msg.friend.doc.kazutoriData?.rate})` : ""}${msg.friend.doc.kazutoriData?.medal ? "\nトロフィー : " + msg.friend.doc.kazutoriData?.medal : ""}` 
+		? `数取り : ${msg.friend.doc.kazutoriData?.winCount} / ${msg.friend.doc.kazutoriData?.playCount}${msg.friend.doc.kazutoriData?.rate ? ` (${msg.friend.doc.kazutoriData?.rate})` : ""}${msg.friend.doc.kazutoriData?.medal ? "\nトロフィー : " + msg.friend.doc.kazutoriData?.medal : ""}` 
 		: undefined;
 
 		const rpg = msg.friend.doc.perModulesData?.rpg 
 			? [
-				`状態 : ${msg.friend.doc.perModulesData.rpg.enemy ? (msg.friend.doc.perModulesData.rpg.enemy?.name ?? "") + (msg.friend.doc.perModulesData.rpg.enemy?.short ?? "") : "探索中"}`,
-				`Lv : ${msg.friend.doc.perModulesData.rpg.lv ?? 1}`,
-				`パワー : ${msg.friend.doc.perModulesData.rpg.atk ?? 0}${msg.friend.doc.kazutoriData?.winCount >= 3 ? ` (+${Math.floor(msg.friend.doc.kazutoriData?.winCount / 3) + (msg.friend.doc.kazutoriData?.medal ?? 0)})` : ""}`,
-				`防御 : ${msg.friend.doc.perModulesData.rpg.def ?? 0}${msg.friend.doc.kazutoriData?.playCount >= 7 ? ` (+${Math.floor(msg.friend.doc.kazutoriData?.playCount / 7) + (msg.friend.doc.kazutoriData?.medal ?? 0)})` : ""}`,
-				lovep >= 100 ? `行動回数 : ${Math.floor(lovep / 100) + 1}` : "",
+				`RPGモード : `,
+				`  現在の状態 : ${msg.friend.doc.perModulesData.rpg.enemy ? (msg.friend.doc.perModulesData.rpg.enemy?.name ?? "") + (msg.friend.doc.perModulesData.rpg.enemy?.short ?? "") : "探索中"}`,
+				`  Lv : ${msg.friend.doc.perModulesData.rpg.lv ?? 1}`,
+				`  パワー : ${msg.friend.doc.perModulesData.rpg.atk ?? 0}${msg.friend.doc.kazutoriData?.winCount >= 3 ? ` (+${Math.floor(msg.friend.doc.kazutoriData?.winCount / 3) + (msg.friend.doc.kazutoriData?.medal ?? 0)})` : ""}`,
+				`  防御 : ${msg.friend.doc.perModulesData.rpg.def ?? 0}${msg.friend.doc.kazutoriData?.playCount >= 7 ? ` (+${Math.floor(msg.friend.doc.kazutoriData?.playCount / 7) + (msg.friend.doc.kazutoriData?.medal ?? 0)})` : ""}`,
+				lovep >= 100 ? `  行動回数 : ${Math.floor(lovep / 100) + 1}` : "",
 			].filter(Boolean).join("\n")
 			: ""
 
