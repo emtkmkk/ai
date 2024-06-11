@@ -49,18 +49,21 @@ export default class extends Module {
                             ? (postCount - 20) / 30 + 2
                             : postCount >= 5
                                 ? (postCount - 5) / 15 + 1
-                                : Math.max(postCount / 5, 0.2)
+                                : Math.max(postCount / 5, 0.3)
 
             const lv = data.lv ?? 1
             const atk = 5 + (data.atk ?? 0) + (Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0);
             const def = 5 + (data.def ?? 0) + (Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0);
-            const spd = Math.floor((msg.friend.love ?? 0) / 100) + (Math.random() < 0.25 ? 2 : 1);
+            let spd = Math.floor((msg.friend.love ?? 0) / 100) + 1;
             const count = data.count ?? 1
             let php = data.php ?? 100;
             let ehp = data.ehp ?? 100;
             let phpp = php / (100 + lv * 3);
             let ehpp = ehp / ((100 + lv * 3) + ((data.winCount ?? 0) * 5));
             let message = ""
+							
+					if (spd === 2 && Math.random() < 0.1) spd = 3;
+					if (spd === 1 && Math.random() < 0.5) spd = 2;
 
             if (count === 1) {
                 const filteredEnemys = enemys.filter((x) => (data.winCount ?? 0) >= (x.limit ?? 0));
