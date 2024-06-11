@@ -49,7 +49,7 @@ export default class extends Module {
                             ? (postCount - 20) / 30 + 2
                             : postCount >= 5
                                 ? (postCount - 5) / 15 + 1
-                                : postCount / 5
+                                : Math.max(postCount / 5, 0.2)
 
             const lv = data.lv ?? 1
             const atk = 5 + (data.atk ?? 0) + (Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0);
