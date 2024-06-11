@@ -1,7 +1,7 @@
 import * as seedrandom from 'seedrandom';
 import getDate from '@/utils/get-date';
 
-export let rng = seedrandom(getDate());
+export let rng: () => number = seedrandom(getDate());
 
 export const itemPrefixes = [
 	'銅の',
