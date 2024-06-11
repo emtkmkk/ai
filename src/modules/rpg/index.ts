@@ -54,7 +54,7 @@ export default class extends Module {
             const lv = data.lv ?? 1
             const atk = 5 + (data.atk ?? 0) + (Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0);
             const def = 5 + (data.def ?? 0) + (Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0);
-            const spd = Math.floor((msg.friend.love ?? 0) / 100) + 1;
+            const spd = Math.floor((msg.friend.love ?? 0) / 100) + (Math.random() < 0.25 ? 2 : 1);
             const count = data.count ?? 1
             let php = data.php ?? 100;
             let ehp = data.ehp ?? 100;
