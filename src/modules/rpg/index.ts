@@ -88,6 +88,7 @@ export default class extends Module {
                 data.ehp = 103 + lv * 3 + data.winCount * 5
             } else {
                 const dmg = Math.round((eatk * 2.5 * (0.3 + Math.random() * 1.4) * (Math.random() < phpp - ehpp ? 2 : 1)) * (1 / (((def * tp) + 100) / 100)))
+                php -= dmg
                 message += data.enemy.defmsg(dmg) + "\n"
                 if (php <= 0) {
                     message += "\n" + data.enemy.losemsg
