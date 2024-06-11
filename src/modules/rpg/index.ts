@@ -74,6 +74,7 @@ export default class extends Module {
                 data.enemy = filteredEnemys[Math.floor(filteredEnemys.length * Math.random())]
                 message += `${data.enemy.name}${data.enemy.msg}\n\n開始！\n\n`
             } else {
+							data.enemy = enemys.find((x) => data.enemy.name === x.name);
                 message += `${data.enemy.name}${data.enemy.short} ${count}ターン目\n\n`
             }
             const eatk = lv * 3.5 * data.enemy.atk;
