@@ -121,7 +121,7 @@ export default class extends Module {
 		}
 
 		console.log(text);
-		msg.reply(`\n\`\`\`\n${text}\n\`\`\`\n${text.length}`, {
+		msg.reply(`\n\`\`\`\n${text}\n\`\`\``, {
 			visibility: 'specified',
 		});
 
@@ -180,13 +180,24 @@ export default class extends Module {
 		if (doc2 == null) return { reaction: ":mk_hotchicken:" };
 
 		doc2.doc.name = doc2.name || doc1.name;
-		for (let i = 0; i < ((doc1.love ?? 0) / 0.5); i++) {
+		let x = 0;
+		let y = 0;
+		while (y < doc1.love) {
+			const amount = y > 100 ? (Math.ceil(0.5 / ((y || 0) * 2 / 100 - 1) * 100) / 100) : 0.5
+			y = parseFloat((y + amount || 0).toFixed(2))
+			x += 1
+		}
+		console.log(`${x} : ${y}`)
+		for (let i = 0; i < x; i++) {
 			doc2.incLove(0.1, "merge")
 		}
+		doc1.doc.love = 0;
 		doc2.doc.married = doc1.married || doc2.married;
 		doc2.doc.perModulesData = this.mergeAndSum(doc1.doc.perModulesData, doc2.doc.perModulesData);
 		doc2.doc.kazutoriData = this.mergeAndSum(doc1.doc.kazutoriData, doc2.doc.kazutoriData)
+		doc1.doc.kazutoriData = { winCount: 0, playCount: 0, rate: 0, inventory: [] };
 		doc2.save();
+		doc1.save();
 
 		let json = JSON.parse(JSON.stringify(doc2.doc));
 
@@ -379,9 +390,25 @@ export default class extends Module {
 		love += lovep >= 100 ? "★" : "☆"
 		love += over >= 1 ? "+" + (over >= 2 ? over : "") : ""
 
-		const kazutori = msg.friend.doc.kazutoriData?.playCount ? msg.friend.doc.kazutoriData?.winCount + ' / ' + msg.friend.doc.kazutoriData?.playCount + (msg.friend.doc.kazutoriData?.rate ? ` (${msg.friend.doc.kazutoriData?.rate})` : "") + (msg.friend.doc.kazutoriData?.medal ? "\nトロフィー : " + msg.friend.doc.kazutoriData?.medal : "") : undefined;
+		const name = msg.friend.name ? '呼び方 : ' + msg.friend.name + '\n' : ''
 
-		msg.reply(serifs.core.getStatus(msg.friend.name, love, kazutori))
+		const lovemsg = `懐き度 : ${love}`;
+
+		const kazutori = msg.friend.doc.kazutoriData?.playCount 
+		? `${msg.friend.doc.kazutoriData?.winCount} / ${msg.friend.doc.kazutoriData?.playCount}${msg.friend.doc.kazutoriData?.rate ? ` (${msg.friend.doc.kazutoriData?.rate})` : ""}${msg.friend.doc.kazutoriData?.medal ? "\nトロフィー : " + msg.friend.doc.kazutoriData?.medal : ""}` 
+		: undefined;
+
+		const rpg = msg.friend.doc.perModulesData?.rpg 
+			? [
+				`状態 : ${msg.friend.doc.perModulesData.rpg.enemy ? (msg.friend.doc.perModulesData.rpg.enemy?.name ?? "") + (msg.friend.doc.perModulesData.rpg.enemy?.short ?? "") : "探索中"}`,
+				`Lv : ${msg.friend.doc.perModulesData.rpg.lv ?? 1}`,
+				`パワー : ${msg.friend.doc.perModulesData.rpg.atk ?? 0}${msg.friend.doc.kazutoriData?.winCount >= 3 ? ` (+${Math.floor(msg.friend.doc.kazutoriData?.winCount / 3) + (msg.friend.doc.kazutoriData?.medal ?? 0)})` : ""}`,
+				`防御 : ${msg.friend.doc.perModulesData.rpg.def ?? 0}${msg.friend.doc.kazutoriData?.playCount >= 7 ? ` (+${Math.floor(msg.friend.doc.kazutoriData?.playCount / 7) + (msg.friend.doc.kazutoriData?.medal ?? 0)})` : ""}`,
+				lovep >= 100 ? `行動回数 : ${Math.floor(lovep / 100) + 1}` : "",
+			].filter(Boolean).join("\n")
+			: ""
+
+		msg.reply(serifs.core.getStatus([name, lovemsg, kazutori, rpg].filter(Boolean).join("\n")))
 
 		return true;
 	}

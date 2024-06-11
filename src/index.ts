@@ -35,6 +35,7 @@ import NotingModule from './modules/noting';
 import PollModule from './modules/poll';
 import ReminderModule from './modules/reminder';
 import YoruhoModule from './modules/yoruho';
+import RpgModule from './modules/rpg';
 
 console.log('   __    ____  _____  ___ ');
 console.log('  /__\\  (_  _)(  _  )/ __)');
@@ -90,6 +91,7 @@ promiseRetry(retry => {
 		new PollModule(),
 		new ReminderModule(),
 		new YoruhoModule(),
+		new RpgModule(),
 	]);
 }).catch(e => {
 	log(chalk.red('Failed to fetch the account'));

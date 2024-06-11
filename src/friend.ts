@@ -151,7 +151,7 @@ export default class Friend {
 		amount = parseFloat(amount.toFixed(2));
 		
 		// x00を超えた時に感謝のメッセージを送信する
-		if ((this.doc.love || 0) > 0 && (this.doc.love || 0) % 100 + amount >= 100) {
+		if (key != "merge" && (this.doc.love || 0) > 0 && (this.doc.love || 0) % 100 + amount >= 100) {
 			this.ai.sendMessage(this.doc.userId, {
 				text: `${acct(this.doc.user)}\n${this.doc.name ? this.doc.name + "、" : ""}私と${'とっても'.repeat(Math.floor((this.doc.love || 0) / 100))}たくさん遊んでいただいてありがとうございます！\nこれからもよろしくお願いします……！`
 			});

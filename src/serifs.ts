@@ -12,7 +12,7 @@ export default {
 
 		getLove: (name, love) => `私の${name}に対する懐き度です！ \n\n懐き度 : ${love}`,
 
-		getStatus: (name, love, kazutori) => `\n${name ? '呼び方 : ' + name + '\n' : ''}懐き度 : ${love}${kazutori ? '\n数取り : ' + kazutori : ''}`,
+		getStatus: (text) => `\n${text}`,
 
 		getInventory: (name, inventory) => `\n私から${name}へプレゼントした物の一覧です！\n\n${inventory}`,
 
