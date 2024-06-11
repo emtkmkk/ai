@@ -390,7 +390,7 @@ export default class extends Module {
 		love += lovep >= 100 ? "★" : "☆"
 		love += over >= 1 ? "+" + (over >= 2 ? over : "") : ""
 
-		const name = msg.friend.name ? '呼び方 : ' + msg.friend.name + '\n' : ''
+		const name = msg.friend.name ? '呼び方 : ' + msg.friend.name : ''
 
 		const lovemsg = `懐き度 : ${love}`;
 
