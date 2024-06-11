@@ -73,7 +73,7 @@ export default class extends Module {
             const edef = lv * 3.5 * data.enemy.def;
 
             for (let i = 0; i < spd; i++) {
-                let dmg = Math.round((atk * tp * (0.3 + Math.random() * 1.4) * (Math.random() < ehpp - phpp ? 2 : 1)) * (1 / (((edef * 3) + 100) / 100)))
+                let dmg = Math.round((atk * tp * ((data.count ?? 1) * 0.5 + 0.5) * (0.3 + Math.random() * 1.4) * (Math.random() < ehpp - phpp ? 2 : 1)) * (1 / (((edef * 3) + 100) / 100)))
                 message += data.enemy.atkmsg(dmg) + "\n"
                 ehp -= dmg
                 if (ehp <= 0) break;
@@ -87,7 +87,7 @@ export default class extends Module {
                 data.php = 103 + lv * 3
                 data.ehp = 103 + lv * 3 + data.winCount * 5
             } else {
-                const dmg = Math.round((eatk * 2.5 * (0.3 + Math.random() * 1.4) * (Math.random() < phpp - ehpp ? 2 : 1)) * (1 / (((def * tp) + 100) / 100)))
+                const dmg = Math.round((eatk * 2.5 * ((data.count ?? 1) * 0.5 + 0.5) * (0.3 + Math.random() * 1.4) * (Math.random() < phpp - ehpp ? 2 : 1)) * (1 / (((def * tp) + 100) / 100)))
                 php -= dmg
                 message += data.enemy.defmsg(dmg) + "\n"
                 if (php <= 0) {
