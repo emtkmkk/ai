@@ -96,7 +96,7 @@ export default class extends Module {
                     data.php = 113 + lv * 3
                     data.ehp = 103 + lv * 3
                 } else {
-                    const ehpGaugeCount = Math.min(Math.ceil((ehp / (100 + lv * 3) + data.winCount * 5) / 0.2), 5)
+                    const ehpGaugeCount = Math.min(Math.ceil(ehp / ((100 + lv * 3) + ((data.winCount ?? 0) * 5)) / 0.2), 5)
                     const ehpGauge = data.enemy.lToR 
                         ? data.enemy.mark2.repeat(5-ehpGaugeCount) + data.enemy.mark.repeat(ehpGaugeCount)
                         : data.enemy.mark2.repeat(ehpGaugeCount) + data.enemy.mark.repeat(5-ehpGaugeCount)
