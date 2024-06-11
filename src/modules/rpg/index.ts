@@ -55,7 +55,7 @@ export default class extends Module {
             const atk = 5 + (data.atk ?? 0) + (Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0);
             const def = 5 + (data.def ?? 0) + (Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0);
             let spd = Math.floor((msg.friend.love ?? 0) / 100) + 1;
-            const count = data.count ?? 1
+            let count = data.count ?? 1
             let php = data.php ?? 100;
             let ehp = data.ehp ?? 100;
             let phpp = php / (100 + lv * 3);
@@ -65,7 +65,11 @@ export default class extends Module {
 					if (spd === 2 && Math.random() < 0.1) spd = 3;
 					if (spd === 1 && Math.random() < 0.5) spd = 2;
 
-            if (count === 1) {
+            if (!data.enemy || count === 1) {
+							count = 1
+							data.count = 1
+							php = 100 + lv * 3
+							ehp = 100 + lv * 3 + (data.winCount ?? 0) * 5
                 const filteredEnemys = enemys.filter((x) => (data.winCount ?? 0) >= (x.limit ?? 0));
                 data.enemy = filteredEnemys[Math.floor(filteredEnemys.length * Math.random())]
                 message += `${data.enemy.name}${data.enemy.msg}\n\n開始！\n\n`
@@ -100,7 +104,7 @@ export default class extends Module {
                     data.atk = (data.atk ?? 0) + 2
                     data.def = (data.def ?? 0) + 2
                     data.php = 113 + lv * 3
-                    data.ehp = 103 + lv * 3
+                    data.ehp = 103 + lv * 3 + data.winCount * 5
                 } else {
                     const ehpGaugeCount = Math.min(Math.ceil(ehp / ((100 + lv * 3) + ((data.winCount ?? 0) * 5)) / 0.2), 5)
                     const ehpGauge = data.enemy.lToR 
@@ -109,15 +113,14 @@ export default class extends Module {
                     const phpGaugeCount = Math.min(Math.ceil(php / (100 + lv * 3) / 0.2), 5)
                     const phpGauge = "★".repeat(phpGaugeCount) + "☆".repeat(5-phpGaugeCount)
                     message += `\n${data.enemy.hpmsg ?? data.enemy.name} : ${ehpGauge}\n${data.enemy.hpmsg ? "体力" : ":mk_hi:"} : ${phpGauge}\n\n明日へ続く……`
+									data.count = (data.count ?? 1) + 1;
+									data.php = php;
+									data.ehp = ehp;
                 }
             }
-
-            data.count = (data.count ?? 1) + 1;
             data.lv = (data.lv ?? 1) + 1;
             data.atk = (data.atk ?? 0) + (2 + Math.floor(Math.random() * 4));
             data.def = (data.def ?? 0) + (2 + Math.floor(Math.random() * 4));
-            data.php = php;
-            data.ehp = ehp;
 
             msg.friend.setPerModulesData(this, data);
 
