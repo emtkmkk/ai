@@ -403,8 +403,8 @@ export default class extends Module {
 				`RPGモード : `,
 				`  現在の状態 : ${msg.friend.doc.perModulesData.rpg.enemy ? (msg.friend.doc.perModulesData.rpg.enemy?.name ?? "") + (msg.friend.doc.perModulesData.rpg.enemy?.short ?? "") : "探索中"}`,
 				`  Lv : ${msg.friend.doc.perModulesData.rpg.lv ?? 1}`,
-				`  パワー : ${msg.friend.doc.perModulesData.rpg.atk ?? 0}${msg.friend.doc.kazutoriData?.winCount >= 3 ? ` (+${Math.floor(Math.floor(msg.friend.doc.kazutoriData?.winCount / 3) + (msg.friend.doc.kazutoriData?.medal ?? 0) * (100 + msg.friend.doc.perModulesData.rpg.atk) / 100)})` : ""}`,
-				`  防御 : ${msg.friend.doc.perModulesData.rpg.def ?? 0}${msg.friend.doc.kazutoriData?.playCount >= 7 ? ` (+${Math.floor(Math.floor(msg.friend.doc.kazutoriData?.playCount / 7) + (msg.friend.doc.kazutoriData?.medal ?? 0) * (100 + msg.friend.doc.perModulesData.rpg.def) / 100)})` : ""}`,
+				`  パワー : ${msg.friend.doc.perModulesData.rpg.atk ?? 0}${msg.friend.doc.kazutoriData?.winCount >= 3 ? ` (+${Math.floor((Math.floor(msg.friend.doc.kazutoriData?.winCount / 3) + (msg.friend.doc.kazutoriData?.medal ?? 0)) * (100 + (msg.friend.doc.perModulesData.rpg.atk ?? 0)) / 100)})` : ""}`,
+				`  防御 : ${msg.friend.doc.perModulesData.rpg.def ?? 0}${msg.friend.doc.kazutoriData?.playCount >= 7 ? ` (+${Math.floor((Math.floor(msg.friend.doc.kazutoriData?.playCount / 7) + (msg.friend.doc.kazutoriData?.medal ?? 0)) * (100 + (msg.friend.doc.perModulesData.rpg.def ?? 0)) / 100)})` : ""}`,
 				lovep >= 100 ? `  行動回数 : ${Math.floor(lovep / 100) + 1}` : "",
 			].filter(Boolean).join("\n")
 			: ""
