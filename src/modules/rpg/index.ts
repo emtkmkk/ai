@@ -80,6 +80,7 @@ export default class extends Module {
             let ehp = Math.min(data.ehp ?? 100, mehp);
             let phpp = php / (100 + lv * 3);
             let ehpp = ehp / mehp;
+            let bonus = 0;
 
             if (spd === 2 && Math.random() < 0.1) spd = 3;
             if (spd === 1 && Math.random() < 0.5) spd = 2;
@@ -129,6 +130,7 @@ export default class extends Module {
                     data.def = (data.def ?? 0) + 2
                     data.php = 113 + lv * 3
                     data.ehp = 103 + lv * 3 + (data.winCount ?? 0) * 5
+                    bonus += 2;
                 } else {
                     const ehpGaugeCount = Math.min(Math.ceil(ehp / mehp / (1 / 7)), 7)
                     const ehpGauge = data.enemy.lToR
@@ -173,8 +175,8 @@ export default class extends Module {
             message += [
 				`\n\n今回のレベルアップ :`,
 				`  Lv : ${data.lv ?? 1} (+1)`,
-				`  パワー : ${data.atk ?? 0} (+${atkUp})`,
-				`  防御 : ${data.def ?? 0} (+${totalUp - atkUp})`,
+				`  パワー : ${data.atk ?? 0} (+${atkUp + bonus})`,
+				`  防御 : ${data.def ?? 0} (+${totalUp - atkUp + bonus})`,
 			].filter(Boolean).join("\n")
 
             msg.friend.setPerModulesData(this, data);
