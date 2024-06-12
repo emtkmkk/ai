@@ -33,13 +33,13 @@ export default class extends Module {
     private async mentionHook(msg: Message) {
         if (msg.includes(['rpg'])) {
             const data = msg.friend.getPerModulesData(this);
-            if (data.lastPlayedAt === getDate() + (new Date().getHours() < 12 ? "" : "/12") && data.ehp <= 110 + data.lv * 3 + (data.winCount ?? 0) * 5) {
-                msg.reply(`RPGモードは午前と午後で1日2回だけです。\n${new Date().getHours() < 12 ? "12時以降" : "明日"}になったらもう一度試してください。`);
+            if (data.lastPlayedAt === getDate() + (new Date().getHours() < 12 ? "" : new Date().getHours() < 18 ? "/12" : "/18") && data.ehp <= 110 + data.lv * 3 + (data.winCount ?? 0) * 5) {
+                msg.reply(`RPGモードは0~11時、12~17時、18~23時の1日3回です。\n${new Date().getHours() < 12 ? "12時以降" : new Date().getHours() < 18 ? "18時以降" : "明日"}になったらもう一度試してください。`);
                 return {
                     reaction: 'confused'
                 };
             }
-            data.lastPlayedAt = getDate() + (new Date().getHours() < 12 ? "" : "/12");
+            data.lastPlayedAt = getDate() + (new Date().getHours() < 12 ? "" : new Date().getHours() < 18 ? "/12" : "/18");
             const chart = await this.ai.api('charts/user/notes', {
                 span: 'day',
                 limit: 2,
