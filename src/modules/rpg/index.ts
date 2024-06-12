@@ -97,7 +97,7 @@ export default class extends Module {
                 message += data.enemy.atkmsg(dmg) + "\n"
                 ehp -= dmg
                 if (ehp <= 0) break;
-                if (data.enemy.abort && Math.random() < data.enemy.abort) {
+                if ((i + 1) < spd && data.enemy.abort && Math.random() < data.enemy.abort) {
                     if (data.enemy.abortmsg) message += data.enemy.abortmsg + "\n"
                     break;
                 }
