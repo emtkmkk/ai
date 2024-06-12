@@ -127,7 +127,7 @@ export default class extends Module {
                         : data.enemy.mark2.repeat(ehpGaugeCount) + data.enemy.mark.repeat(7 - ehpGaugeCount)
                     const phpGaugeCount = Math.min(Math.ceil(php / (100 + lv * 3) / (1 / 7)), 7)
                     const phpGauge = "★".repeat(phpGaugeCount) + "☆".repeat(7 - phpGaugeCount)
-                    message += `\n${data.enemy.hpmsg ?? data.enemy.name} : ${ehpGauge}\n${data.enemy.hpmsg ? "体力" : ":mk_hi:"} : ${phpGauge}\n\n明日へ続く……`
+                    message += `\n${data.enemy.hpmsg ?? data.enemy.name} : ${ehpGauge}\n${data.enemy.hpmsg ? "体力" : ":mk_hi:"} : ${phpGauge}\n\n次回へ続く……`
                     data.count = (data.count ?? 1) + 1;
                     data.php = php;
                     data.ehp = ehp;
