@@ -56,8 +56,8 @@ export default class extends Module {
                                 : Math.max(postCount / 5, 0.3)
 
             const lv = data.lv ?? 1
-            const atk = 5 + (data.atk ?? 0) + (Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0);
-            const def = 5 + (data.def ?? 0) + (Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0);
+            const atk = 5 + (data.atk ?? 0) + Math.floor((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0) * (100 + data.atk) / 100);
+            const def = 5 + (data.def ?? 0) + Math.floor((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0) * (100 + data.def) / 100);
             let spd = Math.floor((msg.friend.love ?? 0) / 100) + 1;
             let count = data.count ?? 1
             let php = data.php ?? 100;
