@@ -33,7 +33,7 @@ export default class extends Module {
     private async mentionHook(msg: Message) {
         if (msg.includes(['rpg'])) {
             const data = msg.friend.getPerModulesData(this);
-            if (data.lastPlayedAt === getDate() + (new Date().getHours() < 12 ? "" : "/12") && data.ehp <= 110 + lv * 3 + (data.winCount ?? 0) * 7) {
+            if (data.lastPlayedAt === getDate() + (new Date().getHours() < 12 ? "" : "/12") && data.ehp <= 110 + data.lv * 3 + (data.winCount ?? 0) * 7) {
                 msg.reply(`RPGモードは午前と午後で1日2回だけです。\n${new Date().getHours() < 12 ? "12時以降" : "明日"}になったらもう一度試してください。`);
                 return {
                     reaction: 'confused'
