@@ -77,7 +77,7 @@ export default class extends Module {
                 data.count = 1
                 php = 100 + lv * 3
                 ehp = 100 + lv * 3 + (data.winCount ?? 0) * 7
-                const filteredEnemys = enemys.filter((x) => (data.winCount ?? 0) >= (x.limit ?? 0));
+                const filteredEnemys = enemys.filter((x) => (data.winCount ?? 0) >= (x.limit ?? 0)).filter((x) => !data.preEnemy || x.name != data.preEnemy);
                 data.enemy = filteredEnemys[Math.floor(filteredEnemys.length * Math.random())]
                 message += `${data.enemy.name}${data.enemy.msg}\n\n開始！\n\n`
             } else {
@@ -107,6 +107,7 @@ export default class extends Module {
 
             if (ehp <= 0) {
                 message += "\n" + data.enemy.winmsg + "\n\n勝利！おめでとう！"
+                data.preEnemy = data.enemy.name;
                 data.enemy = null;
                 data.count = 1;
                 data.winCount = (data.winCount ?? 0) + 1
@@ -118,6 +119,7 @@ export default class extends Module {
                 message += "\n" + data.enemy.defmsg(dmg) + "\n"
                 if (php <= 0) {
                     message += "\n" + data.enemy.losemsg + "\n\n:oyoo:"
+                    data.preEnemy = data.enemy.name;
                     data.enemy = null;
                     data.count = 1;
                     data.atk = (data.atk ?? 0) + 2
