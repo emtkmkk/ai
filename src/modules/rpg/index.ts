@@ -33,13 +33,13 @@ export default class extends Module {
     private async mentionHook(msg: Message) {
         if (msg.includes(['rpg'])) {
             const data = msg.friend.getPerModulesData(this);
-            if (data.lastPlayedAt === getDate() + (new Date().getHours() < 12 ? "" : "/2")) {
+            if (data.lastPlayedAt === getDate() + (new Date().getHours() < 12 ? "" : "/12")) {
                 msg.reply(`RPGモードは午前と午後で1日2回だけです。\n${new Date().getHours() < 12 ? "12時以降" : "明日"}になったらもう一度試してください。`);
                 return {
                     reaction: 'confused'
                 };
             }
-            data.lastPlayedAt = getDate() + (new Date().getHours() < 12 ? "" : "/2");
+            data.lastPlayedAt = getDate() + (new Date().getHours() < 12 ? "" : "/12");
             const chart = await this.ai.api('charts/user/notes', {
                 span: 'day',
                 limit: 2,
@@ -90,10 +90,10 @@ export default class extends Module {
 
             for (let i = 0; i < spd; i++) {
                 let dmg = Math.round((atk * tp * ((data.count ?? 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (Math.random() < ehpp - phpp ? 2 : 1)) * (1 / (((edef * (data.enemy.defx ?? 3)) + 100) / 100)))
-                if (maxdmg && dmg > (maxdmg * (1 / spd - i))) {
-                    dmg = Math.round(maxdmg * (1 / spd - i))
+                if (maxdmg && maxdmg > 0 && dmg > Math.round(maxdmg * (1 / (spd - i)))) {
+                    dmg = Math.round(maxdmg * (1 / (spd - i)))
                     maxdmg -= dmg
-                } else if (maxdmg) {
+                } else if (maxdmg && maxdmg > 0) {
                     maxdmg -= dmg
                 }
                 message += data.enemy.atkmsg(dmg) + "\n"
