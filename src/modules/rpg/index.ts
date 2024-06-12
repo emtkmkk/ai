@@ -133,7 +133,11 @@ export default class extends Module {
                     const phpGauge = data.enemy.pLToR
                         ? "★".repeat(7 - phpGaugeCount) + "☆".repeat(phpGaugeCount)
                         : "★".repeat(phpGaugeCount) + "☆".repeat(7 - phpGaugeCount)
-                    message += `\n${data.enemy.hpmsg ?? data.enemy.name} : ${ehpGauge}\n${data.enemy.hpmsg ? "体力" : ":mk_hi:"} : ${phpGauge}\n\n次回へ続く……`
+                    if (data.enemy.pLToR) {
+                        message += `\n${data.enemy.hpmsg ? "体力" : ":mk_hi:"} : ${ehpGauge}\n${data.enemy.hpmsg ?? data.enemy.name} : ${phpGauge}\n\n次回へ続く……`
+                    } else {
+                        message += `\n${data.enemy.hpmsg ?? data.enemy.name} : ${ehpGauge}\n${data.enemy.hpmsg ? "体力" : ":mk_hi:"} : ${phpGauge}\n\n次回へ続く……`
+                    }
                     data.count = (data.count ?? 1) + 1;
                     data.php = php;
                     data.ehp = ehp;
