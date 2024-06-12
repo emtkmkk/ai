@@ -89,7 +89,7 @@ export default class extends Module {
             for (let i = 0; i < spd; i++) {
                 let dmg = Math.round((atk * tp * ((data.count ?? 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (Math.random() < ehpp - phpp ? 2 : 1)) * (1 / (((edef * (data.enemy.defx ?? 3)) + 100) / 100)))
                 if (maxdmg && dmg > (maxdmg / (1 / spd - i))) {
-                    dmg = (maxdmg / (1 / spd - i))
+                    dmg = Math.round(maxdmg / (1 / spd - i))
                     maxdmg -= (maxdmg / (1 / spd - i))
                 }
                 message += data.enemy.atkmsg(dmg) + "\n"
