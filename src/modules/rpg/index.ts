@@ -10,7 +10,7 @@ const enemys = [
     { name: ":mk_catchicken:", msg: "が撫でてほしいようだ。", short: "を撫で中", hpmsg: "満足度", mark: "☆", mark2: "★", lToR: true, atkmsg: (dmg) => `もこチキの撫で！\n${dmg}ポイント満足させた！`, defmsg: (dmg) => `もこチキは疲れて${dmg}ポイントのダメージ！`, winmsg: ":mk_catchicken:を満足させた！", losemsg: "もこチキは疲れで倒れてしまった…", hp: 100, atk: 1, def: 1, atkx: 3, defx: 3 },
     { name: ":nisemokochiki_mzh:", msg: "が本物と成り替わろうと勝負を仕掛けてきた！", short: "と戦い中", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの羽ペチ！\n:nisemokochiki_mzh:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:nisemokochiki_mzh:の謎の攻撃！\nもこチキは${dmg}ポイントのダメージ！`, winmsg: "どっちが本物か分からせてやった！", losemsg: "もこチキはやられてしまった…", hp: 100, atk: 2, def: 0.5, atkx: 3, defx: 3 },
     { name: ":mokochoki:", msg: "がじゃんけんをしたいようだ。", short: "とじゃんけん中", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキはグーを出した！\n:mokochoki:の精神に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `もこチキはパーを出した！\nもこチキの精神に${dmg}ポイントのダメージ！`, winmsg: ":mokochoki:に負けを認めさせた！", losemsg: "もこチキは負けを認めた…", hp: 100, atk: 1, def: 1, atkx: 3, defx: 3 },
-    { name: ":mk_senryu_kun:", msg: "が川柳で勝負したいようだ。", short: "と川柳考え中", mark: "☆", mark2: "★", lToR: true, atkmsg: (dmg) => `もこチキは考えた！\n川柳の完成度が${dmg}ポイントアップ！`, defmsg: (dmg) => `:mk_senryu_kun:はTLから情報を収集した！\n:mk_senryu_kun:の川柳の完成度が${dmg}ポイントアップ！`, winmsg: "審査員が来た！\n良い川柳と判定されたのはもこチキだった！", losemsg: "審査員が来た！\n良い川柳と判定されたのは:mk_senryu_kun:だった！", hp: 100, atk: 0.7, def: 1.5, atkx: 3, defx: 3, maxdmg: 0.95 },
+    { name: ":mk_senryu_kun:", msg: "が川柳で勝負したいようだ。", short: "と川柳考え中", mark: "☆", mark2: "★", lToR: true, pLToR: true, atkmsg: (dmg) => `もこチキは考えた！\n川柳の完成度が${dmg}ポイントアップ！`, defmsg: (dmg) => `:mk_senryu_kun:はTLから情報を収集した！\n:mk_senryu_kun:の川柳の完成度が${dmg}ポイントアップ！`, winmsg: "審査員が来た！\n良い川柳と判定されたのはもこチキだった！", losemsg: "審査員が来た！\n良い川柳と判定されたのは:mk_senryu_kun:だった！", hp: 100, atk: 0.7, def: 1.5, atkx: 3, defx: 3, maxdmg: 0.95 },
     { name: "もこチキは猛勉強", limit: 1, msg: "を行うようだ。", short: "中", hpmsg: "勉強度", mark: "☆", mark2: "★", lToR: true, atkmsg: (dmg) => `もこチキは勉強に取り組んだ！\n勉強度が${dmg}ポイントアップ！`, defmsg: (dmg) => `もこチキは疲れて${dmg}ポイントのダメージ！`, abortmsg: "もこチキはサボりたくなったので勉強を一旦止めた！", winmsg: "もこチキは試験で高得点を得ることが出来た！", losemsg: "もこチキは疲れて勉強を諦めてしまった…", hp: 100, atk: 2, def: 0.8, atkx: 4, defx: 3, maxdmg: 0.95, abort: 0.05 },
     { name: "もこチキはTLの巡回", limit: 1, msg: "を行うようだ。", short: "中", hpmsg: "TL巡回完了度", mark: "☆", mark2: "★", lToR: true, atkmsg: (dmg) => `もこチキはTLの投稿にリアクションを押した！\nTL巡回完了度が${dmg}ポイントアップ！`, defmsg: (dmg) => `もこチキは疲れて${dmg}ポイントのダメージ！`, abortmsg: "もこチキはサボりたくなったのでTL巡回を一旦止めた！", winmsg: "もこチキはTLの投稿にリアクションを付け終わった！", losemsg: "もこチキは疲れて寝てしまった…", hp: 100, atk: 0.6, def: 2, atkx: 3, defx: 3, maxdmg: 0.95, abort: 0.05 },
     { name: ":mk_fly_sliver:", limit: 1, msg: "が一緒に空を飛びたいようだ。", short: "と飛行中", hpmsg: "高度", mark: "☆", mark2: "★", lToR: true, atkmsg: (dmg) => `もこチキは羽ばたいた！\n${dmg * 5}cm浮いた！`, defmsg: (dmg) => `もこチキは疲れて${dmg}ポイントのダメージ！`, winmsg: "もこチキはかなり高く飛行できた！", losemsg: "もこチキは疲れで墜落してしまった…", hp: 100, atk: 1.5, def: 1.5, atkx: 3.5, defx: 3.5 },
@@ -90,8 +90,8 @@ export default class extends Module {
 
             for (let i = 0; i < spd; i++) {
                 let dmg = Math.round((atk * tp * ((data.count ?? 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (Math.random() < ehpp - phpp ? 2 : 1)) * (1 / (((edef * (data.enemy.defx ?? 3)) + 100) / 100)))
-                if (maxdmg && dmg > (maxdmg / (1 / spd - i))) {
-                    dmg = Math.round(maxdmg / (1 / spd - i))
+                if (maxdmg && dmg > (maxdmg * (1 / spd - i))) {
+                    dmg = Math.round(maxdmg * (1 / spd - i))
                     maxdmg -= dmg
                 } else if (maxdmg) {
                     maxdmg -= dmg
@@ -130,7 +130,9 @@ export default class extends Module {
                         ? data.enemy.mark2.repeat(7 - ehpGaugeCount) + data.enemy.mark.repeat(ehpGaugeCount)
                         : data.enemy.mark2.repeat(ehpGaugeCount) + data.enemy.mark.repeat(7 - ehpGaugeCount)
                     const phpGaugeCount = Math.min(Math.ceil(php / (100 + lv * 3) / (1 / 7)), 7)
-                    const phpGauge = "★".repeat(phpGaugeCount) + "☆".repeat(7 - phpGaugeCount)
+                    const phpGauge = data.enemy.pLToR
+                        ? "★".repeat(7 - phpGaugeCount) + "☆".repeat(phpGaugeCount)
+                        : "★".repeat(phpGaugeCount) + "☆".repeat(7 - phpGaugeCount)
                     message += `\n${data.enemy.hpmsg ?? data.enemy.name} : ${ehpGauge}\n${data.enemy.hpmsg ? "体力" : ":mk_hi:"} : ${phpGauge}\n\n次回へ続く……`
                     data.count = (data.count ?? 1) + 1;
                     data.php = php;
