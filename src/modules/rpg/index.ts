@@ -151,9 +151,18 @@ export default class extends Module {
             data.lv = (data.lv ?? 1) + 1;
             let atkUp = (2 + Math.floor(Math.random() * 4));
             let totalUp = 7;
-            if (Math.random() < 0.5) totalUp += 1;
-            if (Math.random() < 0.3) totalUp += 1;
-            if (Math.random() < 0.2) totalUp += 1;
+            if (Math.random() < 0.4) {
+                totalUp += 1;
+                if (Math.random() < 0.5) atkUp += 1
+                if (Math.random() < 0.5){
+                    totalUp += 1;
+                    if (Math.random() < 0.5) atkUp += 1
+                    if (Math.random() < 0.2) {
+                        totalUp += 1
+                        if (Math.random() < 0.5) atkUp += 1
+                    }
+                }
+            }
             if (data.atk > 0 && data.def > 0) {
                 if (Math.random() < (Math.pow(0.5, data.def / data.atk) * 0.2)) atkUp = totalUp;
                 else if (Math.random() < (Math.pow(0.5, data.atk / data.def) * 0.2)) atkUp = 0;
