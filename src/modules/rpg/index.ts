@@ -11,6 +11,7 @@ const enemys = [
     { name: ":nisemokochiki_mzh:", msg: "が本物と成り替わろうと勝負を仕掛けてきた！", short: "と戦い中", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの羽ペチ！\n:nisemokochiki_mzh:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:nisemokochiki_mzh:の謎の攻撃！\nもこチキは${dmg}ポイントのダメージ！`, winmsg: "どっちが本物か分からせてやった！", losemsg: "もこチキはやられてしまった…", hp: 100, atk: 2, def: 0.5, atkx: 3, defx: 3 },
     { name: ":mokochoki:", msg: "がじゃんけんをしたいようだ。", short: "とじゃんけん中", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキはグーを出した！\n:mokochoki:の精神に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `もこチキはパーを出した！\nもこチキの精神に${dmg}ポイントのダメージ！`, winmsg: ":mokochoki:に負けを認めさせた！", losemsg: "もこチキは負けを認めた…", hp: 100, atk: 1, def: 1, atkx: 3, defx: 3 },
     { name: ":mk_senryu_kun:", msg: "が川柳で勝負したいようだ。", short: "と川柳考え中", mark: "☆", mark2: "★", lToR: true, atkmsg: (dmg) => `もこチキは考えた！\n川柳の完成度が${dmg}ポイントアップ！`, defmsg: (dmg) => `:mk_senryu_kun:はTLから情報を収集した！\n:mk_senryu_kun:の川柳の完成度が${dmg}ポイントアップ！`, winmsg: "審査員が来た！\n良い川柳と判定されたのはもこチキだった！", losemsg: "審査員が来た！\n良い川柳と判定されたのは:mk_senryu_kun:だった！", hp: 100, atk: 0.7, def: 1.5, atkx: 3, defx: 3, maxdmg: 0.95 },
+    { name: "もこチキは猛勉強", limit: 1, msg: "を行うようだ。", short: "中", hpmsg: "勉強度", mark: "☆", mark2: "★", lToR: true, atkmsg: (dmg) => `もこチキは勉強に取り組んだ！\n勉強度が${dmg}ポイントアップ！`, defmsg: (dmg) => `もこチキは疲れて${dmg}ポイントのダメージ！`, abortmsg: "もこチキはサボりたくなったので勉強を一旦止めた！", winmsg: "もこチキは試験で高得点を得ることが出来た！", losemsg: "もこチキは疲れて勉強を諦めてしまった…", hp: 100, atk: 2, def: 0.8, atkx: 4, defx: 3, maxdmg: 0.95, abort: 0.05 },
     { name: ":mk_fly_sliver:", limit: 1, msg: "が一緒に空を飛びたいようだ。", short: "と飛行中", hpmsg: "高度", mark: "☆", mark2: "★", lToR: true, atkmsg: (dmg) => `もこチキは羽ばたいた！\n${dmg * 5}cm浮いた！`, defmsg: (dmg) => `もこチキは疲れて${dmg}ポイントのダメージ！`, winmsg: "もこチキはかなり高く飛行できた！", losemsg: "もこチキは疲れで墜落してしまった…", hp: 100, atk: 1.5, def: 1.5, atkx: 3.5, defx: 3.5 },
     { name: ":muscle_mkchicken:", limit: 3, msg: "が力比べをしたいようだ。", short: "と力比べ中", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの羽バサバサ！:muscle_mkchicken:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:muscle_mkchicken:のマッスルアタック！\nもこチキは${dmg}ポイントのダメージ！`, abortmsg: ":muscle_mkchicken:は気合でもこチキの連続攻撃を止めた！", winmsg: "もこチキは:muscle_mkchicken:を倒した！", losemsg: "もこチキはやられてしまった…", hp: 100, atk: 4, def: 0.3, atkx: 6, defx: 2, abort: 0.3 },
     { name: ":mk_chickenda:", limit: 5, msg: "が勝負を仕掛けてきた！", short: "と戦い中", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの光魔法！\n:mk_chickenda:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mk_chickenda:の†！\nもこチキに${dmg}ポイントのダメージ！`, winmsg: ":mk_chickenda:は帰っていった！", losemsg: "もこチキはやられてしまった…", hp: 100, atk: 5, def: 5, maxdmg: 0.6, atkx: 5, defx: 5 },
@@ -94,11 +95,11 @@ export default class extends Module {
                 }
                 message += data.enemy.atkmsg(dmg) + "\n"
                 ehp -= dmg
+                if (ehp <= 0) break;
                 if (data.enemy.abort && Math.random() < data.enemy.abort) {
                     if (data.enemy.abortmsg) message += data.enemy.abortmsg + "\n"
                     break;
                 }
-                if (ehp <= 0) break;
             }
 
             if (ehp <= 0) {
