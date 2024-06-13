@@ -191,7 +191,7 @@ export default class extends Module {
                         message += "\n" + data.enemy.losemsg + "\n\n:oyoo:"
                     } else {
                         message += "\n" + data.enemy.losemsg + `\n(今回の旅の日数 : ${data.endress + 1}日)`
-                        if (data.endress > (data.maxEndress ?? 0)) data.maxEndress = data.endress;
+                        if ((data.endress ?? 0) > (data.maxEndress ?? 0)) data.maxEndress = data.endress;
                         data.endress = 0;
                     }
                     data.streak = 0;
