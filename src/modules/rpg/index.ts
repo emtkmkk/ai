@@ -181,8 +181,8 @@ export default class extends Module {
                 const dmg = Math.round((eatk * (data.enemy.atkx ?? 3) * ((data.count ?? 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (Math.random() < phpp - ehpp ? 2 : 1)) * (1 / (((def * tp) + 100) / 100)))
                 php -= dmg
                 message += "\n" + data.enemy.defmsg(dmg) + "\n"
-                if (php <= 0 && !data.enemy.notEndure && count === 1 && Math.random() < 0.05 + (0.05 * (data.endure ?? 0))) {
-                    message += "もこチキは気合を出して踏ん張った！\n"
+                if (php <= 0 && !data.enemy.notEndure && count === 1 && Math.random() < 0.05 + (0.1 * (data.endure ?? 0))) {
+                    message += "もこチキは気合で耐えた！\n"
                     php = 1;
                     data.endure = 0
                 }
