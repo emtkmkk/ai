@@ -143,7 +143,7 @@ export default class extends Module {
                 }
             }
 
-            message += "\n"
+            if (message !== `開始！\n\n`) message += "\n"
 
             for (let i = 0; i < spd; i++) {
                 let dmg = Math.round((atk * tp * ((data.count ?? 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (Math.random() < ehpp - phpp ? 2 : 1)) * (1 / (((edef * (data.enemy.defx ?? 3)) + 100) / 100)))
