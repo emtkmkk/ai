@@ -77,7 +77,7 @@ export default class extends Module {
                 const filteredEnemys = enemys.filter((x) => !x.limit || x.limit(data, msg.friend)).filter((x) => !data.preEnemy || x.name != data.preEnemy);
                 data.enemy = filteredEnemys[Math.floor(filteredEnemys.length * Math.random())]
                 cw = `${data.enemy.name}${data.enemy.msg}`
-                message += `開始！`
+                message += `開始！\n\n`
             } else {
                 data.enemy = enemys.find((x) => data.enemy.name === x.name);
                 cw = `${data.enemy.name}${data.enemy.short} ${count}ターン目`
