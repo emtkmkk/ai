@@ -70,18 +70,18 @@ export default class extends Module {
             let php = data.php ?? 100;
             let count = data.count ?? 1
             let message = ""
-            let cw = acct(msg.user);
+            let cw = acct(msg.user) + " ";
             if (!data.enemy || count === 1) {
                 count = 1
                 data.count = 1
                 php = 100 + lv * 3
                 const filteredEnemys = enemys.filter((x) => !x.limit || x.limit(data, msg.friend)).filter((x) => !data.preEnemy || x.name != data.preEnemy);
                 data.enemy = filteredEnemys[Math.floor(filteredEnemys.length * Math.random())]
-                cw = `${data.enemy.name}${data.enemy.msg}`
+                cw += `${data.enemy.name}${data.enemy.msg}`
                 message += `開始！\n\n`
             } else {
                 data.enemy = enemys.find((x) => data.enemy.name === x.name);
-                cw = `${data.enemy.name}${data.enemy.short} ${count}ターン目`
+                cw += `${data.enemy.name}${data.enemy.short} ${count}ターン目`
             }
 
             if (continuousFlg) {
