@@ -184,7 +184,7 @@ export default class extends Module {
             let atkUp = (2 + Math.floor(Math.random() * 4));
             let totalUp = 7;
 
-            while (data.lv >= 3 && data.atk + data.def < (data.lv - 2) * 7) {
+            while (data.lv >= 3 && data.atk + data.def + totalUp < (data.lv - 1) * 7) {
                 totalUp += 1
                 if (Math.random() < 0.5) atkUp += 1
             }
