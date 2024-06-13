@@ -7,9 +7,9 @@ import { genItem } from '@/vocabulary';
 import getDate from '@/utils/get-date';
 
 const enemys = [
-    { name: ":mk_catchicken:", msg: "が撫でてほしいようだ。", short: "を撫で中", hpmsg: "満足度", mark: "☆", mark2: "★", lToR: true, atkmsg: (dmg) => `もこチキの撫で！\n${dmg}ポイント満足させた！`, defmsg: (dmg) => `もこチキは疲れて${dmg}ポイントのダメージ！`, winmsg: ":mk_catchicken:を満足させた！", losemsg: "もこチキは疲れで倒れてしまった…", atk: 1, def: 1, atkx: 3, defx: 3 },
+    { name: ":mk_catchicken:", limit: (data) =>  (data.streak ?? 0) < 3, msg: "が撫でてほしいようだ。", short: "を撫で中", hpmsg: "満足度", mark: "☆", mark2: "★", lToR: true, atkmsg: (dmg) => `もこチキの撫で！\n${dmg}ポイント満足させた！`, defmsg: (dmg) => `もこチキは疲れて${dmg}ポイントのダメージ！`, winmsg: ":mk_catchicken:を満足させた！", losemsg: "もこチキは疲れで倒れてしまった…", atk: 1, def: 1, atkx: 3, defx: 3 },
     { name: ":nisemokochiki_mzh:", msg: "が本物と成り替わろうと勝負を仕掛けてきた！", short: "と戦い中", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの羽ペチ！\n:nisemokochiki_mzh:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:nisemokochiki_mzh:の謎の攻撃！\nもこチキは${dmg}ポイントのダメージ！`, winmsg: "どっちが本物か分からせてやった！", losemsg: "もこチキはやられてしまった…", atk: 2, def: 0.5, atkx: 3, defx: 3 },
-    { name: ":mokochoki:", msg: "がじゃんけんをしたいようだ。", short: "とじゃんけん中", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキはグーを出した！\n:mokochoki:の精神に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `もこチキはパーを出した！\nもこチキの精神に${dmg}ポイントのダメージ！`, winmsg: ":mokochoki:に負けを認めさせた！", losemsg: "もこチキは負けを認めた…", atk: 1, def: 1, atkx: 3, defx: 3 },
+    { name: ":mokochoki:", limit: (data) =>  (data.streak ?? 0) < 3, msg: "がじゃんけんをしたいようだ。", short: "とじゃんけん中", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキはグーを出した！\n:mokochoki:の精神に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `もこチキはパーを出した！\nもこチキの精神に${dmg}ポイントのダメージ！`, winmsg: ":mokochoki:に負けを認めさせた！", losemsg: "もこチキは負けを認めた…", atk: 1, def: 1, atkx: 3, defx: 3 },
     { name: ":mk_senryu_kun:", msg: "が川柳で勝負したいようだ。", short: "と川柳考え中", mark: "☆", mark2: "★", lToR: true, pLToR: true, atkmsg: (dmg) => `もこチキは考えた！\n川柳の完成度が${dmg}ポイントアップ！`, defmsg: (dmg) => `:mk_senryu_kun:はTLから情報を収集した！\n:mk_senryu_kun:の川柳の完成度が${dmg}ポイントアップ！`, winmsg: "審査員が来た！\n良い川柳と判定されたのはもこチキだった！", losemsg: "審査員が来た！\n良い川柳と判定されたのは:mk_senryu_kun:だった！", atk: 0.7, def: 1.5, atkx: 3, defx: 3, maxdmg: 0.95 },
     { name: "もこチキは猛勉強", limit: (data) => (data.streak ?? 0) >= 1, msg: "を行うようだ。", short: "中", hpmsg: "勉強度", mark: "☆", mark2: "★", lToR: true, atkmsg: (dmg) => `もこチキは勉強に取り組んだ！\n勉強度が${dmg}ポイントアップ！`, defmsg: (dmg) => `もこチキは疲れて${dmg}ポイントのダメージ！`, abortmsg: "もこチキはサボりたくなったので勉強を一旦止めた！", winmsg: "もこチキは試験で高得点を得ることが出来た！", losemsg: "もこチキは疲れて勉強を諦めてしまった…", maxhp: 320, atk: 2, def: 0.8, atkx: 4, defx: 3, maxdmg: 0.95, abort: 0.05 },
     { name: "もこチキはTLの巡回", limit: (data) => (data.streak ?? 0) >= 1, msg: "を行うようだ。", short: "中", hpmsg: "TL巡回完了度", mark: "☆", mark2: "★", lToR: true, atkmsg: (dmg) => `もこチキはTLの投稿にリアクションを押した！\nTL巡回完了度が${dmg}ポイントアップ！`, defmsg: (dmg) => `もこチキは疲れて${dmg}ポイントのダメージ！`, abortmsg: "もこチキはサボりたくなったのでTL巡回を一旦止めた！", winmsg: "もこチキはTLの投稿にリアクションを付け終わった！", losemsg: "もこチキは疲れて寝てしまった…", atk: 0.6, def: 2, atkx: 3, defx: 3, maxdmg: 0.95, abort: 0.05 },
@@ -39,13 +39,20 @@ export default class extends Module {
                     reaction: 'confused'
                 };
             }
+            let continuousFlg = false;
+            if (data.lastPlayedAt === (new Date().getHours() < 12 ? getDate(-1) + "/18" : new Date().getHours() < 18 ? getDate() : getDate() + "/12")) {
+                continuousFlg = true;
+            }
             data.lastPlayedAt = getDate() + (new Date().getHours() < 12 ? "" : new Date().getHours() < 18 ? "/12" : "/18");
             const chart = await this.ai.api('charts/user/notes', {
                 span: 'day',
                 limit: 2,
                 userId: msg.userId
             })
-            const postCount = (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.renote?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
+            const postCount = Math.max(
+                (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.renote?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
+                (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.renote?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
+            ) + (continuousFlg ? 10 : 0)
             const tp =
                 postCount >= 100
                     ? (postCount - 100) / 100 + 4
@@ -62,17 +69,24 @@ export default class extends Module {
             let php = data.php ?? 100;
             let count = data.count ?? 1
             let message = ""
+            let cw = ""
             if (!data.enemy || count === 1) {
                 count = 1
                 data.count = 1
                 php = 100 + lv * 3
                 const filteredEnemys = enemys.filter((x) => !x.limit || x.limit(data, msg.friend)).filter((x) => !data.preEnemy || x.name != data.preEnemy);
                 data.enemy = filteredEnemys[Math.floor(filteredEnemys.length * Math.random())]
-                message += `${data.enemy.name}${data.enemy.msg}\n\n開始！\n\n`
+                cw = `${data.enemy.name}${data.enemy.msg}`
+                message += `開始！`
             } else {
                 data.enemy = enemys.find((x) => data.enemy.name === x.name);
-                message += `${data.enemy.name}${data.enemy.short} ${count}ターン目\n\n`
+                cw = `${data.enemy.name}${data.enemy.short} ${count}ターン目`
             }
+
+            if (continuousFlg) {
+                message += `連続RPGボーナス！\nパワー・防御がアップした！\n`
+            }
+
             const atk = 5 + (data.atk ?? 0) + Math.floor(((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) * (100 + (data.atk ?? 0)) / 100);
             const def = 5 + (data.def ?? 0) + Math.floor(((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) * (100 + (data.def ?? 0)) / 100);
             let spd = Math.floor((msg.friend.love ?? 0) / 100) + 1;
@@ -81,18 +95,34 @@ export default class extends Module {
             let phpp = php / (100 + lv * 3);
             let ehpp = ehp / mehp;
             let bonus = 0;
+            let abort = 0;
 
-            if (spd === 2 && Math.random() < 0.1) spd = 3;
-            if (spd === 1 && Math.random() < 0.5) spd = 2;
+            if (spd === 2 && Math.random() < 0.1) {
+                message += "もこチキは体の調子が良さそうだ！\n行動回数+1！\n"
+                spd = 3;
+            }
+            if (spd === 1 && Math.random() < 0.5) {
+                message += "もこチキは体の調子が良さそうだ！\n行動回数+1！\n"
+                spd = 2;
+            }
 
             const eatk = lv * 3.5 * data.enemy.atk;
             const edef = lv * 3.5 * data.enemy.def;
             let maxdmg = data.enemy.maxdmg ? mehp * data.enemy.maxdmg : undefined
 
+            for (let i = 1; i < spd; i++) {
+                if (data.enemy.abort && Math.random() < data.enemy.abort) {
+                    abort = i;
+                    break;
+                }
+            }
+
+            message += "\n"
+
             for (let i = 0; i < spd; i++) {
                 let dmg = Math.round((atk * tp * ((data.count ?? 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (Math.random() < ehpp - phpp ? 2 : 1)) * (1 / (((edef * (data.enemy.defx ?? 3)) + 100) / 100)))
-                if (maxdmg && maxdmg > 0 && dmg > Math.round(maxdmg * (1 / (spd - i)))) {
-                    dmg = Math.round(maxdmg * (1 / (spd - i)))
+                if (maxdmg && maxdmg > 0 && dmg > Math.round(maxdmg * (1 / ((abort || spd) - i)))) {
+                    dmg = Math.round(maxdmg * (1 / ((abort || spd) - i)))
                     maxdmg -= dmg
                 } else if (maxdmg && maxdmg > 0) {
                     maxdmg -= dmg
@@ -100,7 +130,7 @@ export default class extends Module {
                 message += data.enemy.atkmsg(dmg) + "\n"
                 ehp -= dmg
                 if (ehp <= 0) break;
-                if ((i + 1) < spd && data.enemy.abort && Math.random() < data.enemy.abort) {
+                if ((i + 1) === abort) {
                     if (data.enemy.abortmsg) message += data.enemy.abortmsg + "\n"
                     break;
                 }
@@ -153,18 +183,17 @@ export default class extends Module {
             data.lv = (data.lv ?? 1) + 1;
             let atkUp = (2 + Math.floor(Math.random() * 4));
             let totalUp = 7;
-            if (Math.random() < 0.4) {
+
+            while (data.lv >= 3 && data.atk + data.def < (data.lv - 2) * 7) {
+                totalUp += 1
+                if (Math.random() < 0.5) atkUp += 1
+            }
+
+            while (Math.random() < 0.335) {
                 totalUp += 1;
                 if (Math.random() < 0.5) atkUp += 1
-                if (Math.random() < 0.5){
-                    totalUp += 1;
-                    if (Math.random() < 0.5) atkUp += 1
-                    if (Math.random() < 0.2) {
-                        totalUp += 1
-                        if (Math.random() < 0.5) atkUp += 1
-                    }
-                }
             }
+
             if (data.atk > 0 && data.def > 0) {
                 if (Math.random() < (Math.pow(0.5, data.def / data.atk) * 0.2)) atkUp = totalUp;
                 else if (Math.random() < (Math.pow(0.5, data.atk / data.def) * 0.2)) atkUp = 0;
@@ -173,7 +202,8 @@ export default class extends Module {
             data.def = (data.def ?? 0) + totalUp - atkUp;
 
             message += [
-				`\n\n今回のレベルアップ :`,
+                `\n${new Date().getHours() < 12 ? "12時以降に" : new Date().getHours() < 18 ? "18時以降に" : "明日以降に"}続きを遊べます。`,
+				`\n今回のレベルアップ :`,
 				`  Lv : ${data.lv ?? 1} (+1)`,
 				`  パワー : ${data.atk ?? 0} (+${atkUp + bonus})`,
 				`  防御 : ${data.def ?? 0} (+${totalUp - atkUp + bonus})`,
@@ -182,6 +212,7 @@ export default class extends Module {
             msg.friend.setPerModulesData(this, data);
 
             msg.reply(`\n<center>${message}</center>`, {
+                cw,
                 visibility: 'public'
             });
 
