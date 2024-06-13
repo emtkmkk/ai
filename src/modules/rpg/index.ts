@@ -52,17 +52,17 @@ export default class extends Module {
             const postCount = Math.max(
                 (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.renote?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
                 (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.renote?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
-            ) + (continuousFlg ? 10 : 0)
+            )
             const tp =
                 postCount >= 100
-                    ? (postCount - 100) / 100 + 4
+                    ? (postCount - 100) / 100 + 4 + (continuousFlg ? 0.25 : 0)
                     : postCount >= 50
-                        ? (postCount - 50) / 50 + 3
+                        ? (postCount - 50) / 50 + 3 + (continuousFlg ? 0.5 : 0)
                         : postCount >= 20
-                            ? (postCount - 20) / 30 + 2
+                            ? (postCount - 20) / 30 + 2 + (continuousFlg ? 0.5 : 0)
                             : postCount >= 5
-                                ? (postCount - 5) / 15 + 1
-                                : Math.max(postCount / 5, 0.3)
+                                ? (postCount - 5) / 15 + 1 + (continuousFlg ? 0.5 : 0)
+                                : Math.max(postCount / 5, (continuousFlg ? 1 : 0.3))
 
 
             const lv = data.lv ?? 1
@@ -202,11 +202,11 @@ export default class extends Module {
             data.def = (data.def ?? 0) + totalUp - atkUp;
 
             message += [
-                `\n${new Date().getHours() < 12 ? "12時以降に" : new Date().getHours() < 18 ? "18時以降に" : "明日以降に"}続きを遊べます。`,
-				`\n今回のレベルアップ :`,
+				`\n\n今回のレベルアップ :`,
 				`  Lv : ${data.lv ?? 1} (+1)`,
 				`  パワー : ${data.atk ?? 0} (+${atkUp + bonus})`,
 				`  防御 : ${data.def ?? 0} (+${totalUp - atkUp + bonus})`,
+                `\n次回は${new Date().getHours() < 12 ? "12時以降に" : new Date().getHours() < 18 ? "18時以降に" : "明日以降に"}に遊べます。`,
 			].filter(Boolean).join("\n")
 
             msg.friend.setPerModulesData(this, data);
