@@ -5,6 +5,7 @@ import serifs from '@/serifs';
 import * as seedrandom from 'seedrandom';
 import { genItem } from '@/vocabulary';
 import getDate from '@/utils/get-date';
+import { acct } from '@/utils/acct';
 
 const enemys = [
     { name: ":mk_catchicken:", limit: (data) =>  (data.streak ?? 0) < 3, msg: "が撫でてほしいようだ。", short: "を撫で中", hpmsg: "満足度", mark: "☆", mark2: "★", lToR: true, atkmsg: (dmg) => `もこチキの撫で！\n${dmg}ポイント満足させた！`, defmsg: (dmg) => `もこチキは疲れて${dmg}ポイントのダメージ！`, winmsg: ":mk_catchicken:を満足させた！", losemsg: "もこチキは疲れで倒れてしまった…", atk: 1, def: 1, atkx: 3, defx: 3 },
@@ -69,7 +70,7 @@ export default class extends Module {
             let php = data.php ?? 100;
             let count = data.count ?? 1
             let message = ""
-            let cw = ""
+            let cw = acct(msg.user);
             if (!data.enemy || count === 1) {
                 count = 1
                 data.count = 1
@@ -211,7 +212,7 @@ export default class extends Module {
 
             msg.friend.setPerModulesData(this, data);
 
-            msg.reply(`\n<center>${message}</center>`, {
+            msg.reply(`<center>${message}</center>`, {
                 cw,
                 visibility: 'public'
             });
