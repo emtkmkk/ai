@@ -206,7 +206,7 @@ export default class extends Module {
 				`  Lv : ${data.lv ?? 1} (+1)`,
 				`  パワー : ${data.atk ?? 0} (+${atkUp + bonus})`,
 				`  防御 : ${data.def ?? 0} (+${totalUp - atkUp + bonus})`,
-                `\n次回は${new Date().getHours() < 12 ? "12時以降に" : new Date().getHours() < 18 ? "18時以降に" : "明日以降に"}に遊べます。`,
+                `\n次回は${new Date().getHours() < 12 ? "12時以降に" : new Date().getHours() < 18 ? "18時以降に" : "明日以降に"}遊べます。`,
 			].filter(Boolean).join("\n")
 
             msg.friend.setPerModulesData(this, data);
