@@ -217,7 +217,7 @@ export default class extends Module {
                 if (php <= 0 && !data.enemy.notEndure && count === 1 && Math.random() < 0.05 + (0.1 * (data.endure ?? 0))) {
                     message += "もこチキは気合で耐えた！\n"
                     php = 1;
-                    data.endure = 0
+                    data.endure = Math.max(data.endure - 1, 0);
                 }
                 if (php <= 0) {
                     if (data.enemy.name !== "もこチキは旅") {
