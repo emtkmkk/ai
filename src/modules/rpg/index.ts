@@ -229,7 +229,7 @@ export default class extends Module {
                     if (data.enemy.name !== "もこチキは旅") {
                         message += "\n" + data.enemy.losemsg + "\n\n:oyoo:"
                     } else {
-                        message += "\n" + data.enemy.losemsg + `\n(今回の旅の日数 : ${data.endress + 1}日)`
+                        message += "\n" + data.enemy.losemsg + `\n(今回の旅の日数 : ${(data.endress ?? 0) + 1}日)`
                         if ((data.endress ?? 0) > (data.maxEndress ?? 0)) data.maxEndress = data.endress;
                         data.endress = 0;
                     }
