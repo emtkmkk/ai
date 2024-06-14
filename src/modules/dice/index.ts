@@ -17,6 +17,17 @@ export default class extends Module {
 	private async mentionHook(msg: Message) {
 		if (msg.text == null) return false;
 
+		if  (msg.text.endsWith("ですか？")) {
+			if (Math.random() < 0.5) {
+				msg.reply("はい");
+			} else {
+				msg.reply("いいえ");
+			}
+			return {
+				reaction:'love'
+			};
+		}
+
 		const query = msg.text.match(/([0-9]+)[dD]([0-9]+)/);
 
 		if (query == null) return false;
