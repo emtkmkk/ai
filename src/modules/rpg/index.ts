@@ -52,15 +52,18 @@ export default class extends Module {
                 continuousFlg = true;
             }
             let count = data.count ?? 1
-            let endressFlg = false;
             if (msg.includes(['旅モード'])) {
-                if (!data.enemy || count === 1) {   
-                    endressFlg = true;
+                if (!data.enemy || count === 1) {
+                    data.endressFlg = true;
                 } else {
                     msg.reply(`探索中以外の状態では旅モードは指定できません。探索中になったらもう一度試してください。`);
                     return {
                         reaction: 'confused'
                     };
+                }
+            } else {
+                if (!data.enemy || count === 1) {
+                    data.endressFlg = false;
                 }
             }
             data.lastPlayedAt = getDate() + (new Date().getHours() < 12 ? "" : new Date().getHours() < 18 ? "/12" : "/18");
@@ -113,7 +116,7 @@ export default class extends Module {
                 data.count = 1
                 php = 100 + lv * 3
                 const filteredEnemys = enemys.filter((x) => !(data.clearEnemy ?? []).includes(x.name) && (!x.limit || x.limit(data, msg.friend)));
-                if (filteredEnemys.length && !endressFlg) {
+                if (filteredEnemys.length && !data.endressFlg) {
                     const notClearedEnemys = filteredEnemys.filter((x) => !(data.clearHistory ?? []).includes(x.name));
                     if (notClearedEnemys.length) {
                         data.enemy = notClearedEnemys[Math.floor(notClearedEnemys.length * Math.random())]
@@ -121,7 +124,7 @@ export default class extends Module {
                         data.enemy = filteredEnemys[Math.floor(filteredEnemys.length * Math.random())]
                     }
                 } else {
-                    if (!filteredEnemys.length) endressFlg = false
+                    if (!filteredEnemys.length) data.endressFlg = false
                     data.enemy = endressEnemy
                 }
                 cw += `${data.enemy.msg}`
@@ -198,7 +201,7 @@ export default class extends Module {
                 if (data.enemy.name !== "もこチキは旅") {
                     message += "\n" + data.enemy.winmsg + "\n\n勝利！おめでとう！"
                 } else {
-                    message += "\n" + data.enemy.winmsg + (endressFlg ? "\n（次の日へ進む場合は、次回も旅モードを指定してください）" : "")
+                    message += "\n" + data.enemy.winmsg + (data.endressFlg ? "\n（次の日へ進む場合は、次回も旅モードを指定してください）" : "")
                     data.endress += 1;
                 }
                 data.streak = (data.streak ?? 0) + 1;
@@ -230,7 +233,7 @@ export default class extends Module {
                         if ((data.endress ?? 0) > (data.maxEndress ?? 0)) data.maxEndress = data.endress;
                         data.endress = 0;
                     }
-                    if (!endressFlg) {
+                    if (!data.endressFlg) {
                         data.streak = 0;
                         data.clearEnemy = [];
                     }
