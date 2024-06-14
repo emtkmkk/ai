@@ -19,9 +19,9 @@ export default class extends Module {
 
 		if  (msg.text.endsWith("ですか？")) {
 			if (Math.random() < 0.5) {
-				msg.reply("はい");
+				msg.reply("はい", {visibility: 'public'});
 			} else {
-				msg.reply("いいえ");
+				msg.reply("いいえ", {visibility: 'public'});
 			}
 			return {
 				reaction:'love'
