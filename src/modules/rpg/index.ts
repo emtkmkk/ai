@@ -47,7 +47,6 @@ export default class extends Module {
             if (data.lastPlayedAt === (new Date().getHours() < 12 ? getDate(-1) + "/18" : new Date().getHours() < 18 ? getDate() : getDate() + "/12")) {
                 continuousFlg = true;
             }
-            data.lastPlayedAt = getDate() + (new Date().getHours() < 12 ? "" : new Date().getHours() < 18 ? "/12" : "/18");
             let count = data.count ?? 1
             let endressFlg = false;
             if (msg.includes(['旅モード'])) {
@@ -60,6 +59,7 @@ export default class extends Module {
                     };
                 }
             }
+            data.lastPlayedAt = getDate() + (new Date().getHours() < 12 ? "" : new Date().getHours() < 18 ? "/12" : "/18");
             const chart = await this.ai.api('charts/user/notes', {
                 span: 'day',
                 limit: 2,
