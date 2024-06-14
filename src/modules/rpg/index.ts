@@ -36,6 +36,7 @@ export default class extends Module {
         if (msg.includes(['rpg'])) {
             const data = msg.friend.getPerModulesData(this);
             if (!data.clearEnemy) data.clearEnemy = [data.preEnemy ?? ""].filter(Boolean);
+            if (!data.clearHistory) data.clearHistory = data.clearEnemy;
             if (data.lastPlayedAt === getDate() + (new Date().getHours() < 12 ? "" : new Date().getHours() < 18 ? "/12" : "/18") && data.ehp <= 110 + data.lv * 3 + (data.winCount ?? 0) * 5) {
                 msg.reply(`RPGモードは0~11時、12~17時、18~23時の1日3回です。\n${new Date().getHours() < 12 ? "12時以降" : new Date().getHours() < 18 ? "18時以降" : "明日"}になったらもう一度試してください。`);
                 return {
@@ -47,6 +48,18 @@ export default class extends Module {
                 continuousFlg = true;
             }
             data.lastPlayedAt = getDate() + (new Date().getHours() < 12 ? "" : new Date().getHours() < 18 ? "/12" : "/18");
+            let count = data.count ?? 1
+            let endressFlg = false;
+            if (msg.includes(['旅モード'])) {
+                if (!data.enemy || count === 1) {   
+                    endressFlg = true;
+                } else {
+                    msg.reply(`探索中以外の状態では旅モードは指定できません。探索中になったらもう一度試してください。`);
+                    return {
+                        reaction: 'confused'
+                    };
+                }
+            }
             const chart = await this.ai.api('charts/user/notes', {
                 span: 'day',
                 limit: 2,
@@ -70,7 +83,6 @@ export default class extends Module {
 
             const lv = data.lv ?? 1
             let php = data.php ?? 100;
-            let count = data.count ?? 1
             let message = ""
             let cw = acct(msg.user) + " ";
             let endressEnemy = {
@@ -96,9 +108,14 @@ export default class extends Module {
                 count = 1
                 data.count = 1
                 php = 100 + lv * 3
-                const filteredEnemys = enemys.filter((x) => !(data.clearEnemy ?? []).includes(x.name) && (!x.limit || x.limit(data, msg.friend))).filter((x) => !data.preEnemy || x.name != data.preEnemy);
-                if (filteredEnemys.length) {
-                    data.enemy = filteredEnemys[Math.floor(filteredEnemys.length * Math.random())]
+                const filteredEnemys = enemys.filter((x) => !(data.clearEnemy ?? []).includes(x.name) && (!x.limit || x.limit(data, msg.friend)));
+                if (filteredEnemys.length && !endressFlg) {
+                    const notClearedEnemys = filteredEnemys.filter((x) => !(data.clearHistory ?? []).includes(x.name));
+                    if (notClearedEnemys.length) {
+                        data.enemy = notClearedEnemys[Math.floor(notClearedEnemys.length * Math.random())]
+                    } else {
+                        data.enemy = filteredEnemys[Math.floor(filteredEnemys.length * Math.random())]
+                    }
                 } else {
                     data.enemy = endressEnemy
                 }
@@ -172,6 +189,7 @@ export default class extends Module {
                 data.streak = (data.streak ?? 0) + 1;
                 if (data.count == 1) data.streak = (data.streak ?? 0) + 1;
                 data.clearEnemy.push(data.enemy.name);
+                if (!(data.clearHistory ?? []).includes(data.enemy.name)) data.clearHistory.push(data.enemy.name);
                 data.enemy = null;
                 data.count = 1;
                 data.winCount = (data.winCount ?? 0) + 1
