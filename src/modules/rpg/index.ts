@@ -117,6 +117,7 @@ export default class extends Module {
                         data.enemy = filteredEnemys[Math.floor(filteredEnemys.length * Math.random())]
                     }
                 } else {
+                    if (!filteredEnemys.length) endressFlg = false
                     data.enemy = endressEnemy
                 }
                 cw += `${data.enemy.name}${data.enemy.msg}`
