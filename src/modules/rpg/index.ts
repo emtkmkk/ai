@@ -124,11 +124,11 @@ export default class extends Module {
                     if (!filteredEnemys.length) endressFlg = false
                     data.enemy = endressEnemy
                 }
-                cw += `${data.enemy.name}${data.enemy.msg}`
+                cw += `${data.enemy.msg}`
                 message += `$[x2 :mk_hero:]\n\n開始！\n\n`
             } else {
                 data.enemy = [...enemys, endressEnemy].find((x) => data.enemy.name === x.name);
-                cw += `${data.enemy.name}${data.enemy.short} ${count}ターン目`
+                cw += `${data.enemy.short} ${count}ターン目`
                 let mehp = Math.min((100 + lv * 3) + ((data.winCount ?? 0) * 5), (data.enemy.maxhp ?? 300));
                 let ehp = Math.min(data.ehp ?? 100, mehp);
                 message += this.showStatus(data, php, ehp, mehp) + "\n\n"
