@@ -183,7 +183,7 @@ export default class extends Module {
                 if (data.enemy.name !== "もこチキは旅") {
                     message += "\n" + data.enemy.winmsg + "\n\n勝利！おめでとう！"
                 } else {
-                    message += "\n" + data.enemy.winmsg
+                    message += "\n" + data.enemy.winmsg + (endressFlg ? "\n（次の日へ進む場合は、次回も旅モードを指定してください）" : "")
                     data.endress += 1;
                 }
                 data.streak = (data.streak ?? 0) + 1;
