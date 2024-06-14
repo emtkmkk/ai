@@ -62,41 +62,43 @@ export default class Friend {
 					throw new Error('Failed to insert friend doc');
 				}
 
+				this.doc = inserted;
+
 				if (opts.user.alsoKnownAs?.length) {
-					const doc2 = inserted;
 					const moveto = opts.user.alsoKnownAs[0];
 					try {
 						const moveUserFriends = this.ai.friends.findOne({
 							'user.uri': moveto
 						} as any);
-						const doc1 = new Friend(this.ai, { doc: moveUserFriends });
-						console.log ('move user ' + doc1.userId + ' -> ' + doc2.userId)
-						doc2.doc.name = doc2.name || doc1.name;
-						let x = 0;
-						let y = 0;
-						while (y < doc1.love) {
-							const amount = y > 100 ? (Math.ceil(0.5 / ((y || 0) * 2 / 100 - 1) * 100) / 100) : 0.5
-							y = parseFloat((y + amount || 0).toFixed(2))
-							x += 1
+						if (moveUserFriends) {
+							const doc1 = new Friend(this.ai, { doc: moveUserFriends });
+							console.log ('move user ' + doc1.userId + ' -> ' + this.userId)
+							this.doc.name = this.doc.name || doc1.name;
+							let x = 0;
+							let y = 0;
+							while (y < doc1.love) {
+								const amount = y > 100 ? (Math.ceil(0.5 / ((y || 0) * 2 / 100 - 1) * 100) / 100) : 0.5
+								y = parseFloat((y + amount || 0).toFixed(2))
+								x += 1
+							}
+							console.log(`${x} : ${y}`)
+							for (let i = 0; i < x; i++) {
+								this.incLove(0.1, "merge")
+							}
+							doc1.doc.love = 0;
+							this.doc.married = doc1.married || this.married;
+							this.doc.perModulesData = this.mergeAndSum(doc1.doc.perModulesData, this.doc.perModulesData);
+							this.doc.kazutoriData = this.mergeAndSum(doc1.doc.kazutoriData, this.doc.kazutoriData)
+							doc1.doc.kazutoriData = { winCount: 0, playCount: 0, rate: 0, inventory: [] };
+							this.save();
+							doc1.save();
+						} else {
+							console.log ('move user not found ' + opts.user.id)
 						}
-						console.log(`${x} : ${y}`)
-						for (let i = 0; i < x; i++) {
-							doc2.incLove(0.1, "merge")
-						}
-						doc1.doc.love = 0;
-						doc2.doc.married = doc1.married || doc2.married;
-						doc2.doc.perModulesData = this.mergeAndSum(doc1.doc.perModulesData, doc2.doc.perModulesData);
-						doc2.doc.kazutoriData = this.mergeAndSum(doc1.doc.kazutoriData, doc2.doc.kazutoriData)
-						doc1.doc.kazutoriData = { winCount: 0, playCount: 0, rate: 0, inventory: [] };
-						doc2.save();
-						doc1.save();
-						inserted = doc2;
 					} catch {
 						console.log ('move user error ' + opts.user.id)
 					}
 				}
-
-				this.doc = inserted;
 			} else {
 				this.doc = exist;
 				this.doc.user = { ...this.doc.user, ...opts.user };
