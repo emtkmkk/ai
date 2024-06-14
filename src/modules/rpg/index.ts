@@ -121,13 +121,19 @@ export default class extends Module {
                     data.enemy = endressEnemy
                 }
                 cw += `${data.enemy.name}${data.enemy.msg}`
-                message += `開始！\n\n`
+                message += `$[x2 :mk_hero:]\n\n開始！\n\n`
             } else {
                 data.enemy = [...enemys, endressEnemy].find((x) => data.enemy.name === x.name);
                 cw += `${data.enemy.name}${data.enemy.short} ${count}ターン目`
+                let mehp = Math.min((100 + lv * 3) + ((data.winCount ?? 0) * 5), (data.enemy.maxhp ?? 300));
+                let ehp = Math.min(data.ehp ?? 100, mehp);
+                message += this.showStatus(data, php, ehp, mehp) + "\n\n"
             }
 
+            let buff = 0;
+
             if (continuousFlg) {
+                buff += 1
                 message += `連続RPGボーナス！\nパワー・防御がアップした！\n`
             }
 
@@ -142,10 +148,12 @@ export default class extends Module {
             let abort = 0;
 
             if (spd === 2 && Math.random() < 0.1) {
+                buff += 1
                 message += "もこチキは体の調子が良さそうだ！\n行動回数+1！\n"
                 spd = 3;
             }
             if (spd === 1 && Math.random() < 0.5) {
+                buff += 1
                 message += "もこチキは体の調子が良さそうだ！\n行動回数+1！\n"
                 spd = 2;
             }
@@ -161,7 +169,7 @@ export default class extends Module {
                 }
             }
 
-            if (message !== `開始！\n\n`) message += "\n"
+            if (buff === 0) message += "\n"
 
             for (let i = 0; i < spd; i++) {
                 let dmg = Math.round((atk * tp * ((data.count ?? 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (Math.random() < ehpp - phpp ? 2 : 1)) * (1 / (((edef * (data.enemy.defx ?? 3)) + 100) / 100)))
@@ -224,19 +232,7 @@ export default class extends Module {
                     data.endure += 1
                     bonus += 2;
                 } else {
-                    const ehpGaugeCount = Math.min(Math.ceil(ehp / mehp / (1 / 7)), 7)
-                    const ehpGauge = data.enemy.lToR
-                        ? data.enemy.mark2.repeat(7 - ehpGaugeCount) + data.enemy.mark.repeat(ehpGaugeCount)
-                        : data.enemy.mark2.repeat(ehpGaugeCount) + data.enemy.mark.repeat(7 - ehpGaugeCount)
-                    const phpGaugeCount = Math.min(Math.ceil(php / (100 + lv * 3) / (1 / 7)), 7)
-                    const phpGauge = data.enemy.pLToR
-                        ? "★".repeat(7 - phpGaugeCount) + "☆".repeat(phpGaugeCount)
-                        : "★".repeat(phpGaugeCount) + "☆".repeat(7 - phpGaugeCount)
-                    if (data.enemy.pLToR) {
-                        message += `\n${data.enemy.hpmsg ? "体力" : ":mk_hi:"} : ${ehpGauge}\n${data.enemy.hpmsg ?? data.enemy.name} : ${phpGauge}\n\n次回へ続く……`
-                    } else {
-                        message += `\n${data.enemy.hpmsg ?? data.enemy.name} : ${ehpGauge}\n${data.enemy.hpmsg ? "体力" : ":mk_hi:"} : ${phpGauge}\n\n次回へ続く……`
-                    }
+                    message += this.showStatus(data, php, ehp, mehp) + "\n\n次回へ続く……"
                     data.count = (data.count ?? 1) + 1;
                     data.php = php;
                     data.ehp = ehp;
@@ -283,6 +279,23 @@ export default class extends Module {
             };
         } else {
             return false;
+        }
+    }
+
+    @autobind
+    private showStatus(data, php: number, ehp: number, mehp: number): string {
+        const ehpGaugeCount = Math.min(Math.ceil(ehp / mehp / (1 / 7)), 7)
+        const ehpGauge = data.enemy.lToR
+            ? data.enemy.mark2.repeat(7 - ehpGaugeCount) + data.enemy.mark.repeat(ehpGaugeCount)
+            : data.enemy.mark2.repeat(ehpGaugeCount) + data.enemy.mark.repeat(7 - ehpGaugeCount)
+        const phpGaugeCount = Math.min(Math.ceil(php / (100 + data.lv * 3) / (1 / 7)), 7)
+        const phpGauge = data.enemy.pLToR
+            ? "★".repeat(7 - phpGaugeCount) + "☆".repeat(phpGaugeCount)
+            : "★".repeat(phpGaugeCount) + "☆".repeat(7 - phpGaugeCount)
+        if (data.enemy.pLToR) {
+            return `\n${data.enemy.hpmsg ? "体力" : ":mk_hero:"} : ${ehpGauge}\n${data.enemy.hpmsg ?? data.enemy.name} : ${phpGauge}`
+        } else {
+            return `\n${data.enemy.hpmsg ?? data.enemy.name} : ${ehpGauge}\n${data.enemy.hpmsg ? "体力" : ":mk_hero:"} : ${phpGauge}`
         }
     }
 }
