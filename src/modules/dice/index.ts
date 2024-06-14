@@ -17,7 +17,7 @@ export default class extends Module {
 	private async mentionHook(msg: Message) {
 		if (msg.text == null) return false;
 
-		if  (msg.text.endsWith("ですか？") || msg.text.endsWith("ますか？")) {
+		if  (msg.text.endsWith("ですか？") || msg.text.endsWith("ますか？") || msg.text.endsWith("ですよね？")) {
 			if (Math.random() < 0.5) {
 				if (Math.random() < 0.25) {
 					msg.reply("多分はい、部分的にはい", {visibility: 'public'});
