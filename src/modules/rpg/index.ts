@@ -288,7 +288,7 @@ export default class extends Module {
         const ehpGauge = data.enemy.lToR
             ? data.enemy.mark2.repeat(7 - ehpGaugeCount) + data.enemy.mark.repeat(ehpGaugeCount)
             : data.enemy.mark2.repeat(ehpGaugeCount) + data.enemy.mark.repeat(7 - ehpGaugeCount)
-        const phpGaugeCount = Math.min(Math.ceil(php / (100 + data.lv * 3) / (1 / 7)), 7)
+        const phpGaugeCount = Math.min(Math.ceil(php / (100 + (data.lv ?? 1) * 3) / (1 / 7)), 7)
         const phpGauge = data.enemy.pLToR
             ? "★".repeat(7 - phpGaugeCount) + "☆".repeat(phpGaugeCount)
             : "★".repeat(phpGaugeCount) + "☆".repeat(7 - phpGaugeCount)
