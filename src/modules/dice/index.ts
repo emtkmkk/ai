@@ -19,9 +19,18 @@ export default class extends Module {
 
 		if  (msg.text.endsWith("ですか？")) {
 			if (Math.random() < 0.5) {
-				msg.reply("はい", {visibility: 'public'});
+				if (Math.random() < 0.25) {
+					msg.reply("多分はい、部分的にはい", {visibility: 'public'});
+				} else {
+					msg.reply("はい", {visibility: 'public'});
+				}
+				
 			} else {
-				msg.reply("いいえ", {visibility: 'public'});
+				if (Math.random() < 0.25) {
+					msg.reply("多分いいえ、部分的にいいえ", {visibility: 'public'});
+				} else {
+					msg.reply("いいえ", {visibility: 'public'});
+				}
 			}
 			return {
 				reaction:'love'
