@@ -176,14 +176,16 @@ export default class extends Module {
             if (buff > 0) message += "\n"
 
             for (let i = 0; i < spd; i++) {
-                let dmg = Math.round((atk * tp * ((data.count ?? 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (Math.random() < ehpp - phpp ? 2 : 1)) * (1 / (((edef * (data.enemy.defx ?? 3)) + 100) / 100)))
+                let crit = Math.random() < ehpp - phpp;
+                let dmg = Math.round((atk * tp * ((data.count ?? 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (crit ? 2 : 1)) * (1 / (((edef * (data.enemy.defx ?? 3)) + 100) / 100)))
                 if (maxdmg && maxdmg > 0 && dmg > Math.round(maxdmg * (1 / ((abort || spd) - i)))) {
                     dmg = Math.round(maxdmg * (1 / ((abort || spd) - i)))
                     maxdmg -= dmg
+                    crit = false;
                 } else if (maxdmg && maxdmg > 0) {
                     maxdmg -= dmg
                 }
-                message += data.enemy.atkmsg(dmg) + "\n"
+                message += (crit ? `**${data.enemy.atkmsg(dmg)}**` : data.enemy.atkmsg(dmg)) + "\n"
                 ehp -= dmg
                 if (ehp <= 0) break;
                 if ((i + 1) === abort) {
@@ -210,9 +212,10 @@ export default class extends Module {
                 data.ehp = 103 + lv * 3 + (data.winCount ?? 0) * 5
             } else {
                 for (let i = 0; i < (data.enemy.spd ?? 1); i++) {
-                    const dmg = Math.round((eatk * (data.enemy.atkx ?? 3) * ((data.count ?? 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (Math.random() < phpp - ehpp ? 2 : 1)) * (1 / (((def * tp) + 100) / 100)))
+                    const crit = Math.random() < phpp - ehpp;
+                    const dmg = Math.round((eatk * (data.enemy.atkx ?? 3) * ((data.count ?? 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (crit ? 2 : 1)) * (1 / (((def * tp) + 100) / 100)))
                     php -= dmg
-                    message += "\n" + data.enemy.defmsg(dmg) + "\n"
+                    message += "\n" + (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n"
                 }
                 if (php <= 0 && !data.enemy.notEndure && count === 1 && Math.random() < 0.05 + (0.1 * (data.endure ?? 0))) {
                     message += "もこチキは気合で耐えた！\n"
