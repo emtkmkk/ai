@@ -230,8 +230,10 @@ export default class extends Module {
                         if ((data.endress ?? 0) > (data.maxEndress ?? 0)) data.maxEndress = data.endress;
                         data.endress = 0;
                     }
-                    data.streak = 0;
-                    if (!endressFlg) data.clearEnemy = [];
+                    if (!endressFlg) {
+                        data.streak = 0;
+                        data.clearEnemy = [];
+                    }
                     data.enemy = null;
                     data.count = 1;
                     data.atk = (data.atk ?? 0) + 2
