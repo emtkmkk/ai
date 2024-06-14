@@ -231,7 +231,7 @@ export default class extends Module {
                         data.endress = 0;
                     }
                     data.streak = 0;
-                    data.clearEnemy = [];
+                    if (!endressFlg) data.clearEnemy = [];
                     data.enemy = null;
                     data.count = 1;
                     data.atk = (data.atk ?? 0) + 2
