@@ -108,7 +108,7 @@ export default class extends Module {
                 atk: 2 + (0.1 * (data.endress ?? 0)),
                 def: 2 + (0.3 * (data.endress ?? 0)),
                 atkx: 3 + (0.05 * (data.endress ?? 0)),
-                defx: 3 + (0.15 * (data.endress ?? 0)),
+                defx: 4 + (0.15 * (data.endress ?? 0)),
                 about: 0.01,
             }
             if (!data.enemy || count === 1) {
