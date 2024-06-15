@@ -182,7 +182,7 @@ export default class extends Module {
 
             if (!data.enemy.spd && !data.enemy.hpmsg) {
                 const crit = Math.random() < phpp - ehpp;
-                if (count === 1 || Math.random() < ehpp - phpp) {
+                if ((count === 1 && Math.random() < 0.35) || Math.random() < ehpp - phpp) {
                     const dmg = Math.round((eatk * (data.enemy.atkx ?? 3) * (Math.max((data.count ?? 1) - 1, 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (crit ? 2 : 1)) * (1 / (((def * tp) + 100) / 100)))
                     if (php > dmg) {
                         php -= dmg
