@@ -178,6 +178,19 @@ export default class extends Module {
 
             if (buff > 0) message += "\n"
 
+            let enemyTurnFinished = false
+
+            if (!data.enemy.spd && !data.enemy.hpmsg) {
+                if (count === 1 || Math.random() < ehpp - phpp) {
+                    const dmg = Math.round((eatk * (data.enemy.atkx ?? 3) * (Math.max((data.count ?? 1) - 1, 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6)) * (1 / (((def * tp) + 100) / 100)))
+                    if (php > dmg) {
+                        php -= dmg
+                        message += (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n\n"
+                        enemyTurnFinished = true;
+                    }
+                }
+            }
+
             for (let i = 0; i < spd; i++) {
                 let crit = Math.random() < ehpp - phpp;
                 let dmg = Math.round((atk * tp * ((data.count ?? 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (crit ? 2 : 1)) * (1 / (((edef * (data.enemy.defx ?? 3)) + 100) / 100)))
@@ -214,16 +227,18 @@ export default class extends Module {
                 data.php = 103 + lv * 3
                 data.ehp = 103 + lv * 3 + (data.winCount ?? 0) * 5
             } else {
-                for (let i = 0; i < (data.enemy.spd ?? 1); i++) {
-                    const crit = Math.random() < phpp - ehpp;
-                    const dmg = Math.round((eatk * (data.enemy.atkx ?? 3) * (Math.max((data.count ?? 1) - 1, 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (crit ? 2 : 1)) * (1 / (((def * tp) + 100) / 100)))
-                    php -= dmg
-                    message += "\n" + (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n"
-                }
-                if (php <= 0 && !data.enemy.notEndure && count === 1 && Math.random() < 0.05 + (0.1 * (data.endure ?? 0))) {
-                    message += "もこチキは気合で耐えた！\n"
-                    php = 1;
-                    data.endure = Math.max(data.endure - 1, 0);
+                if (!enemyTurnFinished) {
+                    for (let i = 0; i < (data.enemy.spd ?? 1); i++) {
+                        const crit = Math.random() < phpp - ehpp;
+                        const dmg = Math.round((eatk * (data.enemy.atkx ?? 3) * (Math.max((data.count ?? 1) - 1, 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (crit ? 2 : 1)) * (1 / (((def * tp) + 100) / 100)))
+                        php -= dmg
+                        message += "\n" + (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n"
+                    }
+                    if (php <= 0 && !data.enemy.notEndure && count === 1 && Math.random() < 0.05 + (0.1 * (data.endure ?? 0))) {
+                        message += "もこチキは気合で耐えた！\n"
+                        php = 1;
+                        data.endure = Math.max(data.endure - 1, 0);
+                    }
                 }
                 if (php <= 0) {
                     if (data.enemy.name !== "もこチキは旅") {
