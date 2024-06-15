@@ -216,7 +216,7 @@ export default class extends Module {
             } else {
                 for (let i = 0; i < (data.enemy.spd ?? 1); i++) {
                     const crit = Math.random() < phpp - ehpp;
-                    const dmg = Math.round((eatk * (data.enemy.atkx ?? 3) * ((data.count ?? 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (crit ? 2 : 1)) * (1 / (((def * tp) + 100) / 100)))
+                    const dmg = Math.round((eatk * (data.enemy.atkx ?? 3) * (Math.max((data.count ?? 1) - 1, 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (crit ? 2 : 1)) * (1 / (((def * tp) + 100) / 100)))
                     php -= dmg
                     message += "\n" + (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n"
                 }
