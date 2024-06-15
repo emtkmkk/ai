@@ -182,10 +182,10 @@ export default class extends Module {
 
             if (!data.enemy.spd && !data.enemy.hpmsg) {
                 if (count === 1 || Math.random() < ehpp - phpp) {
-                    const dmg = Math.round((eatk * (data.enemy.atkx ?? 3) * (Math.max((data.count ?? 1) - 1, 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6)) * (1 / (((def * tp) + 100) / 100)))
+                    const dmg = Math.round((eatk * (data.enemy.atkx ?? 3) * (Math.max((data.count ?? 1) - 1, 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (crit ? 2 : 1)) * (1 / (((def * tp) + 100) / 100)))
                     if (php > dmg) {
                         php -= dmg
-                        message += data.enemy.defmsg(dmg) + "\n\n"
+                        message += (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n\n"
                         enemyTurnFinished = true;
                     }
                 }
