@@ -181,7 +181,7 @@ export default class extends Module {
             // 予測ダメージ
             let predictedDmg = Math.round((atk * tp) * (1 / (((edef * (data.enemy.defx ?? 3)) + 100) / 100))) * abort;
 
-            if (predictedDmg > maxdmg) predictedDmg = maxdmg;
+            if (maxdmg && predictedDmg > maxdmg) predictedDmg = maxdmg;
 
             let enemyTurnFinished = false
 
