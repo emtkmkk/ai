@@ -179,7 +179,7 @@ export default class extends Module {
             if (buff > 0) message += "\n"
 
             // 予測ダメージ
-            let predictedDmg = Math.round((atk * tp) * (1 / (((edef * (data.enemy.defx ?? 3)) + 100) / 100))) * abort;
+            let predictedDmg = Math.round((atk * tp) * (1 / (((edef * (data.enemy.defx ?? 3)) + 100) / 100))) * (abort || spd);
 
             if (maxdmg && predictedDmg > maxdmg) predictedDmg = maxdmg;
 
