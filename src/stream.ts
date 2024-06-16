@@ -1,6 +1,6 @@
 import autobind from "autobind-decorator";
 import { EventEmitter } from "events";
-import WebSocket from "ws";
+import * as WebSocket from "ws";
 const ReconnectingWebsocket = require("reconnecting-websocket");
 import config from "./config";
 import log from "@/utils/log";
