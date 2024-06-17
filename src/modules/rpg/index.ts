@@ -105,10 +105,10 @@ export default class extends Module {
                 abortmsg: "もこチキは面白いものを見つけたみたいだ。",
                 winmsg: "宿が見えてきた。\n今日はここで休むようだ。\n\n次の日へ続く…",
                 losemsg: "今回の旅はここで終えて家に帰るようだ。",
-                atk: 2 + (0.1 * (data.endress ?? 0)),
+                atk: 1.5 + (0.1 * (data.endress ?? 0)),
                 def: 2 + (0.3 * (data.endress ?? 0)),
                 atkx: 3 + (0.05 * (data.endress ?? 0)),
-                defx: 4 + (0.15 * (data.endress ?? 0)),
+                defx: 3 + (0.15 * (data.endress ?? 0)),
                 about: 0.01,
             }
             if (!data.enemy || count === 1) {
