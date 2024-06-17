@@ -16,8 +16,9 @@ export default class extends Module {
 		setInterval(() => {
 			const hours = new Date().getHours()
 			if ((hours === 0 || hours === 12 || hours === 18) && new Date().getMinutes() >= 1 && new Date().getMinutes() < 6) {
-				this.ai.post({
-                    text: `<center>$[x2 :mk_hero:]\n\n${hours}時です！\nRPGモードの時間ですよ～\n\n毎日3回プレイして、\n私を強くしてください！\n\n「RPG」と話しかけてね\n（ここに返信でも大丈夫ですよ！）</center>`,
+				const me = Math.random() < 0.75 ? ":mk_hero:" : [":mk_hero_2p:",":mk_hero_3p:",":mk_hero_4p:",":mk_hero_5p:",":mk_hero_6p:",":mk_hero_7p:"].sort(() => Math.random() - 0.5)[0];
+                this.ai.post({
+                    text: `<center>$[x2 ${me}]\n\n${hours}時です！\nRPGモードの時間ですよ～\n\n毎日3回プレイして、\n私を強くしてください！\n\n「RPG」と話しかけてね\n（ここに返信でも大丈夫ですよ！）</center>`,
                     localOnly: true,
                 })
 			}
