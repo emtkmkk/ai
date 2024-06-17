@@ -20,17 +20,17 @@ export default class extends Module {
 
     @autobind
     private async mentionHook(msg: Message) {
-        if (msg.includes(['rpg', '色'])) {
+        if (msg.includes(['rpg']) && msg.includes(['色']) ) {
             // データを読み込み
             const data = msg.friend.getPerModulesData(this);
             if (!data) return false;
-            if (msg.includes(['変更', '1'])) {
+            if (msg.includes(['変更']) && msg.includes(['1'])) {
                 data.color = 1
                 msg.friend.setPerModulesData(this, data);
                 return {
                     reaction: ':mk_muscleok:'
                 };
-            } else if (msg.includes(['変更', '2'])) {
+            } else if (msg.includes(['変更']) && msg.includes(['2'])) {
                 if ((data.lv ?? 1) > 99) {
                     data.color = 2
                     msg.friend.setPerModulesData(this, data);
@@ -42,7 +42,7 @@ export default class extends Module {
                         reaction: 'confused'
                     };
                 }
-            } else if (msg.includes(['変更', '3'])) {
+            } else if (msg.includes(['変更']) && msg.includes(['3'])) {
                 if ((data.maxEndress ?? 0) >= 7) {
                     data.color = 3
                     msg.friend.setPerModulesData(this, data);
@@ -54,7 +54,7 @@ export default class extends Module {
                         reaction: 'confused'
                     };
                 }
-            } else if (msg.includes(['変更', '4'])) {
+            } else if (msg.includes(['変更']) && msg.includes(['4'])) {
                 if (data.allClear) {
                     data.color = 4
                     msg.friend.setPerModulesData(this, data);
@@ -66,7 +66,7 @@ export default class extends Module {
                         reaction: 'confused'
                     };
                 }
-            } else if (msg.includes(['変更', '5'])) {
+            } else if (msg.includes(['変更']) && msg.includes(['5'])) {
                 if (data.thirdFire) {
                     data.color = 5
                     msg.friend.setPerModulesData(this, data);
@@ -78,7 +78,7 @@ export default class extends Module {
                         reaction: 'confused'
                     };
                 }
-            } else if (msg.includes(['変更', '6'])) {
+            } else if (msg.includes(['変更']) && msg.includes(['6'])) {
                 if ((data.superMuscle ?? 0) >= 300) {
                     data.color = 6
                     msg.friend.setPerModulesData(this, data);
@@ -90,7 +90,7 @@ export default class extends Module {
                         reaction: 'confused'
                     };
                 }
-            } else if (msg.includes(['変更', '7'])) {
+            } else if (msg.includes(['変更']) && msg.includes(['7'])) {
                 if ((data.winCount ?? 0) >= 100) {
                     data.color = 7
                     msg.friend.setPerModulesData(this, data);
@@ -102,7 +102,7 @@ export default class extends Module {
                         reaction: 'confused'
                     };
                 }
-            } else if (msg.includes(['変更', '8'])) {
+            } else if (msg.includes(['変更']) && msg.includes(['8'])) {
                 if (data.clearHistory.includes(":mk_hero_8p:")) {
                     data.color = 8
                     msg.friend.setPerModulesData(this, data);
