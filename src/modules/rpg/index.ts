@@ -118,8 +118,8 @@ export default class extends Module {
                 msg.reply([
                     "色を変更する場合、`rpg 色変更 <数字>`と話しかけてね",
                     "",
-                    "色開放条件",
-                    "1: :mk_hero: 初期開放",
+                    "色解放条件",
+                    "1: :mk_hero: 初期解放",
                     "2: :mk_hero_2p: " + ((data.lv ?? 1) > 99 ? "解放済み" : `Lv99になると解放されます。(**${(data.lv ?? 1)}** / 99)`),
                     "3: :mk_hero_3p: " + ((data.maxEndress ?? 0) >= 7 ? "解放済み" : `7日以上連続で旅をすると解放されます。(**${(data.maxEndress ?? 0)}** / 7)`),
                     "4: :mk_hero_4p: " + (data.allClear ? "解放済み" : "負けずに全ての敵を1度でも倒すと解放されます。"),
