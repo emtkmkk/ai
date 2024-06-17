@@ -145,8 +145,8 @@ export default class extends Module {
                 message += `連続RPGボーナス！\nパワー・防御がアップした！\n`
             }
 
-            const atk = 5 + (data.atk ?? 0) + Math.floor(((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) * (100 + (data.atk ?? 0)) / 100);
-            const def = 5 + (data.def ?? 0) + Math.floor(((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) * (100 + (data.def ?? 0)) / 100);
+            let atk = 5 + (data.atk ?? 0) + Math.floor(((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) * (100 + (data.atk ?? 0)) / 100);
+            let def = 5 + (data.def ?? 0) + Math.floor(((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) * (100 + (data.def ?? 0)) / 100);
             let spd = Math.floor((msg.friend.love ?? 0) / 100) + 1;
             let mehp = Math.min((100 + lv * 3) + ((data.winCount ?? 0) * 5), (data.enemy.maxhp ?? 300));
             let ehp = Math.min(data.ehp ?? 100, mehp);
@@ -164,6 +164,12 @@ export default class extends Module {
                 buff += 1
                 message += "もこチキは体の調子が良さそうだ！\n行動回数+1！\n"
                 spd = 2;
+            }
+            if (phpp <= (1/7) && (ehpp - phpp) >= 0.5) {
+                buff += 1
+                message += "もこチキは決死の覚悟をした！\nパワーが上がり、防御が下がった！\n"
+                atk = atk + Math.round(def * (ehpp - phpp))
+                def = Math.round(def * (1-(ehpp - phpp)))
             }
 
             const eatk = lv * 3.5 * data.enemy.atk;
