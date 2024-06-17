@@ -136,7 +136,9 @@ export default class extends Module {
                 cw += `${data.enemy.short} ${count}ターン目`
                 let mehp = Math.min((100 + lv * 3) + ((data.winCount ?? 0) * 5), (data.enemy.maxhp ?? 300));
                 let ehp = Math.min(data.ehp ?? 100, mehp);
+                data.count -= 1;
                 message += this.showStatus(data, php, ehp, mehp) + "\n\n"
+                data.count += 1;
             }
 
             let buff = 0;
