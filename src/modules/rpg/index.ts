@@ -214,12 +214,15 @@ export default class extends Module {
                 limit: 2,
                 userId: msg.userId
             })
+
+					// 覚醒状態か？
+					const isSuper = Math.random() < 0.02 || color === 9;
             
             // 投稿数（今日と明日の多い方）
             const postCount = Math.max(
                 (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.renote?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
                 (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.renote?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
-            )
+            ) + (isSuper ? 200 : 0);
 
             // 投稿数に応じてステータス倍率を得る
             // 連続プレイの場合は倍率アップ
@@ -304,6 +307,13 @@ export default class extends Module {
                 buff += 1
                 message += `連続RPGボーナス！\nパワー・防御がアップした！\n`
             }
+
+					
+					if (isSuper) {
+                buff += 1;
+                message += "**もこチキはすごく調子が良いようだ！**\n行動回数+**2**！\nパワー・防御が**超**アップ！\n";
+						    spd += 2;
+					}
 
             // ここで残りのステータスを計算しなおす
             let atk = 5 + (data.atk ?? 0) + Math.floor(((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) * (100 + (data.atk ?? 0)) / 100);
