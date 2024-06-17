@@ -20,6 +20,120 @@ export default class extends Module {
 
     @autobind
     private async mentionHook(msg: Message) {
+        if (msg.includes(['rpg', '色'])) {
+            // データを読み込み
+            const data = msg.friend.getPerModulesData(this);
+            if (!data) return false;
+            if (msg.includes(['変更', '1'])) {
+                data.color = 1
+                msg.friend.setPerModulesData(this, data);
+                return {
+                    reaction: ':mk_muscleok:'
+                };
+            } else if (msg.includes(['変更', '2'])) {
+                if ((data.lv ?? 1) > 99) {
+                    data.color = 2
+                    msg.friend.setPerModulesData(this, data);
+                    return {
+                        reaction: ':mk_muscleok:'
+                    };
+                } else {
+                    return {
+                        reaction: 'confused'
+                    };
+                }
+            } else if (msg.includes(['変更', '3'])) {
+                if ((data.maxEndress ?? 0) >= 7) {
+                    data.color = 3
+                    msg.friend.setPerModulesData(this, data);
+                    return {
+                        reaction: ':mk_muscleok:'
+                    };
+                } else {
+                    return {
+                        reaction: 'confused'
+                    };
+                }
+            } else if (msg.includes(['変更', '4'])) {
+                if (data.allClear) {
+                    data.color = 4
+                    msg.friend.setPerModulesData(this, data);
+                    return {
+                        reaction: ':mk_muscleok:'
+                    };
+                } else {
+                    return {
+                        reaction: 'confused'
+                    };
+                }
+            } else if (msg.includes(['変更', '5'])) {
+                if (data.thirdFire) {
+                    data.color = 5
+                    msg.friend.setPerModulesData(this, data);
+                    return {
+                        reaction: ':mk_muscleok:'
+                    };
+                } else {
+                    return {
+                        reaction: 'confused'
+                    };
+                }
+            } else if (msg.includes(['変更', '6'])) {
+                if ((data.superMuscle ?? 0) >= 300) {
+                    data.color = 6
+                    msg.friend.setPerModulesData(this, data);
+                    return {
+                        reaction: ':mk_muscleok:'
+                    };
+                } else {
+                    return {
+                        reaction: 'confused'
+                    };
+                }
+            } else if (msg.includes(['変更', '7'])) {
+                if ((data.winCount ?? 0) >= 100) {
+                    data.color = 7
+                    msg.friend.setPerModulesData(this, data);
+                    return {
+                        reaction: ':mk_muscleok:'
+                    };
+                } else {
+                    return {
+                        reaction: 'confused'
+                    };
+                }
+            } else if (msg.includes(['変更', '8'])) {
+                if (data.clearHistory.includes(":mk_hero_8p:")) {
+                    data.color = 8
+                    msg.friend.setPerModulesData(this, data);
+                    return {
+                        reaction: ':mk_muscleok:'
+                    };
+                } else {
+                    return {
+                        reaction: 'confused'
+                    };
+                }
+            } else {
+                msg.reply([
+                    "色を変更する場合、`rpg 色変更 <数字>`と話しかけてね",
+                    "",
+                    "色開放条件",
+                    "1: :mk_hero: 初期開放",
+                    "2: :mk_hero_2p: " + ((data.lv ?? 1) > 99 ? "解放済み" : `Lv99になると解放されます。(**${(data.lv ?? 1)}** / 99)`),
+                    "3: :mk_hero_3p: " + ((data.maxEndress ?? 0) >= 7 ? "解放済み" : `7日以上連続で旅をすると解放されます。(**${(data.maxEndress ?? 0)}** / 7)`),
+                    "4: :mk_hero_4p: " + (data.allClear ? "解放済み" : "負けずに全ての敵を1度でも倒すと解放されます。"),
+                    "5: :mk_hero_5p: " + (data.thirdFire ? "解放済み" : "1戦闘で🔥を3回受けると解放されます。"),
+                    "6: :mk_hero_6p: " + ((data.superMuscle ?? 0) >= 300 ? "解放済み" : `一撃で300ダメージ以上受け、倒れなかった場合に解放されます。(**${(data.superMuscle ?? 0)}** / 300)`),
+                    "7: :mk_hero_7p: " + ((data.winCount ?? 0) >= 100 ? "解放済み" : `100回勝利すると解放されます。(**${(data.winCount ?? 0)}** / 100)`),
+                    "8: :mk_hero_8p: " + (data.clearHistory.includes(":mk_hero_8p:") ? "解放済み" : ":mk_hero_8p:を1度でも倒すと解放されます。")
+                ].join("\n"));
+            }
+
+            return {
+                reaction: 'love'
+            };
+        }
         if (msg.includes(['rpg'])) {
             // データを読み込み
             const data = msg.friend.getPerModulesData(this);
@@ -118,6 +232,9 @@ export default class extends Module {
             let cw = acct(msg.user) + " ";
             let message = ""
 
+            // 自分のカラー
+            const me = ":mk_hero" + (!data.color || data.color === 1 ? ":" : `_${data.color}p:`)
+
             // ステータスを計算
             const lv = data.lv ?? 1
             let php = data.php ?? 100;
@@ -142,13 +259,16 @@ export default class extends Module {
                 } else {
                     // 旅モード（エンドレスモード）
                     // 倒す敵がいなくてこのモードに入った場合、旅モード任意入場フラグをOFFにする
-                    if (!filteredEnemys.length) data.endressFlg = false
+                    if (!filteredEnemys.length) {
+                        data.allClear = true;
+                        data.endressFlg = false;
+                    }
                     // エンドレス用の敵を設定
                     data.enemy = endressEnemy
                 }
                 // 敵の開始メッセージなどを設定
                 cw += `${data.enemy.msg}`
-                message += `$[x2 :mk_hero:]\n\n開始！\n\n`
+                message += `$[x2 ${me}]\n\n開始！\n\n`
             } else {
                 // 一度敵の情報を取得しなおす（関数のデータなどが吹き飛ぶ為）
                 data.enemy = [...enemys, endressEnemy].find((x) => data.enemy.name === x.name);
@@ -158,7 +278,7 @@ export default class extends Module {
                 let mehp = Math.min((100 + lv * 3) + ((data.winCount ?? 0) * 5), (data.enemy.maxhp ?? 300));
                 let ehp = Math.min(data.ehp ?? 100, mehp);
                 data.count -= 1;
-                message += this.showStatus(data, php, ehp, mehp) + "\n\n"
+                message += this.showStatus(data, php, ehp, mehp, me) + "\n\n"
                 data.count += 1;
             }
 
@@ -247,6 +367,8 @@ export default class extends Module {
                         php -= dmg
                         message += (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n\n"
                         enemyTurnFinished = true;
+                        if (data.enemy.fire && count == 3) data.thirdFire = true;
+                        if (dmg > data.superMuscle) data.superMuscle = dmg;
                     }
                 }
             }
@@ -284,6 +406,7 @@ export default class extends Module {
                     message += "\n" + data.enemy.winmsg + "\n\n勝利！おめでとう！"
                 } else {
                     message += "\n" + data.enemy.winmsg + (data.endressFlg ? "\n（次の日へ進む場合は、次回も旅モードを指定してください）" : "")
+                    if ((data.endress ?? 0) > (data.maxEndress ?? 0)) data.maxEndress = data.endress;
                     data.endress = (data.endress ?? 0) + 1;
                 }
                 // 連続勝利数
@@ -302,12 +425,15 @@ export default class extends Module {
                 data.maxTp = 0;
             } else {
                 // 敵のターンが既に終了していない場合
+                let maxDmg = 0;
                 if (!enemyTurnFinished) {
                     for (let i = 0; i < (data.enemy.spd ?? 1); i++) {
                         const crit = Math.random() < phpp - ehpp;
                         const dmg = this.getEnemyDmg(data, def, tp, count, crit, eatk)
                         php -= dmg
                         message += "\n" + (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n"
+                        if (dmg > maxDmg) maxDmg = dmg;
+                        if (data.enemy.fire && count == 3) data.thirdFire = true;
                     }
                     // HPが0で食いしばりが可能な場合、食いしばる
                     if (php <= 0 && !data.enemy.notEndure && count === 1 && Math.random() < 0.05 + (0.1 * (data.endure ?? 0))) {
@@ -315,6 +441,7 @@ export default class extends Module {
                         php = 1;
                         data.endure = Math.max(data.endure - 1, 0);
                     }
+                    if (maxDmg > data.superMuscle && php > 0) data.superMuscle = maxDmg;
                 }
                 // 敗北処理
                 if (php <= 0) {
@@ -345,7 +472,7 @@ export default class extends Module {
                     data.maxTp = 0;
                 } else {
                     // 決着がつかない場合
-                    message += this.showStatus(data, php, ehp, mehp) + "\n\n次回へ続く……"
+                    message += this.showStatus(data, php, ehp, mehp, me) + "\n\n次回へ続く……"
                     data.count = (data.count ?? 1) + 1;
                     data.php = php;
                     data.ehp = ehp;
@@ -397,7 +524,7 @@ export default class extends Module {
     }
 
     @autobind
-    private showStatus(data, php: number, ehp: number, mehp: number): string {
+    private showStatus(data, php: number, ehp: number, mehp: number, me = ":mk_hero:"): string {
         const ehpGaugeCount = Math.min(Math.ceil(ehp / mehp / (1 / 7)), 7)
         const ehpGauge = data.enemy.lToR
             ? data.enemy.mark2.repeat(7 - ehpGaugeCount) + data.enemy.mark.repeat(ehpGaugeCount)
@@ -408,9 +535,9 @@ export default class extends Module {
             : "★".repeat(phpGaugeCount) + "☆".repeat(7 - phpGaugeCount)
         const debuff = [data.enemy.fire ? "🔥" + data.count : ""].filter(Boolean).join(" ")
         if (data.enemy.pLToR) {
-            return `\n${data.enemy.hpmsg ? "体力" : ":mk_hero:"} : ${ehpGauge}\n${data.enemy.hpmsg ?? data.enemy.dname ?? data.enemy.name} : ${phpGauge}${debuff ? `\n${debuff}` : ""}`
+            return `\n${data.enemy.hpmsg ? "体力" : me} : ${ehpGauge}\n${data.enemy.hpmsg ?? data.enemy.dname ?? data.enemy.name} : ${phpGauge}${debuff ? `\n${debuff}` : ""}`
         } else {
-            return `\n${data.enemy.hpmsg ?? data.enemy.dname ?? data.enemy.name} : ${ehpGauge}\n${data.enemy.hpmsg ? "体力" : ":mk_hero:"} : ${phpGauge}${debuff ? `\n${debuff}` : ""}`
+            return `\n${data.enemy.hpmsg ?? data.enemy.dname ?? data.enemy.name} : ${ehpGauge}\n${data.enemy.hpmsg ? "体力" : me} : ${phpGauge}${debuff ? `\n${debuff}` : ""}`
         }
     }
 
