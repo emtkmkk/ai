@@ -487,7 +487,7 @@ export default class extends Module {
                 if (Math.random() < 0.5) atkUp += 1
             }
 
-            if (totalUp > data.maxStatusUp) data.maxStatusUp = totalUp;
+            if (totalUp > (data.maxStatusUp ?? 7)) data.maxStatusUp = totalUp;
 
             while (data.lv >= 3 && data.atk + data.def + totalUp < (data.lv - 1) * 7) {
                 totalUp += 1
