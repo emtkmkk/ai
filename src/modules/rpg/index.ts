@@ -88,7 +88,7 @@ export default class extends Module {
                                 ? (postCount - 5) / 15 + 1 + (continuousFlg ? 0.5 : 0)
                                 : Math.max(postCount / 5, (continuousFlg ? 1 : 0.3))
 
-            data.maxTp = Math.max(tp, data.maxTp);
+            data.maxTp = Math.max(tp, data.maxTp ?? 0);
             tp = Math.max(tp, data.maxTp / 2);
             const lv = data.lv ?? 1
             let php = data.php ?? 100;
