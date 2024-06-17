@@ -13,6 +13,15 @@ export default class extends Module {
 
     @autobind
     public install() {
+		setInterval(() => {
+			const hours = new Date().getHours()
+			if ((hours === 12 || hours === 18) && new Date().getMinutes() >= 1 && new Date().getMinutes() < 6) {
+				this.ai.post({
+                    text: "<center>$[x2 :mk_hero:]\n\nRPGモードの時間ですよ～\n\n「RPG」と話しかけてね</center>",
+                    localOnly: true,
+                })
+			}
+		}, 1000 * 60 * 5);
         return {
             mentionHook: this.mentionHook
         };
