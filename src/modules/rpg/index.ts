@@ -246,7 +246,7 @@ export default class extends Module {
             let message = ""
 
             // 自分のカラー
-            const me = ":mk_hero" + (!data.color || data.color === 1 ? ":" : `_${data.color}p:`)
+            const me = ":mk_hero" + (isSuper ? `_9p:` : !data.color || data.color === 1 ? ":" : `_${data.color}p:`)
 
             // ステータスを計算
             const lv = data.lv ?? 1
