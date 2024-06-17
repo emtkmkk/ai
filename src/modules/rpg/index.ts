@@ -216,7 +216,7 @@ export default class extends Module {
             })
 
 					// 覚醒状態か？
-					const isSuper = Math.random() < 0.02 || data.color === 9;
+					const isSuper = Math.random() < 0.02 || (data.lv ?? 1) % 100 === 0 || data.color === 9;
             
             // 投稿数（今日と明日の多い方）
             const postCount = Math.max(
