@@ -8,7 +8,7 @@ import getDate from '@/utils/get-date';
 import { acct } from '@/utils/acct';
 
 const enemys = [
-    { name: ":mk_catchicken:", msg: ":mk_catchicken:が撫でてほしいようだ。", short: ":mk_catchicken:を撫で中", hpmsg: "満足度", mark: "☆", mark2: "★", lToR: true, atkmsg: (dmg) => `もこチキの撫で！\n${dmg}ポイント満足させた！`, defmsg: (dmg) => `もこチキは疲れて${dmg}ポイントのダメージ！`, winmsg: ":mk_catchicken:を満足させた！", losemsg: "もこチキは疲れで倒れてしまった…", atk: 1, def: 1, atkx: 3, defx: 3},
+    { name: ":mk_catchicken:", msg: ":mk_catchicken:が撫でてほしいようだ。", short: ":mk_catchicken:を撫で中", hpmsg: "満足度", mark: "☆", mark2: "★", lToR: true, atkmsg: (dmg) => `もこチキの撫で！\n${dmg}ポイント満足させた！`, defmsg: (dmg) => `もこチキは疲れて${dmg}ポイントのダメージ！`, winmsg: ":mk_catchicken:を満足させた！", losemsg: "もこチキは疲れで倒れてしまった…", atk: 1, def: 1, atkx: 3, defx: 3 },
     { name: ":nisemokochiki_mzh:", msg: ":nisemokochiki_mzh:が本物と成り替わろうと勝負を仕掛けてきた！", short: ":nisemokochiki_mzh:と戦い中", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの羽ペチ！\n:nisemokochiki_mzh:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:nisemokochiki_mzh:の謎の攻撃！\nもこチキは${dmg}ポイントのダメージ！`, winmsg: "どっちが本物か分からせてやった！", losemsg: "もこチキはやられてしまった…", atk: 2, def: 0.5, atkx: 3, defx: 3 },
     { name: ":mokochoki:", msg: ":mokochoki:がじゃんけんをしたいようだ。", short: ":mokochoki:とじゃんけん中", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキはグーを出した！\n:mokochoki:の精神に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `もこチキはパーを出した！\nもこチキの精神に${dmg}ポイントのダメージ！`, winmsg: ":mokochoki:に負けを認めさせた！", losemsg: "もこチキは負けを認めた…", atk: 1, def: 1, atkx: 3, defx: 3 },
     { name: ":mk_senryu_kun:", msg: ":mk_senryu_kun:が川柳で勝負したいようだ。", short: ":mk_senryu_kun:と川柳バトル中", mark: "☆", mark2: "★", lToR: true, pLToR: true, atkmsg: (dmg) => `もこチキは考えた！\n川柳の完成度が${dmg}ポイントアップ！`, defmsg: (dmg) => `:mk_senryu_kun:はTLから情報を収集した！\n:mk_senryu_kun:の川柳の完成度が${dmg}ポイントアップ！`, winmsg: "審査員が来た！\n良い川柳と判定されたのはもこチキだった！", losemsg: "審査員が来た！\n良い川柳と判定されたのは:mk_senryu_kun:だった！", atk: 0.7, def: 1.5, atkx: 3, defx: 3, maxdmg: 0.95, notEndure: true },
@@ -77,7 +77,7 @@ export default class extends Module {
                 (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.renote?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
                 (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.renote?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
             )
-            const tp =
+            let tp =
                 postCount >= 100
                     ? (postCount - 100) / 100 + 4 + (continuousFlg ? 0.25 : 0)
                     : postCount >= 50
@@ -88,7 +88,8 @@ export default class extends Module {
                                 ? (postCount - 5) / 15 + 1 + (continuousFlg ? 0.5 : 0)
                                 : Math.max(postCount / 5, (continuousFlg ? 1 : 0.3))
 
-
+            data.maxTp = Math.max(tp, data.maxTp);
+            tp = Math.max(tp, data.maxTp / 2);
             const lv = data.lv ?? 1
             let php = data.php ?? 100;
             let message = ""
@@ -165,11 +166,11 @@ export default class extends Module {
                 message += "もこチキは体の調子が良さそうだ！\n行動回数+1！\n"
                 spd = 2;
             }
-            if (phpp <= (1/7) && (ehpp - phpp) >= 0.5) {
+            if (phpp <= (1 / 7) && (ehpp - phpp) >= 0.5) {
                 buff += 1
                 message += "もこチキは決死の覚悟をした！\nパワーが上がり、防御が下がった！\n"
                 atk = atk + Math.round(def * (ehpp - phpp))
-                def = Math.round(def * (1-(ehpp - phpp)))
+                def = Math.round(def * (1 - (ehpp - phpp)))
             }
 
             const eatk = lv * 3.5 * data.enemy.atk;
@@ -239,6 +240,7 @@ export default class extends Module {
                 data.winCount = (data.winCount ?? 0) + 1
                 data.php = 103 + lv * 3
                 data.ehp = 103 + lv * 3 + (data.winCount ?? 0) * 5
+                data.maxTp = 0;
             } else {
                 if (!enemyTurnFinished) {
                     for (let i = 0; i < (data.enemy.spd ?? 1); i++) {
@@ -272,6 +274,7 @@ export default class extends Module {
                     data.php = 113 + lv * 3
                     data.ehp = 103 + lv * 3 + (data.winCount ?? 0) * 5
                     data.endure += 1
+                    data.maxTp = 0;
                     bonus += 2;
                 } else {
                     message += this.showStatus(data, php, ehp, mehp) + "\n\n次回へ続く……"
@@ -302,12 +305,12 @@ export default class extends Module {
             data.def = (data.def ?? 0) + totalUp - atkUp;
 
             message += [
-				`\n\n今回のレベルアップ :`,
-				`  Lv : ${data.lv ?? 1} (+1)`,
-				`  パワー : ${data.atk ?? 0} (+${atkUp + bonus})`,
-				`  防御 : ${data.def ?? 0} (+${totalUp - atkUp + bonus})`,
+                `\n\n今回のレベルアップ :`,
+                `  Lv : ${data.lv ?? 1} (+1)`,
+                `  パワー : ${data.atk ?? 0} (+${atkUp + bonus})`,
+                `  防御 : ${data.def ?? 0} (+${totalUp - atkUp + bonus})`,
                 `\n次回は${new Date().getHours() < 12 ? "12時以降に" : new Date().getHours() < 18 ? "18時以降に" : "明日以降に"}遊べます。`,
-			].filter(Boolean).join("\n")
+            ].filter(Boolean).join("\n")
 
             msg.friend.setPerModulesData(this, data);
 
