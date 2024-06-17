@@ -306,14 +306,7 @@ export default class extends Module {
             if (continuousFlg) {
                 buff += 1
                 message += `連続RPGボーナス！\nパワー・防御がアップした！\n`
-            }
-
-					
-					if (isSuper) {
-                buff += 1;
-                message += "**もこチキはすごく調子が良いようだ！**\n行動回数+**2**！\nパワー・防御が**超**アップ！\n";
-						    spd += 2;
-					}
+						}
 
             // ここで残りのステータスを計算しなおす
             let atk = 5 + (data.atk ?? 0) + Math.floor(((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) * (100 + (data.atk ?? 0)) / 100);
@@ -330,6 +323,12 @@ export default class extends Module {
             let bonus = 0;
             // 連続攻撃中断の場合の攻撃可能回数 0は最後まで攻撃
             let abort = 0;
+
+					if (isSuper) {
+                buff += 1;
+                message += "**もこチキはすごく調子が良いようだ！**\n行動回数+**2**！\nパワー・防御が**超**アップ！\n";
+						    spd += 2;
+					}
 
             // spdが低い場合、確率でspdが+1。
             if (spd === 2 && Math.random() < 0.1) {
