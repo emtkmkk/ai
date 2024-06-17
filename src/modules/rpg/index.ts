@@ -199,7 +199,7 @@ export default class extends Module {
 
             for (let i = 0; i < spd; i++) {
                 let crit = Math.random() < ehpp - phpp;
-                let dmg = Math.round((atk * tp * ((data.count ?? 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (crit ? 2 : 1)) * (1 / (((edef * (data.enemy.defx ?? 3)) + 100) / 100)))
+                let dmg = Math.round((atk * tp * (Math.max((data.count ?? 1) - 1, 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (crit ? 2 : 1)) * (1 / (((edef * (data.enemy.defx ?? 3)) + 100) / 100)))
                 if (maxdmg && maxdmg > 0 && dmg > Math.round(maxdmg * (1 / ((abort || spd) - i)))) {
                     dmg = Math.round(maxdmg * (1 / ((abort || spd) - i)))
                     maxdmg -= dmg
