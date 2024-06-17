@@ -67,7 +67,7 @@ export default class extends Module {
                     };
                 }
             } else if (msg.includes(['変更']) && msg.includes(['5'])) {
-                if (data.thirdFire) {
+                if ((data.thirdFire ?? 0) >= 3) {
                     data.color = 5
                     msg.friend.setPerModulesData(this, data);
                     return {
@@ -120,13 +120,13 @@ export default class extends Module {
                     "",
                     "色解放条件",
                     "1: :mk_hero: 初期解放",
-                    "2: :mk_hero_2p: " + ((data.lv ?? 1) > 99 ? "解放済み" : `Lv99になると解放されます。(**${(data.lv ?? 1)}** / 99)`),
-                    "3: :mk_hero_3p: " + ((data.maxEndress ?? 0) >= 7 ? "解放済み" : `7日以上連続で旅をすると解放されます。(**${(data.maxEndress ?? 0)}** / 7)`),
-                    "4: :mk_hero_4p: " + (data.allClear ? "解放済み" : "負けずに全ての敵を1度でも倒すと解放されます。"),
-                    "5: :mk_hero_5p: " + (data.thirdFire ? "解放済み" : "1戦闘で🔥を3回受けると解放されます。"),
-                    "6: :mk_hero_6p: " + ((data.superMuscle ?? 0) >= 300 ? "解放済み" : `一撃で300ダメージ以上受け、倒れなかった場合に解放されます。(**${(data.superMuscle ?? 0)}** / 300)`),
-                    "7: :mk_hero_7p: " + ((data.winCount ?? 0) >= 100 || data.maxStatusUp >= 12 ? "解放済み" : `100回勝利する、または運が良いと解放されます。(**${(data.winCount ?? 0)}** / 100) (**${(data.maxStatusUp ?? 7)}** / 12)`),
-                    "8: :mk_hero_8p: " + (data.clearHistory.includes(":mk_hero_8p:") ? "解放済み" : ":mk_hero_8p:を1度でも倒すと解放されます。")
+                    "2: :mk_hero_2p: " + ((data.lv ?? 1) > 99 ? `解放済み (Lv: **${(data.lv ?? 1)}**)` : `Lv99になると解放されます。(**${(data.lv ?? 1)}** / 99)`),
+                    "3: :mk_hero_3p: " + ((data.maxEndress ?? 0) >= 7 ? `解放済み (旅最高日数: **${(data.lv ?? 1)}**)` : `7日以上連続で旅をすると解放されます。(**${(data.maxEndress ?? 0)}** / 7)`),
+                    "4: :mk_hero_4p: " + (data.allClear ? `解放済み (クリアLv: **${(data.allClear ?? "?")}**)` : "負けずに全ての敵を1度でも倒すと解放されます。"),
+                    "5: :mk_hero_5p: " + ((data.thirdFire ?? 0) >= 3 ? `解放済み (最大🔥: **${(data.thirdFire ?? 0)}**)` : `1戦闘で🔥を3回受けると解放されます。(**${(data.thirdFire ?? 0)}** / 3)`),
+                    "6: :mk_hero_6p: " + ((data.superMuscle ?? 0) >= 300 ? `解放済み (最大被ダメージ: **${(data.superMuscle ?? 0)}**)` : `一撃で300ダメージ以上受け、倒れなかった場合に解放されます。(**${(data.superMuscle ?? 0)}** / 300)`),
+                    "7: :mk_hero_7p: " + ((data.winCount ?? 0) >= 100 || data.maxStatusUp >= 12 ? `解放済み (勝利数: **${(data.winCount ?? 0)}**) (運: **${(data.maxStatusUp ?? 7)}**)` : `100回勝利する、または運が良いと解放されます。(**${(data.winCount ?? 0)}** / 100) (**${(data.maxStatusUp ?? 7)}** / 12)`),
+                    "8: :mk_hero_8p: " + (data.clearHistory.includes(":mk_hero_8p:") ? `解放済み (クリアLv: **${(data.aHeroLv ?? "?")}**)` : ":mk_hero_8p:を1度でも倒すと解放されます。")
                 ].join("\n"));
             }
 
@@ -260,7 +260,7 @@ export default class extends Module {
                     // 旅モード（エンドレスモード）
                     // 倒す敵がいなくてこのモードに入った場合、旅モード任意入場フラグをOFFにする
                     if (!filteredEnemys.length) {
-                        data.allClear = true;
+                        if (!data.allClear) data.allClear = lv - 1;
                         data.endressFlg = false;
                     }
                     // エンドレス用の敵を設定
@@ -367,7 +367,7 @@ export default class extends Module {
                         php -= dmg
                         message += (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n\n"
                         enemyTurnFinished = true;
-                        if (data.enemy.fire && count == 3) data.thirdFire = true;
+                        if (data.enemy.fire && count > (data.thirdFire ?? 0)) data.thirdFire = count;
                         if (dmg > data.superMuscle) data.superMuscle = dmg;
                     }
                 }
@@ -417,6 +417,7 @@ export default class extends Module {
                 // クリアした敵のリストを追加
                 data.clearEnemy.push(data.enemy.name);
                 if (!(data.clearHistory ?? []).includes(data.enemy.name)) data.clearHistory.push(data.enemy.name);
+                if (data.enemy.name === ":mk_hero_8p:" && !data.aHeroLv) data.aHeroLv = data.lv;
                 // 次の試合に向けてのパラメータセット
                 data.enemy = null;
                 data.count = 1;
@@ -433,7 +434,7 @@ export default class extends Module {
                         php -= dmg
                         message += "\n" + (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n"
                         if (dmg > maxDmg) maxDmg = dmg;
-                        if (data.enemy.fire && count == 3) data.thirdFire = true;
+                        if (data.enemy.fire && count > (data.thirdFire ?? 0)) data.thirdFire = count;
                     }
                     // HPが0で食いしばりが可能な場合、食いしばる
                     if (php <= 0 && !data.enemy.notEndure && count === 1 && Math.random() < 0.05 + (0.1 * (data.endure ?? 0))) {
