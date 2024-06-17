@@ -124,7 +124,7 @@ export default class extends Module {
                     "3: :mk_hero_3p: " + ((data.maxEndress ?? 0) >= 7 ? `解放済み (旅最高日数: **${(data.lv ?? 1)}**)` : `7日以上連続で旅をすると解放されます。(**${(data.maxEndress ?? 0)}** / 7)`),
                     "4: :mk_hero_4p: " + (data.allClear ? `解放済み (クリアLv: **${(data.allClear ?? "?")}**)` : "負けずに全ての敵を1度でも倒すと解放されます。"),
                     "5: :mk_hero_5p: " + ((data.thirdFire ?? 0) >= 3 ? `解放済み (最大🔥: **${(data.thirdFire ?? 0)}**)` : `1戦闘で🔥を3回受けると解放されます。(**${(data.thirdFire ?? 0)}** / 3)`),
-                    "6: :mk_hero_6p: " + ((data.superMuscle ?? 0) >= 300 ? `解放済み (最大被ダメージ: **${(data.superMuscle ?? 0)}**)` : `一撃で300ダメージ以上受け、倒れなかった場合に解放されます。(**${(data.superMuscle ?? 0)}** / 300)`),
+                    "6: :mk_hero_6p: " + ((data.superMuscle ?? 0) >= 300 ? `解放済み (最大耐ダメージ: **${(data.superMuscle ?? 0)}**)` : `一撃で300ダメージ以上受け、倒れなかった場合に解放されます。(**${(data.superMuscle ?? 0)}** / 300)`),
                     "7: :mk_hero_7p: " + ((data.winCount ?? 0) >= 100 || data.maxStatusUp >= 12 ? `解放済み (勝利数: **${(data.winCount ?? 0)}**) (運: **${(data.maxStatusUp ?? 7)}**)` : `100回勝利する、または運が良いと解放されます。(**${(data.winCount ?? 0)}** / 100) (**${(data.maxStatusUp ?? 7)}** / 12)`),
                     "8: :mk_hero_8p: " + (data.clearHistory.includes(":mk_hero_8p:") ? `解放済み (クリアLv: **${(data.aHeroLv ?? "?")}**)` : ":mk_hero_8p:を1度でも倒すと解放されます。")
                 ].join("\n"));
@@ -260,7 +260,10 @@ export default class extends Module {
                     // 旅モード（エンドレスモード）
                     // 倒す敵がいなくてこのモードに入った場合、旅モード任意入場フラグをOFFにする
                     if (!filteredEnemys.length) {
-                        if (!data.allClear) data.allClear = lv - 1;
+                        if (!data.allClear) {
+                            data.allClear = lv - 1;
+                            data.allClearDate = Date.now();
+                        }
                         data.endressFlg = false;
                     }
                     // エンドレス用の敵を設定
@@ -417,7 +420,10 @@ export default class extends Module {
                 // クリアした敵のリストを追加
                 data.clearEnemy.push(data.enemy.name);
                 if (!(data.clearHistory ?? []).includes(data.enemy.name)) data.clearHistory.push(data.enemy.name);
-                if (data.enemy.name === ":mk_hero_8p:" && !data.aHeroLv) data.aHeroLv = data.lv;
+                if (data.enemy.name === ":mk_hero_8p:" && !data.aHeroLv) {
+                    data.aHeroLv = data.lv;
+                    data.aHeroClearDate = Date.now();
+                }
                 // 次の試合に向けてのパラメータセット
                 data.enemy = null;
                 data.count = 1;
