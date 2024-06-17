@@ -91,7 +91,7 @@ export default class extends Module {
                     };
                 }
             } else if (msg.includes(['変更']) && msg.includes(['7'])) {
-                if ((data.winCount ?? 0) >= 100) {
+                if ((data.winCount ?? 0) >= 100 || data.maxStatusUp >= 12) {
                     data.color = 7
                     msg.friend.setPerModulesData(this, data);
                     return {
@@ -125,7 +125,7 @@ export default class extends Module {
                     "4: :mk_hero_4p: " + (data.allClear ? "解放済み" : "負けずに全ての敵を1度でも倒すと解放されます。"),
                     "5: :mk_hero_5p: " + (data.thirdFire ? "解放済み" : "1戦闘で🔥を3回受けると解放されます。"),
                     "6: :mk_hero_6p: " + ((data.superMuscle ?? 0) >= 300 ? "解放済み" : `一撃で300ダメージ以上受け、倒れなかった場合に解放されます。(**${(data.superMuscle ?? 0)}** / 300)`),
-                    "7: :mk_hero_7p: " + ((data.winCount ?? 0) >= 100 ? "解放済み" : `100回勝利すると解放されます。(**${(data.winCount ?? 0)}** / 100)`),
+                    "7: :mk_hero_7p: " + ((data.winCount ?? 0) >= 100 || data.maxStatusUp >= 12 ? "解放済み" : `100回勝利する、または運が良いと解放されます。(**${(data.winCount ?? 0)}** / 100) (**${(data.maxStatusUp ?? 7)}** / 12)`),
                     "8: :mk_hero_8p: " + (data.clearHistory.includes(":mk_hero_8p:") ? "解放済み" : ":mk_hero_8p:を1度でも倒すと解放されます。")
                 ].join("\n"));
             }
@@ -482,14 +482,15 @@ export default class extends Module {
             data.lv = (data.lv ?? 1) + 1;
             let atkUp = (2 + Math.floor(Math.random() * 4));
             let totalUp = 7;
-
-            while (data.lv >= 3 && data.atk + data.def + totalUp < (data.lv - 1) * 7) {
-                totalUp += 1
+            while (Math.random() < 0.335) {
+                totalUp += 1;
                 if (Math.random() < 0.5) atkUp += 1
             }
 
-            while (Math.random() < 0.335) {
-                totalUp += 1;
+            if (totalUp > data.maxStatusUp) data.maxStatusUp = totalUp;
+
+            while (data.lv >= 3 && data.atk + data.def + totalUp < (data.lv - 1) * 7) {
+                totalUp += 1
                 if (Math.random() < 0.5) atkUp += 1
             }
 
