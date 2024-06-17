@@ -15,9 +15,9 @@ export default class extends Module {
     public install() {
 		setInterval(() => {
 			const hours = new Date().getHours()
-			if ((hours === 12 || hours === 18) && new Date().getMinutes() >= 1 && new Date().getMinutes() < 6) {
+			if ((hours === 0 || hours === 12 || hours === 18) && new Date().getMinutes() >= 1 && new Date().getMinutes() < 6) {
 				this.ai.post({
-                    text: "<center>$[x2 :mk_hero:]\n\nRPGモードの時間ですよ～\n\n「RPG」と話しかけてね</center>",
+                    text: `<center>$[x2 :mk_hero:]\n\n${hours}時です！\nRPGモードの時間ですよ～\n\n毎日3回プレイして、\n私を強くしてください！\n\n「RPG」と話しかけてね\n（ここに返信でも大丈夫ですよ！）</center>`,
                     localOnly: true,
                 })
 			}
@@ -380,7 +380,7 @@ export default class extends Module {
                         message += (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n\n"
                         enemyTurnFinished = true;
                         if (data.enemy.fire && count > (data.thirdFire ?? 0)) data.thirdFire = count;
-                        if (dmg > data.superMuscle) data.superMuscle = dmg;
+                        if (dmg > (data.superMuscle ?? 0)) data.superMuscle = dmg;
                     }
                 }
             }
@@ -457,7 +457,7 @@ export default class extends Module {
                         php = 1;
                         data.endure = Math.max(data.endure - 1, 0);
                     }
-                    if (maxDmg > data.superMuscle && php > 0) data.superMuscle = maxDmg;
+                    if (maxDmg > (data.superMuscle ?? 0) && php > 0) data.superMuscle = maxDmg;
                 }
                 // 敗北処理
                 if (php <= 0) {
