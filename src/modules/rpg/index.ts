@@ -6,26 +6,7 @@ import * as seedrandom from 'seedrandom';
 import { genItem } from '@/vocabulary';
 import getDate from '@/utils/get-date';
 import { acct } from '@/utils/acct';
-
-const enemys = [
-    { name: ":mk_catchicken:", msg: ":mk_catchicken:が撫でてほしいようだ。", short: ":mk_catchicken:を撫で中", hpmsg: "満足度", mark: "☆", mark2: "★", lToR: true, atkmsg: (dmg) => `もこチキの撫で！\n${dmg}ポイント満足させた！`, defmsg: (dmg) => `もこチキは疲れて${dmg}ポイントのダメージ！`, winmsg: ":mk_catchicken:を満足させた！", losemsg: "もこチキは疲れで倒れてしまった…", atk: 1, def: 1, atkx: 3, defx: 3 },
-    { name: ":nisemokochiki_mzh:", msg: ":nisemokochiki_mzh:が本物と成り替わろうと勝負を仕掛けてきた！", short: ":nisemokochiki_mzh:と戦い中", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの羽ペチ！\n:nisemokochiki_mzh:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:nisemokochiki_mzh:の謎の攻撃！\nもこチキは${dmg}ポイントのダメージ！`, winmsg: "どっちが本物か分からせてやった！", losemsg: "もこチキはやられてしまった…", atk: 2, def: 0.5, atkx: 3, defx: 3 },
-    { name: ":mokochoki:", msg: ":mokochoki:がじゃんけんをしたいようだ。", short: ":mokochoki:とじゃんけん中", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキはグーを出した！\n:mokochoki:の精神に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `もこチキはパーを出した！\nもこチキの精神に${dmg}ポイントのダメージ！`, winmsg: ":mokochoki:に負けを認めさせた！", losemsg: "もこチキは負けを認めた…", atk: 1, def: 1, atkx: 3, defx: 3 },
-    { name: ":kirin_mkchicken:", msg: ":kirin_mkchicken:は草を食べたいようだ。", short: ":kirin_mkchicken:に草を与え中", hpmsg: "満腹度", mark: "☆", mark2: "★", lToR: true, atkmsg: (dmg) => `もこチキは草を${dmg / 10}kg持ってきた！\n:kirin_mkchicken:は全て食べた！`, defmsg: (dmg) => `もこチキは疲れて${dmg}ポイントのダメージ！`, winmsg: ":kirin_mkchicken:は満足したようだ！", losemsg: "もこチキは疲れで倒れてしまった…", atk: 1, def: 1, atkx: 3, defx: 3 },
-    { name: ":mk_senryu_kun:", msg: ":mk_senryu_kun:が川柳で勝負したいようだ。", short: ":mk_senryu_kun:と川柳バトル中", mark: "☆", mark2: "★", lToR: true, pLToR: true, atkmsg: (dmg) => `もこチキは考えた！\n川柳の完成度が${dmg}ポイントアップ！`, defmsg: (dmg) => `:mk_senryu_kun:はTLから情報を収集した！\n:mk_senryu_kun:の川柳の完成度が${dmg}ポイントアップ！`, winmsg: "審査員が来た！\n良い川柳と判定されたのはもこチキだった！", losemsg: "審査員が来た！\n良い川柳と判定されたのは:mk_senryu_kun:だった！", atk: 0.7, def: 1.5, atkx: 3, defx: 3, maxdmg: 0.95, notEndure: true },
-    { name: "もこチキは猛勉強", limit: (data) => (data.streak ?? 0) >= 2, msg: "もこチキは猛勉強を行うようだ。", short: "猛勉強中", hpmsg: "勉強度", mark: "☆", mark2: "★", lToR: true, atkmsg: (dmg) => `もこチキは勉強に取り組んだ！\n勉強度が${dmg}ポイントアップ！`, defmsg: (dmg) => `もこチキは疲れて${dmg}ポイントのダメージ！`, abortmsg: "もこチキはサボりたくなったので勉強を一旦止めた！", winmsg: "もこチキは試験で高得点を得ることが出来た！", losemsg: "もこチキは疲れて勉強を諦めてしまった…", maxhp: 320, atk: 2, def: 0.8, atkx: 4, defx: 3, maxdmg: 0.85, abort: 0.05 },
-    { name: "もこチキはTLの巡回", limit: (data) => (data.streak ?? 0) >= 2, msg: "もこチキはTLの巡回を行うようだ。", short: "TLの巡回中", hpmsg: "TL巡回完了度", mark: "☆", mark2: "★", lToR: true, atkmsg: (dmg) => `もこチキはTLの投稿にリアクションを押した！\nTL巡回完了度が${dmg}ポイントアップ！`, defmsg: (dmg) => `もこチキは疲れて${dmg}ポイントのダメージ！`, abortmsg: "もこチキはサボりたくなったのでTL巡回を一旦止めた！", winmsg: "もこチキはTLの投稿にリアクションを付け終わった！", losemsg: "もこチキは疲れて寝てしまった…", atk: 0.6, def: 2, atkx: 3, defx: 3, maxdmg: 0.95, abort: 0.05 },
-    { name: ":mk_fly_sliver:", limit: (data) => (data.streak ?? 0) >= 2, msg: ":mk_fly_sliver:が一緒に空を飛びたいようだ。", short: ":mk_fly_sliver:と飛行中", hpmsg: "高度", mark: "☆", mark2: "★", lToR: true, atkmsg: (dmg) => `もこチキは羽ばたいた！\n${Math.floor(dmg * 4.57)}cm浮いた！`, defmsg: (dmg) => `もこチキは疲れて${dmg}ポイントのダメージ！`, winmsg: "もこチキはかなり高く飛行できた！", losemsg: "もこチキは疲れで墜落してしまった…", atk: 1.5, def: 1.5, atkx: 3.5, defx: 3.5 },
-    { name: ":mk_tatsu:", limit: (data) => (data.streak ?? 0) >= 2, msg: ":mk_tatsu:が暴れている！止めないと！", short: ":mk_tatsu:を食い止め中", mark: "☆", mark2: "★", atkmsg: (dmg) => `もこチキは羽を振って衝撃波を出した！\n:mk_tatsu:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mk_tatsu:の炎ブレス攻撃！\nもこチキは${dmg}ポイントのダメージ！\nもこチキが次に受けるダメージが上昇した！`, winmsg: "もこチキは:mk_tatsu:を懲らしめた！", losemsg: "もこチキはやられてしまった…", atk: 0.5, def: 2, atkx: 2, defx: 4, fire: 0.2 },
-    { name: ":mk_senryu_kun:2", dname: ":mk_senryu_kun:", limit: (data) => (data.streak ?? 0) >= 3 && data.clearEnemy.includes(":mk_senryu_kun:"), msg: ":mk_senryu_kun:が川柳のリベンジをしたいようだ。", short: ":mk_senryu_kun:と川柳バトル中（ふたたび）", mark: "☆", mark2: "★", lToR: true, pLToR: true, atkmsg: (dmg) => `もこチキは考えた！\n川柳の完成度が${dmg}ポイントアップ！`, defmsg: (dmg) => `:mk_senryu_kun:はTLから情報を収集した！\n:mk_senryu_kun:の川柳の完成度が${dmg}ポイントアップ！`, winmsg: "審査員が来た！\n良い川柳と判定されたのはもこチキだった！", losemsg: "審査員が来た！\n良い川柳と判定されたのは:mk_senryu_kun:だった！", atk: 0.7, def: 1.5, atkx: 5, defx: 5, maxdmg: 0.6, notEndure: true },
-    { name: ":mk_ojousamachicken:", limit: (data) => (data.winCount ?? 0) >= 3 && (data.streak ?? 0) >= 3, msg: ":mk_ojousamachicken:がお嬢様バトルを仕掛けてきた！", short: ":mk_ojousamachicken:とお嬢様バトル中", mark: "☆", mark2: "★", atkmsg: (dmg) => `もこチキは扇子で攻撃！\n:mk_ojousamachicken:に${dmg}ポイントのお嬢様ダメージ！`, defmsg: (dmg) => `:mk_ojousamachicken:のドリルヘアーアタック！\n${dmg}ポイントのお嬢様ダメージ！`, abortmsg: ":mk_ojousamachicken:はもこチキの連続扇子攻撃を受け流した！", winmsg: "もこチキはお嬢様バトルを制した！", losemsg: "もこチキはお嬢様バトルに敗北した…", atk: 0.9, def: 3, atkx: 3, defx: 6, abort: 0.2 },
-    { name: ":muscle_mkchicken:", limit: (data) => (data.winCount ?? 0) >= 3 && (data.streak ?? 0) >= 3, msg: ":muscle_mkchicken:が力比べをしたいようだ。", short: ":muscle_mkchicken:と力比べ中", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの羽バサバサ！\n:muscle_mkchicken:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:muscle_mkchicken:のマッスルアタック！\nもこチキは${dmg}ポイントのダメージ！`, abortmsg: ":muscle_mkchicken:は気合でもこチキの連続攻撃を止めた！", winmsg: "もこチキは:muscle_mkchicken:を倒した！", losemsg: "もこチキはやられてしまった…", atk: 4, def: 0.4, atkx: 6, defx: 3, abort: 0.3 },
-    { name: ":mk_catchicken:2", dname: ":mk_catchicken:", limit: (data) => (data.winCount ?? 0) >= 4 && (data.streak ?? 0) >= 4 && data.clearEnemy.includes(":mk_catchicken:"), msg: ":mk_catchicken:は不機嫌のようだ…", short: ":mk_catchicken:のご機嫌取り中", hpmsg: "機嫌", mark: "☆", mark2: "★", lToR: true, atkmsg: (dmg) => `もこチキの撫で撫で！\n:mk_catchicken:の機嫌が${dmg}ポイントアップ！`, defmsg: (dmg) => `:mk_catchicken:のひっかき！\n${dmg}ポイントのダメージ！`, winmsg: ":mk_catchicken:はご機嫌になった！", losemsg: "もこチキはやられてしまった…", atk: 0.75, def: 1.5, spd: 5, atkx: 3, defx: 4 },
-    { name: ":mokochoki:2", dname: ":mokochoki:", limit: (data) => (data.winCount ?? 0) >= 4 && (data.streak ?? 0) >= 4 && data.clearEnemy.includes(":mokochoki:"), msg: ":mokochoki:がじゃんけんでリベンジをしたいようだ。", short: ":mokochoki:とじゃんけん中（ふたたび）", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキはグーを出した！\n:mokochoki:の精神に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `もこチキはグーを出した！\n:mokochoki:はパーのプラカードを出した！\nもこチキの精神に${dmg}ポイントのダメージ！`, winmsg: ":mokochoki:に負けを認めさせた！", losemsg: "もこチキは負けを認めた…", atk: 2, def: 2, atkx: 3, defx: 3 },
-    { name: ":mk_chickenda:", limit: (data) => (data.winCount ?? 0) >= 5 && (data.streak ?? 0) >= 5, msg: ":mk_chickenda:が勝負を仕掛けてきた！", short: ":mk_chickenda:と戦い中", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの光魔法！\n:mk_chickenda:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mk_chickenda:の†！\nもこチキに${dmg}ポイントのダメージ！`, winmsg: ":mk_chickenda:は帰っていった！", losemsg: "もこチキはやられてしまった…", maxhp: 130, atk: 5, def: 5, maxdmg: 0.7, atkx: 5, defx: 5 },
-    { name: ":mk_chickenda_gtgt:", limit: (data, friend) => (data.winCount ?? 0) >= 15 && (data.streak ?? 0) >= 7 && (friend.love ?? 0) >= 500 && data.clearEnemy.includes(":mk_chickenda:"), msg: ":mk_chickenda_gtgt:が本気の勝負を仕掛けてきた！", short: ":mk_chickenda_gtgt:と本気の戦い中", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの光魔法！\n:mk_chickenda_gtgt:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mk_chickenda_gtgt:の†！\nもこチキに${dmg}ポイントのダメージ！`, abortmsg: ":mk_chickenda_gtgt:は:muscle_mkchicken:を召還した！もこチキの連続攻撃を止めた！", winmsg: ":mk_chickenda_gtgt:は帰っていった！", losemsg: "もこチキはやられてしまった…", atk: 15, def: 15, maxdmg: 0.6, atkx: 7, defx: 7, abort: 0.04 },
-];
-
+import { enemys } from './enemys';
 
 export default class extends Module {
     public readonly name = 'rpg';
@@ -40,21 +21,30 @@ export default class extends Module {
     @autobind
     private async mentionHook(msg: Message) {
         if (msg.includes(['rpg'])) {
+            // データを読み込み
             const data = msg.friend.getPerModulesData(this);
+            // 各種データがない場合は、初期化
             if (!data.clearEnemy) data.clearEnemy = [data.preEnemy ?? ""].filter(Boolean);
             if (!data.clearHistory) data.clearHistory = data.clearEnemy;
+            // プレイ済でないかのチェック
             if (data.lastPlayedAt === getDate() + (new Date().getHours() < 12 ? "" : new Date().getHours() < 18 ? "/12" : "/18") && data.ehp <= 110 + data.lv * 3 + (data.winCount ?? 0) * 5) {
                 msg.reply(`RPGモードは0~11時、12~17時、18~23時の1日3回です。\n${new Date().getHours() < 12 ? "12時以降" : new Date().getHours() < 18 ? "18時以降" : "明日"}になったらもう一度試してください。`);
                 return {
                     reaction: 'confused'
                 };
             }
+            // 連続プレイかどうかをチェック
             let continuousFlg = false;
             if (data.lastPlayedAt === (new Date().getHours() < 12 ? getDate(-1) + "/18" : new Date().getHours() < 18 ? getDate() : getDate() + "/12")) {
                 continuousFlg = true;
             }
+
+            // 現在の敵と戦ってるターン数。 敵がいない場合は1。
             let count = data.count ?? 1
+            
+            // 旅モード（エンドレスモード）のフラグ
             if (msg.includes(['旅モード'])) {
+                // 現在戦っている敵がいない場合で旅モード指定がある場合はON
                 if (!data.enemy || count === 1) {
                     data.endressFlg = true;
                 } else {
@@ -64,37 +54,13 @@ export default class extends Module {
                     };
                 }
             } else {
+                // 現在戦っている敵がいない場合で旅モード指定がない場合はOFF
                 if (!data.enemy || count === 1) {
                     data.endressFlg = false;
                 }
             }
-            data.lastPlayedAt = getDate() + (new Date().getHours() < 12 ? "" : new Date().getHours() < 18 ? "/12" : "/18");
-            const chart = await this.ai.api('charts/user/notes', {
-                span: 'day',
-                limit: 2,
-                userId: msg.userId
-            })
-            const postCount = Math.max(
-                (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.renote?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
-                (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.renote?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
-            )
-            let tp =
-                postCount >= 100
-                    ? (postCount - 100) / 100 + 4 + (continuousFlg ? 0.25 : 0)
-                    : postCount >= 50
-                        ? (postCount - 50) / 50 + 3 + (continuousFlg ? 0.5 : 0)
-                        : postCount >= 20
-                            ? (postCount - 20) / 30 + 2 + (continuousFlg ? 0.5 : 0)
-                            : postCount >= 5
-                                ? (postCount - 5) / 15 + 1 + (continuousFlg ? 0.5 : 0)
-                                : Math.max(postCount / 5, (continuousFlg ? 1 : 0.3))
 
-            data.maxTp = Math.max(tp, data.maxTp ?? 0);
-            tp = Math.max(tp, data.maxTp / 2);
-            const lv = data.lv ?? 1
-            let php = data.php ?? 100;
-            let message = ""
-            let cw = acct(msg.user) + " ";
+            // 旅モードの場合の敵を定義
             let endressEnemy = {
                 name: "もこチキは旅",
                 msg: (data.endress ?? 0) ? `旅の途中 (${data.endress + 1}日目)` : "もこチキは旅に出たいようだ。",
@@ -114,27 +80,81 @@ export default class extends Module {
                 defx: 3 + (0.15 * (data.endress ?? 0)),
                 about: 0.01,
             }
+
+            // 最終プレイの状態を記録
+            data.lastPlayedAt = getDate() + (new Date().getHours() < 12 ? "" : new Date().getHours() < 18 ? "/12" : "/18");
+
+            // ユーザの投稿数を取得
+            const chart = await this.ai.api('charts/user/notes', {
+                span: 'day',
+                limit: 2,
+                userId: msg.userId
+            })
+            
+            // 投稿数（今日と明日の多い方）
+            const postCount = Math.max(
+                (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.renote?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
+                (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.renote?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
+            )
+
+            // 投稿数に応じてステータス倍率を得る
+            // 連続プレイの場合は倍率アップ
+            let tp =
+                postCount >= 100
+                    ? (postCount - 100) / 100 + 4 + (continuousFlg ? 0.25 : 0)
+                    : postCount >= 50
+                        ? (postCount - 50) / 50 + 3 + (continuousFlg ? 0.5 : 0)
+                        : postCount >= 20
+                            ? (postCount - 20) / 30 + 2 + (continuousFlg ? 0.5 : 0)
+                            : postCount >= 5
+                                ? (postCount - 5) / 15 + 1 + (continuousFlg ? 0.5 : 0)
+                                : Math.max(postCount / 5, (continuousFlg ? 1 : 0.3))
+
+            // これが2ターン目以降の場合、戦闘中に計算された最大倍率の50%の倍率が保証される
+            data.maxTp = Math.max(tp, data.maxTp ?? 0);
+            tp = Math.max(tp, data.maxTp / 2);
+
+            // 画面に出力するメッセージ
+            let cw = acct(msg.user) + " ";
+            let message = ""
+
+            // ステータスを計算
+            const lv = data.lv ?? 1
+            let php = data.php ?? 100;
+
+            // 敵情報
             if (!data.enemy || count === 1) {
+                // 新しい敵
                 count = 1
                 data.count = 1
                 php = 100 + lv * 3
+                // すでにこの回で倒している敵、出現条件を満たしていない敵を除外
                 const filteredEnemys = enemys.filter((x) => !(data.clearEnemy ?? []).includes(x.name) && (!x.limit || x.limit(data, msg.friend)));
                 if (filteredEnemys.length && !data.endressFlg) {
                     const notClearedEnemys = filteredEnemys.filter((x) => !(data.clearHistory ?? []).includes(x.name));
                     if (notClearedEnemys.length) {
+                        // 出現条件を満たしている敵の中で、1度も倒した事のない敵がいる場合、優先的に選ばれる
                         data.enemy = notClearedEnemys[Math.floor(notClearedEnemys.length * Math.random())]
                     } else {
+                        // 1度も倒した事のない敵が誰もいない場合
                         data.enemy = filteredEnemys[Math.floor(filteredEnemys.length * Math.random())]
                     }
                 } else {
+                    // 旅モード（エンドレスモード）
+                    // 倒す敵がいなくてこのモードに入った場合、旅モード任意入場フラグをOFFにする
                     if (!filteredEnemys.length) data.endressFlg = false
+                    // エンドレス用の敵を設定
                     data.enemy = endressEnemy
                 }
+                // 敵の開始メッセージなどを設定
                 cw += `${data.enemy.msg}`
                 message += `$[x2 :mk_hero:]\n\n開始！\n\n`
             } else {
+                // 一度敵の情報を取得しなおす（関数のデータなどが吹き飛ぶ為）
                 data.enemy = [...enemys, endressEnemy].find((x) => data.enemy.name === x.name);
+                // 敵の開始メッセージなどを設定
                 cw += `${data.enemy.short} ${count}ターン目`
+                // 前ターン時点のステータスを表示
                 let mehp = Math.min((100 + lv * 3) + ((data.winCount ?? 0) * 5), (data.enemy.maxhp ?? 300));
                 let ehp = Math.min(data.ehp ?? 100, mehp);
                 data.count -= 1;
@@ -142,23 +162,33 @@ export default class extends Module {
                 data.count += 1;
             }
 
+            // バフを得た数。行数のコントロールに使用
             let buff = 0;
 
+            // 連続ボーナスの場合、メッセージを追加
+            // バフはすでに上で付与済み
             if (continuousFlg) {
                 buff += 1
                 message += `連続RPGボーナス！\nパワー・防御がアップした！\n`
             }
 
+            // ここで残りのステータスを計算しなおす
             let atk = 5 + (data.atk ?? 0) + Math.floor(((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) * (100 + (data.atk ?? 0)) / 100);
             let def = 5 + (data.def ?? 0) + Math.floor(((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) * (100 + (data.def ?? 0)) / 100);
             let spd = Math.floor((msg.friend.love ?? 0) / 100) + 1;
-            let mehp = Math.min((100 + lv * 3) + ((data.winCount ?? 0) * 5), (data.enemy.maxhp ?? 300));
+            // 敵の最大HP
+            let mehp = (typeof data.enemy.maxhp === "function") ? data.enemy.maxhp((100 + lv * 3)) : Math.min((100 + lv * 3) + ((data.winCount ?? 0) * 5), (data.enemy.maxhp ?? 300));
+            // 敵のHP
             let ehp = Math.min(data.ehp ?? 100, mehp);
+            // HPの割合
             let phpp = php / (100 + lv * 3);
             let ehpp = ehp / mehp;
+            // 負けた場合のステータスボーナスをここで保持
             let bonus = 0;
+            // 連続攻撃中断の場合の攻撃可能回数 0は最後まで攻撃
             let abort = 0;
 
+            // spdが低い場合、確率でspdが+1。
             if (spd === 2 && Math.random() < 0.1) {
                 buff += 1
                 message += "もこチキは体の調子が良さそうだ！\n行動回数+1！\n"
@@ -169,6 +199,8 @@ export default class extends Module {
                 message += "もこチキは体の調子が良さそうだ！\n行動回数+1！\n"
                 spd = 2;
             }
+
+            // HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
             if (phpp <= (1 / 7) && (ehpp - phpp) >= 0.5) {
                 buff += 1
                 message += "もこチキは決死の覚悟をした！\nパワーが上がり、防御が下がった！\n"
@@ -176,10 +208,14 @@ export default class extends Module {
                 def = Math.round(def * (1 - (ehpp - phpp)))
             }
 
-            const eatk = lv * 3.5 * data.enemy.atk;
-            const edef = lv * 3.5 * data.enemy.def;
+            // 敵のステータスを計算
+            const eatk = (typeof data.enemy.atk === "function") ? data.enemy.atk(atk, def, spd) : lv * 3.5 * data.enemy.atk;
+            const edef = (typeof data.enemy.def === "function") ? data.enemy.def(atk, def, spd) : lv * 3.5 * data.enemy.def;
+
+            // 敵に最大ダメージ制限がある場合、ここで計算
             let maxdmg = data.enemy.maxdmg ? mehp * data.enemy.maxdmg : undefined
 
+            // 敵が中断能力持ちの場合、ここで何回攻撃可能か判定
             for (let i = 1; i < spd; i++) {
                 if (data.enemy.abort && Math.random() < data.enemy.abort) {
                     abort = i;
@@ -187,19 +223,26 @@ export default class extends Module {
                 }
             }
 
+            // バフが1つでも付与された場合、改行を追加する
             if (buff > 0) message += "\n"
 
             // 予測最大ダメージ
-            let predictedDmg = Math.round((atk * tp * 1.8) * (1 / (((edef * (data.enemy.defx ?? 3)) + 100) / 100))) * (abort || spd);
+            let predictedDmg = Math.round((atk * tp * 1.8) * (1 / (((edef * (this.getVal(data.enemy.defx, [tp]) ?? 3)) + 100) / 100))) * (abort || spd);
 
+            // 予測最大ダメージは最大ダメージ制限を超えない
             if (maxdmg && predictedDmg > maxdmg) predictedDmg = maxdmg;
 
+            // 敵のターンが既に完了したかのフラグ
             let enemyTurnFinished = false
 
+            // 敵先制攻撃の処理
+            // spdが1ではない、または戦闘ではない場合は先制攻撃しない
             if (!data.enemy.spd && !data.enemy.hpmsg) {
                 const crit = Math.random() < phpp - ehpp;
+                // 予測最大ダメージが相手のHPの何割かで先制攻撃の確率が判定される
                 if (Math.random() < predictedDmg / ehp) {
-                    const dmg = Math.round((eatk * (data.enemy.atkx ?? 3) * (Math.max((data.count ?? 1) - 1, 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (crit ? 2 : 1)) * (1 / (((def * tp) + 100) / 100))) + Math.round(data.enemy.fire ? (count - 1) * (100 + lv * 3) * data.enemy.fire : 0)
+                    const dmg = this.getEnemyDmg(data, def, tp, count, crit, eatk)
+                    // ダメージが負けるほど多くなる場合は、先制攻撃しない
                     if (php > dmg) {
                         php -= dmg
                         message += (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n\n"
@@ -208,57 +251,74 @@ export default class extends Module {
                 }
             }
 
+            // 自身攻撃の処理
+            // spdの回数分、以下の処理を繰り返す
             for (let i = 0; i < spd; i++) {
                 let crit = Math.random() < ehpp - phpp;
-                let dmg = Math.round((atk * tp * (Math.max((data.count ?? 1) - 1, 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (crit ? 2 : 1)) * (1 / (((edef * (data.enemy.defx ?? 3)) + 100) / 100)))
+                let dmg = this.getAtkDmg(data, atk, tp, count, crit, edef)
+                // 最大ダメージ制限処理
                 if (maxdmg && maxdmg > 0 && dmg > Math.round(maxdmg * (1 / ((abort || spd) - i)))) {
+                    // 最大ダメージ制限を超えるダメージの場合は、ダメージが制限される。
                     dmg = Math.round(maxdmg * (1 / ((abort || spd) - i)))
                     maxdmg -= dmg
                     crit = false;
                 } else if (maxdmg && maxdmg > 0) {
                     maxdmg -= dmg
                 }
+                // メッセージの出力
                 message += (crit ? `**${data.enemy.atkmsg(dmg)}**` : data.enemy.atkmsg(dmg)) + "\n"
                 ehp -= dmg
+                // 敵のHPが0以下になった場合は、以降の攻撃をキャンセル
                 if (ehp <= 0) break;
+                // 攻撃が中断される場合
                 if ((i + 1) === abort) {
                     if (data.enemy.abortmsg) message += data.enemy.abortmsg + "\n"
                     break;
                 }
             }
 
+            // 勝利処理
             if (ehp <= 0) {
+                // エンドレスモードかどうかでメッセージ変更
                 if (data.enemy.name !== "もこチキは旅") {
                     message += "\n" + data.enemy.winmsg + "\n\n勝利！おめでとう！"
                 } else {
                     message += "\n" + data.enemy.winmsg + (data.endressFlg ? "\n（次の日へ進む場合は、次回も旅モードを指定してください）" : "")
                     data.endress = (data.endress ?? 0) + 1;
                 }
+                // 連続勝利数
                 data.streak = (data.streak ?? 0) + 1;
+                // 1ターンで勝利した場合はさらに+1
                 if (data.count == 1) data.streak = (data.streak ?? 0) + 1;
+                data.winCount = (data.winCount ?? 0) + 1
+                // クリアした敵のリストを追加
                 data.clearEnemy.push(data.enemy.name);
                 if (!(data.clearHistory ?? []).includes(data.enemy.name)) data.clearHistory.push(data.enemy.name);
+                // 次の試合に向けてのパラメータセット
                 data.enemy = null;
                 data.count = 1;
-                data.winCount = (data.winCount ?? 0) + 1
                 data.php = 103 + lv * 3
                 data.ehp = 103 + lv * 3 + (data.winCount ?? 0) * 5
                 data.maxTp = 0;
             } else {
+                // 敵のターンが既に終了していない場合
                 if (!enemyTurnFinished) {
                     for (let i = 0; i < (data.enemy.spd ?? 1); i++) {
                         const crit = Math.random() < phpp - ehpp;
-                        const dmg = Math.round((eatk * (data.enemy.atkx ?? 3) * (Math.max((data.count ?? 1) - 1, 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (crit ? 2 : 1)) * (1 / (((def * tp) + 100) / 100))) + Math.round(data.enemy.fire ? (count - 1) * (100 + lv * 3) * data.enemy.fire : 0)
+                        const dmg = this.getEnemyDmg(data, def, tp, count, crit, eatk)
                         php -= dmg
                         message += "\n" + (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n"
                     }
+                    // HPが0で食いしばりが可能な場合、食いしばる
                     if (php <= 0 && !data.enemy.notEndure && count === 1 && Math.random() < 0.05 + (0.1 * (data.endure ?? 0))) {
                         message += "もこチキは気合で耐えた！\n"
                         php = 1;
                         data.endure = Math.max(data.endure - 1, 0);
                     }
                 }
+                // 敗北処理
                 if (php <= 0) {
+                    // エンドレスモードかどうかでメッセージ変更
                     if (data.enemy.name !== "もこチキは旅") {
                         message += "\n" + data.enemy.losemsg + "\n\n:oyoo:"
                     } else {
@@ -266,26 +326,32 @@ export default class extends Module {
                         if ((data.endress ?? 0) > (data.maxEndress ?? 0)) data.maxEndress = data.endress;
                         data.endress = 0;
                     }
+                    // これが任意に入った旅モードだった場合は、各種フラグをリセットしない
                     if (!data.endressFlg) {
                         data.streak = 0;
                         data.clearEnemy = [];
                     }
-                    data.enemy = null;
-                    data.count = 1;
+                    // 食いしばり成功率を上げる
+                    data.endure += 1
+                    // 敗北で能力上昇ボーナス
                     data.atk = (data.atk ?? 0) + 2
                     data.def = (data.def ?? 0) + 2
+                    bonus += 2;
+                    // 次の試合に向けてのパラメータセット
+                    data.enemy = null;
+                    data.count = 1;
                     data.php = 113 + lv * 3
                     data.ehp = 103 + lv * 3 + (data.winCount ?? 0) * 5
-                    data.endure += 1
                     data.maxTp = 0;
-                    bonus += 2;
                 } else {
+                    // 決着がつかない場合
                     message += this.showStatus(data, php, ehp, mehp) + "\n\n次回へ続く……"
                     data.count = (data.count ?? 1) + 1;
                     data.php = php;
                     data.ehp = ehp;
                 }
             }
+            // レベルアップ処理
             data.lv = (data.lv ?? 1) + 1;
             let atkUp = (2 + Math.floor(Math.random() * 4));
             let totalUp = 7;
@@ -346,5 +412,27 @@ export default class extends Module {
         } else {
             return `\n${data.enemy.hpmsg ?? data.enemy.dname ?? data.enemy.name} : ${ehpGauge}\n${data.enemy.hpmsg ? "体力" : ":mk_hero:"} : ${phpGauge}${debuff ? `\n${debuff}` : ""}`
         }
+    }
+
+    @autobind
+    private getAtkDmg(data, atk, tp, count, crit, edef) {
+        return Math.round((atk * tp * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (crit ? 2 : 1)) * (1 / (((edef * (this.getVal(data.enemy.defx, [tp]) ?? 3)) + 100) / 100)))
+    }
+
+    @autobind
+    private getEnemyDmg(data, def, tp, count, crit, eatk) {
+        let dmg = Math.round((eatk * (this.getVal(data.enemy.atkx, [tp]) ?? 3) * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (crit ? 2 : 1)) * (1 / (((def * tp) + 100) / 100)))
+        if (data.enemy.fire) {
+            dmg += Math.round((count - 1) * (100 + data.lv * 3) * data.enemy.fire)
+        }
+        return dmg;
+    }
+
+    @autobind
+    private getVal(val, props?) {
+        if (typeof val === "function") {
+            return val(...props);
+        }
+        return val
     }
 }
