@@ -51,6 +51,6 @@ export const colors = [
         name: ":mk_hero_9p:",
         keyword: "9",
         unlock: (data) => colors.filter((x) => x.name !== ":mk_hero_9p:").every((x) => x.unlock(data)),
-        message: (data) => colors.filter((x) => x.name !== ":mk_hero_9p:").every((x) => x.unlock(data)) ? `解放済み (踏ん張り発動率: **${10 + (data.endure ?? 0) * 5}** %)` : `全ての色を解放する、または100回覚醒すると解放されます。(**${colors.reduce((acc, value) => acc + (value.unlock(data) ? 1 : 0))}** / ${colors.length - 1}) (**${(data.superCount ?? 0)}** / 100)`,
+        message: (data) => colors.filter((x) => x.name !== ":mk_hero_9p:").every((x) => x.unlock(data)) ? `解放済み (踏ん張り発動率: **${10 + (data.endure ?? 0) * 5}** %)` : `全ての色を解放する、または100回覚醒すると解放されます。(**${colors.reduce((acc, value) => acc + (value.unlock(data) ? 1 : 0), 0)}** / ${colors.length - 1}) (**${(data.superCount ?? 0)}** / 100)`,
     }
 ]
