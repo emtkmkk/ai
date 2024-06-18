@@ -7,22 +7,22 @@ import { genItem } from '@/vocabulary';
 import getDate from '@/utils/get-date';
 import { acct } from '@/utils/acct';
 import { enemys } from './enemys';
+import { colors } from './colors';
 
 export default class extends Module {
     public readonly name = 'rpg';
 
     @autobind
     public install() {
-		setInterval(() => {
-			const hours = new Date().getHours()
-			if ((hours === 0 || hours === 12 || hours === 18) && new Date().getMinutes() >= 1 && new Date().getMinutes() < 6) {
-				const me = Math.random() < 0.75 ? ":mk_hero:" : [":mk_hero_2p:",":mk_hero_3p:",":mk_hero_4p:",":mk_hero_5p:",":mk_hero_6p:",":mk_hero_7p:"].sort(() => Math.random() - 0.5)[0];
+        setInterval(() => {
+            const hours = new Date().getHours()
+            if ((hours === 0 || hours === 12 || hours === 18) && new Date().getMinutes() >= 3 && new Date().getMinutes() < 8) {
+                const me = Math.random() < 0.75 ? ":mk_hero:" : [":mk_hero_2p:", ":mk_hero_3p:", ":mk_hero_4p:", ":mk_hero_5p:", ":mk_hero_6p:", ":mk_hero_7p:"].sort(() => Math.random() - 0.5)[0];
                 this.ai.post({
                     text: `<center>$[x2 ${me}]\n\n${hours}時です！\nRPGモードの時間ですよ～\n\n毎日3回プレイして、\n私を強くしてください！\n\n「RPG」と話しかけてね\n（ここに返信でも大丈夫ですよ！）</center>`,
-                    localOnly: true,
                 })
-			}
-		}, 1000 * 60 * 5);
+            }
+        }, 1000 * 60 * 5);
         return {
             mentionHook: this.mentionHook
         };
@@ -30,115 +30,35 @@ export default class extends Module {
 
     @autobind
     private async mentionHook(msg: Message) {
-        if (msg.includes(['rpg']) && msg.includes(['色']) ) {
+        if (msg.includes(['rpg']) && msg.includes(['色'])) {
             // データを読み込み
             const data = msg.friend.getPerModulesData(this);
             if (!data) return false;
-            if (msg.includes(['変更']) && msg.includes(['1'])) {
-                data.color = 1
-                msg.friend.setPerModulesData(this, data);
-                return {
-                    reaction: ':mk_muscleok:'
-                };
-            } else if (msg.includes(['変更']) && msg.includes(['2'])) {
-                if ((data.lv ?? 1) > 99) {
-                    data.color = 2
-                    msg.friend.setPerModulesData(this, data);
-                    return {
-                        reaction: ':mk_muscleok:'
-                    };
-                } else {
-                    return {
-                        reaction: 'confused'
-                    };
+
+            if (msg.includes(['変更'])) {
+                for (let i = 0; i < colors.length; i++) {
+                    if (msg.includes([colors[i].keyword])) {
+                        if (colors[i].unlock(data)) {
+                            data.color = i + 1
+                            msg.friend.setPerModulesData(this, data);
+                            return {
+                                reaction: ':mk_muscleok:'
+                            };
+                        } else {
+                            return {
+                                reaction: 'confused'
+                            };
+                        }
+                    }
                 }
-            } else if (msg.includes(['変更']) && msg.includes(['3'])) {
-                if ((data.maxEndress ?? 0) >= 7) {
-                    data.color = 3
-                    msg.friend.setPerModulesData(this, data);
-                    return {
-                        reaction: ':mk_muscleok:'
-                    };
-                } else {
-                    return {
-                        reaction: 'confused'
-                    };
-                }
-            } else if (msg.includes(['変更']) && msg.includes(['4'])) {
-                if (data.allClear) {
-                    data.color = 4
-                    msg.friend.setPerModulesData(this, data);
-                    return {
-                        reaction: ':mk_muscleok:'
-                    };
-                } else {
-                    return {
-                        reaction: 'confused'
-                    };
-                }
-            } else if (msg.includes(['変更']) && msg.includes(['5'])) {
-                if ((data.thirdFire ?? 0) >= 3) {
-                    data.color = 5
-                    msg.friend.setPerModulesData(this, data);
-                    return {
-                        reaction: ':mk_muscleok:'
-                    };
-                } else {
-                    return {
-                        reaction: 'confused'
-                    };
-                }
-            } else if (msg.includes(['変更']) && msg.includes(['6'])) {
-                if ((data.superMuscle ?? 0) >= 300) {
-                    data.color = 6
-                    msg.friend.setPerModulesData(this, data);
-                    return {
-                        reaction: ':mk_muscleok:'
-                    };
-                } else {
-                    return {
-                        reaction: 'confused'
-                    };
-                }
-            } else if (msg.includes(['変更']) && msg.includes(['7'])) {
-                if ((data.winCount ?? 0) >= 100 || data.maxStatusUp >= 12) {
-                    data.color = 7
-                    msg.friend.setPerModulesData(this, data);
-                    return {
-                        reaction: ':mk_muscleok:'
-                    };
-                } else {
-                    return {
-                        reaction: 'confused'
-                    };
-                }
-            } else if (msg.includes(['変更']) && msg.includes(['8'])) {
-                if (data.clearHistory.includes(":mk_hero_8p:")) {
-                    data.color = 8
-                    msg.friend.setPerModulesData(this, data);
-                    return {
-                        reaction: ':mk_muscleok:'
-                    };
-                } else {
-                    return {
-                        reaction: 'confused'
-                    };
-                }
-            } else {
-                msg.reply([
-                    "色を変更する場合、`rpg 色変更 <数字>`と話しかけてね",
-                    "",
-                    "色解放条件",
-                    "1: :mk_hero: 初期解放",
-                    "2: :mk_hero_2p: " + ((data.lv ?? 1) >= 99 ? `解放済み (Lv: **${(data.lv ?? 1)}**)` : `Lv99になると解放されます。(**${(data.lv ?? 1)}** / 99)`),
-                    "3: :mk_hero_3p: " + ((data.maxEndress ?? 0) >= 7 ? `解放済み (旅最高日数: **${(data.lv ?? 1)}**)` : `7日以上連続で旅をすると解放されます。(**${(data.maxEndress ?? 0)}** / 7)`),
-                    "4: :mk_hero_4p: " + (data.allClear ? `解放済み (クリアLv: **${(data.allClear ?? "?")}**)` : "負けずに全ての敵を1度でも倒すと解放されます。"),
-                    "5: :mk_hero_5p: " + ((data.thirdFire ?? 0) >= 3 ? `解放済み (最大🔥: **${(data.thirdFire ?? 0)}**)` : `1戦闘で🔥を3回受けると解放されます。(**${(data.thirdFire ?? 0)}** / 3)`),
-                    "6: :mk_hero_6p: " + ((data.superMuscle ?? 0) >= 300 ? `解放済み (最大耐ダメージ: **${(data.superMuscle ?? 0)}**)` : `一撃で300ダメージ以上受け、倒れなかった場合に解放されます。(**${(data.superMuscle ?? 0)}** / 300)`),
-                    "7: :mk_hero_7p: " + ((data.winCount ?? 0) >= 100 || data.maxStatusUp >= 12 ? `解放済み (勝利数: **${(data.winCount ?? 0)}**) (運: **${(data.maxStatusUp ?? 7)}**)` : `100回勝利する、または運が良いと解放されます。(**${(data.winCount ?? 0)}** / 100) (**${(data.maxStatusUp ?? 7)}** / 12)`),
-                    "8: :mk_hero_8p: " + (data.clearHistory.includes(":mk_hero_8p:") ? `解放済み (クリアLv: **${(data.aHeroLv ?? "?")}**)` : ":mk_hero_8p:を1度でも倒すと解放されます。")
-                ].join("\n"));
             }
+            
+            msg.reply([
+                "色を変更する場合、`rpg 色変更 <数字>`と話しかけてね",
+                "",
+                "色解放条件",
+                ...colors.map((x) => `${x.keyword}: ${x.name} ${x.message(data)}`)
+            ].join("\n"));
 
             return {
                 reaction: 'love'
@@ -147,6 +67,7 @@ export default class extends Module {
         if (msg.includes(['rpg'])) {
             // データを読み込み
             const data = msg.friend.getPerModulesData(this);
+            const colorData = colors.map((x) => x.unlock(data));
             // 各種データがない場合は、初期化
             if (!data.clearEnemy) data.clearEnemy = [data.preEnemy ?? ""].filter(Boolean);
             if (!data.clearHistory) data.clearHistory = data.clearEnemy;
@@ -165,7 +86,7 @@ export default class extends Module {
 
             // 現在の敵と戦ってるターン数。 敵がいない場合は1。
             let count = data.count ?? 1
-            
+
             // 旅モード（エンドレスモード）のフラグ
             if (msg.includes(['旅モード'])) {
                 // 現在戦っている敵がいない場合で旅モード指定がある場合はON
@@ -215,9 +136,9 @@ export default class extends Module {
                 userId: msg.userId
             })
 
-					// 覚醒状態か？
-					const isSuper = Math.random() < 0.02 || (data.lv ?? 1) % 100 === 0 || data.color === 9;
-            
+            // 覚醒状態か？
+            const isSuper = Math.random() < 0.02 || (data.lv ?? 1) % 100 === 0 || data.color === 9;
+
             // 投稿数（今日と明日の多い方）
             const postCount = Math.max(
                 (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.renote?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
@@ -246,7 +167,7 @@ export default class extends Module {
             let message = ""
 
             // 自分のカラー
-            const me = ":mk_hero" + (isSuper ? `_9p:` : !data.color || data.color === 1 ? ":" : `_${data.color}p:`)
+            let me = ":mk_hero" + (!data.color || data.color === 1 ? ":" : `_${data.color}p:`)
 
             // ステータスを計算
             const lv = data.lv ?? 1
@@ -306,7 +227,7 @@ export default class extends Module {
             if (continuousFlg) {
                 buff += 1
                 message += `連続RPGボーナス！\nパワー・防御がアップした！\n`
-						}
+            }
 
             // ここで残りのステータスを計算しなおす
             let atk = 5 + (data.atk ?? 0) + Math.floor(((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) * (100 + (data.atk ?? 0)) / 100);
@@ -324,11 +245,13 @@ export default class extends Module {
             // 連続攻撃中断の場合の攻撃可能回数 0は最後まで攻撃
             let abort = 0;
 
-					if (isSuper) {
+            if (isSuper) {
                 buff += 1;
-                message += "**もこチキはすごく調子が良いようだ！**\n行動回数+**2**！\nパワー・防御が**超**アップ！\n";
-						    spd += 2;
-					}
+                me = ":mk_hero_9p:"
+                message += `$[x2 ${me}]\n\n**もこチキは覚醒状態になった！**\n行動回数+**2**！\nパワー・防御が**超**アップ！\n`;
+                spd += 2;
+                data.superCount = (data.superCount ?? 0) + 1
+            }
 
             // spdが低い場合、確率でspdが+1。
             if (spd === 2 && Math.random() < 0.1) {
@@ -399,7 +322,7 @@ export default class extends Module {
             // spdの回数分、以下の処理を繰り返す
             for (let i = 0; i < spd; i++) {
                 let crit = Math.random() < ehpp - phpp;
-                let dmg = this.getAtkDmg(data, atk, tp, count, crit, edef)
+                let dmg = this.getAtkDmg(data, atk, tp, count, crit, edef, mehp)
                 // 最大ダメージ制限処理
                 if (maxdmg && maxdmg > 0 && dmg > Math.round(maxdmg * (1 / ((abort || spd) - i)))) {
                     // 最大ダメージ制限を超えるダメージの場合は、ダメージが制限される。
@@ -419,6 +342,12 @@ export default class extends Module {
                     if (data.enemy.abortmsg) message += data.enemy.abortmsg + "\n"
                     break;
                 }
+            }
+
+            // 覚醒状態でこれが戦闘なら炎で追加攻撃
+            if (isSuper && ehp > 0 && !data.enemy.hpmsg && !data.enemy.lToR && !data.enemy.pLToR) {
+                message += `もこチキの追い打ち炎攻撃！\n${data.enemy.dname ?? data.enemy.name}が次に受けるダメージが上昇した！\n`
+                data.fireAtk = (data.enemyFire ?? 0) + 1;
             }
 
             // 勝利処理
@@ -449,6 +378,7 @@ export default class extends Module {
                 data.php = 103 + lv * 3
                 data.ehp = 103 + lv * 3 + (data.winCount ?? 0) * 5
                 data.maxTp = 0;
+                data.fireAtk = 0;
             } else {
                 // 敵のターンが既に終了していない場合
                 let maxDmg = 0;
@@ -496,6 +426,7 @@ export default class extends Module {
                     data.php = 113 + lv * 3
                     data.ehp = 103 + lv * 3 + (data.winCount ?? 0) * 5
                     data.maxTp = 0;
+                    data.fireAtk = 0;
                 } else {
                     // 決着がつかない場合
                     message += this.showStatus(data, php, ehp, mehp, me) + "\n\n次回へ続く……"
@@ -537,13 +468,20 @@ export default class extends Module {
 
             msg.friend.setPerModulesData(this, data);
 
+            const newColorData = colors.map((x) => x.unlock(data));
+            for (let i = 0; i < newColorData.length; i++) {
+                if (!colorData[i] && newColorData[i]) {
+                    message += `\n\n条件を満たしたので、新しい色が解放されました！\n\n$[x2 ${colors[i].name}]\n\n「RPG 色」と話しかけて確認してみてね！`
+                }
+            }
+
             msg.reply(`<center>${message}</center>`, {
                 cw,
                 visibility: 'public'
             });
 
             return {
-                reaction: 'love'
+                reaction: me
             };
         } else {
             return false;
@@ -569,8 +507,12 @@ export default class extends Module {
     }
 
     @autobind
-    private getAtkDmg(data, atk, tp, count, crit, edef) {
-        return Math.round((atk * tp * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (crit ? 2 : 1)) * (1 / (((edef * (this.getVal(data.enemy.defx, [tp]) ?? 3)) + 100) / 100)))
+    private getAtkDmg(data, atk, tp, count, crit, edef, mehp) {
+        let dmg = Math.round((atk * tp * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (crit ? 2 : 1)) * (1 / (((edef * (this.getVal(data.enemy.defx, [tp]) ?? 3)) + 100) / 100)))
+        if (data.fireAtk) {
+            dmg += Math.round((data.fireAtk) * mehp * 0.1)
+        }
+        return dmg;
     }
 
     @autobind
