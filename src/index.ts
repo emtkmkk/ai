@@ -2,7 +2,7 @@
 
 import "module-alias/register";
 
-import * as request from "request-promise-native";
+import request from "request-promise-native";
 const promiseRetry = require("promise-retry");
 
 import 藍 from "./ai";
