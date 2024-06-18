@@ -67,10 +67,10 @@ export default class extends Module {
         if (msg.includes(['rpg'])) {
             // データを読み込み
             const data = msg.friend.getPerModulesData(this);
-            const colorData = colors.map((x) => x.unlock(data));
             // 各種データがない場合は、初期化
             if (!data.clearEnemy) data.clearEnemy = [data.preEnemy ?? ""].filter(Boolean);
             if (!data.clearHistory) data.clearHistory = data.clearEnemy;
+            const colorData = colors.map((x) => x.unlock(data));
             // プレイ済でないかのチェック
             if (data.lastPlayedAt === getDate() + (new Date().getHours() < 12 ? "" : new Date().getHours() < 18 ? "/12" : "/18") && data.ehp <= 110 + data.lv * 3 + (data.winCount ?? 0) * 5) {
                 msg.reply(`RPGモードは0~11時、12~17時、18~23時の1日3回です。\n${new Date().getHours() < 12 ? "12時以降" : new Date().getHours() < 18 ? "18時以降" : "明日"}になったらもう一度試してください。`);
