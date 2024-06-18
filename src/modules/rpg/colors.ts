@@ -44,8 +44,8 @@ export const colors = [
     {
         name: ":mk_hero_8p:",
         keyword: "8",
-        unlock: (data) => data.clearHistory.includes(":mk_hero_8p:"),
-        message: (data) => data.clearHistory.includes(":mk_hero_8p:") ? `解放済み (クリアLv: **${(data.aHeroLv ?? "?")}**)` : ":mk_hero_8p:を1度でも倒すと解放されます。",
+        unlock: (data) => (data.clearHistory ?? []).includes(":mk_hero_8p:"),
+        message: (data) => (data.clearHistory ?? []).includes(":mk_hero_8p:") ? `解放済み (クリアLv: **${(data.aHeroLv ?? "?")}**)` : ":mk_hero_8p:を1度でも倒すと解放されます。",
     },
     {
         name: ":mk_hero_9p:",
