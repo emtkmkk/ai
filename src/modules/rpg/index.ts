@@ -429,7 +429,7 @@ export default class extends Module {
                         data.clearEnemy = [];
                     }
                     // 食いしばり成功率を上げる
-                    data.endure += 1
+                    data.endure = (data.endure ?? 0) + 1
                     // 敗北で能力上昇ボーナス
                     data.atk = (data.atk ?? 0) + 2
                     data.def = (data.def ?? 0) + 2
