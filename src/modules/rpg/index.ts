@@ -320,17 +320,18 @@ export default class extends Module {
             if (!data.enemy.spd && !data.enemy.hpmsg) {
                 const crit = Math.random() < phpp - ehpp;
                 // 予測最大ダメージが相手のHPの何割かで先制攻撃の確率が判定される
-                if (Math.random() < predictedDmg / ehp || (count === 3 && (data.thirdFire ?? 0) <= 2)) {
+                if (Math.random() < predictedDmg / ehp || (count === 3 && data.enemy.fire && (data.thirdFire ?? 0) <= 2)) {
                     const dmg = this.getEnemyDmg(data, def, tp, count, crit, eatk)
                     // ダメージが負けるほど多くなる場合は、先制攻撃しない
-                    if (php > dmg || (count === 3 && (data.thirdFire ?? 0) <= 2)) {
+                    if (php > dmg || (count === 3 && data.enemy.fire && (data.thirdFire ?? 0) <= 2)) {
                         php -= dmg
-                        message += (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n\n"
+                        message += (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n"
                         if (php <= 0 && !data.enemy.notEndure) {
                             message += "もこチキは気合で耐えた！\n"
                             php = 1;
                             data.endure = Math.max(data.endure - 1, 0);
                         }
+											message += "/n";
                         enemyTurnFinished = true;
                         if (data.enemy.fire && count > (data.thirdFire ?? 0)) data.thirdFire = count;
                         if (dmg > (data.superMuscle ?? 0)) data.superMuscle = dmg;
