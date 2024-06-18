@@ -1,9 +1,9 @@
 // AI CORE
 
-import * as fs from "fs";
+import fs from "fs";
 import autobind from "autobind-decorator";
 import loki from "lokijs";
-import * as request from "request-promise-native";
+import request from "request-promise-native";
 import { v4 as uuid } from "uuid";
 const delay = require("timeout-as-promise");
 
@@ -575,6 +575,7 @@ export default class 藍 {
 
 	@autobind
 	public incActiveFactor(amount = 0.003) {
+		amount = amount * 1000;
 		const incNum = amount / Math.max(this.activeFactor, 1);
 		this.activeFactor =
 			Math.floor(Math.min(this.activeFactor + incNum, 2) * 1000) / 1000;
