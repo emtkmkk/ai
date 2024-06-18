@@ -240,6 +240,12 @@ export default class extends Module {
             let atk = 5 + (data.atk ?? 0) + Math.floor(((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) * (100 + (data.atk ?? 0)) / 100);
             let def = 5 + (data.def ?? 0) + Math.floor(((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) * (100 + (data.def ?? 0)) / 100);
             let spd = Math.floor((msg.friend.love ?? 0) / 100) + 1;
+            if (data.color === 8) {
+                // 8Pカラーがセットされている場合、パラメータを逆転
+                const _atk = atk;
+                atk = def
+                def = _atk
+            }
             // 敵の最大HP
             let mehp = (typeof data.enemy.maxhp === "function") ? data.enemy.maxhp((100 + lv * 3)) : Math.min((100 + lv * 3) + ((data.winCount ?? 0) * 5), (data.enemy.maxhp ?? 300));
             // 敵のHP
@@ -361,7 +367,7 @@ export default class extends Module {
             // 覚醒状態でこれが戦闘なら炎で追加攻撃
             if (isSuper && ehp > 0 && !data.enemy.hpmsg && !data.enemy.lToR && !data.enemy.pLToR) {
                 message += `もこチキの追い打ち炎攻撃！\n${data.enemy.dname ?? data.enemy.name}が次に受けるダメージが上昇した！\n`
-                data.fireAtk = (data.enemyFire ?? 0) + 1;
+                data.fireAtk = (data.fireAtk ?? 0) + 10;
             }
 
             // 勝利処理
@@ -523,8 +529,9 @@ export default class extends Module {
     @autobind
     private getAtkDmg(data, atk, tp, count, crit, edef, mehp) {
         let dmg = Math.round((atk * tp * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (crit ? 2 : 1)) * (1 / (((edef * (this.getVal(data.enemy.defx, [tp]) ?? 3)) + 100) / 100)))
-        if (data.fireAtk) {
-            dmg += Math.round((data.fireAtk) * mehp * 0.1)
+        if (data.fireAtk > 0) {
+            dmg += Math.round((data.fireAtk) * mehp * 0.01)
+            data.fireAtk = (data.fireAtk ?? 0) - 1;
         }
         return dmg;
     }
