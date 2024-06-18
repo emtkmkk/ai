@@ -137,7 +137,7 @@ export default class extends Module {
             })
 
             // 覚醒状態か？
-            const isSuper = Math.random() < 0.02 || (data.lv ?? 1) % 100 === 0 || data.color === 9;
+            const isSuper = Math.random() < (0.02 + Math.max(data.superPoint / 100, 0)) || (data.lv ?? 1) % 100 === 0 || data.color === 9;
 
             // 投稿数（今日と明日の多い方）
             const postCount = Math.max(
@@ -161,6 +161,13 @@ export default class extends Module {
             // これが2ターン目以降の場合、戦闘中に計算された最大倍率の50%の倍率が保証される
             data.maxTp = Math.max(tp, data.maxTp ?? 0);
             tp = Math.max(tp, data.maxTp / 2);
+
+            if (!isSuper) {
+                data.superPoint = Math.max(data.superPoint ?? 0 - (tp - 2), -3)
+            } else {
+                data.superPoint = 0;
+            }
+            
 
             // 画面に出力するメッセージ
             let cw = acct(msg.user) + " ";
