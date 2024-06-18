@@ -52,7 +52,7 @@ export default class extends Module {
                     }
                 }
             }
-            
+
             msg.reply([
                 "色を変更する場合、`rpg 色変更 <数字>`と話しかけてね",
                 "",
@@ -167,7 +167,7 @@ export default class extends Module {
             } else {
                 data.superPoint = 0;
             }
-            
+
 
             // 画面に出力するメッセージ
             let cw = acct(msg.user) + " ";
@@ -331,7 +331,7 @@ export default class extends Module {
                             php = 1;
                             data.endure = Math.max(data.endure - 1, 0);
                         }
-											message += "/n";
+                        message += "\n";
                         enemyTurnFinished = true;
                         if (data.enemy.fire && count > (data.thirdFire ?? 0)) data.thirdFire = count;
                         if (dmg > (data.superMuscle ?? 0)) data.superMuscle = dmg;
