@@ -246,11 +246,13 @@ export default class extends Module {
             let abort = 0;
 
             if (isSuper) {
-                buff += 1;
-                me = ":mk_hero_9p:"
-                message += `$[x2 ${me}]\n\n**もこチキは覚醒状態になった！**\n行動回数+**2**！\nパワー・防御が**超**アップ！\n`;
+                if (me !== ":mk_hero_9p:") {
+                    buff += 1;
+                    me = ":mk_hero_9p:"
+                    message += `$[x2 ${me}]\n\n**もこチキは覚醒状態になった！**\n行動回数+**2**！\nパワー・防御が**超**アップ！\n`;
+                    data.superCount = (data.superCount ?? 0) + 1
+                }
                 spd += 2;
-                data.superCount = (data.superCount ?? 0) + 1
             }
 
             // spdが低い場合、確率でspdが+1。
