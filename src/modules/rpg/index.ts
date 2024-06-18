@@ -474,9 +474,10 @@ export default class extends Module {
 
             if (data.atk > 0 && data.def > 0) {
                 const diff = data.atk - data.def;
-                const rate = (Math.pow(0.5, Math.abs(diff / 100)) * 0.15)
-                if (Math.random() < (diff > 0 ? 0.3 - rate : rate)) atkUp = totalUp;
-                else if (Math.random() < (diff < 0 ? 0.3 - rate : rate)) atkUp = 0;
+                const totalrate = 0.2 + Math.min(Math.abs(diff) * 0.005, 0.3)
+                const rate = (Math.pow(0.5, Math.abs(diff / 100)) * (totalrate / 2))
+                if (Math.random() < (diff > 0 ? totalrate - rate : rate)) atkUp = totalUp;
+                else if (Math.random() < (diff < 0 ? totalrate - rate : rate)) atkUp = 0;
             }
             data.atk = (data.atk ?? 0) + atkUp;
             data.def = (data.def ?? 0) + totalUp - atkUp;
