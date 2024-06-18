@@ -320,7 +320,7 @@ export default class extends Module {
                     if (php > dmg || (count === 3 && (data.thirdFire ?? 0) <= 2)) {
                         php -= dmg
                         message += (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n\n"
-                        if (php <= 0 && !data.enemy.notEndure && count === 1 && Math.random() < 0.05 + (0.1 * (data.endure ?? 0))) {
+                        if (php <= 0 && !data.enemy.notEndure) {
                             message += "もこチキは気合で耐えた！\n"
                             php = 1;
                             data.endure = Math.max(data.endure - 1, 0);
