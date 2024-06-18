@@ -493,11 +493,15 @@ export default class extends Module {
             msg.friend.setPerModulesData(this, data);
 
             const newColorData = colors.map((x) => x.unlock(data));
+					let unlockColors = "";
             for (let i = 0; i < newColorData.length; i++) {
                 if (!colorData[i] && newColorData[i]) {
-                    message += `\n\n条件を満たしたので、新しい色が解放されました！\n\n$[x2 ${colors[i].name}]\n\n「RPG 色」と話しかけて確認してみてね！`
+                    unlockColors += colors[i].name
                 }
             }
+					if (unlockColors) {
+								message += `\n\n条件を満たしたので、\n新しい色が解放されました！\n\n$[x2 ${unlockColors}]\n\n「RPG 色」と話しかけて確認してみてね！`
+					}
 
             msg.reply(`<center>${message}</center>`, {
                 cw,
