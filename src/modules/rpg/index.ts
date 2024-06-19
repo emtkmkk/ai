@@ -142,7 +142,7 @@ export default class extends Module {
             let totalDmg = 0;
 
             for (let i = 0; i < spd; i++) {
-                let dmg = this.getAtkDmg(data, atk, tp, 1, false, edef, 0, 1)
+                let dmg = this.getAtkDmg(data, atk, tp, 1, false, edef, 0, 1, 3)
                 totalDmg += dmg
                 // メッセージの出力
                 message += `もこチキは木人に攻撃！\n${dmg}ポイントのダメージ！` + "\n"
@@ -651,8 +651,8 @@ export default class extends Module {
     }
 
     @autobind
-    private getAtkDmg(data, atk, tp, count, crit, edef, mehp, rng = (0.2 + Math.random() * 1.6)) {
-        let dmg = Math.round((atk * tp * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * rng * (crit ? 2 : 1)) * (1 / (((edef * (this.getVal(data.enemy.defx, [tp]) ?? 3)) + 100) / 100)))
+    private getAtkDmg(data, atk, tp, count, crit, edef, mehp, rng = (0.2 + Math.random() * 1.6), defx?) {
+        let dmg = Math.round((atk * tp * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * rng * (crit ? 2 : 1)) * (1 / (((edef * (defx ?? this.getVal(data.enemy.defx, [tp]) ?? 3)) + 100) / 100)))
         if (data.fireAtk > 0) {
             dmg += Math.round((data.fireAtk) * mehp * 0.01)
             data.fireAtk = (data.fireAtk ?? 0) - 1;
