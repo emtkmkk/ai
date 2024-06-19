@@ -260,6 +260,8 @@ export default class extends Module {
 
             if (isSuper) {
                 if (me !== ":mk_hero_9p:") {
+									// バフが1つでも付与された場合、改行を追加する
+									if (buff > 0) message += "\n"
                     buff += 1;
                     me = ":mk_hero_9p:"
                     message += `$[x2 ${me}]\n\n**もこチキは覚醒状態になった！**\n行動回数+**2**！\nパワー・防御が**超**アップ！\n`;
