@@ -14,8 +14,8 @@ export const colors = [
     {
         name: ":mk_hero_3p:",
         keyword: "3",
-        unlock: (data) => (data.maxEndress ?? 0) >= 7,
-        message: (data) => (data.maxEndress ?? 0) >= 7 ? `解放済み (旅最高日数: **${(data.lv ?? 1)}**)` : `7日以上連続で旅をすると解放されます。(**${(data.maxEndress ?? 0)}** / 7)`,
+        unlock: (data) => (data.maxEndress ?? 0) >= 6,
+        message: (data) => (data.maxEndress ?? 0) >= 6 ? `解放済み (旅最高日数: **${(data.maxEndress ?? 1)}**)` : `「旅モード」で7日以上連続で旅をすると解放されます。(**${(data.maxEndress ?? -1) + 1}** / 7)`,
     },
     {
         name: ":mk_hero_4p:",
