@@ -192,9 +192,18 @@ export default class extends Module {
                 };
             }
             // 連続プレイかどうかをチェック
+            let continuousBonus = 0;
             let continuousFlg = false;
             if (data.lastPlayedAt === (new Date().getHours() < 12 ? getDate(-1) + "/18" : new Date().getHours() < 18 ? getDate() : getDate() + "/12")) {
-                continuousFlg = true;
+                continuousBonus = 1;
+            } else {
+                if (
+                    data.lastPlayedAt === (new Date().getHours() < 12 ? getDate(-1) + "/12" : new Date().getHours() < 18 ? getDate(-1) + "/18" : getDate()) ||
+                    data.lastPlayedAt === (new Date().getHours() < 12 ? getDate(-1) : new Date().getHours() < 18 ? getDate(-1) + "/12" : getDate(-1) + "/18")
+                ) {
+                    if (new Date().getHours() >= 18 && data.lastPlayedAt === getDate()) continuousFlg = true;
+                    continuousBonus = 0.5;
+                }
             }
 
             // 現在の敵と戦ってるターン数。 敵がいない場合は1。
@@ -253,23 +262,27 @@ export default class extends Module {
             const isSuper = Math.random() < (0.02 + Math.max(data.superPoint / 100, 0)) || (data.lv ?? 1) % 100 === 0 || data.color === 9;
 
             // 投稿数（今日と明日の多い方）
-            const postCount = Math.max(
+            let postCount = Math.max(
                 (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.renote?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
                 (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.renote?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
             ) + (isSuper ? 200 : 0);
 
+            if (continuousBonus > 0) {
+                postCount = postCount + (Math.min(Math.max(10, postCount / 2), 25) * continuousBonus)
+            }
+
             // 投稿数に応じてステータス倍率を得る
             // 連続プレイの場合は倍率アップ
             let tp =
-                postCount >= 100
-                    ? (postCount - 100) / 100 + 4 + (continuousFlg ? 0.25 : 0)
-                    : postCount >= 50
-                        ? (postCount - 50) / 50 + 3 + (continuousFlg ? 0.5 : 0)
-                        : postCount >= 20
-                            ? (postCount - 20) / 30 + 2 + (continuousFlg ? 0.5 : 0)
-                            : postCount >= 5
-                                ? (postCount - 5) / 15 + 1 + (continuousFlg ? 0.5 : 0)
-                                : Math.max(postCount / 5, (continuousFlg ? 1 : 0.3))
+                    postCount >= 75
+                        ? (postCount - 75) / 100 + 4
+                        : postCount >= 25
+                            ? (postCount - 25) / 50 + 3
+                            : postCount >= 10
+                                ? (postCount - 10) / 15 + 2
+                                : postCount >= 3
+                                    ? (postCount - 3) / 7 + 1
+                                    : Math.max(postCount / 3, (1/3))
 
             // これが2ターン目以降の場合、戦闘中に計算された最大倍率の50%の倍率が保証される
             data.maxTp = Math.max(tp, data.maxTp ?? 0);
@@ -344,9 +357,15 @@ export default class extends Module {
 
             // 連続ボーナスの場合、メッセージを追加
             // バフはすでに上で付与済み
-            if (continuousFlg) {
+            if (continuousBonus >= 1) {
                 buff += 1
                 message += `連続RPGボーナス！\nパワー・防御がアップした！\n`
+            } else if (continuousFlg && continuousBonus > 0) {
+                buff += 1
+                message += `連続RPGボーナス（弱）！\nパワー・防御が小アップした！\n`
+            } else if (continuousBonus > 0) {
+                buff += 1
+                message += `毎日RPGボーナス！\nパワー・防御が小アップした！\n`
             }
 
             // ここで残りのステータスを計算しなおす
