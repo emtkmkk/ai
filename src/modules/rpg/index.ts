@@ -64,6 +64,119 @@ export default class extends Module {
                 reaction: 'love'
             };
         }
+        if (msg.includes(['rpg']) && msg.includes(['木人'])) {
+            // データを読み込み
+            const data = msg.friend.getPerModulesData(this);
+            // 各種データがない場合は、初期化
+            if (!data.clearEnemy) data.clearEnemy = [data.preEnemy ?? ""].filter(Boolean);
+            if (!data.clearHistory) data.clearHistory = data.clearEnemy;
+            const colorData = colors.map((x) => x.unlock(data));
+            // プレイ済でないかのチェック
+            if (data.lastPlayedLv >= data.lv) {
+                msg.reply(`全力を出して疲れてしまったみたいです。Lvが上がったら、もう一度試してみてください。`);
+                return {
+                    reaction: 'confused'
+                };
+            }
+
+            data.lastPlayedLv = data.lv;
+
+            // 覚醒状態か？
+            const isSuper = data.color === 9;
+
+            // ユーザの投稿数を取得
+            const chart = await this.ai.api('charts/user/notes', {
+                span: 'day',
+                limit: 2,
+                userId: msg.userId
+            })
+
+            
+            // 投稿数（今日と明日の多い方）
+            const postCount = Math.max(
+                (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.renote?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
+                (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.renote?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
+            ) + (isSuper ? 200 : 0);
+
+            // 投稿数に応じてステータス倍率を得る
+            // 連続プレイの場合は倍率アップ
+            let tp =
+                postCount >= 100
+                    ? (postCount - 100) / 100 + 4
+                    : postCount >= 50
+                        ? (postCount - 50) / 50 + 3
+                        : postCount >= 20
+                            ? (postCount - 20) / 30 + 2
+                            : postCount >= 5
+                                ? (postCount - 5) / 15 + 1
+                                : Math.max(postCount / 5, 0.3)
+
+            // 自分のカラー
+            let me = ":mk_hero" + (!data.color || data.color === 1 ? ":" : `_${data.color}p:`)
+
+            // 画面に出力するメッセージ
+            let cw = acct(msg.user) + " ";
+            let message = ""
+
+            cw += `もこチキは自分の力を確認するようだ。(Lv${data.lv})`
+            message += `$[x2 ${me}]\n\n開始！\n\n`
+
+            // ここで残りのステータスを計算しなおす
+            let atk = 5 + (data.atk ?? 0) + Math.floor(((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) * (100 + (data.atk ?? 0)) / 100);
+            let def = 5 + (data.def ?? 0) + Math.floor(((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) * (100 + (data.def ?? 0)) / 100);
+            let spd = Math.floor((msg.friend.love ?? 0) / 100) + 1;
+            if (data.color === 8) {
+                // 8Pカラーがセットされている場合、パラメータを逆転
+                const _atk = atk;
+                atk = def
+                def = _atk
+            }
+
+            if (isSuper) {
+                spd += 2;
+            }
+
+            // 敵のステータスを計算
+            const edef =  data.lv * 3.5 * data.enemy.def;
+
+            let totalDmg = 0;
+
+            for (let i = 0; i < spd; i++) {
+                let dmg = this.getAtkDmg(data, atk, tp, 1, false, edef, 0, 1)
+                totalDmg += dmg
+                // メッセージの出力
+                message += `もこチキは木人に攻撃！${dmg}ポイントのダメージ！` + "\n"
+            }
+
+            message += `\n合計${totalDmg}ポイントのダメージ！\n(${Math.round(totalDmg * 0.2)} ~ ${Math.round(totalDmg * 1.8)})${data.bestScore ? `\n(これまでのベスト: **${data.bestScore}**)` : ""}`
+            
+            data.bestScore = Math.max(data.bestScore ?? 0, totalDmg)
+
+            msg.friend.setPerModulesData(this, data);
+
+            // 色解禁確認
+            const newColorData = colors.map((x) => x.unlock(data));
+            let unlockColors = "";
+            for (let i = 0; i < newColorData.length; i++) {
+                if (!colorData[i] && newColorData[i]) {
+                    unlockColors += colors[i].name
+                }
+            }
+            if (unlockColors) {
+                message += `\n\n条件を満たしたので、\n新しい色が解放されました！\n\n$[x2 ${unlockColors}]\n\n「RPG 色」と話しかけて確認してみてね！`
+            }
+
+            msg.reply(`<center>${message}</center>`, {
+                cw,
+                visibility: 'public'
+            });
+
+            return {
+                reaction: me
+            };
+
+        }
+
         if (msg.includes(['rpg'])) {
             // データを読み込み
             const data = msg.friend.getPerModulesData(this);
@@ -538,8 +651,8 @@ export default class extends Module {
     }
 
     @autobind
-    private getAtkDmg(data, atk, tp, count, crit, edef, mehp) {
-        let dmg = Math.round((atk * tp * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (crit ? 2 : 1)) * (1 / (((edef * (this.getVal(data.enemy.defx, [tp]) ?? 3)) + 100) / 100)))
+    private getAtkDmg(data, atk, tp, count, crit, edef, mehp, rng = (0.2 + Math.random() * 1.6)) {
+        let dmg = Math.round((atk * tp * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * rng * (crit ? 2 : 1)) * (1 / (((edef * (this.getVal(data.enemy.defx, [tp]) ?? 3)) + 100) / 100)))
         if (data.fireAtk > 0) {
             dmg += Math.round((data.fireAtk) * mehp * 0.01)
             data.fireAtk = (data.fireAtk ?? 0) - 1;
