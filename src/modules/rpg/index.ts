@@ -137,7 +137,7 @@ export default class extends Module {
             }
 
             // 敵のステータスを計算
-            const edef =  data.lv * 3.5;
+            const edef = data.lv * 3.5;
 
             let totalDmg = 0;
 

@@ -189,7 +189,7 @@ export default class Friend {
 		// x00を超えた時に感謝のメッセージを送信する
 		if (key != "merge" && (this.doc.love || 0) > 0 && (this.doc.love || 0) % 100 + amount >= 100) {
 			this.ai.sendMessage(this.doc.userId, {
-				text: `${acct(this.doc.user)}\n${this.doc.name ? this.doc.name + "、" : ""}私と${'とっても'.repeat(Math.floor((this.doc.love || 0) / 100))}たくさん遊んでいただいてありがとうございます！\nこれからもよろしくお願いします……！${this.doc.perModulesData?.rpg ? `\n（RPGモードでの行動回数が ${Math.floor((this.doc.love || 0) / 100) + 1} 回になりました！）` : ""}`
+				text: `${acct(this.doc.user)}\n${this.doc.name ? this.doc.name + "、" : ""}私と${'とっても'.repeat(Math.floor((this.doc.love || 0) / 100))}たくさん遊んでいただいてありがとうございます！\nこれからもよろしくお願いします……！${this.doc.perModulesData?.rpg ? `\n（RPGモードでの行動回数が ${Math.floor((this.doc.love || 0) / 100) + 2} 回になりました！）` : ""}`
 			});
 		}
 		this.doc.love += amount;
