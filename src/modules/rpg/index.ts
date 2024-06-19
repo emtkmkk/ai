@@ -101,15 +101,15 @@ export default class extends Module {
             // 投稿数に応じてステータス倍率を得る
             // 連続プレイの場合は倍率アップ
             let tp =
-                postCount >= 100
-                    ? (postCount - 100) / 100 + 4
-                    : postCount >= 50
-                        ? (postCount - 50) / 50 + 3
-                        : postCount >= 20
-                            ? (postCount - 20) / 30 + 2
-                            : postCount >= 5
-                                ? (postCount - 5) / 15 + 1
-                                : Math.max(postCount / 5, 0.3)
+                    postCount >= 75
+                        ? (postCount - 75) / 100 + 4
+                        : postCount >= 25
+                            ? (postCount - 25) / 50 + 3
+                            : postCount >= 10
+                                ? (postCount - 10) / 15 + 2
+                                : postCount >= 3
+                                    ? (postCount - 3) / 7 + 1
+                                    : Math.max(postCount / 3, (1/3))
 
             // 自分のカラー
             let me = ":mk_hero" + (!data.color || data.color === 1 ? ":" : `_${data.color}p:`)
