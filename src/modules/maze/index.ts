@@ -37,7 +37,7 @@ export default class extends Module {
 		if (now.getMonth() === 3 && now.getDate() === 1) mazeSize = 500;
 
 		this.log('Time to maze');
-		const file = await this.genMazeFile(date,mazeSize);
+		const file = await this.genMazeFile(date + "/mkck",mazeSize);
 
 		this.log('Posting...');
 		this.ai.post({
