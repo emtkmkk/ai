@@ -145,10 +145,10 @@ export default class extends Module {
                 let dmg = this.getAtkDmg(data, atk, tp, 1, false, edef, 0, 1)
                 totalDmg += dmg
                 // メッセージの出力
-                message += `もこチキは木人に攻撃！${dmg}ポイントのダメージ！` + "\n"
+                message += `もこチキは木人に攻撃！\n${dmg}ポイントのダメージ！` + "\n"
             }
 
-            message += `\n合計${totalDmg}ポイントのダメージ！\n(${Math.round(totalDmg * 0.2)} ~ ${Math.round(totalDmg * 1.8)})${data.bestScore ? `\n(これまでのベスト: **${data.bestScore}**)` : ""}`
+            message += `\n終了！\n\n合計${totalDmg}ポイントのダメージ！\n(${Math.round(totalDmg * 0.2)} ~ ${Math.round(totalDmg * 1.8)})${data.bestScore ? `\n(これまでのベスト: **${data.bestScore}**)` : ""}`
             
             data.bestScore = Math.max(data.bestScore ?? 0, totalDmg)
 
