@@ -134,10 +134,8 @@ export default class extends Module {
             }
 
 			message += [
-                `現在のステータス`,
-				`Lv : ${msg.friend.doc.perModulesData.rpg.lv ?? 1}`,
+                `現在のステータス\n`,
 				`パワー : ${Math.round(atk)}`,
-				`防御 : ${Math.round(def)}`,
 				`投稿数 : ${Math.round(postCount - (isSuper ? 200 : 0))}\n\n`,
 			].filter(Boolean).join("\n")
 
