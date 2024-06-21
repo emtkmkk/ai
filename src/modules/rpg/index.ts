@@ -118,9 +118,6 @@ export default class extends Module {
             let cw = acct(msg.user) + " ";
             let message = ""
 
-            cw += `もこチキは自分の力を確認するようだ。(Lv${data.lv})`
-            message += `$[x2 ${me}]\n\n開始！\n\n`
-
             // ここで残りのステータスを計算しなおす
             let atk = 5 + (data.atk ?? 0) + Math.floor(((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) * (100 + (data.atk ?? 0)) / 100);
             let def = 5 + (data.def ?? 0) + Math.floor(((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) * (100 + (data.def ?? 0)) / 100);
@@ -136,6 +133,18 @@ export default class extends Module {
                 spd += 2;
             }
 
+			message += [
+                `現在のステータス`,
+				`Lv : ${msg.friend.doc.perModulesData.rpg.lv ?? 1}`,
+				`パワー : ${Math.round(atk)}`,
+				`防御 : ${Math.round(def)}`,
+				`投稿数 : ${Math.round(postCount - (isSuper ? 200 : 0))}\n\n`,
+			].filter(Boolean).join("\n")
+
+            cw += `もこチキは自分の力を確認するようだ。(Lv${data.lv})`
+            message += `$[x2 ${me}]\n\n開始！\n\n`
+
+
             // 敵のステータスを計算
             const edef = data.lv * 3.5;
 
@@ -148,7 +157,7 @@ export default class extends Module {
                 message += `もこチキは木人に攻撃！\n${dmg}ポイントのダメージ！` + "\n"
             }
 
-            message += `\n終了！\n\n合計${totalDmg}ポイントのダメージ！\n(${Math.round(totalDmg * 0.2)} ~ ${Math.round(totalDmg * 1.8)})${data.bestScore ? `\n(これまでのベスト: **${data.bestScore}**)` : ""}`
+            message += `\n終了！\n\n合計${totalDmg}ポイントのダメージ！\n(ダメージ幅: ${Math.round(totalDmg * 0.2)} ~ ${Math.round(totalDmg * 1.8)})${data.bestScore ? `\n(これまでのベスト: **${data.bestScore}**)` : ""}`
             
             data.bestScore = Math.max(data.bestScore ?? 0, totalDmg)
 
@@ -199,7 +208,8 @@ export default class extends Module {
             } else {
                 if (
                     data.lastPlayedAt === (new Date().getHours() < 12 ? getDate(-1) + "/12" : new Date().getHours() < 18 ? getDate(-1) + "/18" : getDate()) ||
-                    data.lastPlayedAt === (new Date().getHours() < 12 ? getDate(-1) : new Date().getHours() < 18 ? getDate(-1) + "/12" : getDate(-1) + "/18")
+                    data.lastPlayedAt === (new Date().getHours() < 12 ? getDate(-1) : new Date().getHours() < 18 ? getDate(-1) + "/12" : getDate(-1) + "/18") ||
+                    data.lastPlayedAt.startsWith(getDate(-1))
                 ) {
                     if (new Date().getHours() >= 18 && data.lastPlayedAt === getDate()) continuousFlg = true;
                     continuousBonus = 0.5;
