@@ -207,7 +207,7 @@ export default class extends Module {
                 if (
                     data.lastPlayedAt === (new Date().getHours() < 12 ? getDate(-1) + "/12" : new Date().getHours() < 18 ? getDate(-1) + "/18" : getDate()) ||
                     data.lastPlayedAt === (new Date().getHours() < 12 ? getDate(-1) : new Date().getHours() < 18 ? getDate(-1) + "/12" : getDate(-1) + "/18") ||
-                    data.lastPlayedAt.startsWith(getDate(-1))
+                    data.lastPlayedAt?.startsWith(getDate(-1))
                 ) {
                     if (new Date().getHours() >= 18 && data.lastPlayedAt === getDate()) continuousFlg = true;
                     continuousBonus = 0.5;
