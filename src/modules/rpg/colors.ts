@@ -21,7 +21,7 @@ export const colors = [
         name: ":mk_hero_4p:",
         keyword: "4",
         unlock: (data) => data.allClear,
-        message: (data) => data.allClear ? `解放済み (クリアLv: **${(data.allClear ?? "?")}**)` : "負けずに全ての敵を1度でも倒すと解放されます。",
+        message: (data) => data.allClear ? `解放済み (クリアLv: **${(data.allClear ?? "?")}**)` :`連勝で全ての敵を倒すと解放されます。${data.clearEnemy?.length ? `(現在 **${data.clearEnemy.length}** 連勝中)` : ""}`,
     },
     {
         name: ":mk_hero_5p:",
