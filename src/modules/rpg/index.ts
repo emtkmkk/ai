@@ -364,7 +364,7 @@ export default class extends Module {
             // バフを得た数。行数のコントロールに使用
             let buff = 0;
 			
-			if (data.info < 1 && ((100 + lv * 3) + ((data.winCount ?? 0) * 5)) >= 300) {
+			if ((data.info ?? 0) < 1 && ((100 + lv * 3) + ((data.winCount ?? 0) * 5)) >= 300) {
 				data.info = 1
                 buff += 1;
 				message += `もこチキの状況判断能力がアップ！\n今後、状況が細かく\n分析出来るようになる事があるぞ！\n`
@@ -633,7 +633,7 @@ export default class extends Module {
 
 			let addMessage = ""
 
-			if (data.info < 1 && ((100 + lv * 3) + ((data.winCount ?? 0) * 5)) >= 300) {
+			if ((data.info ?? 0) < 1 && ((100 + lv * 3) + ((data.winCount ?? 0) * 5)) >= 300) {
 				data.info = 1
 				addMessage += `\nもこチキの状況判断能力がアップ！\n次回から状況が細かく\n分析出来るようになる事があるぞ！`
 			}
