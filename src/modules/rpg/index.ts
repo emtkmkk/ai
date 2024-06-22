@@ -220,7 +220,7 @@ export default class extends Module {
             // 旅モード（エンドレスモード）のフラグ
             if (msg.includes(['旅モード'])) {
                 // 現在戦っている敵がいない場合で旅モード指定がある場合はON
-                if (!data.enemy || count === 1) {
+                if (!data.enemy || count === 1 || data.endressFlg) {
                     data.endressFlg = true;
                 } else {
                     msg.reply(`探索中以外の状態では旅モードは指定できません。探索中になったらもう一度試してください。`);
