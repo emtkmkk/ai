@@ -343,17 +343,18 @@ export default class extends Module {
                     }
                     // エンドレス用の敵を設定
                     data.enemy = endressEnemy
-                }
+								}
                 // 敵の開始メッセージなどを設定
                 cw += `${data.enemy.msg}`
-                message += `$[x2 ${me}]\n\n開始！\n\n`
+                message += `$[x2 ${me}]\n\n開始！\n\n`;
+							data.ehp = (typeof data.enemy.maxhp === "function") ? data.enemy.maxhp((100 + lv * 3)) : Math.min((100 + lv * 3) + ((data.winCount ?? 0) * 5), (data.enemy.maxhp ?? 300));
             } else {
                 // 一度敵の情報を取得しなおす（関数のデータなどが吹き飛ぶ為）
                 data.enemy = [...enemys, endressEnemy].find((x) => data.enemy.name === x.name);
                 // 敵の開始メッセージなどを設定
                 cw += `${data.enemy.short} ${count}ターン目`
                 // 前ターン時点のステータスを表示
-                let mehp = Math.min((100 + lv * 3) + ((data.winCount ?? 0) * 5), (data.enemy.maxhp ?? 300));
+                let mehp = (typeof data.enemy.maxhp === "function") ? data.enemy.maxhp((100 + lv * 3)) : Math.min((100 + lv * 3) + ((data.winCount ?? 0) * 5), (data.enemy.maxhp ?? 300));
                 let ehp = Math.min(data.ehp ?? 100, mehp);
                 data.count -= 1;
                 message += this.showStatus(data, php, ehp, mehp, me) + "\n\n"
