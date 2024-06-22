@@ -363,6 +363,12 @@ export default class extends Module {
 
             // バフを得た数。行数のコントロールに使用
             let buff = 0;
+			
+			if (data.info < 1 && ((100 + lv * 3) + ((data.winCount ?? 0) * 5)) >= 300) {
+				data.info = 1
+                buff += 1;
+				message += `もこチキの状況判断能力がアップ！\n今後、状況が細かく\n分析出来るようになる事があるぞ！\n`
+			}
 
             // 連続ボーナスの場合、メッセージを追加
             // バフはすでに上で付与済み
@@ -530,7 +536,7 @@ export default class extends Module {
                 if (data.count == 1) data.streak = (data.streak ?? 0) + 1;
                 data.winCount = (data.winCount ?? 0) + 1
                 // クリアした敵のリストを追加
-                data.clearEnemy.push(data.enemy.name);
+                if (!(data.clearEnemy ?? []).includes(data.enemy.name)) data.clearEnemy.push(data.enemy.name);
                 if (!(data.clearHistory ?? []).includes(data.enemy.name)) data.clearHistory.push(data.enemy.name);
                 if (data.enemy.name === ":mk_hero_8p:" && !data.aHeroLv) {
                     data.aHeroLv = data.lv;
@@ -625,11 +631,19 @@ export default class extends Module {
             data.atk = (data.atk ?? 0) + atkUp;
             data.def = (data.def ?? 0) + totalUp - atkUp;
 
+			let addMessage = ""
+
+			if (data.info < 1 && ((100 + lv * 3) + ((data.winCount ?? 0) * 5)) >= 300) {
+				data.info = 1
+				addMessage += `\nもこチキの状況判断能力がアップ！\n次回から状況が細かく\n分析出来るようになる事があるぞ！`
+			}
+
             message += [
                 `\n\n今回のレベルアップ :`,
                 `  Lv : ${data.lv ?? 1} (+1)`,
                 `  パワー : ${data.atk ?? 0} (+${atkUp + bonus})`,
                 `  防御 : ${data.def ?? 0} (+${totalUp - atkUp + bonus})`,
+				addMessage,
                 `\n次回は${new Date().getHours() < 12 ? "12時以降に" : new Date().getHours() < 18 ? "18時以降に" : "明日以降に"}遊べます。`,
             ].filter(Boolean).join("\n")
 
@@ -666,15 +680,21 @@ export default class extends Module {
         const ehpGauge = data.enemy.lToR
             ? data.enemy.mark2.repeat(7 - ehpGaugeCount) + data.enemy.mark.repeat(ehpGaugeCount)
             : data.enemy.mark2.repeat(ehpGaugeCount) + data.enemy.mark.repeat(7 - ehpGaugeCount)
+        const ehpInfo = data.enemy.lToR
+            ? "**" + (Math.ceil((100 - Math.min(Math.ceil(ehp / mehp / (1 / 100)), 100)) / 5) * 5) + "** %？"
+            : "**" + (Math.ceil((Math.min(Math.ceil(ehp / mehp / (1 / 100)), 100)) / 5) * 5) + "** %？"
         const phpGaugeCount = Math.min(Math.ceil(php / (100 + (data.lv ?? 1) * 3) / (1 / 7)), 7)
         const phpGauge = data.enemy.pLToR
             ? "★".repeat(7 - phpGaugeCount) + "☆".repeat(phpGaugeCount)
             : "★".repeat(phpGaugeCount) + "☆".repeat(7 - phpGaugeCount)
+        const phpInfo = data.enemy.pLToR
+            ? "**" + (Math.ceil((100 - Math.min(Math.ceil(php / (100 + (data.lv ?? 1) * 3) / (1 / 100)), 100)) / 5) * 5) + "** %？"
+            : "**" + (Math.ceil((Math.min(Math.ceil(php / (100 + (data.lv ?? 1) * 3) / (1 / 100)), 100)) / 5) * 5) + "** %？"
         const debuff = [data.enemy.fire ? "🔥" + data.count : ""].filter(Boolean).join(" ")
         if (data.enemy.pLToR) {
-            return `\n${data.enemy.hpmsg ? "体力" : me} : ${ehpGauge}\n${data.enemy.hpmsg ?? data.enemy.dname ?? data.enemy.name} : ${phpGauge}${debuff ? `\n${debuff}` : ""}`
+            return `\n${data.enemy.hpmsg ? "体力" : me} : ${data.info && (data.clearHistory ?? []).includes(data.enemy.name) ? ehpInfo : ehpGauge}\n${data.enemy.hpmsg ?? data.enemy.dname ?? data.enemy.name} : ${data.info ? phpInfo : phpGauge}${debuff ? `\n${debuff}` : ""}`
         } else {
-            return `\n${data.enemy.hpmsg ?? data.enemy.dname ?? data.enemy.name} : ${ehpGauge}\n${data.enemy.hpmsg ? "体力" : me} : ${phpGauge}${debuff ? `\n${debuff}` : ""}`
+            return `\n${data.enemy.hpmsg ?? data.enemy.dname ?? data.enemy.name} : ${data.info && (data.clearHistory ?? []).includes(data.enemy.name) ? ehpInfo : ehpGauge}\n${data.enemy.hpmsg ? "体力" : me} : ${data.info ? phpInfo : phpGauge}${debuff ? `\n${debuff}` : ""}`
         }
     }
 
