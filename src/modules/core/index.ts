@@ -82,7 +82,7 @@ export default class extends Module {
                 (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.renote?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
             );
 
-			message = acct(msg.user) + " 投稿数: " + postCount
+			message += acct(msg.user) + " 投稿数: " + postCount
 			let totalPostCount = postCount
 
             if (msg.friend.doc.linkedAccounts?.length) {
