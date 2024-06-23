@@ -100,7 +100,7 @@ export default class extends Module {
             if (msg.friend.doc.linkedAccounts.length) {
                 for (const userId of msg.friend.doc.linkedAccounts) {
                     const friend = this.ai.lookupFriend(userId);
-                    if (!friend || !friend.doc.linkedAccounts.includes(msg.friend.userId)) continue;
+                    if (!friend || !friend.doc?.linkedAccounts?.includes(msg.friend.userId)) continue;
 
                     // ユーザの投稿数を取得
                     const chart = await this.ai.api('charts/user/notes', {
