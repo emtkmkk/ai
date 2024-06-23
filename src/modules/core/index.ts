@@ -41,7 +41,7 @@ export default class extends Module {
 			(await this.ranking(msg)) ||
 			this.transferBegin(msg) ||
 			this.transferEnd(msg) ||
-			this.linkAccount(msg) ||
+			(await this.linkAccount(msg)) ||
 			this.setName(msg) ||
 			this.getLove(msg) ||
 			this.getStatus(msg) ||
@@ -61,7 +61,7 @@ export default class extends Module {
 
 
 	@autobind 
-	private linkAccount(msg: Message) {
+	private async linkAccount(msg: Message) {
 		if (!msg.text) return false;
 		if (!msg.includes(['リンク','link'])) return false;
 
@@ -90,7 +90,7 @@ export default class extends Module {
                     const friend = this.ai.lookupFriend(userId);
                     if (!friend) continue;
 					if (!friend.doc?.linkedAccounts?.includes(msg.friend.userId)) {
-						message += "\n" + acct(friend.user) + " 未リンク（リンク先のアカウントから" + acct(msg.user) + "をリンクしてください）"
+						message += "\n" + acct(friend.doc.user) + " 未リンク（リンク先のアカウントから" + acct(msg.user) + "をリンクしてください）"
 					}
 
                     // ユーザの投稿数を取得
@@ -106,7 +106,7 @@ export default class extends Module {
                     );
 					totalPostCount += postCount
 
-					message += "\n" + acct(friend.user) + " 投稿数: " + postCount
+					message += "\n" + acct(friend.doc.user) + " 投稿数: " + postCount
                 }
             }
 			message += "\n\n" + "リンク内合計投稿数: " + totalPostCount
