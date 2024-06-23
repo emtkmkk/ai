@@ -90,13 +90,31 @@ export default class extends Module {
                 limit: 2,
                 userId: msg.userId
             })
-
             
             // 投稿数（今日と明日の多い方）
-            const postCount = Math.max(
+            let postCount = Math.max(
                 (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.renote?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
                 (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.renote?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
             ) + (isSuper ? 200 : 0);
+
+            if (msg.friend.doc.linkedAccounts.length) {
+                for (const userId of msg.friend.doc.linkedAccounts) {
+                    const friend = this.ai.lookupFriend(userId);
+                    if (!friend || !friend.doc.linkedAccounts.includes(msg.friend.userId)) continue;
+
+                    // ユーザの投稿数を取得
+                    const chart = await this.ai.api('charts/user/notes', {
+                        span: 'day',
+                        limit: 2,
+                        userId: userId
+                    })
+
+                    postCount += Math.max(
+                        (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.renote?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
+                        (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.renote?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
+                    );
+                }
+            }
 
             // 投稿数に応じてステータス倍率を得る
             // 連続プレイの場合は倍率アップ

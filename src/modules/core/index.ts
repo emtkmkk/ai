@@ -41,6 +41,7 @@ export default class extends Module {
 			(await this.ranking(msg)) ||
 			this.transferBegin(msg) ||
 			this.transferEnd(msg) ||
+			this.linkAccount(msg) ||
 			this.setName(msg) ||
 			this.getLove(msg) ||
 			this.getStatus(msg) ||
@@ -56,6 +57,33 @@ export default class extends Module {
 		);
 
 		return ret === true ? { reaction: "love" } : ret;
+	}
+
+
+	@autobind 
+	private linkAccount(msg: Message) {
+		if (!msg.text) return false;
+		if (!msg.includes(['リンク','link'])) return false;
+
+		const exp = /@(\w+)@?([\w.-]+)?/.exec(msg.extractedText.replace("リンク",""));
+		if (!exp?.[1]) return { reaction: ":mk_hotchicken:" };
+		const doc = this.ai.friends.find({
+			'user.username': exp[1],
+			...(exp?.[2] ? {'user.host': exp[2]} : {})
+		} as any) as any;
+		const filteredDoc = exp?.[2] ? doc : doc.filter((x) => x.user.host == null);
+		
+		if (filteredDoc.length !== 1) return { reaction: ":mk_hotchicken:" };
+
+		msg.friend.doc.linkedAccounts?.push(filteredDoc[0].userId);
+
+		msg.friend.save();
+
+		if (filteredDoc[0].linkedAccounts.includes(msg.friend.userId)) {
+			msg.reply(`アカウントのリンクに成功しました！\n投稿数が使用される際にリンクしたアカウントの合計投稿数で計算されるようになります！`);
+		} else {
+			msg.reply(`アカウントを登録しました！\nリンク先のアカウントからも同じ操作を実行してください！`);
+		}
 	}
 
 	@autobind

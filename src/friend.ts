@@ -21,6 +21,7 @@ export type FriendDoc = {
 	married?: boolean;
 	transferCode?: string;
 	isWelcomeMessageSent?: boolean;
+	linkedAccounts?: string[];
 };
 
 export default class Friend {
