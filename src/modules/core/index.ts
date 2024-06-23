@@ -140,7 +140,7 @@ export default class extends Module {
 			msg.friend.save();
 	
 			if (filteredDoc[0].linkedAccounts?.includes(msg.friend.userId)) {
-				msg.reply(`アカウントのリンクに成功しました！\n投稿数が使用される際にリンクしたアカウントの合計投稿数で計算されるようになります！`);
+				msg.reply(`アカウントのリンクに成功しました！\n投稿数が使用される際にリンクしたアカウントの合計投稿数で計算されるようになります！\n\n\`リンク\`と話しかけてもらえれば、リンクしているアカウントの情報を表示します！`);
 			} else {
 				msg.reply(`アカウントを登録しました！\nリンク先のアカウントからも同じ操作を実行してください！`);
 			}
