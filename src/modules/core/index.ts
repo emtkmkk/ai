@@ -66,37 +66,86 @@ export default class extends Module {
 		if (!msg.includes(['リンク','link'])) return false;
 
 		const exp = /@(\w+)@?([\w.-]+)?/.exec(msg.extractedText.replace("リンク",""));
-		if (!exp?.[1]) return { reaction: ":mk_hotchicken:" };
-		const doc = this.ai.friends.find({
-			'user.username': exp[1],
-			...(exp?.[2] ? {'user.host': exp[2]} : {})
-		} as any) as any;
-		let filteredDoc = exp?.[2] ? doc : doc.filter((x) => x.user.host == null);
+		if (!exp?.[1]) {
+			let message = "とリンクしているアカウント一覧\n\n"
+            // ユーザの投稿数を取得
+            const chart = await this.ai.api('charts/user/notes', {
+                span: 'day',
+                limit: 2,
+                userId: msg.userId
+            })
+            
+            // 投稿数（今日と明日の多い方）
+            let postCount = Math.max(
+                (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.renote?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
+                (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.renote?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
+            );
 
-		if (filteredDoc.length === 0) {
+			message = acct(msg.user) + " 投稿数: " + postCount
+			let totalPostCount = postCount
+
+            if (msg.friend.doc.linkedAccounts?.length) {
+                for (const userId of msg.friend.doc.linkedAccounts) {
+                    const friend = this.ai.lookupFriend(userId);
+                    if (!friend) continue;
+					if (!friend.doc?.linkedAccounts?.includes(msg.friend.userId)) {
+						message += "\n" + acct(friend.user) + " 未リンク（リンク先のアカウントから" + acct(msg.user) + "をリンクしてください）"
+					}
+
+                    // ユーザの投稿数を取得
+                    const chart = await this.ai.api('charts/user/notes', {
+                        span: 'day',
+                        limit: 2,
+                        userId: userId
+                    })
+
+                    let postCount = Math.max(
+                        (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
+                        (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
+                    );
+					totalPostCount += postCount
+
+					message += "\n" + acct(friend.user) + " 投稿数: " + postCount
+                }
+            }
+			message += "\n\n" + "リンク内合計投稿数: " + totalPostCount
+			msg.reply(`${message}`,{
+				visibility: 'specified',
+			});
+	
+			return true;
+		} else {
 			const doc = this.ai.friends.find({
 				'user.username': exp[1],
+				...(exp?.[2] ? {'user.host': exp[2]} : {})
 			} as any) as any;
-			filteredDoc = doc.filter((x) => x.user.host == null);
-		}
-		
-		if (filteredDoc.length !== 1) return { reaction: ":mk_hotchicken:" };
-
-		if (filteredDoc[0].userId === msg.userId) return { reaction: ":mk_hotchicken:" };
-
-		if (!msg.friend.doc.linkedAccounts) msg.friend.doc.linkedAccounts = [];
-
-		msg.friend.doc.linkedAccounts?.push(filteredDoc[0].userId);
-
-		msg.friend.save();
-
-		if (filteredDoc[0].linkedAccounts?.includes(msg.friend.userId)) {
-			msg.reply(`アカウントのリンクに成功しました！\n投稿数が使用される際にリンクしたアカウントの合計投稿数で計算されるようになります！`);
-		} else {
-			msg.reply(`アカウントを登録しました！\nリンク先のアカウントからも同じ操作を実行してください！`);
-		}
-
-		return true;
+			let filteredDoc = exp?.[2] ? doc : doc.filter((x) => x.user.host == null);
+	
+			if (filteredDoc.length === 0) {
+				const doc = this.ai.friends.find({
+					'user.username': exp[1],
+				} as any) as any;
+				filteredDoc = doc.filter((x) => x.user.host == null);
+			}
+			
+			if (filteredDoc.length !== 1) return { reaction: ":mk_hotchicken:" };
+	
+			if (filteredDoc[0].userId === msg.userId) return { reaction: ":mk_hotchicken:" };
+	
+			if (!msg.friend.doc.linkedAccounts) msg.friend.doc.linkedAccounts = [];
+	
+			msg.friend.doc.linkedAccounts?.push(filteredDoc[0].userId);
+	
+			msg.friend.save();
+	
+			if (filteredDoc[0].linkedAccounts?.includes(msg.friend.userId)) {
+				msg.reply(`アカウントのリンクに成功しました！\n投稿数が使用される際にリンクしたアカウントの合計投稿数で計算されるようになります！`);
+			} else {
+				msg.reply(`アカウントを登録しました！\nリンク先のアカウントからも同じ操作を実行してください！`);
+			}
+	
+			return true;
+		};
 	}
 
 	@autobind
