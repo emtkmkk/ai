@@ -84,6 +84,8 @@ export default class extends Module {
 		} else {
 			msg.reply(`アカウントを登録しました！\nリンク先のアカウントからも同じ操作を実行してください！`);
 		}
+		
+		return true;
 	}
 
 	@autobind

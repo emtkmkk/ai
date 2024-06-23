@@ -97,7 +97,7 @@ export default class extends Module {
                 (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.renote?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
             ) + (isSuper ? 200 : 0);
 
-            if (msg.friend.doc.linkedAccounts.length) {
+            if (msg.friend.doc.linkedAccounts?.length) {
                 for (const userId of msg.friend.doc.linkedAccounts) {
                     const friend = this.ai.lookupFriend(userId);
                     if (!friend || !friend.doc?.linkedAccounts?.includes(msg.friend.userId)) continue;
