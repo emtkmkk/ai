@@ -75,6 +75,8 @@ export default class extends Module {
 		
 		if (filteredDoc.length !== 1) return { reaction: ":mk_hotchicken:" };
 
+		if (filteredDoc[0].userId === msg.userId) return { reaction: ":mk_hotchicken:" };
+
 		msg.friend.doc.linkedAccounts?.push(filteredDoc[0].userId);
 
 		msg.friend.save();
@@ -84,7 +86,7 @@ export default class extends Module {
 		} else {
 			msg.reply(`アカウントを登録しました！\nリンク先のアカウントからも同じ操作を実行してください！`);
 		}
-		
+
 		return true;
 	}
 
