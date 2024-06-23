@@ -71,7 +71,14 @@ export default class extends Module {
 			'user.username': exp[1],
 			...(exp?.[2] ? {'user.host': exp[2]} : {})
 		} as any) as any;
-		const filteredDoc = exp?.[2] ? doc : doc.filter((x) => x.user.host == null);
+		let filteredDoc = exp?.[2] ? doc : doc.filter((x) => x.user.host == null);
+
+		if (filteredDoc.length === 0) {
+			const doc = this.ai.friends.find({
+				'user.username': exp[1],
+			} as any) as any;
+			filteredDoc = doc.filter((x) => x.user.host == null);
+		}
 		
 		if (filteredDoc.length !== 1) return { reaction: ":mk_hotchicken:" };
 
