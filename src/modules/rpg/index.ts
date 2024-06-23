@@ -70,6 +70,9 @@ export default class extends Module {
             // 各種データがない場合は、初期化
             if (!data.clearEnemy) data.clearEnemy = [data.preEnemy ?? ""].filter(Boolean);
             if (!data.clearHistory) data.clearHistory = data.clearEnemy;
+            if (!data.lv) return {
+                reaction: 'confused'
+            };
             const colorData = colors.map((x) => x.unlock(data));
             // プレイ済でないかのチェック
             if (data.lastPlayedLv >= data.lv) {
@@ -289,8 +292,8 @@ export default class extends Module {
 
             // 投稿数（今日と明日の多い方）
             let postCount = Math.max(
-                (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.renote?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
-                (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.renote?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
+                (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
+                (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
             ) + (isSuper ? 200 : 0);
 
             if (continuousBonus > 0) {
@@ -310,8 +313,8 @@ export default class extends Module {
                     })
 
                     postCount += Math.max(
-                        (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.renote?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
-                        (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.renote?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
+                        (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
+                        (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
                     );
                 }
             }
