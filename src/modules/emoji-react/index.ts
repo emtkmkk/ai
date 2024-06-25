@@ -91,6 +91,8 @@ export default class extends Module {
 			":bokuha_tuiteyukerudarouka:",
 			":bleach_05_kantouka:",
 			":bleach_47_kantouka:",
+			":bleach_6_kantouka:",
+			":bleach_14_kantouka:",
 		];
 
 		const randomKantouka = Math.floor(Math.random() * kantoukareactions.length);
