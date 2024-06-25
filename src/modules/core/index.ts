@@ -78,7 +78,7 @@ export default class extends Module {
 
 			let totalPostCount = 0;
 			// チャートがない場合
-			if (!chart) {
+			if (!chart?.diffs) {
 				if (msg.friend.doc?.perModulesData?.rpg?.noChart && msg.friend.doc.perModulesData.rpg.todayNotesCount) {
 					let postCount = Math.max(
 						(msg.friend.doc.user.notesCount ?? msg.friend.doc.perModulesData.rpg.todayNotesCount) - msg.friend.doc.perModulesData.rpg.todayNotesCount,
@@ -114,7 +114,7 @@ export default class extends Module {
                     })
 
 					// チャートがない場合
-					if (!chart) {
+					if (!chart?.diffs) {
 						if (friend.doc?.perModulesData?.rpg?.noChart && friend.doc.perModulesData.rpg.todayNotesCount) {
 							let postCount = Math.max(
 								(friend.doc.user.notesCount ?? friend.doc.perModulesData.rpg.todayNotesCount) - friend.doc.perModulesData.rpg.todayNotesCount,

@@ -685,7 +685,7 @@ export default class extends Module {
         })
 
         // チャートがない場合
-        if (!chart) {
+        if (!chart?.diffs) {
             let postCount = 25;
             if (data.noChart && data.todayNotesCount) {
                 postCount = Math.max(
