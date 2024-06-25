@@ -152,7 +152,7 @@ export default class extends Module {
                     reaction: 'confused'
                 };
             }
-            // 連続プレイかどうかをチェック
+            /** 連続プレイかどうかをチェック */ 
             let continuousBonus = 0;
             let continuousFlg = false;
             if (data.lastPlayedAt === (new Date().getHours() < 12 ? getDate(-1) + "/18" : new Date().getHours() < 18 ? getDate() : getDate() + "/12")) {
@@ -168,7 +168,7 @@ export default class extends Module {
                 }
             }
 
-            // 現在の敵と戦ってるターン数。 敵がいない場合は1。
+            /** 現在の敵と戦ってるターン数。 敵がいない場合は1 */ 
             let count = data.count ?? 1
 
             // 旅モード（エンドレスモード）のフラグ
@@ -192,12 +192,13 @@ export default class extends Module {
             // 最終プレイの状態を記録
             data.lastPlayedAt = getDate() + (new Date().getHours() < 12 ? "" : new Date().getHours() < 18 ? "/12" : "/18");
 
+            /** 使用中の色情報 */
             const color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
 
-            // 覚醒状態か？
+            /** 覚醒状態か？*/
             const isSuper = Math.random() < (0.02 + Math.max(data.superPoint / 200, 0)) || (data.lv ?? 1) % 100 === 0 || color.alwaysSuper;
 
-            // 投稿数（今日と明日の多い方）
+            /** 投稿数（今日と明日の多い方）*/
             let postCount = await this.getPostCount(msg, (isSuper ? 200 : 0))
 
             if (continuousBonus > 0) {
@@ -206,6 +207,7 @@ export default class extends Module {
 
             // 投稿数に応じてステータス倍率を得る
             // 連続プレイの場合は倍率アップ
+            /** ステータス倍率（投稿数） */
             let tp = this.getPostX(postCount)
 
             // これが2ターン目以降の場合、戦闘中に計算された最大倍率の50%の倍率が保証される
@@ -219,15 +221,18 @@ export default class extends Module {
             }
 
 
-            // 画面に出力するメッセージ
+            /** 画面に出力するメッセージ:CW */ 
             let cw = acct(msg.user) + " ";
+            /** 画面に出力するメッセージ:Text */ 
             let message = ""
 
-            // 自分のカラー
+            /** プレイヤーの見た目 */
             let me = color.name
 
             // ステータスを計算
+            /** プレイヤーのLv */
             const lv = data.lv ?? 1
+            /** プレイヤーのHP */
             let playerHp = data.php ?? 100;
 
             // 敵情報
@@ -236,9 +241,10 @@ export default class extends Module {
                 count = 1
                 data.count = 1
                 playerHp = 100 + lv * 3
-                // すでにこの回で倒している敵、出現条件を満たしていない敵を除外
+                /** すでにこの回で倒している敵、出現条件を満たしていない敵を除外 */ 
                 const filteredEnemys = enemys.filter((x) => !(data.clearEnemy ?? []).includes(x.name) && (!x.limit || x.limit(data, msg.friend)));
                 if (filteredEnemys.length && !data.endressFlg) {
+                    /** 1度も倒した事のない敵 */
                     const notClearedEnemys = filteredEnemys.filter((x) => !(data.clearHistory ?? []).includes(x.name));
                     if (notClearedEnemys.length) {
                         // 出現条件を満たしている敵の中で、1度も倒した事のない敵がいる場合、優先的に選ばれる
@@ -277,7 +283,7 @@ export default class extends Module {
                 data.count += 1;
             }
 
-            // バフを得た数。行数のコントロールに使用
+            /** バフを得た数。行数のコントロールに使用 */ 
             let buff = 0;
 
             if ((data.info ?? 0) < 1 && ((100 + lv * 3) + ((data.winCount ?? 0) * 5)) >= 300) {
@@ -300,8 +306,11 @@ export default class extends Module {
             }
 
             // ここで残りのステータスを計算しなおす
+            /** プレイヤーの攻撃力 */
             let atk = 5 + (data.atk ?? 0) + Math.floor(((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) * (100 + (data.atk ?? 0)) / 100);
+            /** プレイヤーの防御力 */
             let def = 5 + (data.def ?? 0) + Math.floor(((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) * (100 + (data.def ?? 0)) / 100);
+            /** プレイヤーの行動回数 */
             let spd = Math.floor((msg.friend.love ?? 0) / 100) + 1;
             if (color.reverseStatus) {
                 // カラーによるパラメータ逆転
@@ -309,16 +318,17 @@ export default class extends Module {
                 atk = def
                 def = _atk
             }
-            // 敵の最大HP
+            /** 敵の最大HP */
             let enemyMaxHp = (typeof data.enemy.maxhp === "function") ? data.enemy.maxhp((100 + lv * 3)) : Math.min((100 + lv * 3) + ((data.winCount ?? 0) * 5), (data.enemy.maxhp ?? 300));
-            // 敵のHP
+            /** 敵のHP */
             let enemyHp = Math.min(data.ehp ?? 100, enemyMaxHp);
-            // HPの割合
+            /** プレイヤーのHP割合 */
             let playerHpPercent = playerHp / (100 + lv * 3);
+            /** 敵のHP割合 */
             let enemyHpPercent = enemyHp / enemyMaxHp;
-            // 負けた場合のステータスボーナスをここで保持
+            /** 敗北時のステータスボーナス */
             let bonus = 0;
-            // 連続攻撃中断の場合の攻撃可能回数 0は最後まで攻撃
+            /** 連続攻撃中断の場合の攻撃可能回数 0は最後まで攻撃 */
             let abort = 0;
 
             if (isSuper) {
@@ -355,10 +365,13 @@ export default class extends Module {
             }
 
             // 敵のステータスを計算
+            /** 敵の攻撃力 */
             const enemyAtk = (typeof data.enemy.atk === "function") ? data.enemy.atk(atk, def, spd) : lv * 3.5 * data.enemy.atk;
+            /** 敵の防御力 */
             const enemyDef = (typeof data.enemy.def === "function") ? data.enemy.def(atk, def, spd) : lv * 3.5 * data.enemy.def;
 
             // 敵に最大ダメージ制限がある場合、ここで計算
+            /** 1ターンに与えられる最大ダメージ量 */
             let maxdmg = data.enemy.maxdmg ? enemyMaxHp * data.enemy.maxdmg : undefined
 
             // 敵が中断能力持ちの場合、ここで何回攻撃可能か判定
@@ -372,21 +385,23 @@ export default class extends Module {
             // バフが1つでも付与された場合、改行を追加する
             if (buff > 0) message += "\n"
 
-            // 予測最大ダメージ
+            /** 予測最大ダメージ */
             let predictedDmg = Math.round((atk * tp * 1.8) * (1 / (((enemyDef * (this.getVal(data.enemy.defx, [tp]) ?? 3)) + 100) / 100))) * (abort || spd);
 
             // 予測最大ダメージは最大ダメージ制限を超えない
             if (maxdmg && predictedDmg > maxdmg) predictedDmg = maxdmg;
 
-            // 敵のターンが既に完了したかのフラグ
+            /** 敵のターンが既に完了したかのフラグ */
             let enemyTurnFinished = false
 
             // 敵先制攻撃の処理
             // spdが1ではない、または戦闘ではない場合は先制攻撃しない
             if (!data.enemy.spd && !data.enemy.hpmsg) {
+                /** クリティカルかどうか */
                 const crit = Math.random() < playerHpPercent - enemyHpPercent;
                 // 予測最大ダメージが相手のHPの何割かで先制攻撃の確率が判定される
                 if (Math.random() < predictedDmg / enemyHp || (count === 3 && data.enemy.fire && (data.thirdFire ?? 0) <= 2)) {
+                    /** ダメージ */
                     const dmg = this.getEnemyDmg(data, def, tp, count, crit, enemyAtk)
                     // ダメージが負けるほど多くなる場合は、先制攻撃しない
                     if (playerHp > dmg || (count === 3 && data.enemy.fire && (data.thirdFire ?? 0) <= 2)) {
@@ -408,7 +423,9 @@ export default class extends Module {
             // 自身攻撃の処理
             // spdの回数分、以下の処理を繰り返す
             for (let i = 0; i < spd; i++) {
+                /** クリティカルかどうか */
                 let crit = Math.random() < enemyHpPercent - playerHpPercent;
+                /** ダメージ */
                 let dmg = this.getAtkDmg(data, atk, tp, count, crit, enemyDef, enemyMaxHp)
                 // 最大ダメージ制限処理
                 if (maxdmg && maxdmg > 0 && dmg > Math.round(maxdmg * (1 / ((abort || spd) - i)))) {
@@ -469,10 +486,13 @@ export default class extends Module {
                 data.fireAtk = 0;
             } else {
                 // 敵のターンが既に終了していない場合
+                /** 受けた最大ダメージ */
                 let maxDmg = 0;
                 if (!enemyTurnFinished) {
                     for (let i = 0; i < (data.enemy.spd ?? 1); i++) {
+                        /** クリティカルかどうか */
                         const crit = Math.random() < playerHpPercent - enemyHpPercent;
+                        /** ダメージ */
                         const dmg = this.getEnemyDmg(data, def, tp, count, crit, enemyAtk)
                         playerHp -= dmg
                         message += "\n" + (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n"
@@ -540,6 +560,7 @@ export default class extends Module {
             }
 
             if (data.atk > 0 && data.def > 0) {
+                /** 攻撃力と防御力の差 */
                 const diff = data.atk - data.def;
                 const totalrate = 0.2 + Math.min(Math.abs(diff) * 0.005, 0.3)
                 const rate = (Math.pow(0.5, Math.abs(diff / 100)) * (totalrate / 2))
@@ -549,6 +570,7 @@ export default class extends Module {
             data.atk = (data.atk ?? 0) + atkUp;
             data.def = (data.def ?? 0) + totalUp - atkUp;
 
+            /** 追加表示メッセージ */
             let addMessage = ""
 
             if ((data.info ?? 0) < 1 && ((100 + lv * 3) + ((data.winCount ?? 0) * 5)) >= 300) {
@@ -569,6 +591,7 @@ export default class extends Module {
 
             // 色解禁確認
             const newColorData = colors.map((x) => x.unlock(data));
+            /** 解禁した色 */
             let unlockColors = "";
             for (let i = 0; i < newColorData.length; i++) {
                 if (!colorData[i] && newColorData[i]) {

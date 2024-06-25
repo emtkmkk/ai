@@ -21,6 +21,7 @@ type Color = {
     alwaysSuper?: boolean;
 }
 
+/** 色一覧 */
 export const colors: Color[] = [
     {
         id: 1,
@@ -90,6 +91,7 @@ export const colors: Color[] = [
     }
 ]
 
+/** 色に関しての情報を返す */
 export const colorReply = (module: Module, msg: Message) => {
 
             // データを読み込み
