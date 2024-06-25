@@ -24,8 +24,8 @@ export default class extends Module {
         setInterval(() => {
             const hours = new Date().getHours()
             if (hours === 23 && new Date().getMinutes() >= 55 && new Date().getMinutes() < 60) {
-                const friends = this.ai.friends.find().filter((x) => x.doc.perModulesData?.rpg?.lv && x.doc.perModulesData.rpg.lv > 1 && x.doc.perModulesData.rpg.noChart)
-                friends.array.forEach(async x => {
+                const friends = this.ai.friends.find().filter((x) => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1 && x.perModulesData.rpg.noChart)
+                friends.forEach(async x => {
                     const data = x.getPerModulesData(this);
                     const user = await this.ai.api('users/show', {
                         userId: x.userId
