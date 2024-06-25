@@ -1,5 +1,79 @@
-//RPGで使用する敵の情報
-export const enemys = [
+// RPGで使用する敵の情報
+
+type Enemy = {
+    /** 内部ID ユニークでなければならない */
+    name: string;
+    /** 表示名 指定があれば内部IDの代わりに敵の名前として表示 */
+    dname?: string;
+    /** 出現条件 trueが返された場合、出現する */
+    limit?: (data: any, friend?: any) => boolean;
+    /** 出現時のメッセージ */
+    msg: string;
+    /** 短いメッセージ 2ターン目以降や、ステータスなどで表示される。 */
+    short: string;
+    /** HPが何を示しているか 体力以外の場合に使用 */
+    hpmsg?: string;
+    /** 空のマーク HP表示に使用 */
+    mark: string;
+    /** 満たされたマーク HP表示に使用 */
+    mark2: string;
+    /** 体力表示の際に 0% -> 100% で表示するか 進捗表示などに使用 */
+    lToR?: boolean;
+    /** 
+     * プレイヤーの体力表示の際に 0% -> 100% で表示するか 進捗表示などに使用
+     * trueの場合、体力表示の際に自動的に上がプレイヤー、下が敵になる
+     * */
+    pLToR?: boolean;
+    /** 攻撃時のメッセージ */
+    atkmsg: (dmg: number) => string;
+    /** 防御時のメッセージ */
+    defmsg: (dmg: number) => string;
+    /** 連続攻撃中断時のメッセージ */
+    abortmsg?: string;
+    /** 勝利時のメッセージ */
+    winmsg: string;
+    /** 敗北時のメッセージ */
+    losemsg: string;
+    /** 最大HP 未指定なら300 */
+    maxhp?: number | ((hp: number) => number);
+    /**
+     * 攻撃力倍率 1でプレイヤーのLvの3.5倍の値になる
+     * （プレイヤーの最低保証分のパラメータを均等に割り振った値）
+     * 関数で指定した場合は倍率ではなく、その値がそのまま使用される
+     * */
+    atk: number | ((atk: number, def: number, spd: number) => number);
+    /**
+     * 防御力倍率 1でプレイヤーのLvの3.5倍の値になる
+     * （プレイヤーの最低保証分のパラメータを均等に割り振った値）
+     * 関数で指定した場合は倍率ではなく、その値がそのまま使用される
+     * */
+    def: number | ((atk: number, def: number, spd: number) => number);
+    /**  攻撃回数 未指定で1 */
+    spd?: number;
+    /** 
+     * 攻撃ボーナス倍率 基本的な値は3
+     * プレイヤーの投稿数ボーナスと同じかかり方をする
+     * */
+    atkx: number | ((tp: number) => number);
+    /** 
+     * 防御ボーナス倍率 基本的な値は3
+     * プレイヤーの投稿数ボーナスと同じかかり方をする
+     * */
+    defx: number | ((tp: number) => number);
+    /** 最大ダメージ制限 0 ~ 1で指定する 1ターンに指定した割合以上のダメージを与えられなくなる */
+    maxdmg?: number;
+    /** 踏ん張れないフラグ 耐えるという概念がない場合にオン （川柳勝負など） */
+    notEndure?: boolean;
+    /** 
+     * 炎攻撃1スタックにつきHPに受けるダメージ割合 0 ~ 1
+     * 0.1 に設定した場合、2スタックでプレイヤーは通常の攻撃ダメージ + プレイヤーHP20%の固定ダメージを受けるようになる
+     * */
+    fire?: number;
+    /** 連続攻撃を中断する割合 0 ~ 1 連続攻撃毎に判定 */
+    abort?: number;
+};
+
+export const enemys: Enemy[] = [
     { name: ":mk_catchicken:", msg: ":mk_catchicken:が撫でてほしいようだ。", short: ":mk_catchicken:を撫で中", hpmsg: "満足度", mark: "☆", mark2: "★", lToR: true, atkmsg: (dmg) => `もこチキの撫で！\n${dmg}ポイント満足させた！`, defmsg: (dmg) => `もこチキは疲れて${dmg}ポイントのダメージ！`, winmsg: ":mk_catchicken:を満足させた！", losemsg: "もこチキは疲れで倒れてしまった…", atk: 1, def: 1, atkx: 3, defx: 3 },
     { name: ":nisemokochiki_mzh:", msg: ":nisemokochiki_mzh:が本物と成り替わろうと勝負を仕掛けてきた！", short: ":nisemokochiki_mzh:と戦い中", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの羽ペチ！\n:nisemokochiki_mzh:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:nisemokochiki_mzh:の謎の攻撃！\nもこチキは${dmg}ポイントのダメージ！`, winmsg: "どっちが本物か分からせてやった！", losemsg: "もこチキはやられてしまった…", atk: 2, def: 0.5, atkx: 3, defx: 3 },
     { name: ":mokochoki:", msg: ":mokochoki:がじゃんけんをしたいようだ。", short: ":mokochoki:とじゃんけん中", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキはグーを出した！\n:mokochoki:の精神に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `もこチキはパーを出した！\nもこチキの精神に${dmg}ポイントのダメージ！`, winmsg: ":mokochoki:に負けを認めさせた！", losemsg: "もこチキは負けを認めた…", atk: 1, def: 1, atkx: 3, defx: 3 },
@@ -20,3 +94,24 @@ export const enemys = [
     { name: ":mk_chickenda:", limit: (data) => (data.winCount ?? 0) >= 5 && (data.streak ?? 0) >= 5, msg: ":mk_chickenda:が勝負を仕掛けてきた！", short: ":mk_chickenda:と戦い中", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの光魔法！\n:mk_chickenda:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mk_chickenda:の†！\nもこチキに${dmg}ポイントのダメージ！`, winmsg: ":mk_chickenda:は帰っていった！", losemsg: "もこチキはやられてしまった…", maxhp: 130, atk: 5, def: 5, maxdmg: 0.7, atkx: 5, defx: 5 },
     { name: ":mk_chickenda_gtgt:", limit: (data, friend) => (data.winCount ?? 0) >= 15 && (data.streak ?? 0) >= 7 && (friend.love ?? 0) >= 500 && data.clearEnemy.includes(":mk_chickenda:"), msg: ":mk_chickenda_gtgt:が本気の勝負を仕掛けてきた！", short: ":mk_chickenda_gtgt:と本気の戦い中", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの光魔法！\n:mk_chickenda_gtgt:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mk_chickenda_gtgt:の†！\nもこチキに${dmg}ポイントのダメージ！`, abortmsg: ":mk_chickenda_gtgt:は:muscle_mkchicken:を召還した！もこチキの連続攻撃を止めた！", winmsg: ":mk_chickenda_gtgt:は帰っていった！", losemsg: "もこチキはやられてしまった…", atk: 15, def: 15, maxdmg: 0.6, atkx: 7, defx: 7, abort: 0.04 },
 ];
+
+// 旅モードの場合の敵を定義
+export const endressEnemy = (data): Enemy => ({
+    name: "もこチキは旅",
+    msg: (data.endress ?? 0) ? `旅の途中 (${data.endress + 1}日目)` : "もこチキは旅に出たいようだ。",
+    short: (data.endress ?? 0) ? `旅の途中 (${data.endress + 1}日目)` : "旅立ち中",
+    hpmsg: "進行度",
+    lToR: true,
+    mark: "☆",
+    mark2: "★",
+    atkmsg: (dmg) => `もこチキは先に進んだ。\n進行度が${dmg}ポイントアップ！`,
+    defmsg: (dmg) => `もこチキは疲れて${dmg}ポイントのダメージ！`,
+    abortmsg: "もこチキは面白いものを見つけたみたいだ。",
+    winmsg: "宿が見えてきた。\n今日はここで休むようだ。\n\n次の日へ続く…",
+    losemsg: "今回の旅はここで終えて家に帰るようだ。",
+    atk: 1.5 + (0.1 * (data.endress ?? 0)),
+    def: 2 + (0.3 * (data.endress ?? 0)),
+    atkx: 3 + (0.05 * (data.endress ?? 0)),
+    defx: 3 + (0.15 * (data.endress ?? 0)),
+    abort: 0.01,
+})

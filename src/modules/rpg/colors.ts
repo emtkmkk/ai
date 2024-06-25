@@ -1,56 +1,130 @@
-export const colors = [
+import Message from "@/message";
+import Module from "@/module";
+import serifs from "@/serifs";
+
+type Color = {
+    /** 色のID ユニークでなければならない */
+    id: number;
+    /** 見た目 絵文字などを指定 */
+    name: string;
+    /** 色変更の際にここに指定したキーワードが入っていたら選択される */
+    keyword: string;
+    /** 解放条件 trueなら変更可能になる */
+    unlock: (data?: any) => boolean;
+    /** 色一覧に表示するメッセージ 解放条件について記載するのが望ましい */
+    message: (data?: any) => string;
+    /** この色が初期状態として使用されるかどうか */
+    default?: boolean;
+    /** 攻撃と防御が入れ替わる効果があるかどうか */
+    reverseStatus?: boolean;
+    /** 常に覚醒になる効果があるかどうか */
+    alwaysSuper?: boolean;
+}
+
+export const colors: Color[] = [
     {
+        id: 1,
         name: ":mk_hero:",
         keyword: "1",
         unlock: () => true,
-        message: () => "初期解放",
+        message: () => serifs.rpg.color.default,
+        default: true,
     },
     {
+        id: 2,
         name: ":mk_hero_2p:",
         keyword: "2",
         unlock: (data) => (data.lv ?? 1) >= 99,
-        message: (data) => (data.lv ?? 1) >= 99 ? `解放済み (Lv: **${(data.lv ?? 1)}**)` : `Lv99になると解放されます。(**${(data.lv ?? 1)}** / 99)`,
+        message: (data) => (data.lv ?? 1) >= 99 ? `${serifs.rpg.color.unlock} (Lv: **${(data.lv ?? 1)}**)` : `Lv99になると解放されます。(**${(data.lv ?? 1)}** / 99)`,
     },
     {
+        id: 3,
         name: ":mk_hero_3p:",
         keyword: "3",
         unlock: (data) => (data.maxEndress ?? 0) >= 6,
-        message: (data) => (data.maxEndress ?? 0) >= 6 ? `解放済み (旅最高日数: **${(data.maxEndress ?? 1) + 1}**)` : `「旅モード」で7日以上連続で旅をすると解放されます。(**${(data.maxEndress ?? -1) + 1}** / 7)`,
+        message: (data) => (data.maxEndress ?? 0) >= 6 ? `${serifs.rpg.color.unlock} (旅最高日数: **${(data.maxEndress ?? 1) + 1}**)` : `「旅モード」で7日以上連続で旅をすると解放されます。(**${(data.maxEndress ?? -1) + 1}** / 7)`,
     },
     {
+        id: 4,
         name: ":mk_hero_4p:",
         keyword: "4",
         unlock: (data) => data.allClear,
-        message: (data) => data.allClear ? `解放済み (クリアLv: **${(data.allClear ?? "?")}**)` :`連勝で全ての敵を倒すと解放されます。${data.clearEnemy?.length ? `(現在 **${data.clearEnemy.length}** 連勝中)` : ""}`,
+        message: (data) => data.allClear ? `${serifs.rpg.color.unlock} (クリアLv: **${(data.allClear ?? "?")}**)` :`連勝で全ての敵を倒すと解放されます。${data.clearEnemy?.length ? `(現在 **${data.clearEnemy.length}** 連勝中)` : ""}`,
     },
     {
+        id: 5,
         name: ":mk_hero_5p:",
         keyword: "5",
         unlock: (data) => (data.thirdFire ?? 0) >= 3,
-        message: (data) => (data.thirdFire ?? 0) >= 3 ? `解放済み (最大🔥: **${(data.thirdFire ?? 0)}**)` : `1戦闘で🔥を3回受けると解放されます。(**${(data.thirdFire ?? 0)}** / 3)`,
+        message: (data) => (data.thirdFire ?? 0) >= 3 ? `${serifs.rpg.color.unlock} (最大🔥: **${(data.thirdFire ?? 0)}**)` : `1戦闘で🔥を3回受けると解放されます。(**${(data.thirdFire ?? 0)}** / 3)`,
     },
     {
+        id: 6,
         name: ":mk_hero_6p:",
         keyword: "6",
         unlock: (data) => (data.superMuscle ?? 0) >= 300,
-        message: (data) => (data.superMuscle ?? 0) >= 300 ? `解放済み (最大耐ダメージ: **${(data.superMuscle ?? 0)}**)` : `一撃で300ダメージ以上受け、倒れなかった場合に解放されます。(**${(data.superMuscle ?? 0)}** / 300)`,
+        message: (data) => (data.superMuscle ?? 0) >= 300 ? `${serifs.rpg.color.unlock} (最大耐ダメージ: **${(data.superMuscle ?? 0)}**)` : `一撃で300ダメージ以上受け、倒れなかった場合に解放されます。(**${(data.superMuscle ?? 0)}** / 300)`,
     },
     {
+        id: 7,
         name: ":mk_hero_7p:",
         keyword: "7",
         unlock: (data) => (data.winCount ?? 0) >= 100 || data.maxStatusUp >= 12,
-        message: (data) => (data.winCount ?? 0) >= 100 || data.maxStatusUp >= 12 ? `解放済み (勝利数: **${(data.winCount ?? 0)}**) (運: **${(data.maxStatusUp ?? 7)}**)` : `100回勝利する、または運が良いと解放されます。(**${(data.winCount ?? 0)}** / 100) (**${(data.maxStatusUp ?? 7)}** / 12)`,
+        message: (data) => (data.winCount ?? 0) >= 100 || data.maxStatusUp >= 12 ? `${serifs.rpg.color.unlock} (勝利数: **${(data.winCount ?? 0)}**) (運: **${(data.maxStatusUp ?? 7)}**)` : `100回勝利する、または運が良いと解放されます。(**${(data.winCount ?? 0)}** / 100) (**${(data.maxStatusUp ?? 7)}** / 12)`,
     },
     {
+        id: 8,
         name: ":mk_hero_8p:",
         keyword: "8",
         unlock: (data) => (data.clearHistory ?? []).includes(":mk_hero_8p:"),
-        message: (data) => (data.clearHistory ?? []).includes(":mk_hero_8p:") ? `解放済み (クリアLv: **${(data.aHeroLv ?? "?")}**)` : ":mk_hero_8p:を1度でも倒すと解放されます。",
+        message: (data) => (data.clearHistory ?? []).includes(":mk_hero_8p:") ? `${serifs.rpg.color.unlock} (クリアLv: **${(data.aHeroLv ?? "?")}**)` : ":mk_hero_8p:を1度でも倒すと解放されます。",
+        reverseStatus: true,
     },
     {
+        id: 9,
         name: ":mk_hero_9p:",
         keyword: "9",
         unlock: (data) => colors.filter((x) => x.name !== ":mk_hero_9p:").every((x) => x.unlock(data)),
-        message: (data) => colors.filter((x) => x.name !== ":mk_hero_9p:").every((x) => x.unlock(data)) ? `解放済み (踏ん張り発動率: **${10 + (data.endure ?? 0) * 5}** %)` : `全ての色を解放する、または100回覚醒すると解放されます。(**${colors.reduce((acc, value) => acc + (value.unlock(data) ? 1 : 0), 0)}** / ${colors.length - 1}) (**${(data.superCount ?? 0)}** / 100)`,
+        message: (data) => colors.filter((x) => x.name !== ":mk_hero_9p:").every((x) => x.unlock(data)) ? `${serifs.rpg.color.unlock} (踏ん張り発動率: **${10 + (data.endure ?? 0) * 5}** %)` : `全ての色を解放する、または100回覚醒すると解放されます。(**${colors.reduce((acc, value) => acc + (value.unlock(data) ? 1 : 0), 0)}** / ${colors.length - 1}) (**${(data.superCount ?? 0)}** / 100)`,
+        alwaysSuper: true,
     }
 ]
+
+export const colorReply = (module: Module, msg: Message) => {
+
+            // データを読み込み
+            const data = msg.friend.getPerModulesData(module);
+            if (!data) return false;
+
+            if (msg.includes(['変更'])) {
+                // 文字数が多い物を先に判定
+                const sortedColors = colors.sort((a,b) => b.keyword.length - a.keyword.length)
+                for (let i = 0; i < sortedColors.length; i++) {
+                    if (msg.includes([sortedColors[i].keyword])) {
+                        if (sortedColors[i].unlock(data)) {
+                            data.color = sortedColors[i].id
+                            msg.friend.setPerModulesData(module, data);
+                            return {
+                                reaction: ':mk_muscleok:'
+                            };
+                        } else {
+                            return {
+                                reaction: 'confused'
+                            };
+                        }
+                    }
+                }
+            }
+
+            msg.reply([
+                serifs.rpg.color.info,
+                "",
+                serifs.rpg.color.list,
+                ...colors.map((x) => `${x.keyword}: ${x.name} ${x.message(data)}`)
+            ].join("\n"));
+
+            return {
+                reaction: 'love'
+            };
+
+}

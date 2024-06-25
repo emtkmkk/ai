@@ -1,13 +1,11 @@
-import autobind from 'autobind-decorator';
-import Module from '@/module';
 import Message from '@/message';
+import Module from '@/module';
 import serifs from '@/serifs';
-import * as seedrandom from 'seedrandom';
-import { genItem } from '@/vocabulary';
-import getDate from '@/utils/get-date';
 import { acct } from '@/utils/acct';
-import { enemys } from './enemys';
-import { colors } from './colors';
+import getDate from '@/utils/get-date';
+import autobind from 'autobind-decorator';
+import { colorReply, colors } from './colors';
+import { endressEnemy, enemys } from './enemys';
 
 export default class extends Module {
     public readonly name = 'rpg';
@@ -16,10 +14,10 @@ export default class extends Module {
     public install() {
         setInterval(() => {
             const hours = new Date().getHours()
-            if ((hours === 0 || hours === 12 || hours === 18) && new Date().getMinutes() >= 3 && new Date().getMinutes() < 8) {
-                const me = Math.random() < 0.75 ? ":mk_hero:" : [":mk_hero_2p:", ":mk_hero_3p:", ":mk_hero_4p:", ":mk_hero_5p:", ":mk_hero_6p:", ":mk_hero_7p:"].sort(() => Math.random() - 0.5)[0];
+            if ((hours === 0 || hours === 12 || hours === 18) && new Date().getMinutes() >= 1 && new Date().getMinutes() < 6) {
+                const me = Math.random() < 0.8 ? colors.find((x) => x.default)?.name ?? colors[0].name : colors.filter((x) => x.id > 1 && !x.reverseStatus && !x.alwaysSuper).map((x) => x.name).sort(() => Math.random() - 0.5)[0];
                 this.ai.post({
-                    text: `<center>$[x2 ${me}]\n\n${hours}時です！\nRPGモードの時間ですよ～\n\n毎日3回プレイして、\n私を強くしてください！\n\n「RPG」と話しかけてね\n（ここに返信でも大丈夫ですよ！）</center>`,
+                    text: serifs.rpg.remind(me, hours),
                 })
             }
         }, 1000 * 60 * 5);
@@ -30,41 +28,11 @@ export default class extends Module {
 
     @autobind
     private async mentionHook(msg: Message) {
-        if (msg.includes(['rpg']) && msg.includes(['色'])) {
-            // データを読み込み
-            const data = msg.friend.getPerModulesData(this);
-            if (!data) return false;
-
-            if (msg.includes(['変更'])) {
-                for (let i = 0; i < colors.length; i++) {
-                    if (msg.includes([colors[i].keyword])) {
-                        if (colors[i].unlock(data)) {
-                            data.color = i + 1
-                            msg.friend.setPerModulesData(this, data);
-                            return {
-                                reaction: ':mk_muscleok:'
-                            };
-                        } else {
-                            return {
-                                reaction: 'confused'
-                            };
-                        }
-                    }
-                }
-            }
-
-            msg.reply([
-                "色を変更する場合、`rpg 色変更 <数字>`と話しかけてね",
-                "",
-                "色解放条件",
-                ...colors.map((x) => `${x.keyword}: ${x.name} ${x.message(data)}`)
-            ].join("\n"));
-
-            return {
-                reaction: 'love'
-            };
+        if (msg.includes([serifs.rpg.command.rpg]) && msg.includes([serifs.rpg.command.color])) {
+            // 色モード
+            return colorReply(this, msg);
         }
-        if (msg.includes(['rpg']) && msg.includes(['木人'])) {
+        if (msg.includes([serifs.rpg.command.rpg]) && msg.includes([serifs.rpg.command.trial])) {
             // データを読み込み
             const data = msg.friend.getPerModulesData(this);
             // 各種データがない場合は、初期化
@@ -76,7 +44,7 @@ export default class extends Module {
             const colorData = colors.map((x) => x.unlock(data));
             // プレイ済でないかのチェック
             if (data.lastPlayedLv >= data.lv) {
-                msg.reply(`全力を出して疲れてしまったみたいです。Lvが上がったら、もう一度試してみてください。`);
+                msg.reply(serifs.rpg.trial.tired);
                 return {
                     reaction: 'confused'
                 };
@@ -84,56 +52,20 @@ export default class extends Module {
 
             data.lastPlayedLv = data.lv;
 
+            const color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
+
             // 覚醒状態か？
-            const isSuper = data.color === 9;
+            const isSuper = color.alwaysSuper;
 
-            // ユーザの投稿数を取得
-            const chart = await this.ai.api('charts/user/notes', {
-                span: 'day',
-                limit: 2,
-                userId: msg.userId
-            })
-            
             // 投稿数（今日と明日の多い方）
-            let postCount = Math.max(
-                (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
-                (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
-            ) + (isSuper ? 200 : 0);
-
-            if (msg.friend.doc.linkedAccounts?.length) {
-                for (const userId of msg.friend.doc.linkedAccounts) {
-                    const friend = this.ai.lookupFriend(userId);
-                    if (!friend || !friend.doc?.linkedAccounts?.includes(msg.friend.userId)) continue;
-
-                    // ユーザの投稿数を取得
-                    const chart = await this.ai.api('charts/user/notes', {
-                        span: 'day',
-                        limit: 2,
-                        userId: userId
-                    })
-
-                    postCount += Math.max(
-                        (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.renote?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
-                        (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.renote?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
-                    );
-                }
-            }
+            let postCount = await this.getPostCount(msg, (isSuper ? 200 : 0))
 
             // 投稿数に応じてステータス倍率を得る
             // 連続プレイの場合は倍率アップ
-            let tp =
-                    postCount >= 75
-                        ? (postCount - 75) / 100 + 4
-                        : postCount >= 25
-                            ? (postCount - 25) / 50 + 3
-                            : postCount >= 10
-                                ? (postCount - 10) / 15 + 2
-                                : postCount >= 3
-                                    ? (postCount - 3) / 7 + 1
-                                    : Math.max(postCount / 3, (1/3))
+            let tp = this.getPostX(postCount)
 
             // 自分のカラー
-            let me = ":mk_hero" + (!data.color || data.color === 1 ? ":" : `_${data.color}p:`)
+            let me = color.name;
 
             // 画面に出力するメッセージ
             let cw = acct(msg.user) + " ";
@@ -143,8 +75,8 @@ export default class extends Module {
             let atk = 5 + (data.atk ?? 0) + Math.floor(((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) * (100 + (data.atk ?? 0)) / 100);
             let def = 5 + (data.def ?? 0) + Math.floor(((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) * (100 + (data.def ?? 0)) / 100);
             let spd = Math.floor((msg.friend.love ?? 0) / 100) + 1;
-            if (data.color === 8) {
-                // 8Pカラーがセットされている場合、パラメータを逆転
+            if (color.reverseStatus) {
+                // カラーによるパラメータ逆転
                 const _atk = atk;
                 atk = def
                 def = _atk
@@ -154,14 +86,14 @@ export default class extends Module {
                 spd += 2;
             }
 
-			message += [
-                `現在のステータス\n`,
-				`パワー : ${Math.round(atk)}`,
-				`投稿数 : ${Math.round(postCount - (isSuper ? 200 : 0))}\n\n`,
-			].filter(Boolean).join("\n")
+            message += [
+                `${serifs.rpg.nowStatus}`,
+                `${serifs.rpg.status.atk} : ${Math.round(atk)}`,
+                `${serifs.rpg.status.post} : ${Math.round(postCount - (isSuper ? 200 : 0))}\n\n`,
+            ].filter(Boolean).join("\n")
 
-            cw += `もこチキは自分の力を確認するようだ。(Lv${data.lv})`
-            message += `$[x2 ${me}]\n\n開始！\n\n`
+            cw += serifs.rpg.trial.cw(data.lv)
+            message += `$[x2 ${me}]\n\n${serifs.rpg.start}\n\n`
 
 
             // 敵のステータスを計算
@@ -173,11 +105,11 @@ export default class extends Module {
                 let dmg = this.getAtkDmg(data, atk, tp, 1, false, edef, 0, 1, 3)
                 totalDmg += dmg
                 // メッセージの出力
-                message += `もこチキは木人に攻撃！\n${dmg}ポイントのダメージ！` + "\n"
+                message += serifs.rpg.trial.atk + "\n"
             }
 
-            message += `\n終了！\n\n合計${totalDmg}ポイントのダメージ！\n(ダメージ幅: ${Math.round(totalDmg * 0.2)} ~ ${Math.round(totalDmg * 1.8)})${data.bestScore ? `\n(これまでのベスト: **${data.bestScore}**)` : ""}`
-            
+            message += `\n${serifs.rpg.end}\n\n${serifs.rpg.trial.result(totalDmg)}${data.bestScore ? serifs.rpg.trial.best(data.bestScore) : ""}`
+
             data.bestScore = Math.max(data.bestScore ?? 0, totalDmg)
 
             msg.friend.setPerModulesData(this, data);
@@ -191,7 +123,7 @@ export default class extends Module {
                 }
             }
             if (unlockColors) {
-                message += `\n\n条件を満たしたので、\n新しい色が解放されました！\n\n$[x2 ${unlockColors}]\n\n「RPG 色」と話しかけて確認してみてね！`
+                message += serifs.rpg.newColor(unlockColors)
             }
 
             msg.reply(`<center>${message}</center>`, {
@@ -205,7 +137,8 @@ export default class extends Module {
 
         }
 
-        if (msg.includes(['rpg'])) {
+        // 通常処理
+        if (msg.includes([serifs.rpg.command.rpg])) {
             // データを読み込み
             const data = msg.friend.getPerModulesData(this);
             // 各種データがない場合は、初期化
@@ -214,7 +147,7 @@ export default class extends Module {
             const colorData = colors.map((x) => x.unlock(data));
             // プレイ済でないかのチェック
             if (data.lastPlayedAt === getDate() + (new Date().getHours() < 12 ? "" : new Date().getHours() < 18 ? "/12" : "/18") && data.ehp <= 110 + data.lv * 3 + (data.winCount ?? 0) * 5) {
-                msg.reply(`RPGモードは0~11時、12~17時、18~23時の1日3回です。\n${new Date().getHours() < 12 ? "12時以降" : new Date().getHours() < 18 ? "18時以降" : "明日"}になったらもう一度試してください。`);
+                msg.reply(serifs.rpg.tired(new Date()));
                 return {
                     reaction: 'confused'
                 };
@@ -239,12 +172,12 @@ export default class extends Module {
             let count = data.count ?? 1
 
             // 旅モード（エンドレスモード）のフラグ
-            if (msg.includes(['旅モード'])) {
+            if (msg.includes([serifs.rpg.command.journey])) {
                 // 現在戦っている敵がいない場合で旅モード指定がある場合はON
                 if (!data.enemy || count === 1 || data.endressFlg) {
                     data.endressFlg = true;
                 } else {
-                    msg.reply(`探索中以外の状態では旅モードは指定できません。探索中になったらもう一度試してください。`);
+                    msg.reply(serifs.rpg.journey.err);
                     return {
                         reaction: 'confused'
                     };
@@ -256,81 +189,24 @@ export default class extends Module {
                 }
             }
 
-            // 旅モードの場合の敵を定義
-            let endressEnemy = {
-                name: "もこチキは旅",
-                msg: (data.endress ?? 0) ? `旅の途中 (${data.endress + 1}日目)` : "もこチキは旅に出たいようだ。",
-                short: (data.endress ?? 0) ? `旅の途中 (${data.endress + 1}日目)` : "旅立ち中",
-                hpmsg: "進行度",
-                lToR: true,
-                mark: "☆",
-                mark2: "★",
-                atkmsg: (dmg) => `もこチキは先に進んだ。\n進行度が${dmg}ポイントアップ！`,
-                defmsg: (dmg) => `もこチキは疲れて${dmg}ポイントのダメージ！`,
-                abortmsg: "もこチキは面白いものを見つけたみたいだ。",
-                winmsg: "宿が見えてきた。\n今日はここで休むようだ。\n\n次の日へ続く…",
-                losemsg: "今回の旅はここで終えて家に帰るようだ。",
-                atk: 1.5 + (0.1 * (data.endress ?? 0)),
-                def: 2 + (0.3 * (data.endress ?? 0)),
-                atkx: 3 + (0.05 * (data.endress ?? 0)),
-                defx: 3 + (0.15 * (data.endress ?? 0)),
-                about: 0.01,
-            }
-
             // 最終プレイの状態を記録
             data.lastPlayedAt = getDate() + (new Date().getHours() < 12 ? "" : new Date().getHours() < 18 ? "/12" : "/18");
 
-            // ユーザの投稿数を取得
-            const chart = await this.ai.api('charts/user/notes', {
-                span: 'day',
-                limit: 2,
-                userId: msg.userId
-            })
+            const color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
 
             // 覚醒状態か？
-            const isSuper = Math.random() < (0.02 + Math.max(data.superPoint / 200, 0)) || (data.lv ?? 1) % 100 === 0 || data.color === 9;
+            const isSuper = Math.random() < (0.02 + Math.max(data.superPoint / 200, 0)) || (data.lv ?? 1) % 100 === 0 || color.alwaysSuper;
 
             // 投稿数（今日と明日の多い方）
-            let postCount = Math.max(
-                (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
-                (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
-            ) + (isSuper ? 200 : 0);
+            let postCount = await this.getPostCount(msg, (isSuper ? 200 : 0))
 
             if (continuousBonus > 0) {
                 postCount = postCount + (Math.min(Math.max(10, postCount / 2), 25) * continuousBonus)
             }
 
-            if (msg.friend.doc.linkedAccounts?.length) {
-                for (const userId of msg.friend.doc.linkedAccounts) {
-                    const friend = this.ai.lookupFriend(userId);
-                    if (!friend || !friend.doc?.linkedAccounts?.includes(msg.friend.userId)) continue;
-
-                    // ユーザの投稿数を取得
-                    const chart = await this.ai.api('charts/user/notes', {
-                        span: 'day',
-                        limit: 2,
-                        userId: userId
-                    })
-
-                    postCount += Math.max(
-                        (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
-                        (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
-                    );
-                }
-            }
-
             // 投稿数に応じてステータス倍率を得る
             // 連続プレイの場合は倍率アップ
-            let tp =
-                    postCount >= 75
-                        ? (postCount - 75) / 100 + 4
-                        : postCount >= 25
-                            ? (postCount - 25) / 50 + 3
-                            : postCount >= 10
-                                ? (postCount - 10) / 15 + 2
-                                : postCount >= 3
-                                    ? (postCount - 3) / 7 + 1
-                                    : Math.max(postCount / 3, (1/3))
+            let tp = this.getPostX(postCount)
 
             // これが2ターン目以降の場合、戦闘中に計算された最大倍率の50%の倍率が保証される
             data.maxTp = Math.max(tp, data.maxTp ?? 0);
@@ -348,18 +224,18 @@ export default class extends Module {
             let message = ""
 
             // 自分のカラー
-            let me = ":mk_hero" + (!data.color || data.color === 1 ? ":" : `_${data.color}p:`)
+            let me = color.name
 
             // ステータスを計算
             const lv = data.lv ?? 1
-            let php = data.php ?? 100;
+            let playerHp = data.php ?? 100;
 
             // 敵情報
             if (!data.enemy || count === 1) {
                 // 新しい敵
                 count = 1
                 data.count = 1
-                php = 100 + lv * 3
+                playerHp = 100 + lv * 3
                 // すでにこの回で倒している敵、出現条件を満たしていない敵を除外
                 const filteredEnemys = enemys.filter((x) => !(data.clearEnemy ?? []).includes(x.name) && (!x.limit || x.limit(data, msg.friend)));
                 if (filteredEnemys.length && !data.endressFlg) {
@@ -383,75 +259,76 @@ export default class extends Module {
                     }
                     // エンドレス用の敵を設定
                     data.enemy = endressEnemy
-								}
+                }
                 // 敵の開始メッセージなどを設定
                 cw += `${data.enemy.msg}`
-                message += `$[x2 ${me}]\n\n開始！\n\n`;
-							data.ehp = (typeof data.enemy.maxhp === "function") ? data.enemy.maxhp((100 + lv * 3)) : Math.min((100 + lv * 3) + ((data.winCount ?? 0) * 5), (data.enemy.maxhp ?? 300));
+                message += `$[x2 ${me}]\n\n${serifs.rpg.start}\n\n`;
+                data.ehp = (typeof data.enemy.maxhp === "function") ? data.enemy.maxhp((100 + lv * 3)) : Math.min((100 + lv * 3) + ((data.winCount ?? 0) * 5), (data.enemy.maxhp ?? 300));
             } else {
                 // 一度敵の情報を取得しなおす（関数のデータなどが吹き飛ぶ為）
                 data.enemy = [...enemys, endressEnemy].find((x) => data.enemy.name === x.name);
                 // 敵の開始メッセージなどを設定
-                cw += `${data.enemy.short} ${count}ターン目`
+                cw += `${data.enemy.short} ${count}${serifs.rpg.turn}`
                 // 前ターン時点のステータスを表示
                 let mehp = (typeof data.enemy.maxhp === "function") ? data.enemy.maxhp((100 + lv * 3)) : Math.min((100 + lv * 3) + ((data.winCount ?? 0) * 5), (data.enemy.maxhp ?? 300));
                 let ehp = Math.min(data.ehp ?? 100, mehp);
                 data.count -= 1;
-                message += this.showStatus(data, php, ehp, mehp, me) + "\n\n"
+                message += this.showStatus(data, playerHp, ehp, mehp, me) + "\n\n"
                 data.count += 1;
             }
 
             // バフを得た数。行数のコントロールに使用
             let buff = 0;
-			
-			if ((data.info ?? 0) < 1 && ((100 + lv * 3) + ((data.winCount ?? 0) * 5)) >= 300) {
-				data.info = 1
+
+            if ((data.info ?? 0) < 1 && ((100 + lv * 3) + ((data.winCount ?? 0) * 5)) >= 300) {
+                data.info = 1
                 buff += 1;
-				message += `もこチキの状況判断能力がアップ！\n今後、状況が細かく\n分析出来るようになる事があるぞ！\n`
-			}
+                message += serifs.rpg.info + `\n`
+            }
 
             // 連続ボーナスの場合、メッセージを追加
             // バフはすでに上で付与済み
             if (continuousBonus >= 1) {
                 buff += 1
-                message += `連続RPGボーナス！\nパワー・防御がアップした！\n`
+                message += serifs.rpg.bonus.a + `\n`
             } else if (continuousFlg && continuousBonus > 0) {
                 buff += 1
-                message += `連続RPGボーナス（弱）！\nパワー・防御が小アップした！\n`
+                message += serifs.rpg.bonus.b + `\n`
             } else if (continuousBonus > 0) {
                 buff += 1
-                message += `毎日RPGボーナス！\nパワー・防御が小アップした！\n`
+                message += serifs.rpg.bonus.c + `\n`
             }
 
             // ここで残りのステータスを計算しなおす
             let atk = 5 + (data.atk ?? 0) + Math.floor(((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) * (100 + (data.atk ?? 0)) / 100);
             let def = 5 + (data.def ?? 0) + Math.floor(((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) * (100 + (data.def ?? 0)) / 100);
             let spd = Math.floor((msg.friend.love ?? 0) / 100) + 1;
-            if (data.color === 8) {
-                // 8Pカラーがセットされている場合、パラメータを逆転
+            if (color.reverseStatus) {
+                // カラーによるパラメータ逆転
                 const _atk = atk;
                 atk = def
                 def = _atk
             }
             // 敵の最大HP
-            let mehp = (typeof data.enemy.maxhp === "function") ? data.enemy.maxhp((100 + lv * 3)) : Math.min((100 + lv * 3) + ((data.winCount ?? 0) * 5), (data.enemy.maxhp ?? 300));
+            let enemyMaxHp = (typeof data.enemy.maxhp === "function") ? data.enemy.maxhp((100 + lv * 3)) : Math.min((100 + lv * 3) + ((data.winCount ?? 0) * 5), (data.enemy.maxhp ?? 300));
             // 敵のHP
-            let ehp = Math.min(data.ehp ?? 100, mehp);
+            let enemyHp = Math.min(data.ehp ?? 100, enemyMaxHp);
             // HPの割合
-            let phpp = php / (100 + lv * 3);
-            let ehpp = ehp / mehp;
+            let playerHpPercent = playerHp / (100 + lv * 3);
+            let enemyHpPercent = enemyHp / enemyMaxHp;
             // 負けた場合のステータスボーナスをここで保持
             let bonus = 0;
             // 連続攻撃中断の場合の攻撃可能回数 0は最後まで攻撃
             let abort = 0;
 
             if (isSuper) {
-                if (me !== ":mk_hero_9p:") {
-									// バフが1つでも付与された場合、改行を追加する
-									if (buff > 0) message += "\n"
+                const superColor = colors.find((x) => x.alwaysSuper)?.name ?? colors.find((x) => x.default)?.name ?? colors[0]?.name;
+                if (me !== superColor) {
+                    // バフが1つでも付与された場合、改行を追加する
+                    if (buff > 0) message += "\n"
                     buff += 1;
-                    me = ":mk_hero_9p:"
-                    message += `$[x2 ${me}]\n\n**もこチキは覚醒状態になった！**\n行動回数+**2**！\nパワー・防御が**超**アップ！\n`;
+                    me = superColor;
+                    message += serifs.rpg.super(me) + `\n`;
                     data.superCount = (data.superCount ?? 0) + 1
                 }
                 spd += 2;
@@ -460,29 +337,29 @@ export default class extends Module {
             // spdが低い場合、確率でspdが+1。
             if (spd === 2 && Math.random() < 0.1) {
                 buff += 1
-                message += "もこチキは体の調子が良さそうだ！\n行動回数+1！\n"
+                message += serifs.rpg.spdUp + "\n"
                 spd = 3;
             }
             if (spd === 1 && Math.random() < 0.5) {
                 buff += 1
-                message += "もこチキは体の調子が良さそうだ！\n行動回数+1！\n"
+                message += serifs.rpg.spdUp + "\n"
                 spd = 2;
             }
 
             // HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
-            if (phpp <= (1 / 7) && (ehpp - phpp) >= 0.5) {
+            if (playerHpPercent <= (1 / 7) && (enemyHpPercent - playerHpPercent) >= 0.5) {
                 buff += 1
-                message += "もこチキは決死の覚悟をした！\nパワーが上がり、防御が下がった！\n"
-                atk = atk + Math.round(def * (ehpp - phpp))
-                def = Math.round(def * (1 - (ehpp - phpp)))
+                message += serifs.rpg.haisui + "\n"
+                atk = atk + Math.round(def * (enemyHpPercent - playerHpPercent))
+                def = Math.round(def * (1 - (enemyHpPercent - playerHpPercent)))
             }
 
             // 敵のステータスを計算
-            const eatk = (typeof data.enemy.atk === "function") ? data.enemy.atk(atk, def, spd) : lv * 3.5 * data.enemy.atk;
-            const edef = (typeof data.enemy.def === "function") ? data.enemy.def(atk, def, spd) : lv * 3.5 * data.enemy.def;
+            const enemyAtk = (typeof data.enemy.atk === "function") ? data.enemy.atk(atk, def, spd) : lv * 3.5 * data.enemy.atk;
+            const enemyDef = (typeof data.enemy.def === "function") ? data.enemy.def(atk, def, spd) : lv * 3.5 * data.enemy.def;
 
             // 敵に最大ダメージ制限がある場合、ここで計算
-            let maxdmg = data.enemy.maxdmg ? mehp * data.enemy.maxdmg : undefined
+            let maxdmg = data.enemy.maxdmg ? enemyMaxHp * data.enemy.maxdmg : undefined
 
             // 敵が中断能力持ちの場合、ここで何回攻撃可能か判定
             for (let i = 1; i < spd; i++) {
@@ -496,7 +373,7 @@ export default class extends Module {
             if (buff > 0) message += "\n"
 
             // 予測最大ダメージ
-            let predictedDmg = Math.round((atk * tp * 1.8) * (1 / (((edef * (this.getVal(data.enemy.defx, [tp]) ?? 3)) + 100) / 100))) * (abort || spd);
+            let predictedDmg = Math.round((atk * tp * 1.8) * (1 / (((enemyDef * (this.getVal(data.enemy.defx, [tp]) ?? 3)) + 100) / 100))) * (abort || spd);
 
             // 予測最大ダメージは最大ダメージ制限を超えない
             if (maxdmg && predictedDmg > maxdmg) predictedDmg = maxdmg;
@@ -507,17 +384,17 @@ export default class extends Module {
             // 敵先制攻撃の処理
             // spdが1ではない、または戦闘ではない場合は先制攻撃しない
             if (!data.enemy.spd && !data.enemy.hpmsg) {
-                const crit = Math.random() < phpp - ehpp;
+                const crit = Math.random() < playerHpPercent - enemyHpPercent;
                 // 予測最大ダメージが相手のHPの何割かで先制攻撃の確率が判定される
-                if (Math.random() < predictedDmg / ehp || (count === 3 && data.enemy.fire && (data.thirdFire ?? 0) <= 2)) {
-                    const dmg = this.getEnemyDmg(data, def, tp, count, crit, eatk)
+                if (Math.random() < predictedDmg / enemyHp || (count === 3 && data.enemy.fire && (data.thirdFire ?? 0) <= 2)) {
+                    const dmg = this.getEnemyDmg(data, def, tp, count, crit, enemyAtk)
                     // ダメージが負けるほど多くなる場合は、先制攻撃しない
-                    if (php > dmg || (count === 3 && data.enemy.fire && (data.thirdFire ?? 0) <= 2)) {
-                        php -= dmg
+                    if (playerHp > dmg || (count === 3 && data.enemy.fire && (data.thirdFire ?? 0) <= 2)) {
+                        playerHp -= dmg
                         message += (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n"
-                        if (php <= 0 && !data.enemy.notEndure) {
-                            message += "もこチキは気合で耐えた！\n"
-                            php = 1;
+                        if (playerHp <= 0 && !data.enemy.notEndure) {
+                            message += serifs.rpg.endure + "\n"
+                            playerHp = 1;
                             data.endure = Math.max(data.endure - 1, 0);
                         }
                         message += "\n";
@@ -531,8 +408,8 @@ export default class extends Module {
             // 自身攻撃の処理
             // spdの回数分、以下の処理を繰り返す
             for (let i = 0; i < spd; i++) {
-                let crit = Math.random() < ehpp - phpp;
-                let dmg = this.getAtkDmg(data, atk, tp, count, crit, edef, mehp)
+                let crit = Math.random() < enemyHpPercent - playerHpPercent;
+                let dmg = this.getAtkDmg(data, atk, tp, count, crit, enemyDef, enemyMaxHp)
                 // 最大ダメージ制限処理
                 if (maxdmg && maxdmg > 0 && dmg > Math.round(maxdmg * (1 / ((abort || spd) - i)))) {
                     // 最大ダメージ制限を超えるダメージの場合は、ダメージが制限される。
@@ -544,9 +421,9 @@ export default class extends Module {
                 }
                 // メッセージの出力
                 message += (crit ? `**${data.enemy.atkmsg(dmg)}**` : data.enemy.atkmsg(dmg)) + "\n"
-                ehp -= dmg
+                enemyHp -= dmg
                 // 敵のHPが0以下になった場合は、以降の攻撃をキャンセル
-                if (ehp <= 0) break;
+                if (enemyHp <= 0) break;
                 // 攻撃が中断される場合
                 if ((i + 1) === abort) {
                     if (data.enemy.abortmsg) message += data.enemy.abortmsg + "\n"
@@ -555,19 +432,19 @@ export default class extends Module {
             }
 
             // 覚醒状態でこれが戦闘なら炎で追加攻撃
-            if (isSuper && ehp > 0 && !data.enemy.hpmsg && !data.enemy.lToR && !data.enemy.pLToR) {
-                message += `もこチキの追い打ち炎攻撃！\n${data.enemy.dname ?? data.enemy.name}が次に受けるダメージが上昇した！\n`
+            if (isSuper && enemyHp > 0 && !data.enemy.hpmsg && !data.enemy.lToR && !data.enemy.pLToR) {
+                message += serifs.rpg.fireAtk(data.enemy.dname ?? data.enemy.name) + `\n`
                 data.fireAtk = (data.fireAtk ?? 0) + 10;
             }
 
             // 勝利処理
-            if (ehp <= 0) {
+            if (enemyHp <= 0) {
                 // エンドレスモードかどうかでメッセージ変更
-                if (data.enemy.name !== "もこチキは旅") {
-                    message += "\n" + data.enemy.winmsg + "\n\n勝利！おめでとう！"
+                if (data.enemy.name !== endressEnemy.name) {
+                    message += "\n" + data.enemy.winmsg + "\n\n" + serifs.rpg.win
                 } else {
-                    message += "\n" + data.enemy.winmsg + (data.endressFlg ? "\n（次の日へ進む場合は、次回も旅モードを指定してください）" : "")
-                    if ((data.endress ?? 0) > (data.maxEndress ?? 0)) data.maxEndress = data.endress;
+                    message += "\n" + data.enemy.winmsg + (data.endressFlg ? "\n" + serifs.rpg.journey.win : "")
+                    if ((data.endress ?? 0) > (data.maxEndress ?? -1)) data.maxEndress = data.endress;
                     data.endress = (data.endress ?? 0) + 1;
                 }
                 // 連続勝利数
@@ -578,6 +455,7 @@ export default class extends Module {
                 // クリアした敵のリストを追加
                 if (!(data.clearEnemy ?? []).includes(data.enemy.name)) data.clearEnemy.push(data.enemy.name);
                 if (!(data.clearHistory ?? []).includes(data.enemy.name)) data.clearHistory.push(data.enemy.name);
+                // ～を倒す系の記録
                 if (data.enemy.name === ":mk_hero_8p:" && !data.aHeroLv) {
                     data.aHeroLv = data.lv;
                     data.aHeroClearDate = Date.now();
@@ -594,29 +472,29 @@ export default class extends Module {
                 let maxDmg = 0;
                 if (!enemyTurnFinished) {
                     for (let i = 0; i < (data.enemy.spd ?? 1); i++) {
-                        const crit = Math.random() < phpp - ehpp;
-                        const dmg = this.getEnemyDmg(data, def, tp, count, crit, eatk)
-                        php -= dmg
+                        const crit = Math.random() < playerHpPercent - enemyHpPercent;
+                        const dmg = this.getEnemyDmg(data, def, tp, count, crit, enemyAtk)
+                        playerHp -= dmg
                         message += "\n" + (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n"
                         if (dmg > maxDmg) maxDmg = dmg;
                         if (data.enemy.fire && count > (data.thirdFire ?? 0)) data.thirdFire = count;
                     }
                     // HPが0で食いしばりが可能な場合、食いしばる
-                    if (php <= 0 && !data.enemy.notEndure && count === 1 && Math.random() < 0.05 + (0.1 * (data.endure ?? 0))) {
-                        message += "もこチキは気合で耐えた！\n"
-                        php = 1;
+                    if (playerHp <= 0 && !data.enemy.notEndure && count === 1 && Math.random() < 0.05 + (0.1 * (data.endure ?? 0))) {
+                        message += serifs.rpg.endure + "\n"
+                        playerHp = 1;
                         data.endure = Math.max(data.endure - 1, 0);
                     }
-                    if (maxDmg > (data.superMuscle ?? 0) && php > 0) data.superMuscle = maxDmg;
+                    if (maxDmg > (data.superMuscle ?? 0) && playerHp > 0) data.superMuscle = maxDmg;
                 }
                 // 敗北処理
-                if (php <= 0) {
+                if (playerHp <= 0) {
                     // エンドレスモードかどうかでメッセージ変更
-                    if (data.enemy.name !== "もこチキは旅") {
-                        message += "\n" + data.enemy.losemsg + "\n\n:oyoo:"
+                    if (data.enemy.name !== endressEnemy.name) {
+                        message += "\n" + data.enemy.losemsg + "\n\n" + serifs.rpg.lose
                     } else {
-                        message += "\n" + data.enemy.losemsg + `\n(今回の旅の日数 : ${(data.endress ?? 0) + 1}日)`
-                        if ((data.endress ?? 0) > (data.maxEndress ?? 0)) data.maxEndress = data.endress;
+                        message += "\n" + data.enemy.losemsg + `\n` + serifs.rpg.journey.lose((data.endress ?? 0) + 1)
+                        if ((data.endress ?? 0) > (data.maxEndress ?? -1)) data.maxEndress = data.endress;
                         data.endress = 0;
                     }
                     // これが任意に入った旅モードだった場合は、各種フラグをリセットしない
@@ -639,10 +517,10 @@ export default class extends Module {
                     data.fireAtk = 0;
                 } else {
                     // 決着がつかない場合
-                    message += this.showStatus(data, php, ehp, mehp, me) + "\n\n次回へ続く……"
+                    message += this.showStatus(data, playerHp, enemyHp, enemyMaxHp, me) + "\n\n" + serifs.rpg.next;
                     data.count = (data.count ?? 1) + 1;
-                    data.php = php;
-                    data.ehp = ehp;
+                    data.php = playerHp;
+                    data.ehp = enemyHp;
                 }
             }
             // レベルアップ処理
@@ -671,20 +549,20 @@ export default class extends Module {
             data.atk = (data.atk ?? 0) + atkUp;
             data.def = (data.def ?? 0) + totalUp - atkUp;
 
-			let addMessage = ""
+            let addMessage = ""
 
-			if ((data.info ?? 0) < 1 && ((100 + lv * 3) + ((data.winCount ?? 0) * 5)) >= 300) {
-				data.info = 1
-				addMessage += `\nもこチキの状況判断能力がアップ！\n次回から状況が細かく\n分析出来るようになる事があるぞ！`
-			}
+            if ((data.info ?? 0) < 1 && ((100 + lv * 3) + ((data.winCount ?? 0) * 5)) >= 300) {
+                data.info = 1
+                addMessage += `\n` + serifs.rpg.info
+            }
 
             message += [
-                `\n\n今回のレベルアップ :`,
-                `  Lv : ${data.lv ?? 1} (+1)`,
-                `  パワー : ${data.atk ?? 0} (+${atkUp + bonus})`,
-                `  防御 : ${data.def ?? 0} (+${totalUp - atkUp + bonus})`,
-				addMessage,
-                `\n次回は${new Date().getHours() < 12 ? "12時以降に" : new Date().getHours() < 18 ? "18時以降に" : "明日以降に"}遊べます。`,
+                `\n\n${serifs.rpg.lvUp}`,
+                `  ${serifs.rpg.status.lv} : ${data.lv ?? 1} (+1)`,
+                `  ${serifs.rpg.status.atk} : ${data.atk ?? 0} (+${atkUp + bonus})`,
+                `  ${serifs.rpg.status.def} : ${data.def ?? 0} (+${totalUp - atkUp + bonus})`,
+                addMessage,
+                `\n${serifs.rpg.nextPlay(new Date())}`,
             ].filter(Boolean).join("\n")
 
             msg.friend.setPerModulesData(this, data);
@@ -698,7 +576,7 @@ export default class extends Module {
                 }
             }
             if (unlockColors) {
-                message += `\n\n条件を満たしたので、\n新しい色が解放されました！\n\n$[x2 ${unlockColors}]\n\n「RPG 色」と話しかけて確認してみてね！`
+                message += serifs.rpg.newColor(unlockColors)
             }
 
             msg.reply(`<center>${message}</center>`, {
@@ -714,49 +592,159 @@ export default class extends Module {
         }
     }
 
+    /**
+     * ステータスを作成し、返します。
+     * @param data RPGモジュールのData
+     * @param playerHp プレイヤーのHP
+     * @param enemyHp 敵のHP
+     * @param enemyMaxHp 敵の最大HP
+     * @param me 自分の姿
+     */
     @autobind
-    private showStatus(data, php: number, ehp: number, mehp: number, me = ":mk_hero:"): string {
-        const ehpGaugeCount = Math.min(Math.ceil(ehp / mehp / (1 / 7)), 7)
-        const ehpGauge = data.enemy.lToR
-            ? data.enemy.mark2.repeat(7 - ehpGaugeCount) + data.enemy.mark.repeat(ehpGaugeCount)
-            : data.enemy.mark2.repeat(ehpGaugeCount) + data.enemy.mark.repeat(7 - ehpGaugeCount)
-        const ehpInfo = data.enemy.lToR
-            ? "**" + (Math.ceil((100 - Math.min(Math.ceil(ehp / mehp / (1 / 100)), 100)) / 5) * 5) + "** %？"
-            : "**" + (Math.ceil((Math.min(Math.ceil(ehp / mehp / (1 / 100)), 100)) / 5) * 5) + "** %？"
-        const phpGaugeCount = Math.min(Math.ceil(php / (100 + (data.lv ?? 1) * 3) / (1 / 7)), 7)
-        const phpGauge = data.enemy.pLToR
-            ? "★".repeat(7 - phpGaugeCount) + "☆".repeat(phpGaugeCount)
-            : "★".repeat(phpGaugeCount) + "☆".repeat(7 - phpGaugeCount)
-        const phpInfo = data.enemy.pLToR
-            ? "**" + (Math.ceil((100 - Math.min(Math.ceil(php / (100 + (data.lv ?? 1) * 3) / (1 / 100)), 100)) / 5) * 5) + "** %？"
-            : "**" + (Math.ceil((Math.min(Math.ceil(php / (100 + (data.lv ?? 1) * 3) / (1 / 100)), 100)) / 5) * 5) + "** %？"
-        const debuff = [data.enemy.fire ? "🔥" + data.count : ""].filter(Boolean).join(" ")
+    private showStatus(data, playerHp: number, enemyHp: number, enemyMaxHp: number, me = colors.find((x) => x.default)?.name ?? colors[0].name): string {
+
+        // 敵
+        const enemyHpMarkCount = Math.min(Math.ceil(enemyHp / enemyMaxHp / (1 / 7)), 7)
+        const enemyHpMarkStr = data.enemy.lToR
+            ? data.enemy.mark2.repeat(7 - enemyHpMarkCount) + data.enemy.mark.repeat(enemyHpMarkCount)
+            : data.enemy.mark2.repeat(enemyHpMarkCount) + data.enemy.mark.repeat(7 - enemyHpMarkCount)
+        const enemyHpInfoStr = data.enemy.lToR
+            ? (Math.ceil((100 - Math.min(Math.ceil(enemyHp / enemyMaxHp / (1 / 100)), 100)) / 5) * 5) + " " + serifs.rpg.infoPercent
+            : (Math.ceil((Math.min(Math.ceil(enemyHp / enemyMaxHp / (1 / 100)), 100)) / 5) * 5) + " " + serifs.rpg.infoPercent
+            
+        // プレイヤー
+        const playerHpMarkCount = Math.min(Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 7)), 7)
+        const playerHpMarkStr = data.enemy.pLToR
+            ? serifs.rpg.player.mark2.repeat(7 - playerHpMarkCount) + serifs.rpg.player.mark.repeat(playerHpMarkCount)
+            : serifs.rpg.player.mark2.repeat(playerHpMarkCount) + serifs.rpg.player.mark.repeat(7 - playerHpMarkCount)
+        const PlayerHpInfoStr = data.enemy.pLToR
+            ? (Math.ceil((100 - Math.min(Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 100)), 100)) / 5) * 5) + " " + serifs.rpg.infoPercent
+            : (Math.ceil((Math.min(Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 100)), 100)) / 5) * 5) + " " + serifs.rpg.infoPercent
+
+        const debuff = [data.enemy.fire ? serifs.rpg.fire + data.count : ""].filter(Boolean).join(" ")
+
         if (data.enemy.pLToR) {
-            return `\n${data.enemy.hpmsg ? "体力" : me} : ${data.info && (data.clearHistory ?? []).includes(data.enemy.name) ? ehpInfo : ehpGauge}\n${data.enemy.hpmsg ?? data.enemy.dname ?? data.enemy.name} : ${data.info ? phpInfo : phpGauge}${debuff ? `\n${debuff}` : ""}`
+            return `\n${data.enemy.hpmsg ? serifs.rpg.player.hpmsg : me} : ${data.info && (data.clearHistory ?? []).includes(data.enemy.name) ? enemyHpInfoStr : enemyHpMarkStr}\n${data.enemy.hpmsg ?? data.enemy.dname ?? data.enemy.name} : ${data.info ? PlayerHpInfoStr : playerHpMarkStr}${debuff ? `\n${debuff}` : ""}`
         } else {
-            return `\n${data.enemy.hpmsg ?? data.enemy.dname ?? data.enemy.name} : ${data.info && (data.clearHistory ?? []).includes(data.enemy.name) ? ehpInfo : ehpGauge}\n${data.enemy.hpmsg ? "体力" : me} : ${data.info ? phpInfo : phpGauge}${debuff ? `\n${debuff}` : ""}`
+            return `\n${data.enemy.hpmsg ?? data.enemy.dname ?? data.enemy.name} : ${data.info && (data.clearHistory ?? []).includes(data.enemy.name) ? enemyHpInfoStr : enemyHpMarkStr}\n${data.enemy.hpmsg ? serifs.rpg.player.hpmsg : me} : ${data.info ? PlayerHpInfoStr : playerHpMarkStr}${debuff ? `\n${debuff}` : ""}`
         }
     }
 
+    /**
+     * ユーザの投稿数を取得します
+     * @param msg Message
+     * @param bonus 投稿数に上乗せする値
+     * @returns 投稿数
+     */
     @autobind
-    private getAtkDmg(data, atk, tp, count, crit, edef, mehp, rng = (0.2 + Math.random() * 1.6), defx?) {
-        let dmg = Math.round((atk * tp * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * rng * (crit ? 2 : 1)) * (1 / (((edef * (defx ?? this.getVal(data.enemy.defx, [tp]) ?? 3)) + 100) / 100)))
+    private async getPostCount(msg, bonus = 0): Promise<number> {
+
+        // ユーザの投稿数を取得
+        const chart = await this.ai.api('charts/user/notes', {
+            span: 'day',
+            limit: 2,
+            userId: msg.userId
+        })
+
+        let postCount = Math.max(
+            (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
+            (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
+        ) + bonus;
+
+        if (msg.friend.doc.linkedAccounts?.length) {
+            for (const userId of msg.friend.doc.linkedAccounts) {
+                const friend = this.ai.lookupFriend(userId);
+                if (!friend || !friend.doc?.linkedAccounts?.includes(msg.friend.userId)) continue;
+
+                // ユーザの投稿数を取得
+                const chart = await this.ai.api('charts/user/notes', {
+                    span: 'day',
+                    limit: 2,
+                    userId: userId
+                })
+
+                postCount += Math.max(
+                    (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
+                    (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
+                );
+            }
+        }
+
+        return postCount
+    }
+
+    /**
+     * 投稿数からステータス倍率を計算します
+     * 3 で 1倍
+     * 10 で 2倍
+     * 25 で 3倍
+     * 75 で 4倍
+     * 以降 100 毎に +1倍
+     * @param postCount 投稿数
+     * @returns ステータス倍率
+     */
+    @autobind
+    private getPostX(postCount) {
+        return postCount >= 75
+            ? (postCount - 75) / 100 + 4
+            : postCount >= 25
+                ? (postCount - 25) / 50 + 3
+                : postCount >= 10
+                    ? (postCount - 10) / 15 + 2
+                    : postCount >= 3
+                        ? (postCount - 3) / 7 + 1
+                        : Math.max(postCount / 3, (1 / 3))
+    }
+
+    /**
+     * プレイヤーが与えるダメージを計算します
+     * @param data RPGモジュールのData
+     * @param atk 攻撃力
+     * @param tp ステータス倍率
+     * @param count ターン数
+     * @param crit クリティカルかどうか
+     * @param enemyDef 敵の防御力
+     * @param enemyMaxHp 敵の最大HP
+     * @param rng 乱数（固定する場合は指定）
+     * @param defx 敵の防御ステータス倍率（固定する場合は指定）
+     * @returns プレイヤーが与えるダメージ
+     */
+    @autobind
+    private getAtkDmg(data, atk, tp, count, crit, enemyDef, enemyMaxHp, rng = (0.2 + Math.random() * 1.6), defx?) {
+        let dmg = Math.round((atk * tp * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * rng * (crit ? 2 : 1)) * (1 / (((enemyDef * (defx ?? this.getVal(data.enemy.defx, [tp]) ?? 3)) + 100) / 100)))
         if (data.fireAtk > 0) {
-            dmg += Math.round((data.fireAtk) * mehp * 0.01)
+            dmg += Math.round((data.fireAtk) * enemyMaxHp * 0.01)
             data.fireAtk = (data.fireAtk ?? 0) - 1;
         }
         return dmg;
     }
 
+    /**
+     * プレイヤーが受けるダメージを計算します
+     * @param data RPGモジュールのData
+     * @param def 防御力
+     * @param tp ステータス倍率
+     * @param count ターン数
+     * @param crit クリティカルかどうか
+     * @param enemyAtk 敵の攻撃力
+     * @param rng 乱数（固定する場合は指定）
+     * @returns プレイヤーが受けるダメージ
+     */
     @autobind
-    private getEnemyDmg(data, def, tp, count, crit, eatk) {
-        let dmg = Math.round((eatk * (this.getVal(data.enemy.atkx, [tp]) ?? 3) * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * (0.2 + Math.random() * 1.6) * (crit ? 2 : 1)) * (1 / (((def * tp) + 100) / 100)))
+    private getEnemyDmg(data, def, tp, count, crit, enemyAtk, rng = (0.2 + Math.random() * 1.6)) {
+        let dmg = Math.round((enemyAtk * (this.getVal(data.enemy.atkx, [tp]) ?? 3) * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * rng * (crit ? 2 : 1)) * (1 / (((def * tp) + 100) / 100)))
         if (data.enemy.fire) {
             dmg += Math.round((count - 1) * (100 + data.lv * 3) * data.enemy.fire)
         }
         return dmg;
     }
 
+    /**
+     * valで指定された値が関数の場合、計算し値を返します。
+     * @param val 関数または値
+     * @param props 関数だった場合の引数
+     * @returns 値
+     */
     @autobind
     private getVal(val, props?) {
         if (typeof val === "function") {

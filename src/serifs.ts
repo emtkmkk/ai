@@ -431,6 +431,72 @@ export default {
 		reportUtatane: minutes => `コケコッコー、${minutes}分くらい寝ちゃってたみたい`,
 	},
 
+	rpg: {
+		remind: (me, hours) => `<center>$[x2 ${me}]\n\n${hours}時です！\nRPGモードの時間ですよ～\n\n毎日3回プレイして、\n私を強くしてください！\n\n「RPG」と話しかけてね\n（ここに返信でも大丈夫ですよ！）</center>`,
+		nowStatus: "現在のステータス",
+		lvUp: "今回のレベルアップ :",
+		rpgMode: "RPGモード : ",
+		status: {
+			enemy: "現在の状態",
+			lv: "Lv",
+			atk: "パワー",
+			def: "防御",
+			spd: "行動回数",
+			post: "投稿数",
+		},
+		tired: (date) => `RPGモードは0~11時、12~17時、18~23時の1日3回です。\n${date.getHours() < 12 ? "12時以降" : date.getHours() < 18 ? "18時以降" : "明日"}になったらもう一度試してください。`,
+		start: "開始！",
+		end: "終了！",
+		turn: "ターン目",
+		bonus: {
+			a: "連続RPGボーナス！\nパワー・防御がアップした！",
+			b: "連続RPGボーナス（弱）！\nパワー・防御が小アップした！",
+			c: "毎日RPGボーナス！\nパワー・防御が小アップした！",
+		},
+		super: (me) => `$[x2 ${me}]\n\n**もこチキは覚醒状態になった！**\n行動回数+**2**！\nパワー・防御が**超**アップ！`,
+		spdUp: "もこチキは体の調子が良さそうだ！\n行動回数+1！",
+		haisui: "もこチキは決死の覚悟をした！\nパワーが上がり、防御が下がった！",
+		endure: "もこチキは気合で耐えた！",
+		fireAtk: (enemyName) => `もこチキの追い打ち炎攻撃！\n${enemyName}が次に受けるダメージが上昇した！`,
+		win: "勝利！おめでとう！",
+		lose: ":oyoo:",
+		next: "次回へ続く……",
+		nextPlay: (date) => `次回は${date.getHours() < 12 ? "12時以降に" : date.getHours() < 18 ? "18時以降に" : "明日以降に"}遊べます。`,
+		player: {
+			mark: "☆",
+			mark2: "★",
+			hpmsg: "体力",
+		},
+		fire: "🔥",
+		journey: {
+			err: `探索中以外の状態では旅モードは指定できません。探索中になったらもう一度試してください。`,
+			win: "（次の日へ進む場合は、次回も旅モードを指定してください）",
+			lose: (day) => `(今回の旅の日数 : ${day}日)`,
+		},
+		trial: {
+			tired: `全力を出して疲れてしまったみたいです。Lvが上がったら、もう一度試してみてください。`,
+			cw: (lv) => `もこチキは自分の力を確認するようだ。(Lv${lv})`,
+			atk: (dmg) => `もこチキは木人に攻撃！\n${dmg}ポイントのダメージ！`,
+			result: (totalDmg) => `合計${totalDmg}ポイントのダメージ！\n(ダメージ幅: ${Math.round(totalDmg * 0.2)} ~ ${Math.round(totalDmg * 1.8)})`,
+			best: (bestScore) => `\n(これまでのベスト: **${bestScore}**)`,
+		},
+		info: "もこチキの状況判断能力がアップ！\n今後、状況が細かく\n分析出来るようになる事があるぞ！",
+		infoPercent: "%？",
+		newColor: (unlockColors) => `\n\n条件を満たしたので、\n新しい色が解放されました！\n\n$[x2 ${unlockColors}]\n\n「RPG 色」と話しかけて確認してみてね！`,
+		color: {
+			info: "色を変更する場合、`rpg 色変更 <数字>`と話しかけてね",
+			list: "色解放条件",
+			default: "初期解放",
+			unlock: "解放済み",
+		},
+		command: {
+			rpg: "rpg",
+			color: "色",
+			trial: "木人",
+			journey: "旅モード",
+		}
+	},
+
 	noting: {
 		notes: [
 			'1時間以上経過した投稿は絶対時刻で表示されるようになります！',
