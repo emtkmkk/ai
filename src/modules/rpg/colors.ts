@@ -85,8 +85,8 @@ export const colors: Color[] = [
         id: 9,
         name: ":mk_hero_9p:",
         keyword: "9",
-        unlock: (data) => (colors.reduce((acc, value) => acc + (value.unlock(data) ? 1 : 0), 0) >= 8 || (data.superCount ?? 0) >= Math.ceil(100 * (colors.reduce((acc, value) => acc + (value.unlock(data) ? 1 : 0), -1) / 7)),
-        message: (data) => (colors.reduce((acc, value) => acc + (value.unlock(data) ? 1 : 0), 0) >= 8 || (data.superCount ?? 0) >= Math.ceil(100 * (colors.reduce((acc, value) => acc + (value.unlock(data) ? 1 : 0), -1) / 7)) ? `${serifs.rpg.color.unlock} (踏ん張り発動率: **${10 + (data.endure ?? 0) * 5}** %)` : `色を8種類解放する、または${Math.ceil(100 * (colors.reduce((acc, value) => acc + (value.unlock(data) ? 1 : 0), -1) / 7))}回覚醒すると解放されます。(**${colors.reduce((acc, value) => acc + (value.unlock(data) ? 1 : 0), 0)}** / ${colors.length - 1}) (**${(data.superCount ?? 0)}** / ${Math.ceil(100 * (colors.reduce((acc, value) => acc + (value.unlock(data) ? 1 : 0), -1) / 7))})`,
+        unlock: (data) => colors.reduce((acc, value) => acc + (value.unlock(data) ? 1 : 0), 0) >= 8 || (data.superCount ?? 0) >= Math.ceil(100 * (colors.reduce((acc, value) => acc + (value.unlock(data) ? 1 : 0), -1) / 7)),
+        message: (data) => colors.reduce((acc, value) => acc + (value.unlock(data) ? 1 : 0), 0) >= 8 || (data.superCount ?? 0) >= Math.ceil(100 * (colors.reduce((acc, value) => acc + (value.unlock(data) ? 1 : 0), -1) / 7)) ? `${serifs.rpg.color.unlock} (踏ん張り発動率: **${10 + (data.endure ?? 0) * 5}** %)` : `色を8種類解放する、または${Math.ceil(100 * (colors.reduce((acc, value) => acc + (value.unlock(data) ? 1 : 0), -1) / 7))}回覚醒すると解放されます。(**${colors.reduce((acc, value) => acc + (value.unlock(data) ? 1 : 0), 0)}** / ${colors.length - 1}) (**${(data.superCount ?? 0)}** / ${Math.ceil(100 * (colors.reduce((acc, value) => acc + (value.unlock(data) ? 1 : 0), -1) / 7))})`,
         alwaysSuper: true,
     }
 ]
