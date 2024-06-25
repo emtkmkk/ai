@@ -6,6 +6,7 @@ import getDate from '@/utils/get-date';
 import autobind from 'autobind-decorator';
 import { colorReply, colors } from './colors';
 import { endressEnemy, enemys } from './enemys';
+import Friend from '@/friend';
 
 export default class extends Module {
     public readonly name = 'rpg';
@@ -26,13 +27,15 @@ export default class extends Module {
             if (hours === 23 && new Date().getMinutes() >= 55 && new Date().getMinutes() < 60) {
                 const friends = this.ai.friends.find().filter((x) => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1 && x.perModulesData.rpg.noChart)
                 friends.forEach(async x => {
-                    const data = x.getPerModulesData(this);
+                    const friend = new Friend(this.ai, {doc: x})
+                    const data = friend.getPerModulesData(this);
                     const user = await this.ai.api('users/show', {
-                        userId: x.userId
+                        userId: friend.userId
                     })
-                    x.updateUser(user);
+                    friend.updateUser(user);
                     if (data.todayNotesCount) data.yesterdayNotesCount = data.todayNotesCount;
-                    data.todayNotesCount = x.doc.user.notesCount;
+                    data.todayNotesCount = friend.doc.user.notesCount;
+                    friend.save()
                 });
             }
         }, 1000 * 60 * 5);
