@@ -162,7 +162,9 @@ export default class extends Module {
 			if (filteredDoc[0].userId === msg.userId) return { reaction: ":mk_hotchicken:" };
 	
 			if (!msg.friend.doc.linkedAccounts) msg.friend.doc.linkedAccounts = [];
-	
+
+			if (msg.friend.doc.linkedAccounts.includes(filteredDoc[0].userId)) return { reaction: ":mk_hotchicken:" };
+			
 			msg.friend.doc.linkedAccounts?.push(filteredDoc[0].userId);
 	
 			msg.friend.save();
