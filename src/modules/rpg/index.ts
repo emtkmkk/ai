@@ -105,7 +105,7 @@ export default class extends Module {
                 let dmg = this.getAtkDmg(data, atk, tp, 1, false, edef, 0, 1, 3)
                 totalDmg += dmg
                 // メッセージの出力
-                message += serifs.rpg.trial.atk + "\n"
+                message += serifs.rpg.trial.atk(dmg) + "\n"
             }
 
             message += `\n${serifs.rpg.end}\n\n${serifs.rpg.trial.result(totalDmg)}${data.bestScore ? serifs.rpg.trial.best(data.bestScore) : ""}`
