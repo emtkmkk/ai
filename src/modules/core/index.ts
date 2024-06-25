@@ -41,6 +41,7 @@ export default class extends Module {
 			(await this.ranking(msg)) ||
 			this.transferBegin(msg) ||
 			this.transferEnd(msg) ||
+			(await this.linkAccount(msg)) ||
 			this.setName(msg) ||
 			this.getLove(msg) ||
 			this.getStatus(msg) ||
@@ -54,6 +55,155 @@ export default class extends Module {
 			this.version(msg);
 
 		return ret === true ? { reaction: ":neofox_heart:" } : ret;
+	}
+	@autobind
+	private async linkAccount(msg: Message) {
+		if (!msg.text) return false;
+		if (!msg.includes(["リンク", "link"])) return false;
+
+		const exp = /@(\w+)@?([\w.-]+)?/.exec(
+			msg.extractedText.replace("リンク", "")
+		);
+		if (!exp?.[1]) {
+			if (!msg.friend.doc.linkedAccounts)
+				return { reaction: ":mk_hotchicken:" };
+			let message = "とリンクしているアカウント一覧\n\n";
+			// ユーザの投稿数を取得
+			const chart = await this.ai.api("charts/user/notes", {
+				span: "day",
+				limit: 2,
+				userId: msg.userId,
+			});
+
+			let totalPostCount = 0;
+			// チャートがない場合
+			if (!chart?.diffs) {
+				if (
+					msg.friend.doc?.perModulesData?.rpg?.noChart &&
+					msg.friend.doc.perModulesData.rpg.todayNotesCount
+				) {
+					let postCount = Math.max(
+						(msg.friend.doc.user.notesCount ??
+							msg.friend.doc.perModulesData.rpg.todayNotesCount) -
+							msg.friend.doc.perModulesData.rpg.todayNotesCount,
+						msg.friend.doc.perModulesData.rpg.todayNotesCount -
+							(msg.friend.doc.perModulesData.rpg.yesterdayNotesCount ??
+								msg.friend.doc.perModulesData.rpg.todayNotesCount)
+					);
+					message += "\n" + acct(msg.friend.doc.user) + " 投稿数: " + postCount;
+				} else {
+					message += "\n" + acct(msg.friend.doc.user);
+				}
+			} else {
+				// 投稿数（今日と明日の多い方）
+				let postCount = Math.max(
+					(chart.diffs.normal?.[0] ?? 0) +
+						(chart.diffs.reply?.[0] ?? 0) +
+						(chart.diffs.withFile?.[0] ?? 0),
+					(chart.diffs.normal?.[1] ?? 0) +
+						(chart.diffs.reply?.[1] ?? 0) +
+						(chart.diffs.withFile?.[1] ?? 0)
+				);
+				message += acct(msg.user) + " 投稿数: " + postCount;
+				totalPostCount += postCount;
+			}
+
+			if (msg.friend.doc.linkedAccounts?.length) {
+				for (const userId of msg.friend.doc.linkedAccounts) {
+					const friend = this.ai.lookupFriend(userId);
+					if (!friend) continue;
+					if (!friend.doc?.linkedAccounts?.includes(msg.friend.userId)) {
+						message +=
+							"\n" +
+							acct(friend.doc.user) +
+							" 未リンク（リンク先のアカウントから" +
+							acct(msg.user) +
+							"をリンクしてください）";
+					}
+
+					// ユーザの投稿数を取得
+					const chart = await this.ai.api("charts/user/notes", {
+						span: "day",
+						limit: 2,
+						userId: userId,
+					});
+
+					// チャートがない場合
+					if (!chart?.diffs) {
+						if (
+							friend.doc?.perModulesData?.rpg?.noChart &&
+							friend.doc.perModulesData.rpg.todayNotesCount
+						) {
+							let postCount = Math.max(
+								(friend.doc.user.notesCount ??
+									friend.doc.perModulesData.rpg.todayNotesCount) -
+									friend.doc.perModulesData.rpg.todayNotesCount,
+								friend.doc.perModulesData.rpg.todayNotesCount -
+									(friend.doc.perModulesData.rpg.yesterdayNotesCount ??
+										friend.doc.perModulesData.rpg.todayNotesCount)
+							);
+							message += "\n" + acct(friend.doc.user) + " 投稿数: " + postCount;
+						} else {
+							message += "\n" + acct(friend.doc.user);
+						}
+					} else {
+						let postCount = Math.max(
+							(chart.diffs.normal?.[0] ?? 0) +
+								(chart.diffs.reply?.[0] ?? 0) +
+								(chart.diffs.withFile?.[0] ?? 0),
+							(chart.diffs.normal?.[1] ?? 0) +
+								(chart.diffs.reply?.[1] ?? 0) +
+								(chart.diffs.withFile?.[1] ?? 0)
+						);
+						totalPostCount += postCount;
+
+						message += "\n" + acct(friend.doc.user) + " 投稿数: " + postCount;
+					}
+				}
+			}
+			message += "\n\n" + "リンク内合計投稿数: " + totalPostCount;
+			msg.reply(`${message}`, {
+				visibility: "specified",
+			});
+
+			return true;
+		} else {
+			const doc = this.ai.friends.find({
+				"user.username": exp[1],
+				...(exp?.[2] ? { "user.host": exp[2] } : {}),
+			} as any) as any;
+			let filteredDoc = exp?.[2] ? doc : doc.filter((x) => x.user.host == null);
+
+			if (filteredDoc.length === 0) {
+				const doc = this.ai.friends.find({
+					"user.username": exp[1],
+				} as any) as any;
+				filteredDoc = doc.filter((x) => x.user.host == null);
+			}
+
+			if (filteredDoc.length !== 1) return { reaction: ":mk_hotchicken:" };
+
+			if (filteredDoc[0].userId === msg.userId)
+				return { reaction: ":mk_hotchicken:" };
+
+			if (!msg.friend.doc.linkedAccounts) msg.friend.doc.linkedAccounts = [];
+
+			msg.friend.doc.linkedAccounts?.push(filteredDoc[0].userId);
+
+			msg.friend.save();
+
+			if (filteredDoc[0].linkedAccounts?.includes(msg.friend.userId)) {
+				msg.reply(
+					`アカウントのリンクに成功したのじゃ！\n投稿数が使用される際にリンクしたアカウントの合計投稿数で計算されるようになったのじゃ！\n\n\`リンク\`と話しかけてもらえれば、リンクしているアカウントの情報を表示するのじゃ！`
+				);
+			} else {
+				msg.reply(
+					`アカウントを登録したのじゃ！\nリンク先のアカウントからも同じ操作を実行してほしいのじゃ！`
+				);
+			}
+
+			return true;
+		}
 	}
 
 	@autobind

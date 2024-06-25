@@ -31,6 +31,7 @@ import SleepReportModule from "./modules/sleep-report";
 import NotingModule from "./modules/noting";
 import PollModule from "./modules/poll";
 import ReminderModule from "./modules/reminder";
+import RpgModule from "./modules/rpg";
 
 console.log("   __    ____  _____  ___ ");
 console.log("  /__\\  (_  _)(  _  )/ __)");
@@ -89,6 +90,7 @@ promiseRetry(
 			new NotingModule(),
 			new PollModule(),
 			new ReminderModule(),
+			new RpgModule(),
 		]);
 	})
 	.catch((e) => {
