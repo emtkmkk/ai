@@ -692,7 +692,7 @@ export default class extends Module {
             let postCount = 25;
             if (data.noChart && data.todayNotesCount) {
                 postCount = Math.max(
-                    msg.user?.notesCount - data.todayNotesCount,
+                    (msg.friend.doc.user?.notesCount ?? data.todayNotesCount) - data.todayNotesCount,
                     data.todayNotesCount - (data.yesterdayNotesCount ?? data.todayNotesCount)
                 );
             } else {
