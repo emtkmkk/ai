@@ -155,12 +155,12 @@ export default class extends Module {
 					: serifs.reminder.cancel
 			);
 			return {
-				reaction: "love",
+				reaction: ":neofox_heart:",
 			};
 		} else if (isOneself === false) {
 			msg.reply(serifs.reminder.doneFromInvalidUser);
 			return {
-				reaction: "confused",
+				reaction: ":neofox_confused:",
 			};
 		} else {
 			return false;

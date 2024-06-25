@@ -73,7 +73,7 @@ export default class extends Module {
 
 			this.log("finish!");
 
-			return { reaction: "love" };
+			return { reaction: ":neofox_heart:" };
 		}
 	}
 
