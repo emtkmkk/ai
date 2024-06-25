@@ -575,7 +575,7 @@ export default class 藍 {
 
 	@autobind
 	public incActiveFactor(amount = 0.003) {
-		amount = amount * 1000;
+		amount = amount * 10;
 		const incNum = amount / Math.max(this.activeFactor, 1);
 		this.activeFactor =
 			Math.floor(Math.min(this.activeFactor + incNum, 2) * 1000) / 1000;
