@@ -258,7 +258,7 @@ export default class extends Module {
                         data.endressFlg = false;
                     }
                     // エンドレス用の敵を設定
-                    data.enemy = endressEnemy
+                    data.enemy = endressEnemy(data)
                 }
                 // 敵の開始メッセージなどを設定
                 cw += `${data.enemy.msg}`
@@ -266,7 +266,7 @@ export default class extends Module {
                 data.ehp = (typeof data.enemy.maxhp === "function") ? data.enemy.maxhp((100 + lv * 3)) : Math.min((100 + lv * 3) + ((data.winCount ?? 0) * 5), (data.enemy.maxhp ?? 300));
             } else {
                 // 一度敵の情報を取得しなおす（関数のデータなどが吹き飛ぶ為）
-                data.enemy = [...enemys, endressEnemy].find((x) => data.enemy.name === x.name);
+                data.enemy = [...enemys, endressEnemy(data)].find((x) => data.enemy.name === x.name);
                 // 敵の開始メッセージなどを設定
                 cw += `${data.enemy.short} ${count}${serifs.rpg.turn}`
                 // 前ターン時点のステータスを表示
@@ -440,7 +440,7 @@ export default class extends Module {
             // 勝利処理
             if (enemyHp <= 0) {
                 // エンドレスモードかどうかでメッセージ変更
-                if (data.enemy.name !== endressEnemy.name) {
+                if (data.enemy.name !== endressEnemy(data).name) {
                     message += "\n" + data.enemy.winmsg + "\n\n" + serifs.rpg.win
                 } else {
                     message += "\n" + data.enemy.winmsg + (data.endressFlg ? "\n" + serifs.rpg.journey.win : "")
@@ -490,7 +490,7 @@ export default class extends Module {
                 // 敗北処理
                 if (playerHp <= 0) {
                     // エンドレスモードかどうかでメッセージ変更
-                    if (data.enemy.name !== endressEnemy.name) {
+                    if (data.enemy.name !== endressEnemy(data).name) {
                         message += "\n" + data.enemy.losemsg + "\n\n" + serifs.rpg.lose
                     } else {
                         message += "\n" + data.enemy.losemsg + `\n` + serifs.rpg.journey.lose((data.endress ?? 0) + 1)
@@ -611,7 +611,7 @@ export default class extends Module {
         const enemyHpInfoStr = data.enemy.lToR
             ? (Math.ceil((100 - Math.min(Math.ceil(enemyHp / enemyMaxHp / (1 / 100)), 100)) / 5) * 5) + " " + serifs.rpg.infoPercent
             : (Math.ceil((Math.min(Math.ceil(enemyHp / enemyMaxHp / (1 / 100)), 100)) / 5) * 5) + " " + serifs.rpg.infoPercent
-            
+
         // プレイヤー
         const playerHpMarkCount = Math.min(Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 7)), 7)
         const playerHpMarkStr = data.enemy.pLToR
