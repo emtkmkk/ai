@@ -92,7 +92,7 @@ export const colors: Color[] = [
 ]
 
 export const unlockCount = (data, excludeIds: number[] = [], excludeDefault = false) => {
-    return (excludeDefault ? colors.filter((x) => !excludeIds.includes(x.id)).filter((x) => !x.default) : colors).reduce((acc, value) => acc + (value.unlock(data) ? 1 : 0), 0)
+    return (excludeDefault ? colors.filter((x) => !excludeIds.includes(x.id)).filter((x) => !x.default) : colors.filter((x) => !excludeIds.includes(x.id))).reduce((acc, value) => acc + (value.unlock(data) ? 1 : 0), 0)
 }
 
 /** 色に関しての情報を返す */
