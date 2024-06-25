@@ -494,6 +494,7 @@ export default {
 			color: "色",
 			trial: "木人",
 			journey: "旅モード",
+			change: "変更",
 		}
 	},
 

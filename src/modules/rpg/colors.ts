@@ -102,7 +102,7 @@ export const colorReply = (module: Module, msg: Message) => {
             const data = msg.friend.getPerModulesData(module);
             if (!data) return false;
 
-            if (msg.includes(['変更'])) {
+            if (msg.includes([serifs.rpg.command.change])) {
                 // 文字数が多い物を先に判定
                 const sortedColors = colors.sort((a,b) => b.keyword.length - a.keyword.length)
                 for (let i = 0; i < sortedColors.length; i++) {
