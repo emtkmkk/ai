@@ -84,6 +84,7 @@ export default class extends Module {
 						(msg.friend.doc.user.notesCount ?? msg.friend.doc.perModulesData.rpg.todayNotesCount) - msg.friend.doc.perModulesData.rpg.todayNotesCount,
 						msg.friend.doc.perModulesData.rpg.todayNotesCount - (msg.friend.doc.perModulesData.rpg.yesterdayNotesCount ?? msg.friend.doc.perModulesData.rpg.todayNotesCount)
 					);
+					totalPostCount += postCount
 					message += acct(msg.friend.doc.user) + " 投稿数: " + postCount
 				} else {
 					message += acct(msg.friend.doc.user)
@@ -120,6 +121,7 @@ export default class extends Module {
 								(friend.doc.user.notesCount ?? friend.doc.perModulesData.rpg.todayNotesCount) - friend.doc.perModulesData.rpg.todayNotesCount,
 								friend.doc.perModulesData.rpg.todayNotesCount - (friend.doc.perModulesData.rpg.yesterdayNotesCount ?? friend.doc.perModulesData.rpg.todayNotesCount)
 							);
+							totalPostCount += postCount
 							message += "\n" + acct(friend.doc.user) + " 投稿数: " + postCount
 						} else {
 							message += "\n" + acct(friend.doc.user)
