@@ -85,14 +85,14 @@ export const colors: Color[] = [
         id: 9,
         name: ":mk_hero_9p:",
         keyword: "9",
-        unlock: (data) => unlockCount(data) >= 8 || (data.superCount ?? 0) >= Math.ceil(100 * unlockCount(data, true) / 7),
-        message: (data) => unlockCount(data) >= 8 || (data.superCount ?? 0) >= Math.ceil(100 * unlockCount(data, true) / 7) ? `${serifs.rpg.color.unlock} (踏ん張り発動率: **${10 + (data.endure ?? 0) * 5}** %)` : `色を8種類解放する、または${Math.ceil(100 * unlockCount(data, true) / 7)}回覚醒すると解放されます。(**${unlockCount(data)}** / 8) (**${(data.superCount ?? 0)}** / ${Math.ceil(100 * unlockCount(data, true) / 7)})`,
+        unlock: (data) => unlockCount(data, [9]) >= 8 || (data.superCount ?? 0) >= Math.ceil(100 * unlockCount(data, [9], true) / 7),
+        message: (data) => unlockCount(data, [9]) >= 8 || (data.superCount ?? 0) >= Math.ceil(100 * unlockCount(data, [9], true) / 7) ? `${serifs.rpg.color.unlock} (踏ん張り発動率: **${10 + (data.endure ?? 0) * 5}** %)` : `色を8種類解放する、または${Math.ceil(100 * unlockCount(data, [9], true) / 7)}回覚醒すると解放されます。(**${unlockCount(data, [9])}** / 8) (**${(data.superCount ?? 0)}** / ${Math.ceil(100 * unlockCount(data, [9], true) / 7)})`,
         alwaysSuper: true,
     }
 ]
 
-export const unlockCount = (data, excludeDefault = false) => {
-    return (excludeDefault ? colors.filter((x) => !x.default) : colors).reduce((acc, value) => acc + (value.unlock(data) ? 1 : 0), 0)
+export const unlockCount = (data, excludeIds: number[] = [], excludeDefault = false) => {
+    return (excludeDefault ? colors.filter((x) => !excludeIds.includes(x.id)).filter((x) => !x.default) : colors).reduce((acc, value) => acc + (value.unlock(data) ? 1 : 0), 0)
 }
 
 /** 色に関しての情報を返す */
