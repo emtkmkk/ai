@@ -21,6 +21,21 @@ export default class extends Module {
                 })
             }
         }, 1000 * 60 * 5);
+        setInterval(() => {
+            const hours = new Date().getHours()
+            if (hours === 23 && new Date().getMinutes() >= 55 && new Date().getMinutes() < 60) {
+                const friends = this.ai.friends.find().filter((x) => x.doc.perModulesData?.rpg?.lv && x.doc.perModulesData.rpg.lv > 1 && x.doc.perModulesData.rpg.noChart)
+                friends.array.forEach(async x => {
+                    const data = x.getPerModulesData(this);
+                    const user = await this.ai.api('users/show', {
+                        userId: x.userId
+                    })
+                    x.updateUser(user);
+                    if (data.todayNotesCount) data.yesterdayNotesCount = data.todayNotesCount;
+                    data.todayNotesCount = x.doc.user.notesCount;
+                });
+            }
+        }, 1000 * 60 * 5);
         return {
             mentionHook: this.mentionHook
         };
@@ -58,7 +73,7 @@ export default class extends Module {
             const isSuper = color.alwaysSuper;
 
             // 投稿数（今日と明日の多い方）
-            let postCount = await this.getPostCount(msg, (isSuper ? 200 : 0))
+            let postCount = await this.getPostCount(data, msg, (isSuper ? 200 : 0))
 
             // 投稿数に応じてステータス倍率を得る
             // 連続プレイの場合は倍率アップ
@@ -199,7 +214,7 @@ export default class extends Module {
             const isSuper = Math.random() < (0.02 + Math.max(data.superPoint / 200, 0)) || (data.lv ?? 1) % 100 === 0 || color.alwaysSuper;
 
             /** 投稿数（今日と明日の多い方）*/
-            let postCount = await this.getPostCount(msg, (isSuper ? 200 : 0))
+            let postCount = await this.getPostCount(data, msg, (isSuper ? 200 : 0))
 
             if (continuousBonus > 0) {
                 postCount = postCount + (Math.min(Math.max(10, postCount / 2), 25) * continuousBonus)
@@ -655,13 +670,13 @@ export default class extends Module {
 
     /**
      * ユーザの投稿数を取得します
+     * @param data RPGモジュールのData
      * @param msg Message
      * @param bonus 投稿数に上乗せする値
      * @returns 投稿数
      */
     @autobind
-    private async getPostCount(msg, bonus = 0): Promise<number> {
-
+    private async getPostCount(data, msg, bonus = 0): Promise<number> {
         // ユーザの投稿数を取得
         const chart = await this.ai.api('charts/user/notes', {
             span: 'day',
@@ -669,31 +684,62 @@ export default class extends Module {
             userId: msg.userId
         })
 
-        let postCount = Math.max(
-            (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
-            (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
-        ) + bonus;
-
-        if (msg.friend.doc.linkedAccounts?.length) {
-            for (const userId of msg.friend.doc.linkedAccounts) {
-                const friend = this.ai.lookupFriend(userId);
-                if (!friend || !friend.doc?.linkedAccounts?.includes(msg.friend.userId)) continue;
-
-                // ユーザの投稿数を取得
-                const chart = await this.ai.api('charts/user/notes', {
-                    span: 'day',
-                    limit: 2,
-                    userId: userId
-                })
-
-                postCount += Math.max(
-                    (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
-                    (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
+        // チャートがない場合
+        if (!chart) {
+            let postCount = 25;
+            if (data.noChart && data.todayNotesCount) {
+                postCount = Math.max(
+                    msg.user?.notesCount - data.todayNotesCount,
+                    data.todayNotesCount - (data.yesterdayNotesCount ?? data.todayNotesCount)
                 );
+            } else {
+                data.noChart = true;
             }
-        }
+            if (msg.friend.doc.linkedAccounts?.length) {
+                for (const userId of msg.friend.doc.linkedAccounts) {
+                    const friend = this.ai.lookupFriend(userId);
+                    if (!friend || !friend.doc?.linkedAccounts?.includes(msg.friend.userId)) continue;
 
-        return postCount
+                    /** リンク先のdata */
+                    const data = friend.getPerModulesData(this);
+                    if (data.noChart && data.todayNotesCount) {
+                        postCount += Math.max(
+                            (friend.doc.user?.notesCount ?? data.todayNotesCount) - data.todayNotesCount,
+                            data.todayNotesCount - (data.yesterdayNotesCount ?? data.todayNotesCount)
+                        );
+                    } else {
+                        data.noChart = true;
+                    }
+                    friend.setPerModulesData(this, data);
+                }
+            }
+            return postCount + bonus;
+        } else {
+            let postCount = Math.max(
+                (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
+                (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
+            );
+
+            if (msg.friend.doc.linkedAccounts?.length) {
+                for (const userId of msg.friend.doc.linkedAccounts) {
+                    const friend = this.ai.lookupFriend(userId);
+                    if (!friend || !friend.doc?.linkedAccounts?.includes(msg.friend.userId)) continue;
+
+                    // ユーザの投稿数を取得
+                    const chart = await this.ai.api('charts/user/notes', {
+                        span: 'day',
+                        limit: 2,
+                        userId: userId
+                    })
+
+                    postCount += Math.max(
+                        (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
+                        (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
+                    );
+                }
+            }
+            return postCount + bonus;
+        }
     }
 
     /**

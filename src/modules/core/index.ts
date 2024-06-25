@@ -75,15 +75,28 @@ export default class extends Module {
                 limit: 2,
                 userId: msg.userId
             })
-            
-            // 投稿数（今日と明日の多い方）
-            let postCount = Math.max(
-                (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.renote?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
-                (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.renote?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
-            );
 
-			message += acct(msg.user) + " 投稿数: " + postCount
-			let totalPostCount = postCount
+			let totalPostCount = 0;
+			// チャートがない場合
+			if (!chart) {
+				if (msg.friend.doc?.perModulesData?.rpg?.noChart && msg.friend.doc.perModulesData.rpg.todayNotesCount) {
+					let postCount = Math.max(
+						(msg.friend.doc.user.notesCount ?? msg.friend.doc.perModulesData.rpg.todayNotesCount) - msg.friend.doc.perModulesData.rpg.todayNotesCount,
+						msg.friend.doc.perModulesData.rpg.todayNotesCount - (msg.friend.doc.perModulesData.rpg.yesterdayNotesCount ?? msg.friend.doc.perModulesData.rpg.todayNotesCount)
+					);
+					message += "\n" + acct(msg.friend.doc.user) + " 投稿数: " + postCount
+				} else {
+					message += "\n" + acct(msg.friend.doc.user)
+				}
+			} else {
+				// 投稿数（今日と明日の多い方）
+				let postCount = Math.max(
+					(chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
+					(chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
+				);
+				message += acct(msg.user) + " 投稿数: " + postCount
+				totalPostCount += postCount
+			}
 
             if (msg.friend.doc.linkedAccounts?.length) {
                 for (const userId of msg.friend.doc.linkedAccounts) {
@@ -100,13 +113,26 @@ export default class extends Module {
                         userId: userId
                     })
 
-                    let postCount = Math.max(
-                        (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
-                        (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
-                    );
-					totalPostCount += postCount
+					// チャートがない場合
+					if (!chart) {
+						if (friend.doc?.perModulesData?.rpg?.noChart && friend.doc.perModulesData.rpg.todayNotesCount) {
+							let postCount = Math.max(
+								(friend.doc.user.notesCount ?? friend.doc.perModulesData.rpg.todayNotesCount) - friend.doc.perModulesData.rpg.todayNotesCount,
+								friend.doc.perModulesData.rpg.todayNotesCount - (friend.doc.perModulesData.rpg.yesterdayNotesCount ?? friend.doc.perModulesData.rpg.todayNotesCount)
+							);
+							message += "\n" + acct(friend.doc.user) + " 投稿数: " + postCount
+						} else {
+							message += "\n" + acct(friend.doc.user)
+						}
+					} else {
+						let postCount = Math.max(
+							(chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
+							(chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
+						);
+						totalPostCount += postCount
 
-					message += "\n" + acct(friend.doc.user) + " 投稿数: " + postCount
+						message += "\n" + acct(friend.doc.user) + " 投稿数: " + postCount
+					}
                 }
             }
 			message += "\n\n" + "リンク内合計投稿数: " + totalPostCount
