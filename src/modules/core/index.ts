@@ -84,9 +84,9 @@ export default class extends Module {
 						(msg.friend.doc.user.notesCount ?? msg.friend.doc.perModulesData.rpg.todayNotesCount) - msg.friend.doc.perModulesData.rpg.todayNotesCount,
 						msg.friend.doc.perModulesData.rpg.todayNotesCount - (msg.friend.doc.perModulesData.rpg.yesterdayNotesCount ?? msg.friend.doc.perModulesData.rpg.todayNotesCount)
 					);
-					message += "\n" + acct(msg.friend.doc.user) + " 投稿数: " + postCount
+					message += acct(msg.friend.doc.user) + " 投稿数: " + postCount
 				} else {
-					message += "\n" + acct(msg.friend.doc.user)
+					message += acct(msg.friend.doc.user)
 				}
 			} else {
 				// 投稿数（今日と明日の多い方）
