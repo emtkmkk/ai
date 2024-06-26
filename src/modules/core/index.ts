@@ -111,6 +111,10 @@ export default class extends Module {
 			}
 
 			if (msg.friend.doc.linkedAccounts?.length) {
+				msg.friend.doc.linkedAccounts = Array.from(
+					new Set(msg.friend.doc.linkedAccounts)
+				);
+				msg.friend.save();
 				for (const userId of msg.friend.doc.linkedAccounts) {
 					const friend = this.ai.lookupFriend(userId);
 					if (!friend) continue;
