@@ -56,6 +56,7 @@ export default class extends Module {
 
 		return ret === true ? { reaction: ":neofox_heart:" } : ret;
 	}
+
 	@autobind
 	private async linkAccount(msg: Message) {
 		if (!msg.text) return false;
@@ -90,9 +91,10 @@ export default class extends Module {
 							(msg.friend.doc.perModulesData.rpg.yesterdayNotesCount ??
 								msg.friend.doc.perModulesData.rpg.todayNotesCount)
 					);
-					message += "\n" + acct(msg.friend.doc.user) + " 投稿数: " + postCount;
+					totalPostCount += postCount;
+					message += acct(msg.friend.doc.user) + " 投稿数: " + postCount;
 				} else {
-					message += "\n" + acct(msg.friend.doc.user);
+					message += acct(msg.friend.doc.user);
 				}
 			} else {
 				// 投稿数（今日と明日の多い方）
@@ -142,6 +144,7 @@ export default class extends Module {
 									(friend.doc.perModulesData.rpg.yesterdayNotesCount ??
 										friend.doc.perModulesData.rpg.todayNotesCount)
 							);
+							totalPostCount += postCount;
 							message += "\n" + acct(friend.doc.user) + " 投稿数: " + postCount;
 						} else {
 							message += "\n" + acct(friend.doc.user);
@@ -181,10 +184,10 @@ export default class extends Module {
 				filteredDoc = doc.filter((x) => x.user.host == null);
 			}
 
-			if (filteredDoc.length !== 1) return { reaction: ":mk_hotchicken:" };
+			if (filteredDoc.length !== 1) return { reaction: ":neofox_thumbsup:" };
 
 			if (filteredDoc[0].userId === msg.userId)
-				return { reaction: ":mk_hotchicken:" };
+				return { reaction: ":neofox_thumbsup:" };
 
 			if (!msg.friend.doc.linkedAccounts) msg.friend.doc.linkedAccounts = [];
 

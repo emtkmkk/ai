@@ -76,7 +76,7 @@ type Enemy = {
 export const enemys: Enemy[] = [
 	{
 		name: ":aine_heart:",
-		msg: ":aine_heart: 村長がお喋りしてほしいようだ。",
+		msg: ":aine_heart:がお喋りしてほしいようだ。",
 		short: ":aine_heart:とお喋り中",
 		hpmsg: "満足度",
 		mark: "☆",
@@ -86,8 +86,8 @@ export const enemys: Enemy[] = [
 		defmsg: (dmg) => `阨ちゃんは疲れて${dmg}ポイントのダメージ！`,
 		winmsg: ":aine_heart:を満足させた！",
 		losemsg: "阨ちゃんは疲れで倒れてしまった…",
-		atk: 1,
-		def: 1,
+		atk: 1.1,
+		def: 1.1,
 		atkx: 3,
 		defx: 3,
 	},

@@ -528,7 +528,7 @@ export default {
 		fireAtk: (enemyName) =>
 			`阨ちゃんの追い打ち狐火攻撃！\n${enemyName}が次に受けるダメージが上昇した！`,
 		win: "勝利！おめでとう！",
-		lose: ":oyoo:",
+		lose: ":neofox_x_x:",
 		next: "次回へ続く……",
 		nextPlay: (date) =>
 			`次回は${

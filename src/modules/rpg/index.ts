@@ -974,13 +974,13 @@ export default class extends Module {
 			limit: 2,
 			userId: msg.userId,
 		});
-
 		// チャートがない場合
 		if (!chart?.diffs) {
 			let postCount = 25;
 			if (data.noChart && data.todayNotesCount) {
 				postCount = Math.max(
-					msg.user?.notesCount - data.todayNotesCount,
+					(msg.friend.doc.user?.notesCount ?? data.todayNotesCount) -
+						data.todayNotesCount,
 					data.todayNotesCount -
 						(data.yesterdayNotesCount ?? data.todayNotesCount)
 				);
@@ -1051,7 +1051,6 @@ export default class extends Module {
 			return postCount + bonus;
 		}
 	}
-
 	/**
 	 * 投稿数からステータス倍率を計算します
 	 * 3 で 1倍
