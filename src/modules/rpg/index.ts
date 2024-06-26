@@ -178,10 +178,10 @@ export default class extends Module {
             if (!data.clearHistory) data.clearHistory = data.clearEnemy;
             const colorData = colors.map((x) => x.unlock(data));
             // プレイ済でないかのチェック
-            if (data.lastPlayedAt === getDate() + (new Date().getHours() < 12 ? "" : new Date().getHours() < 18 ? "/12" : "/18") && data.ehp <= 110 + data.lv * 3 + (data.winCount ?? 0) * 5) {
+            if (data.lastPlayedAt === getDate() + (new Date().getHours() < 12 ? "" : new Date().getHours() < 18 ? "/12" : "/18")) {
                 if (msg.includes([serifs.rpg.command.onemore])) {
                     const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
-                    if (data.lastOneMorePlayedAt === getDate()) {
+                    if (data.lastOnemorePlayedAt === getDate()) {
                         msg.reply(serifs.rpg.oneMore.tired(data.lv >= rpgData.maxLv));
                         return {
                             reaction: 'confused'
