@@ -213,6 +213,10 @@ export default class extends Module {
             /** 使用中の色情報 */
             const color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
 
+            if (colors.find((x) => x.alwaysSuper)?.unlock(data)) {
+                data.superUnlockCount = (data.superUnlockCount ?? 0) + 1
+            }
+
             /** 覚醒状態か？*/
             const isSuper = Math.random() < (0.02 + Math.max(data.superPoint / 200, 0)) || (data.lv ?? 1) % 100 === 0 || color.alwaysSuper;
 
@@ -299,6 +303,11 @@ export default class extends Module {
                 data.count -= 1;
                 message += this.showStatus(data, playerHp, ehp, mehp, me) + "\n\n"
                 data.count += 1;
+            }
+
+            if (data.enemy.event) {
+                msg.friend.setPerModulesData(this, data);
+                return data.enemy.event(msg);
             }
 
             /** バフを得た数。行数のコントロールに使用 */ 
@@ -531,9 +540,10 @@ export default class extends Module {
                     if (data.enemy.name !== endressEnemy(data).name) {
                         message += "\n" + data.enemy.losemsg + "\n\n" + serifs.rpg.lose
                     } else {
-                        message += "\n" + data.enemy.losemsg + `\n` + serifs.rpg.journey.lose((data.endress ?? 0) + 1)
+                        const minusStage = Math.min((data.endress ?? 0), 3)
+                        message += "\n" + data.enemy.losemsg + (minusStage ? `\n` + serifs.rpg.journey.lose(minusStage) : "")
                         if ((data.endress ?? 0) > (data.maxEndress ?? -1)) data.maxEndress = data.endress;
-                        data.endress = 0;
+                        data.endress = (data.endress ?? 0) - minusStage;
                     }
                     // これが任意に入った旅モードだった場合は、各種フラグをリセットしない
                     if (!data.endressFlg) {
@@ -661,13 +671,16 @@ export default class extends Module {
         const PlayerHpInfoStr = data.enemy.pLToR
             ? (Math.ceil((100 - Math.min(Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 100)), 100)) / 5) * 5) + " " + serifs.rpg.infoPercent
             : (Math.ceil((Math.min(Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 100)), 100)) / 5) * 5) + " " + serifs.rpg.infoPercent
+        const playerHpStr = data.enemy.pLToR
+            ? PlayerHpInfoStr
+            : `${playerHp} / ${100 + (data.lv ?? 1) * 3}`
 
         const debuff = [data.enemy.fire ? serifs.rpg.fire + data.count : ""].filter(Boolean).join(" ")
 
         if (data.enemy.pLToR) {
             return `\n${data.enemy.hpmsg ? serifs.rpg.player.hpmsg : me} : ${data.info && (data.clearHistory ?? []).includes(data.enemy.name) ? enemyHpInfoStr : enemyHpMarkStr}\n${data.enemy.hpmsg ?? data.enemy.dname ?? data.enemy.name} : ${data.info ? PlayerHpInfoStr : playerHpMarkStr}${debuff ? `\n${debuff}` : ""}`
         } else {
-            return `\n${data.enemy.hpmsg ?? data.enemy.dname ?? data.enemy.name} : ${data.info && (data.clearHistory ?? []).includes(data.enemy.name) ? enemyHpInfoStr : enemyHpMarkStr}\n${data.enemy.hpmsg ? serifs.rpg.player.hpmsg : me} : ${data.info ? PlayerHpInfoStr : playerHpMarkStr}${debuff ? `\n${debuff}` : ""}`
+            return `\n${data.enemy.hpmsg ?? data.enemy.dname ?? data.enemy.name} : ${data.info && (data.clearHistory ?? []).includes(data.enemy.name) ? enemyHpInfoStr : enemyHpMarkStr}\n${data.enemy.hpmsg ? serifs.rpg.player.hpmsg : me} : ${data.info >= 3 ? playerHpStr : data.info ? PlayerHpInfoStr : playerHpMarkStr}${debuff ? `\n${debuff}` : ""}`
         }
     }
 

@@ -43,7 +43,7 @@ export const colors: Color[] = [
         name: ":mk_hero_3p:",
         keyword: "3",
         unlock: (data) => (data.maxEndress ?? 0) >= 6,
-        message: (data) => (data.maxEndress ?? 0) >= 6 ? `${serifs.rpg.color.unlock} (旅最高日数: **${(data.maxEndress ?? 1) + 1}**)` : `「旅モード」で7日以上連続で旅をすると解放されます。(**${(data.maxEndress ?? -1) + 1}** / 7)`,
+        message: (data) => (data.maxEndress ?? 0) >= 6 ? `${serifs.rpg.color.unlock} (旅最高ステージ数: **${(data.maxEndress ?? 1) + 1}**)` : `「旅モード」にて、ステージ7の目的地到達で解放されます。(**${(data.maxEndress ?? -1) + 1}** / 7)`,
     },
     {
         id: 4,
