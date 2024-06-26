@@ -14,10 +14,7 @@ export default {
 		getLove: (name, love) =>
 			`わらわの${name}に対する好感度なのじゃ！ \n\n好感度 : ${love}`,
 
-		getStatus: (name, love, kazutori) =>
-			`\n${name ? "呼び方 : " + name + "\n" : ""}好感度 : ${love}${
-				kazutori ? "\n数取り : " + kazutori : ""
-			}`,
+		getStatus: (text) => `\n${text}`,
 
 		getInventory: (name, inventory) =>
 			`\nわらわから${name}へプレゼントした物の一覧じゃぞ！\n\n${inventory}`,

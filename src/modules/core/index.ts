@@ -579,23 +579,80 @@ export default class extends Module {
 		love += lovep >= 100 ? "★" : "☆";
 		love += over >= 1 ? "+" + (over >= 2 ? over : "") : "";
 
+		const name = msg.friend.name ? "呼び方 : " + msg.friend.name : "";
+
+		const lovemsg = `懐き度 : ${love}`;
+
 		const kazutori = msg.friend.doc.kazutoriData?.playCount
-			? msg.friend.doc.kazutoriData?.winCount +
-			  " / " +
-			  msg.friend.doc.kazutoriData?.playCount +
-			  (msg.friend.doc.kazutoriData?.rate
-					? ` (${msg.friend.doc.kazutoriData?.rate})`
-					: "") +
-			  (msg.friend.doc.kazutoriData?.medal
-					? "\nめだる : " + msg.friend.doc.kazutoriData?.medal
-					: "")
+			? `数取り : ${msg.friend.doc.kazutoriData?.winCount} / ${
+					msg.friend.doc.kazutoriData?.playCount
+			  }${
+					msg.friend.doc.kazutoriData?.rate
+						? ` (${msg.friend.doc.kazutoriData?.rate})`
+						: ""
+			  }${
+					msg.friend.doc.kazutoriData?.medal
+						? "\nトロフィー : " + msg.friend.doc.kazutoriData?.medal
+						: ""
+			  }`
 			: undefined;
 
-		msg.reply(serifs.core.getStatus(msg.friend.name, love, kazutori));
+		const rpg = msg.friend.doc.perModulesData?.rpg
+			? [
+					serifs.rpg.rpgMode +
+						((msg.friend.doc.perModulesData.rpg.clearHistory ?? []).includes(
+							"ending"
+						)
+							? " ⭐"
+							: ""),
+					`  ${serifs.rpg.status.enemy} : ${
+						msg.friend.doc.perModulesData.rpg.enemy
+							? msg.friend.doc.perModulesData.rpg.enemy?.short ?? ""
+							: "探索中"
+					}`,
+					`  ${serifs.rpg.status.lv} : ${
+						msg.friend.doc.perModulesData.rpg.lv ?? 1
+					}`,
+					`  ${serifs.rpg.status.atk} : ${
+						msg.friend.doc.perModulesData.rpg.atk ?? 0
+					}${
+						msg.friend.doc.kazutoriData?.winCount >= 3
+							? ` (+${Math.floor(
+									((Math.floor(msg.friend.doc.kazutoriData?.winCount / 3) +
+										(msg.friend.doc.kazutoriData?.medal ?? 0)) *
+										(100 + (msg.friend.doc.perModulesData.rpg.atk ?? 0))) /
+										100
+							  )})`
+							: ""
+					}`,
+					`  ${serifs.rpg.status.def} : ${
+						msg.friend.doc.perModulesData.rpg.def ?? 0
+					}${
+						msg.friend.doc.kazutoriData?.playCount >= 7
+							? ` (+${Math.floor(
+									((Math.floor(msg.friend.doc.kazutoriData?.playCount / 7) +
+										(msg.friend.doc.kazutoriData?.medal ?? 0)) *
+										(100 + (msg.friend.doc.perModulesData.rpg.def ?? 0))) /
+										100
+							  )})`
+							: ""
+					}`,
+					lovep >= 100
+						? `  ${serifs.rpg.status.spd} : ${Math.floor(lovep / 100) + 1}`
+						: "",
+			  ]
+					.filter(Boolean)
+					.join("\n")
+			: "";
+
+		msg.reply(
+			serifs.core.getStatus(
+				[name, lovemsg, kazutori, rpg].filter(Boolean).join("\n")
+			)
+		);
 
 		return true;
 	}
-
 	@autobind
 	private getInventory(msg: Message): boolean {
 		if (!msg.text) return false;
