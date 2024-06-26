@@ -333,6 +333,8 @@ export default class extends Module {
             } else {
                 // 一度敵の情報を取得しなおす（関数のデータなどが吹き飛ぶ為）
                 data.enemy = [...enemys, endressEnemy(data)].find((x) => data.enemy.name === x.name);
+                // 敵が消された？？
+                if (!data.enemy) data.enemy = endressEnemy(data);
                 // 敵の開始メッセージなどを設定
                 cw += `${data.enemy.short} ${count}${serifs.rpg.turn}`
                 // 前ターン時点のステータスを表示
