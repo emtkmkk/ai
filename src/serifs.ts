@@ -480,6 +480,11 @@ export default {
 			result: (totalDmg) => `合計${totalDmg}ポイントのダメージ！\n(ダメージ幅: ${Math.round(totalDmg * 0.2)} ~ ${Math.round(totalDmg * 1.8)})`,
 			best: (bestScore) => `\n(これまでのベスト: **${bestScore}**)`,
 		},
+		oneMore: {
+			tired: (flg) => `\n今日は既におかわりRPGをプレイしている様です。${flg ? "\n明日になるとまたおかわりRPGがプレイ可能になります。" : ""}`,
+			maxLv: "\nあなたは過去にプレイ可能だったすべてのRPG権利をプレイ済みで、取り逃したRPG権利が無いようです！\nRPGをやり忘れた時に、もう一度試してみてください。",
+			err: "おかわりRPGの前に通常のRPGをプレイする必要があります！"
+		},
 		info: "もこチキの状況判断能力がアップ！\n今後、状況が細かく\n分析出来るようになる事があるぞ！",
 		infoPercent: "%？",
 		newColor: (unlockColors) => `\n\n条件を満たしたので、\n新しい色が解放されました！\n\n$[x2 ${unlockColors}]\n\n「RPG 色」と話しかけて確認してみてね！`,
@@ -495,6 +500,7 @@ export default {
 			trial: "木人",
 			journey: "旅モード",
 			change: "変更",
+			onemore: "おかわり",
 		}
 	},
 

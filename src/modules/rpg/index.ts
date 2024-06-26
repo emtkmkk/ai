@@ -13,9 +13,23 @@ export default class extends Module {
 
     @autobind
     public install() {
+        const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
+        if (!rpgData) {
+            const maxLv = this.ai.friends.find().filter((x) => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1).reduce((acc,cur) => acc > cur.perModulesData.rpg.lv ? acc : cur.perModulesData.rpg.lv, 0)
+            console.log("maxLv : " + maxLv);
+            this.ai.moduleData.insert({ type: 'rpg', maxLv: maxLv });
+        }
         setInterval(() => {
             const hours = new Date().getHours()
             if ((hours === 0 || hours === 12 || hours === 18) && new Date().getMinutes() >= 1 && new Date().getMinutes() < 6) {
+                const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
+                if (rpgData) {
+                    rpgData.maxLv += 1;
+					this.ai.moduleData.update(rpgData);
+				} else {
+                    const maxLv = this.ai.friends.find().filter((x) => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1).reduce((acc,cur) => acc > cur.perModulesData.rpg.lv ? acc : cur.perModulesData.rpg.lv, 0)
+					this.ai.moduleData.insert({ type: 'rpg', maxLv: maxLv });
+				}
                 const me = Math.random() < 0.8 ? colors.find((x) => x.default)?.name ?? colors[0].name : colors.filter((x) => x.id > 1 && !x.reverseStatus && !x.alwaysSuper).map((x) => x.name).sort(() => Math.random() - 0.5)[0];
                 this.ai.post({
                     text: serifs.rpg.remind(me, hours),
@@ -165,15 +179,39 @@ export default class extends Module {
             const colorData = colors.map((x) => x.unlock(data));
             // プレイ済でないかのチェック
             if (data.lastPlayedAt === getDate() + (new Date().getHours() < 12 ? "" : new Date().getHours() < 18 ? "/12" : "/18") && data.ehp <= 110 + data.lv * 3 + (data.winCount ?? 0) * 5) {
-                msg.reply(serifs.rpg.tired(new Date()));
-                return {
-                    reaction: 'confused'
-                };
+                if (msg.includes([serifs.rpg.command.onemore])) {
+                    const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
+                    if (data.lastOneMorePlayedAt === getDate()) {
+                        msg.reply(serifs.rpg.oneMore.tired(data.lv >= rpgData.maxLv));
+                        return {
+                            reaction: 'confused'
+                        };
+                    }
+                    if (data.lv >= rpgData.maxLv) {
+                        msg.reply(serifs.rpg.oneMore.maxLv);
+                        return {
+                            reaction: 'confused'
+                        };
+                    }
+                    data.lastOnemorePlayedAt = getDate();
+                } else {
+                    msg.reply(serifs.rpg.tired(new Date()));
+                    return {
+                        reaction: 'confused'
+                    };
+                }
+            } else {
+                if (msg.includes([serifs.rpg.command.onemore])) {
+                    msg.reply(serifs.rpg.oneMore.err);
+                    return {
+                        reaction: 'confused'
+                    };
+                }
             }
             /** 連続プレイかどうかをチェック */ 
             let continuousBonus = 0;
             let continuousFlg = false;
-            if (data.lastPlayedAt === (new Date().getHours() < 12 ? getDate(-1) + "/18" : new Date().getHours() < 18 ? getDate() : getDate() + "/12")) {
+            if (data.lastPlayedAt === getDate() + (new Date().getHours() < 12 ? "" : new Date().getHours() < 18 ? "/12" : "/18") || data.lastPlayedAt === (new Date().getHours() < 12 ? getDate(-1) + "/18" : new Date().getHours() < 18 ? getDate() : getDate() + "/12")) {
                 continuousBonus = 1;
             } else {
                 if (
