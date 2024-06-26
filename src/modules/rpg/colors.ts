@@ -50,10 +50,10 @@ export const colors: Color[] = [
 		unlock: (data) => (data.maxEndress ?? 0) >= 6,
 		message: (data) =>
 			(data.maxEndress ?? 0) >= 6
-				? `${serifs.rpg.color.unlock} (旅最高日数: **${
+				? `${serifs.rpg.color.unlock} (修行最高ステージ数: **${
 						(data.maxEndress ?? 1) + 1
 				  }**)`
-				: `高難度コンテンツ「修行モード」で7日以上連続で修行をすると解放できるようじゃ！(**${
+				: `高難度コンテンツ「修行モード」でステージ7の目的地到達すると解放できるようじゃ！(**${
 						(data.maxEndress ?? -1) + 1
 				  }** / 7)`,
 	},

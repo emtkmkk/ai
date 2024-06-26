@@ -1,4 +1,10 @@
 //RPGで使用する敵の情報
+
+import Message from "@/message";
+import { colors, unlockCount } from "./colors";
+import rpg from "./index";
+import serifs from "@/serifs";
+
 type Enemy = {
 	/** 内部ID ユニークでなければならない */
 	name: string;
@@ -13,9 +19,9 @@ type Enemy = {
 	/** HPが何を示しているか 体力以外の場合に使用 */
 	hpmsg?: string;
 	/** 空のマーク HP表示に使用 */
-	mark: string;
+	mark?: string;
 	/** 満たされたマーク HP表示に使用 */
-	mark2: string;
+	mark2?: string;
 	/** 体力表示の際に 0% -> 100% で表示するか 進捗表示などに使用 */
 	lToR?: boolean;
 	/**
@@ -24,15 +30,15 @@ type Enemy = {
 	 * */
 	pLToR?: boolean;
 	/** 攻撃時のメッセージ */
-	atkmsg: (dmg: number) => string;
+	atkmsg?: (dmg: number) => string;
 	/** 防御時のメッセージ */
-	defmsg: (dmg: number) => string;
+	defmsg?: (dmg: number) => string;
 	/** 連続攻撃中断時のメッセージ */
 	abortmsg?: string;
 	/** 勝利時のメッセージ */
-	winmsg: string;
+	winmsg?: string;
 	/** 敗北時のメッセージ */
-	losemsg: string;
+	losemsg?: string;
 	/** 最大HP 未指定なら300 */
 	maxhp?: number | ((hp: number) => number);
 	/**
@@ -40,25 +46,25 @@ type Enemy = {
 	 * （プレイヤーの最低保証分のパラメータを均等に割り振った値）
 	 * 関数で指定した場合は倍率ではなく、その値がそのまま使用される
 	 * */
-	atk: number | ((atk: number, def: number, spd: number) => number);
+	atk?: number | ((atk: number, def: number, spd: number) => number);
 	/**
 	 * 防御力倍率 1でプレイヤーのLvの3.5倍の値になる
 	 * （プレイヤーの最低保証分のパラメータを均等に割り振った値）
 	 * 関数で指定した場合は倍率ではなく、その値がそのまま使用される
 	 * */
-	def: number | ((atk: number, def: number, spd: number) => number);
+	def?: number | ((atk: number, def: number, spd: number) => number);
 	/**  攻撃回数 未指定で1 */
 	spd?: number;
 	/**
 	 * 攻撃ボーナス倍率 基本的な値は3
 	 * プレイヤーの投稿数ボーナスと同じかかり方をする
 	 * */
-	atkx: number | ((tp: number) => number);
+	atkx?: number | ((tp: number) => number);
 	/**
 	 * 防御ボーナス倍率 基本的な値は3
 	 * プレイヤーの投稿数ボーナスと同じかかり方をする
 	 * */
-	defx: number | ((tp: number) => number);
+	defx?: number | ((tp: number) => number);
 	/** 最大ダメージ制限 0 ~ 1で指定する 1ターンに指定した割合以上のダメージを与えられなくなる */
 	maxdmg?: number;
 	/** 踏ん張れないフラグ 耐えるという概念がない場合にオン （川柳勝負など） */
@@ -70,6 +76,10 @@ type Enemy = {
 	fire?: number;
 	/** 連続攻撃を中断する割合 0 ~ 1 連続攻撃毎に判定 */
 	abort?: number;
+	/** エンディング時のメッセージ */
+	endingmsg?: string;
+	/** 独自イベントを指定 */
+	event?: (msg: Message) => any;
 };
 
 /** 敵一覧 */
@@ -92,6 +102,28 @@ export const enemys: Enemy[] = [
 		defx: 3,
 	},
 	{
+		name: ":mijinko_aww:",
+		limit: (data) =>
+			(data.streak ?? 0) >= 4 && data.clearEnemy.includes(":aine_heart:"),
+		msg: "暇を持て余した:mijinko_aww:がお喋りしてほしいようだ。",
+		short: ":mijinko_aww:とお喋り中",
+		hpmsg: "満足度",
+		mark: "☆",
+		mark2: "★",
+		lToR: true,
+		atkmsg: (dmg) => `阨ちゃんの愛くるしい話術！\n${dmg}ポイント満足させた！`,
+		defmsg: (dmg) => `阨ちゃんは疲れて${dmg}ポイントのダメージ！`,
+		abortmsg: ":mijinko_aww:が「それってどういうこと？」と話をさえぎった！",
+		winmsg: ":mijinko_aww:を満足させた！",
+		losemsg: "阨ちゃんは疲れで倒れてしまった…",
+		endingmsg: ":mijinko_aww:はニコニコしながら帰って行った！",
+		atk: 2.5,
+		def: 2.5,
+		atkx: 4,
+		defx: 4,
+		abort: 0.5,
+	},
+	{
 		name: ":gentoochan:",
 		msg: ":gentoochan:は一緒に輪投げで遊びたいようだ",
 		short: ":gentoochan:と輪投げ遊び中",
@@ -104,6 +136,7 @@ export const enemys: Enemy[] = [
 			`:gentoochan:の番だ！\n輪っかを投げて${dmg}ポイント獲得した！`,
 		winmsg: "勝負の結果、阨ちゃんが勝った！",
 		losemsg: "勝負の結果、:gentoochan:が勝った！",
+		endingmsg: ":gentoochan:をとっても満足させた！",
 		atk: 1.2,
 		def: 1.2,
 		atkx: 3,
@@ -138,6 +171,7 @@ export const enemys: Enemy[] = [
 			`:strawberry_normal:の甘い誘惑！\n阨ちゃんはお腹が減って${dmg}ポイントのダメージ！`,
 		winmsg: ":strawberry_half:にできた！儀式を完遂した！",
 		losemsg: "阨ちゃんは我慢しきれず🍰を途中で食べてしまった…",
+		endingmsg: ":strawberry_half:をきれいに切ることができた！儀式を完遂した！",
 		atk: 2,
 		def: 0.5,
 		atkx: 3,
@@ -156,6 +190,7 @@ export const enemys: Enemy[] = [
 			`:kochi_cat:のひっかき攻撃！\n阨ちゃんに${dmg}ポイントのダメージ！`,
 		winmsg: ":kochi_cat:に負けを認めさせた！",
 		losemsg: "阨ちゃんは負けを認めた…",
+		endingmsg: ":kochi_cat:は寝転がって負けを認めた！",
 		atk: 1,
 		def: 1,
 		atkx: 3,
@@ -163,8 +198,8 @@ export const enemys: Enemy[] = [
 	},
 	{
 		name: ":chocolatchan:",
-		msg: ":chocolatchan:がなでなでバトルを持ち掛けてきた！",
-		short: ":chocolatchan:となでなでバトル中",
+		msg: ":chocolatchan:がなでなで技術バトルを持ち掛けてきた！",
+		short: ":chocolatchan:となでなで技術バトル中",
 		mark: "☆",
 		mark2: "★",
 		lToR: false,
@@ -172,11 +207,32 @@ export const enemys: Enemy[] = [
 			`阨ちゃんは:chocolatchan:をなでなでした！\n:chocolatchan:を${dmg}ポイント満足させた`,
 		defmsg: (dmg) =>
 			`:chocolatchan:は阨ちゃんをなでなでした！\n阨ちゃんを${dmg}ポイント満足させた`,
-		winmsg: ":chocolatchan:を満足させた！",
+		winmsg: ":chocolatchan:に「その調子です！」と褒められた！",
 		losemsg: "阨ちゃんは自分が満足させられてしまった…",
 		atk: 1.3,
 		def: 1,
 		atkx: 3,
+		defx: 3,
+	},
+	{
+		name: ":chocolatchan:2",
+		limit: (data) =>
+			(data.streak ?? 0) >= 3 && data.clearEnemy.includes(":chocolatchan"),
+		msg: ":chocolatchan:が今度は肩もみ技術バトルを持ち掛けてきた！",
+		short: ":chocolatchan:と肩もみ技術バトル中",
+		mark: "☆",
+		mark2: "★",
+		lToR: false,
+		atkmsg: (dmg) =>
+			`阨ちゃんは:chocolatchan:を肩もみした！\n:chocolatchan:を${dmg}ポイント満足させた`,
+		defmsg: (dmg) =>
+			`:chocolatchan:は阨ちゃんを肩もみした！\n阨ちゃんを${dmg}ポイント満足させた`,
+		winmsg: ":chocolatchan:に「上達してますね！」と褒められた！",
+		losemsg: "阨ちゃんは自分が満足させられてしまった…",
+		endingmsg: ":chocolatchan:にいっぱい頭をなでなでしてもらった！",
+		atk: 3,
+		def: 2,
+		atkx: 4,
 		defx: 3,
 	},
 	{
@@ -198,6 +254,30 @@ export const enemys: Enemy[] = [
 		def: 1,
 		atkx: 3,
 		defx: 3,
+	},
+	{
+		name: ":tera_dotto:2",
+		limit: (data) =>
+			(data.streak ?? 0) >= 3 && data.clearEnemy.includes(":tera_dotto:"),
+		msg: ":tera_dotto:はもっときゅうりを食べたいようだ。",
+		short: ":tera_dotto:にきゅうりを与え中（ふたたび）",
+		hpmsg: "満腹度",
+		mark: "☆",
+		mark2: "★",
+		lToR: true,
+		atkmsg: (dmg) =>
+			`阨ちゃんはきゅうりを${
+				dmg / 10
+			}kg持ってきた！\n:tera_dotto:は全て食べた！`,
+		defmsg: (dmg) => `阨ちゃんは疲れて${dmg}ポイントのダメージ！`,
+		winmsg: ":tera_dotto:は大満足したようだ！",
+		losemsg: "阨ちゃんは疲れで倒れてしまった…",
+		endingmsg:
+			":tera_dotto:は阨ちゃんにだれかの尻子玉をプレゼントして立ち去って行った！",
+		atk: 2,
+		def: 3,
+		atkx: 3,
+		defx: 4,
 	},
 	{
 		name: ":jump_kito:",
@@ -235,6 +315,7 @@ export const enemys: Enemy[] = [
 		abortmsg: "阨ちゃんはサボりたくなったので勉強を一旦止めた！",
 		winmsg: "阨ちゃんは試験で高得点を得ることが出来た！",
 		losemsg: "阨ちゃんは疲れて勉強を諦めてしまった…",
+		endingmsg: "勉強を沢山して高得点を得ることが出来た！",
 		maxhp: 320,
 		atk: 2,
 		def: 0.8,
@@ -259,6 +340,7 @@ export const enemys: Enemy[] = [
 		winmsg:
 			"なぞなぞを解き終えた！阨ちゃんは:makihara_ojiichan_dot:に褒められた！",
 		losemsg: "阨ちゃんは疲れてなぞなぞに答えるのを諦めてしまった…",
+		endingmsg: "阨ちゃんは:makihara_ojiichan_dot:になでなでしてもらえた！",
 		maxhp: 320,
 		atk: 1.4,
 		def: 1.2,
@@ -282,6 +364,7 @@ export const enemys: Enemy[] = [
 		abortmsg: "阨ちゃんは飽きちゃったので村の巡回を一旦止めた！",
 		winmsg: "阨ちゃんは村の巡回を終わらせた！",
 		losemsg: "阨ちゃんは疲れて寝てしまった…",
+		endingmsg: "村を巡回して沢山の人に挨拶をする事が出来た！",
 		atk: 0.6,
 		def: 2,
 		atkx: 3,
@@ -305,6 +388,8 @@ export const enemys: Enemy[] = [
 		abortmsg: "阨ちゃんは疲れてしまって掃除を一旦止めた！",
 		winmsg: "阨ちゃんは神社のお掃除を終わらせた！",
 		losemsg: "阨ちゃんは疲れて寝てしまった…",
+		endingmsg:
+			"阨ちゃんは神社をピカピカにして:miko_encounter_dot:に感謝された！",
 		atk: 1.2,
 		def: 1.4,
 		atkx: 3,
@@ -314,8 +399,8 @@ export const enemys: Enemy[] = [
 	},
 	{
 		name: ":syounenz_dotto:",
-		limit: (data) => (data.streak ?? 0) >= 2,
-		msg: ":syounenz_dotto:が一緒にゲームで遊びたいようだ。",
+		limit: (data) => (data.streak ?? 0) >= 1,
+		msg: ":syounenz_dotto:が一緒にテレビゲームで遊びたいようだ。",
 		short: ":syounenz_dotto:と遊び中",
 		mark: "☆",
 		mark2: "★",
@@ -328,6 +413,29 @@ export const enemys: Enemy[] = [
 		def: 0.5,
 		atkx: 3.5,
 		defx: 3.5,
+	},
+	{
+		name: ":syounenz_dotto:2",
+		limit: (data) =>
+			(data.streak ?? 0) >= 4 && data.clearEnemy.includes(":syounenz_dotto:"),
+		msg: ":syounenz_dotto:がもう一度一緒にテレビゲームで遊びたいようだ。",
+		short: ":syounenz_dotto:と遊び中（ふたたび）",
+		mark: "☆",
+		mark2: "★",
+		lToR: true,
+		atkmsg: (dmg) =>
+			`阨ちゃんは頑張ってコントローラを操作した！\n${dmg}ポイントを手に入れた！`,
+		defmsg: (dmg) =>
+			`:syounenz_dotto:の番だ！巧みなゲームさばきで${dmg}ポイント手に入れた！`,
+		abortmsg: ":syounenz_dotto:のゲームプレイが楽しそうで魅せられてしまった！",
+		winmsg: "阨ちゃんはゲームに勝利した！",
+		losemsg: ":syounenz_dotto:はゲームに勝利した！",
+		endingmsg: ":syounenz_dotto:と楽しくゲームで遊ぶことができた！",
+		atk: 2.2,
+		def: 2.5,
+		atkx: 4,
+		defx: 4,
+		abort: 0.2,
 	},
 	{
 		name: ":role_capsaishin:",
@@ -349,6 +457,31 @@ export const enemys: Enemy[] = [
 		fire: 0.2,
 	},
 	{
+		name: ":jump_kito:2",
+		dname: ":jump_kito:",
+		limit: (data) =>
+			(data.streak ?? 0) >= 4 && data.clearEnemy.includes(":jump_kito:"),
+		msg: ":jump_kito:が着こなし勝負のリベンジをしたいようだ。",
+		short: ":jump_kito:と着こなしバトル中（ふたたび）",
+		mark: "☆",
+		mark2: "★",
+		lToR: true,
+		pLToR: true,
+		atkmsg: (dmg) =>
+			`阨ちゃんはいっぱいいっぱい考えた！\n着こなしのオシャレ度が${dmg}ポイントアップ！`,
+		defmsg: (dmg) =>
+			`::jump_kito:は雑誌から情報を収集した！\n:jump_kito:の着こなしのオシャレ度が${dmg}ポイントアップ！`,
+		winmsg: "審査員が来た！\n良い着こなしと判定されたのは阨ちゃんだった！",
+		losemsg: "審査員が来た！\n良い着こなしと判定されたのは:jump_kito:だった！",
+		endingmsg: ":jump_kito:との着こなし勝負に勝つ事が出来た！",
+		atk: 2.2,
+		def: 2,
+		atkx: 5,
+		defx: 5,
+		maxdmg: 0.6,
+		notEndure: true,
+	},
+	{
 		name: ":kochi_shiromaru_drop:",
 		dname: ":kochi_shiromaru_drop:",
 		limit: (data) =>
@@ -363,6 +496,8 @@ export const enemys: Enemy[] = [
 		defmsg: (dmg) => `:shiromaru_dotto:の攻撃！\n${dmg}のダメージ`,
 		winmsg: ":shiromaru_dotto:は:kochi_shiromaru_drop:の中に逃げ去った！",
 		losemsg: "阨ちゃんは疲れて倒れてしまった…",
+		endingmsg:
+			":shiromaru_dotto:は:kochi_shiromaru_drop:と一緒にどこかに逃げ去った！",
 		atk: 0.7,
 		def: 1.5,
 		atkx: 5,
@@ -426,6 +561,8 @@ export const enemys: Enemy[] = [
 			":densi_renzi_dot:は姑息にも阨ちゃんのミニ狐火からお弁当の位置をずらした！",
 		winmsg: "阨ちゃんはあたためバトルを制した！",
 		losemsg: "阨ちゃんはあたためバトルに敗北した…",
+		endingmsg:
+			":densi_renzi_dot:とのあたためバトルに勝利して家電製品の限界を分からせた！",
 		atk: 1.8,
 		def: 3.5,
 		atkx: 4,
@@ -444,6 +581,7 @@ export const enemys: Enemy[] = [
 		defmsg: (dmg) => `:syokusyu:の捲きつき攻撃！${dmg}ポイントのダメージ！`,
 		winmsg: ":syokusyu:はびっくりして地中に逃げ帰っていった！",
 		losemsg: "阨ちゃんは倒れてしまった…",
+		endingmsg: ":syokusyu:を地中に退散させることに成功した！",
 		atk: 1.2,
 		def: 2,
 		spd: 2,
@@ -489,6 +627,7 @@ export const enemys: Enemy[] = [
 			`:kochisan:はただそこに存在している！\n${dmg}ポイントのダメージ！`,
 		winmsg: ":kochisan:はいつの間にか消えていた",
 		losemsg: "阨ちゃんはやられてしまった…",
+		endingmsg: "消えてしまったが、阨ちゃんは:kochisan:を認識することができた",
 		atk: 0.75,
 		def: 4,
 		spd: 3,
@@ -514,6 +653,8 @@ export const enemys: Enemy[] = [
 		winmsg:
 			":kamoshika_dot:は「相も変わらず世の中クソだな」と言いながら立ち去って行った！",
 		losemsg: "阨ちゃんは倒れてしまった…",
+		endingmsg:
+			":kamoshika_dot:は「立てよ、お前は俺とは違うんだろ」と言い、どこかへ立ち去ってしまった",
 		atk: 3,
 		def: 3,
 		atkx: 3,
@@ -537,6 +678,8 @@ export const enemys: Enemy[] = [
 		abortmsg: "阨ちゃんは全力で食べた為、すぐには連続で食べることが出来ない！",
 		winmsg: "阨ちゃんは完食し、:role_capsaishin:の激辛試練に打ち勝った！",
 		losemsg: "阨ちゃんは辛さに耐えられずやられてしまった…",
+		endingmsg:
+			"阨ちゃんは完食し、:role_capsaishin:の激辛試練に完璧に打ち勝った！",
 		atk: 0.1,
 		def: 1,
 		atkx: 1,
@@ -564,6 +707,7 @@ export const enemys: Enemy[] = [
 		winmsg: "もうひとりの自分は消えていった！\nどうやら幻だったようだ…",
 		losemsg:
 			"阨ちゃんはやられてしまった…\nもうひとりの自分はどこかへ消えていった…",
+		endingmsg: "自分のシャドウを受け入れることが出来た！",
 		maxhp: (hp) => hp - 3,
 		atk: (atk, def, spd) => def - 3.5,
 		def: (atk, def, spd) => (atk - 3.5) * spd,
@@ -583,8 +727,10 @@ export const enemys: Enemy[] = [
 			`:nene_chan_dot:の立て続けの解説！\n難しくて理解しきれず混乱した阨ちゃんに${dmg}ポイントのダメージ！`,
 		winmsg: "阨ちゃんは長文邪教解説を乗り切った！",
 		losemsg: "阨ちゃんは長文邪教解説に耐えられず目の前が真っ暗になった…",
-		atk: 1.1,
+		endingmsg: "阨ちゃんは邪教を少しだけ理解することができた！",
+		atk: 2.5,
 		def: 4,
+		spd: 2,
 		atkx: 2,
 		defx: 4,
 	},
@@ -606,6 +752,7 @@ export const enemys: Enemy[] = [
 		abortmsg: ":gaming_panjandrum:は回転力で阨ちゃんの連続攻撃を止めた！",
 		winmsg: "阨ちゃんは:gaming_panjandrum:を鎮めた！",
 		losemsg: "阨ちゃんはやられてしまった…",
+		endingmsg: ":panjandrum2:を退けるほどの力を手に入れた！",
 		atk: 8,
 		def: 1,
 		atkx: 4,
@@ -629,6 +776,7 @@ export const enemys: Enemy[] = [
 		defmsg: (dmg) => `:aichan8:の攻撃！\n阨ちゃんに${dmg}ポイントのダメージ！`,
 		winmsg: ":aichan8:に打ち勝った！",
 		losemsg: "阨ちゃんはやられてしまった…",
+		endingmsg: ":aichan8:の力に飲まれずに対抗出来た！",
 		maxhp: (hp) => hp,
 		atk: (atk, def, spd) => def,
 		def: (atk, def, spd) => atk * spd,
@@ -647,8 +795,9 @@ export const enemys: Enemy[] = [
 			`阨ちゃんのお話し攻撃！\n:aine_oko:の精神に${dmg}ポイントのダメージ！`,
 		defmsg: (dmg) =>
 			`:aine_oko:の罵詈雑言！\n阨ちゃんの精神に${dmg}ポイントのダメージ！`,
-		winmsg: ":aine_kuyashii:はぶつぶつ言いながら帰っていった！",
+		winmsg: ":aine_oko:はぶつぶつ言いながら帰っていった！",
 		losemsg: "阨ちゃんは悲しくて逃げ出してしまった…",
+		endingmsg: ":aine_oko:の恐ろしい暴言に負けずに追い返す事が出来た！",
 		maxhp: 130,
 		atk: 5,
 		def: 5,
@@ -676,6 +825,8 @@ export const enemys: Enemy[] = [
 			":aine_youshou:は大きな声で「黙れ:aine_oko:」と言った！阨ちゃんはびっくりしてお話を止めてしまった！",
 		winmsg: ":aine_kuyashii:は捨て台詞を言いながら帰っていった！",
 		losemsg: "阨ちゃんは悲しくて逃げ出してしまった…",
+		endingmsg:
+			"aine_youshou:の大人げない本気の暴言にも負けずに追い返す事が出来た！",
 		atk: 15,
 		def: 15,
 		maxdmg: 0.6,
@@ -700,8 +851,10 @@ export const enemys: Enemy[] = [
 			`:ai_minazuki_buged:縺阪％縺医ｋ縺ｾ縺吶°！\n阨ちゃんの精神に${dmg}ポイントのダメージ！`,
 		abortmsg:
 			":ai_minazuki_buged:縺ｩ縺?＠縺ｦ縺ｨ縺?≧縺ｨ髦ｨ縺｡繧?ｓ縺ｯ蜍輔￠縺ｪ縺上↑縺｣縺！",
-		winmsg: ":aine_kuyashii:縺ゅｊ縺後→縺?→險?縺｣縺ｦ蜴ｻ縺｣縺ｦ縺?▲縺！",
+		winmsg: "::ai_minazuki_buged:縺ゅｊ縺後→縺?→險?縺｣縺ｦ蜴ｻ縺｣縺ｦ縺?▲縺！",
 		losemsg: "阨ちゃんは目の前が真っ暗になった…",
+		endingmsg:
+			":ai_minazuki_buged:は微笑みながらまるで夢か幻のように消えていった…",
 		atk: 13,
 		def: 13,
 		maxdmg: 1.3,
@@ -709,16 +862,26 @@ export const enemys: Enemy[] = [
 		defx: 13,
 		abort: 0.13,
 	},
+	{
+		name: "ending",
+		limit: (data, friend) =>
+			(data.superUnlockCount ?? 0) >= 5 &&
+			!data.clearHistory.includes("ending"),
+		msg: `🎉阨ちゃんはあなたにいままでの冒険で行ってきた事を話したいようだ。`,
+		short: "冒険のまとめ中",
+		event: (msg) => ending(msg),
+	},
 ];
 
 /** 修行モードの場合の敵 */
 export const endressEnemy = (data): Enemy => ({
-	name: "阨ちゃんは修行",
+	name: "修行モード",
 	msg:
 		data.endress ?? 0
-			? `修行の途中 (${data.endress + 1}日目)`
+			? `修行の途中 (ステージ${data.endress + 1})`
 			: "阨ちゃんは修行に出たいようだ。",
-	short: data.endress ?? 0 ? `修行の途中 (${data.endress + 1}日目)` : "修行中",
+	short:
+		data.endress ?? 0 ? `修行の途中 (ステージ${data.endress + 1})` : "修行中",
 	hpmsg: "進行度",
 	lToR: true,
 	mark: "☆",
@@ -727,11 +890,109 @@ export const endressEnemy = (data): Enemy => ({
 	defmsg: (dmg) => `阨ちゃんは疲れて${dmg}ポイントのダメージ！`,
 	abortmsg: "阨ちゃんは面白いものを見つけたみたいだ。",
 	winmsg:
-		"寝泊りするのによい感じの草むらが見えてきた。\n今日はここにテントを張って休むようだ。\n\n次の日へ続く…",
-	losemsg: "今回の修行はここで終えて家に帰るようだ。",
+		"寝泊りするのによい感じのふかふかの草むらが見えてきた。\n今日はここで休むようだ。\n\n次のステージへ続く…",
+	losemsg: "阨ちゃんは疲れてしまった…",
 	atk: 1.5 + 0.1 * (data.endress ?? 0),
 	def: 2 + 0.3 * (data.endress ?? 0),
 	atkx: 3 + 0.05 * (data.endress ?? 0),
 	defx: 3 + 0.15 * (data.endress ?? 0),
 	abort: 0.01,
 });
+
+export const ending = (msg: Message): any => {
+	const data = msg.friend.getPerModulesData(new rpg());
+	/** 使用中の色情報 */
+	const color =
+		colors.find((x) => x.id === (data.color ?? 1)) ??
+		colors.find((x) => x.default) ??
+		colors[0];
+	/** プレイヤーの見た目 */
+	let me = color.name;
+
+	let message = `$[x2 ${me}]\n\n${serifs.rpg.start}\n\n`;
+
+	for (const name of data.clearHistory) {
+		const emsg = enemys.find((x) => x.name === name)?.endingmsg;
+		if (!emsg) continue;
+		message += emsg + "\n\n";
+		msg.friend.incLove(0.1);
+	}
+
+	message += `\n\n${
+		msg.friend.name ?? "そなた"
+	}が\nそばに付いてくれていたおかげで、\nこれだけ色々な事が出来たのじゃ！阨ひとりじゃここまで来るのは無理だったのじゃ…\n本当にありがとうなのじゃ！\nこれからもわらわといっぱい仲良くしてほしいぞ！\n\n`;
+
+	message += [
+		`${serifs.rpg.status.lv} : ${data.lv ?? 1}`,
+		`最大体力 : ${100 + data.lv * 3}`,
+		`${serifs.rpg.status.atk} : ${data.atk ?? 0}`,
+		`${serifs.rpg.status.def} : ${data.def ?? 0}`,
+		`${serifs.rpg.status.spd} : ${
+			Math.floor((msg.friend.love ?? 0) / 100) + 1
+		}`,
+		`平均能力上昇量 : ${((data.atk + data.def) / (data.lv - 1)).toFixed(2)}`,
+		`これまでの勝利数 : ${data.winCount}`,
+		`最高旅ステージ数 : ${(data.maxEndress ?? 0) + 1}`,
+		`最大耐ダメージ数 : ${data.superMuscle ?? 0}`,
+		`最大能力上昇値 : ${data.maxStatusUp ?? 0} (1 / ${Math.pow(
+			3,
+			data.maxStatusUp - 7
+		)})`,
+		`最大木人ダメージ : ${data.bestScore ?? 0}`,
+		`覚醒した回数 : ${data.superCount ?? 0}`,
+		`解放した色の数 : ${unlockCount(data, [], false)}`,
+	]
+		.filter(Boolean)
+		.join("\n");
+
+	message += `\n\n**ここまでRPGモードを遊んでくれてありがとうなのじゃ！**\n阨ちゃんの体力の詳細な数値が表示されるようになったのじゃ！`;
+
+	msg.friend.incLove(0.1);
+	data.info = 3;
+
+	// クリアした敵のリストを追加
+	if (!(data.clearEnemy ?? []).includes(data.enemy.name))
+		data.clearEnemy.push(data.enemy.name);
+	if (!(data.clearHistory ?? []).includes(data.enemy.name))
+		data.clearHistory.push(data.enemy.name);
+	// 次の試合に向けてのパラメータセット
+	data.enemy = null;
+	data.count = 1;
+	data.php = 103 + (data.lv ?? 1) * 3;
+	data.ehp = 103 + (data.lv ?? 1) * 3 + (data.winCount ?? 0) * 5;
+	data.maxTp = 0;
+	data.fireAtk = 0;
+
+	// レベルアップ処理
+	data.lv = (data.lv ?? 1) + 1;
+	let atkUp = 2 + Math.floor(Math.random() * 4);
+	let totalUp = 7;
+	while (Math.random() < 0.335) {
+		totalUp += 1;
+		if (Math.random() < 0.5) atkUp += 1;
+	}
+
+	if (totalUp > (data.maxStatusUp ?? 7)) data.maxStatusUp = totalUp;
+
+	if (data.atk > 0 && data.def > 0) {
+		/** 攻撃力と防御力の差 */
+		const diff = data.atk - data.def;
+		const totalrate = 0.2 + Math.min(Math.abs(diff) * 0.005, 0.3);
+		const rate = Math.pow(0.5, Math.abs(diff / 100)) * (totalrate / 2);
+		if (Math.random() < (diff > 0 ? totalrate - rate : rate)) atkUp = totalUp;
+		else if (Math.random() < (diff < 0 ? totalrate - rate : rate)) atkUp = 0;
+	}
+	data.atk = (data.atk ?? 0) + atkUp;
+	data.def = (data.def ?? 0) + totalUp - atkUp;
+
+	msg.friend.setPerModulesData(new rpg(), data);
+
+	msg.reply(`<center>${message}</center>`, {
+		cw: `${data.enemy.msg}`,
+		visibility: "public",
+	});
+
+	return {
+		reaction: me,
+	};
+};

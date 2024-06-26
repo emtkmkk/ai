@@ -13,6 +13,19 @@ export default class extends Module {
 
 	@autobind
 	public install() {
+		const rpgData = this.ai.moduleData.findOne({ type: "rpg" });
+		if (!rpgData) {
+			const maxLv = this.ai.friends
+				.find()
+				.filter((x) => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1)
+				.reduce(
+					(acc, cur) =>
+						acc > cur.perModulesData.rpg.lv ? acc : cur.perModulesData.rpg.lv,
+					0
+				);
+			console.log("maxLv : " + maxLv);
+			this.ai.moduleData.insert({ type: "rpg", maxLv: maxLv });
+		}
 		setInterval(() => {
 			const hours = new Date().getHours();
 			if (
@@ -20,6 +33,25 @@ export default class extends Module {
 				new Date().getMinutes() >= 1 &&
 				new Date().getMinutes() < 6
 			) {
+				const rpgData = this.ai.moduleData.findOne({ type: "rpg" });
+				if (rpgData) {
+					rpgData.maxLv += 1;
+					this.ai.moduleData.update(rpgData);
+				} else {
+					const maxLv = this.ai.friends
+						.find()
+						.filter(
+							(x) => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1
+						)
+						.reduce(
+							(acc, cur) =>
+								acc > cur.perModulesData.rpg.lv
+									? acc
+									: cur.perModulesData.rpg.lv,
+							0
+						);
+					this.ai.moduleData.insert({ type: "rpg", maxLv: maxLv });
+				}
 				const me =
 					Math.random() < 0.8
 						? colors.find((x) => x.default)?.name ?? colors[0].name
@@ -220,29 +252,59 @@ export default class extends Module {
 			// プレイ済でないかのチェック
 			if (
 				data.lastPlayedAt ===
-					getDate() +
-						(new Date().getHours() < 12
-							? ""
-							: new Date().getHours() < 18
-							? "/12"
-							: "/18") &&
-				data.ehp <= 110 + data.lv * 3 + (data.winCount ?? 0) * 5
+				getDate() +
+					(new Date().getHours() < 12
+						? ""
+						: new Date().getHours() < 18
+						? "/12"
+						: "/18")
 			) {
-				msg.reply(serifs.rpg.tired(new Date()));
-				return {
-					reaction: ":neofox_confused:",
-				};
+				if (msg.includes([serifs.rpg.command.onemore])) {
+					const rpgData = this.ai.moduleData.findOne({ type: "rpg" });
+					if (data.lastOnemorePlayedAt === getDate()) {
+						msg.reply(serifs.rpg.oneMore.tired(data.lv < rpgData.maxLv));
+						return {
+							reaction: ":neofox_confused:",
+						};
+					}
+					if (data.lv >= rpgData.maxLv) {
+						msg.reply(serifs.rpg.oneMore.maxLv);
+						return {
+							reaction: ":neofox_confused:",
+						};
+					}
+					data.lastOnemorePlayedAt = getDate();
+				} else {
+					msg.reply(serifs.rpg.tired(new Date()));
+					return {
+						reaction: ":neofox_confused:",
+					};
+				}
+			} else {
+				if (msg.includes([serifs.rpg.command.onemore])) {
+					msg.reply(serifs.rpg.oneMore.err);
+					return {
+						reaction: ":neofox_confused:",
+					};
+				}
 			}
 			/** 連続プレイかどうかをチェック */
 			let continuousBonus = 0;
 			let continuousFlg = false;
 			if (
 				data.lastPlayedAt ===
-				(new Date().getHours() < 12
-					? getDate(-1) + "/18"
-					: new Date().getHours() < 18
-					? getDate()
-					: getDate() + "/12")
+					getDate() +
+						(new Date().getHours() < 12
+							? ""
+							: new Date().getHours() < 18
+							? "/12"
+							: "/18") ||
+				data.lastPlayedAt ===
+					(new Date().getHours() < 12
+						? getDate(-1) + "/18"
+						: new Date().getHours() < 18
+						? getDate()
+						: getDate() + "/12")
 			) {
 				continuousBonus = 1;
 			} else {
@@ -302,6 +364,10 @@ export default class extends Module {
 				colors.find((x) => x.id === (data.color ?? 1)) ??
 				colors.find((x) => x.default) ??
 				colors[0];
+
+			if (colors.find((x) => x.alwaysSuper)?.unlock(data)) {
+				data.superUnlockCount = (data.superUnlockCount ?? 0) + 1;
+			}
 
 			/** 覚醒状態か？*/
 			const isSuper =
@@ -403,6 +469,8 @@ export default class extends Module {
 				data.enemy = [...enemys, endressEnemy(data)].find(
 					(x) => data.enemy.name === x.name
 				);
+				// 敵が消された？？
+				if (!data.enemy) data.enemy = endressEnemy(data);
 				// 敵の開始メッセージなどを設定
 				cw += `${data.enemy.short} ${count}${serifs.rpg.turn}`;
 				// 前ターン時点のステータスを表示
@@ -417,6 +485,11 @@ export default class extends Module {
 				data.count -= 1;
 				message += this.showStatus(data, playerHp, ehp, mehp, me) + "\n\n";
 				data.count += 1;
+			}
+
+			if (data.enemy.event) {
+				msg.friend.setPerModulesData(this, data);
+				return data.enemy.event(msg);
 			}
 
 			/** バフを得た数。行数のコントロールに使用 */
@@ -742,14 +815,14 @@ export default class extends Module {
 					if (data.enemy.name !== endressEnemy(data).name) {
 						message += "\n" + data.enemy.losemsg + "\n\n" + serifs.rpg.lose;
 					} else {
+						const minusStage = Math.min(data.endress ?? 0, 3);
 						message +=
 							"\n" +
 							data.enemy.losemsg +
-							`\n` +
-							serifs.rpg.journey.lose((data.endress ?? 0) + 1);
+							(minusStage ? `\n` + serifs.rpg.journey.lose(minusStage) : "");
 						if ((data.endress ?? 0) > (data.maxEndress ?? -1))
 							data.maxEndress = data.endress;
-						data.endress = 0;
+						data.endress = (data.endress ?? 0) - minusStage;
 					}
 					// これが任意に入った旅モードだった場合は、各種フラグをリセットしない
 					if (!data.endressFlg) {
@@ -935,6 +1008,9 @@ export default class extends Module {
 					5 +
 			  " " +
 			  serifs.rpg.infoPercent;
+		const playerHpStr = data.enemy.pLToR
+			? PlayerHpInfoStr
+			: `${playerHp} / ${100 + (data.lv ?? 1) * 3}`;
 
 		const debuff = [data.enemy.fire ? serifs.rpg.fire + data.count : ""]
 			.filter(Boolean)
@@ -954,7 +1030,11 @@ export default class extends Module {
 					? enemyHpInfoStr
 					: enemyHpMarkStr
 			}\n${data.enemy.hpmsg ? serifs.rpg.player.hpmsg : me} : ${
-				data.info ? PlayerHpInfoStr : playerHpMarkStr
+				data.info >= 3
+					? playerHpStr
+					: data.info
+					? PlayerHpInfoStr
+					: playerHpMarkStr
 			}${debuff ? `\n${debuff}` : ""}`;
 		}
 	}
@@ -974,6 +1054,7 @@ export default class extends Module {
 			limit: 2,
 			userId: msg.userId,
 		});
+
 		// チャートがない場合
 		if (!chart?.diffs) {
 			let postCount = 25;
@@ -1051,6 +1132,7 @@ export default class extends Module {
 			return postCount + bonus;
 		}
 	}
+
 	/**
 	 * 投稿数からステータス倍率を計算します
 	 * 3 で 1倍
