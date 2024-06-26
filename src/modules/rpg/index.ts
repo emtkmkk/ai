@@ -182,7 +182,7 @@ export default class extends Module {
                 if (msg.includes([serifs.rpg.command.onemore])) {
                     const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
                     if (data.lastOnemorePlayedAt === getDate()) {
-                        msg.reply(serifs.rpg.oneMore.tired(data.lv >= rpgData.maxLv));
+                        msg.reply(serifs.rpg.oneMore.tired(data.lv < rpgData.maxLv));
                         return {
                             reaction: 'confused'
                         };
