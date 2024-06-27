@@ -454,7 +454,7 @@ export default class extends Module {
                 }
                 switch (item.type) {
                     case "weapon":
-                        message += `もこチキは${item.name}を取り出し、装備した！\n`
+                        message += `${item.name}を取り出し、装備した！\n`
                         if (data.enemy.lToR) {
                             if (item.mind >= 0) {
                                 message += `もこチキの気合がアップ！\n`
@@ -464,7 +464,9 @@ export default class extends Module {
                             atk = atk * (1 + (item.mind * 0.0025))
                             def = def * (1 + (item.mind * 0.0025))
                         } else {
-                            if (item.effect >= 70) {
+                           if (item.effect >= 100) {
+                                message += `もこチキのパワーが特大アップ！\n`
+                            } else if (item.effect >= 70) {
                                 message += `もこチキのパワーが大アップ！\n`
                             } else if (item.effect > 30) {
                                 message += `もこチキのパワーがアップ！\n`
@@ -475,7 +477,7 @@ export default class extends Module {
                         }
                         break;
                     case "armor":
-                        message += `もこチキは${item.name}を取り出し、装備した！\n`
+                        message += `${item.name}を取り出し、装備した！\n`
                         if (data.enemy.pLToR) {
                             if (item.mind >= 0) {
                                 message += `もこチキの気合がアップ！\n`
@@ -485,7 +487,9 @@ export default class extends Module {
                             atk = atk * (1 + (item.mind * 0.0025))
                             def = def * (1 + (item.mind * 0.0025))
                         } else {
-                            if (item.effect >= 70) {
+                            if (item.effect >= 100) {
+                                message += `もこチキの防御が特大アップ！\n`
+                            } else if (item.effect >= 70) {
                                 message += `もこチキの防御が大アップ！\n`
                             } else if (item.effect > 30) {
                                 message += `もこチキの防御がアップ！\n`
@@ -496,7 +500,7 @@ export default class extends Module {
                         }
                         break;
                     case "medicine":
-                        message += `もこチキは${item.name}を取り出し、食べた！\n`
+                        message += `${item.name}を取り出し、食べた！\n`
                         if (data.enemy.pLToR) {
                             if (item.mind >= 0) {
                                 message += `もこチキの気合がアップ！\n`
@@ -506,7 +510,9 @@ export default class extends Module {
                             atk = atk * (1 + (item.mind * 0.0025))
                             def = def * (1 + (item.mind * 0.0025))
                         } else {
-                            if (item.effect >= 70) {
+                            if (item.effect >= 100) {
+                                message += `もこチキの体力が特大回復！\n`
+                            } else if (item.effect >= 70) {
                                 message += `もこチキの体力が大回復！\n`
                             } else if (item.effect > 30) {
                                 message += `もこチキの体力が回復！\n`
@@ -517,7 +523,7 @@ export default class extends Module {
                         }
                         break;
                     case "poison":
-                        message += `もこチキは${item.name}を取り出し、食べた！\n`
+                        message += `${item.name}を取り出し、食べた！\n`
                         if (data.enemy.pLToR) {
                             if (item.mind >= 0) {
                                 message += `もこチキの気合がアップ！\n`
