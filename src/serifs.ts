@@ -50,14 +50,6 @@ export default {
 				? `${name}、この村にダムなんてないのじゃ`
 				: `この村にダムなんてないのじゃ`,
 
-		/*
-		goodMorning: {
-			normal: (tension, name) => name ? `おはようございます、${name}！${tension}` : `おはようございます！${tension}`,
-
-			hiru: (tension, name) => name ? `おはようございます、${name}！${tension}もうお昼ですよ？${tension}` : `おはようございます！${tension}もうお昼ですよ？${tension}`,
-		},
-*/
-
 		goodNight: (name) =>
 			name ? `おやすみなのじゃ、${name}！` : "おやすみなのじゃ！",
 
@@ -528,13 +520,13 @@ export default {
 		lose: ":neofox_x_x:",
 		next: "次回へ続く……",
 		nextPlay: (date) =>
-			`次回は${
+			`次は${
 				date.getHours() < 12
 					? "12時以降に"
 					: date.getHours() < 18
 					? "18時以降に"
 					: "明日以降に"
-			}遊べます。`,
+			}遊べるのじゃ。`,
 		player: {
 			mark: "☆",
 			mark2: "★",

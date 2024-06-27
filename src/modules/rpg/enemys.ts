@@ -447,7 +447,7 @@ export const enemys: Enemy[] = [
 		atkmsg: (dmg) =>
 			`阨ちゃんは激辛料理を食べた！\n激辛料理を${dmg}ポイント分食べた！`,
 		defmsg: (dmg) =>
-			`:role_capsaishin:"の追い唐辛子！\n阨ちゃんは${dmg}ポイントのダメージ！\n阨ちゃんが次に受けるダメージが上昇した！`,
+			`:role_capsaishin:の追い唐辛子！\n阨ちゃんは${dmg}ポイントのダメージ！\n阨ちゃんが次に受けるダメージが上昇した！`,
 		winmsg: "阨ちゃんは完食し、:role_capsaishin:の激辛試練に打ち勝った！",
 		losemsg: "阨ちゃんは辛さに耐えられずやられてしまった…",
 		atk: 0.5,
