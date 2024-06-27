@@ -6,6 +6,7 @@ import getDate from '@/utils/get-date';
 import autobind from 'autobind-decorator';
 import { colorReply, colors } from './colors';
 import { endressEnemy, enemys } from './enemys';
+import { rpgItems } from './items';
 import Friend from '@/friend';
 
 export default class extends Module {
@@ -25,9 +26,11 @@ export default class extends Module {
                 const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
                 if (rpgData) {
                     rpgData.maxLv += 1;
+                    console.log("maxLv : " + rpgData.maxLv);
                     this.ai.moduleData.update(rpgData);
                 } else {
                     const maxLv = this.ai.friends.find().filter((x) => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1).reduce((acc, cur) => acc > cur.perModulesData.rpg.lv ? acc : cur.perModulesData.rpg.lv, 0)
+                    console.log("maxLv : " + maxLv);
                     this.ai.moduleData.insert({ type: 'rpg', maxLv: maxLv });
                 }
                 const me = Math.random() < 0.8 ? colors.find((x) => x.default)?.name ?? colors[0].name : colors.filter((x) => x.id > 1 && !x.reverseStatus && !x.alwaysSuper).map((x) => x.name).sort(() => Math.random() - 0.5)[0];
@@ -428,6 +431,115 @@ export default class extends Module {
                 buff += 1
                 message += serifs.rpg.spdUp + "\n"
                 spd = 2;
+            }
+
+            if (rpgItems.length && Math.random() < 0.5) {
+                //アイテム
+                buff += 1
+                let item;
+                if (data.enemy.pLToR) {
+                    let isPlus = Math.random() < 0.5;
+                    item = rpgItems.filter((x) => isPlus ? x.mind > 0 : x.mind <= 0).sort(() => Math.random() - 0.5)[0];
+                } else {
+                    let types = ["weapon", "armor"];
+                    if (count !== 1 || data.enemy.pLToR) types.push("medicine");
+                    if (count !== 1 || data.enemy.pLToR) types.push("poison");
+                    const type = types.sort(() => Math.random() - 0.5)[0]
+                    if (type !== "weapon" || !data.enemy.lToR) {
+                        item = rpgItems.filter((x) => x.type === type).sort(() => Math.random() - 0.5)[0];
+                    } else {
+                        let isPlus = Math.random() < 0.5;
+                        item = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind <= 0)).sort(() => Math.random() - 0.5)[0];
+                    }
+                }
+                switch (item.type) {
+                    case "weapon":
+                        message += `もこチキは${item.name}を取り出し、装備した！\n`
+                        if (data.enemy.lToR) {
+                            if (item.mind >= 0) {
+                                message += `もこチキの気合がアップ！\n`
+                            } else {
+                                message += `あまり良い気分ではないようだ…\n`
+                            }
+                            atk = atk * (1 + (item.mind * 0.0025))
+                            def = def * (1 + (item.mind * 0.0025))
+                        } else {
+                            if (item.effect >= 70) {
+                                message += `もこチキのパワーが大アップ！\n`
+                            } else if (item.effect >= 30) {
+                                message += `もこチキのパワーがアップ！\n`
+                            } else {
+                                message += `もこチキのパワーが小アップ！\n`
+                            }
+                            atk = atk * (1 + (item.effect * 0.005))
+                        }
+                        break;
+                    case "armor":
+                        message += `もこチキは${item.name}を取り出し、装備した！\n`
+                        if (data.enemy.pLToR) {
+                            if (item.mind >= 0) {
+                                message += `もこチキの気合がアップ！\n`
+                            } else {
+                                message += `あまり良い気分ではないようだ…\n`
+                            }
+                            atk = atk * (1 + (item.mind * 0.0025))
+                            def = def * (1 + (item.mind * 0.0025))
+                        } else {
+                            if (item.effect >= 70) {
+                                message += `もこチキの防御が大アップ！\n`
+                            } else if (item.effect >= 30) {
+                                message += `もこチキの防御がアップ！\n`
+                            } else {
+                                message += `もこチキの防御が小アップ！\n`
+                            }
+                            def = def * (1 + (item.effect * 0.005))
+                        }
+                        break;
+                    case "medicine":
+                        message += `もこチキは${item.name}を取り出し、食べた！\n`
+                        if (data.enemy.pLToR) {
+                            if (item.mind >= 0) {
+                                message += `もこチキの気合がアップ！\n`
+                            } else {
+                                message += `あまり良い気分ではないようだ…\n`
+                            }
+                            atk = atk * (1 + (item.mind * 0.0025))
+                            def = def * (1 + (item.mind * 0.0025))
+                        } else {
+                            if (item.effect >= 70) {
+                                message += `もこチキの体力が大回復！\n`
+                            } else if (item.effect >= 30) {
+                                message += `もこチキの体力が回復！\n`
+                            } else {
+                                message += `もこチキの体力が小回復！\n`
+                            }
+                            playerHp += Math.round(((100 + lv * 3) - playerHp) * (item.effect * 0.005))
+                        }
+                        break;
+                    case "poison":
+                        message += `もこチキは${item.name}を取り出し、食べた！\n`
+                        if (data.enemy.pLToR) {
+                            if (item.mind >= 0) {
+                                message += `もこチキの気合がアップ！\n`
+                            } else {
+                                message += `あまり良い気分ではないようだ…\n`
+                            }
+                            atk = atk * (1 + (item.mind * 0.0025))
+                            def = def * (1 + (item.mind * 0.0025))
+                        } else {
+                            if (item.effect >= 70) {
+                                message += `もこチキはかなり調子が悪くなった…\n`
+                            } else if (item.effect >= 30) {
+                                message += `もこチキは調子が悪くなった…\n`
+                            } else {
+                                message += `あまり美味しくなかったようだ…\n`
+                            }
+                            playerHp -= Math.round(playerHp * (item.effect * 0.0025))
+                        }
+                        break;
+                    default:
+                        break;
+                }
             }
 
             // HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
