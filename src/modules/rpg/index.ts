@@ -466,7 +466,7 @@ export default class extends Module {
                         } else {
                             if (item.effect >= 70) {
                                 message += `もこチキのパワーが大アップ！\n`
-                            } else if (item.effect >= 30) {
+                            } else if (item.effect > 30) {
                                 message += `もこチキのパワーがアップ！\n`
                             } else {
                                 message += `もこチキのパワーが小アップ！\n`
@@ -487,7 +487,7 @@ export default class extends Module {
                         } else {
                             if (item.effect >= 70) {
                                 message += `もこチキの防御が大アップ！\n`
-                            } else if (item.effect >= 30) {
+                            } else if (item.effect > 30) {
                                 message += `もこチキの防御がアップ！\n`
                             } else {
                                 message += `もこチキの防御が小アップ！\n`
@@ -508,7 +508,7 @@ export default class extends Module {
                         } else {
                             if (item.effect >= 70) {
                                 message += `もこチキの体力が大回復！\n`
-                            } else if (item.effect >= 30) {
+                            } else if (item.effect > 30) {
                                 message += `もこチキの体力が回復！\n`
                             } else {
                                 message += `もこチキの体力が小回復！\n`
@@ -529,7 +529,7 @@ export default class extends Module {
                         } else {
                             if (item.effect >= 70) {
                                 message += `もこチキはかなり調子が悪くなった…\n`
-                            } else if (item.effect >= 30) {
+                            } else if (item.effect > 30) {
                                 message += `もこチキは調子が悪くなった…\n`
                             } else {
                                 message += `あまり美味しくなかったようだ…\n`
