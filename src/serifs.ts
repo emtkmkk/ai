@@ -682,8 +682,7 @@ export default {
 			`${item}、そういうのが流行っとるときいたぞ！わらわもほしい！`,
 		see: (item) =>
 			`そういえば道に${item}が落ちているのを見たんじゃー！本当じゃぞ！`,
-		expire: (item) =>
-			`気が付いたら、${item}の賞味期限とやらが切れていたようじゃ…`,
+		discover: (item) => `${item}を探している人がいると聞いたが…本当かのう？`,
 		talkTheme: (word) =>
 			`${
 				Math.random() < 0.5

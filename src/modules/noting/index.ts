@@ -49,7 +49,7 @@ export default class extends Module {
 			},
 			() => {
 				const item = genItem();
-				return serifs.noting.expire(item);
+				return serifs.noting.discover(item);
 			},
 		];
 		const themeNotes = [
