@@ -444,7 +444,7 @@ export default {
 			spd: "行動回数",
 			post: "投稿数",
 		},
-		tired: (date) => `RPGモードは0~11時、12~17時、18~23時の1日3回です。\n${date.getHours() < 12 ? "12時以降" : date.getHours() < 18 ? "18時以降" : "明日"}になったらもう一度試してください。`,
+		tired: (date, canOkawari) => `RPGモードは0~11時、12~17時、18~23時の1日3回です。\n${date.getHours() < 12 ? "12時以降" : date.getHours() < 18 ? "18時以降" : "明日"}になったらもう一度試してください。${canOkawari ? "\n（どうしてもプレイしたい場合は、「rpg おかわり」と話しかけてください）" : ""}`,
 		start: "開始！",
 		end: "終了！",
 		turn: "ターン目",

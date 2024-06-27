@@ -15,7 +15,7 @@ export default class extends Module {
     public install() {
         const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
         if (!rpgData) {
-            const maxLv = this.ai.friends.find().filter((x) => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1).reduce((acc,cur) => acc > cur.perModulesData.rpg.lv ? acc : cur.perModulesData.rpg.lv, 0)
+            const maxLv = this.ai.friends.find().filter((x) => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1).reduce((acc, cur) => acc > cur.perModulesData.rpg.lv ? acc : cur.perModulesData.rpg.lv, 0)
             console.log("maxLv : " + maxLv);
             this.ai.moduleData.insert({ type: 'rpg', maxLv: maxLv });
         }
@@ -25,11 +25,11 @@ export default class extends Module {
                 const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
                 if (rpgData) {
                     rpgData.maxLv += 1;
-					this.ai.moduleData.update(rpgData);
-				} else {
-                    const maxLv = this.ai.friends.find().filter((x) => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1).reduce((acc,cur) => acc > cur.perModulesData.rpg.lv ? acc : cur.perModulesData.rpg.lv, 0)
-					this.ai.moduleData.insert({ type: 'rpg', maxLv: maxLv });
-				}
+                    this.ai.moduleData.update(rpgData);
+                } else {
+                    const maxLv = this.ai.friends.find().filter((x) => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1).reduce((acc, cur) => acc > cur.perModulesData.rpg.lv ? acc : cur.perModulesData.rpg.lv, 0)
+                    this.ai.moduleData.insert({ type: 'rpg', maxLv: maxLv });
+                }
                 const me = Math.random() < 0.8 ? colors.find((x) => x.default)?.name ?? colors[0].name : colors.filter((x) => x.id > 1 && !x.reverseStatus && !x.alwaysSuper).map((x) => x.name).sort(() => Math.random() - 0.5)[0];
                 this.ai.post({
                     text: serifs.rpg.remind(me, hours),
@@ -41,7 +41,7 @@ export default class extends Module {
             if (hours === 23 && new Date().getMinutes() >= 55 && new Date().getMinutes() < 60) {
                 const friends = this.ai.friends.find().filter((x) => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1 && x.perModulesData.rpg.noChart)
                 friends.forEach(async x => {
-                    const friend = new Friend(this.ai, {doc: x})
+                    const friend = new Friend(this.ai, { doc: x })
                     const data = friend.getPerModulesData(this);
                     const user = await this.ai.api('users/show', {
                         userId: friend.userId
@@ -179,8 +179,8 @@ export default class extends Module {
             const colorData = colors.map((x) => x.unlock(data));
             // プレイ済でないかのチェック
             if (data.lastPlayedAt === getDate() + (new Date().getHours() < 12 ? "" : new Date().getHours() < 18 ? "/12" : "/18")) {
+                const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
                 if (msg.includes([serifs.rpg.command.onemore])) {
-                    const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
                     if (data.lastOnemorePlayedAt === getDate()) {
                         msg.reply(serifs.rpg.oneMore.tired(data.lv < rpgData.maxLv));
                         return {
@@ -195,20 +195,27 @@ export default class extends Module {
                     }
                     data.lastOnemorePlayedAt = getDate();
                 } else {
-                    msg.reply(serifs.rpg.tired(new Date()));
+                    msg.reply(serifs.rpg.tired(new Date(), data.lv < rpgData.maxLv && data.lastOnemorePlayedAt !== getDate()));
                     return {
                         reaction: 'confused'
                     };
                 }
             } else {
                 if (msg.includes([serifs.rpg.command.onemore])) {
+                    if (data.lastOnemorePlayedAt === getDate()) {
+                        const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
+                        msg.reply(serifs.rpg.oneMore.tired(data.lv < rpgData.maxLv));
+                        return {
+                            reaction: 'confused'
+                        };
+                    }
                     msg.reply(serifs.rpg.oneMore.err);
                     return {
                         reaction: 'confused'
                     };
                 }
             }
-            /** 連続プレイかどうかをチェック */ 
+            /** 連続プレイかどうかをチェック */
             let continuousBonus = 0;
             let continuousFlg = false;
             if (data.lastPlayedAt === getDate() + (new Date().getHours() < 12 ? "" : new Date().getHours() < 18 ? "/12" : "/18") || data.lastPlayedAt === (new Date().getHours() < 12 ? getDate(-1) + "/18" : new Date().getHours() < 18 ? getDate() : getDate() + "/12")) {
@@ -224,7 +231,7 @@ export default class extends Module {
                 }
             }
 
-            /** 現在の敵と戦ってるターン数。 敵がいない場合は1 */ 
+            /** 現在の敵と戦ってるターン数。 敵がいない場合は1 */
             let count = data.count ?? 1
 
             // 旅モード（エンドレスモード）のフラグ
@@ -281,9 +288,9 @@ export default class extends Module {
             }
 
 
-            /** 画面に出力するメッセージ:CW */ 
+            /** 画面に出力するメッセージ:CW */
             let cw = acct(msg.user) + " ";
-            /** 画面に出力するメッセージ:Text */ 
+            /** 画面に出力するメッセージ:Text */
             let message = ""
 
             /** プレイヤーの見た目 */
@@ -301,7 +308,7 @@ export default class extends Module {
                 count = 1
                 data.count = 1
                 playerHp = 100 + lv * 3
-                /** すでにこの回で倒している敵、出現条件を満たしていない敵を除外 */ 
+                /** すでにこの回で倒している敵、出現条件を満たしていない敵を除外 */
                 const filteredEnemys = enemys.filter((x) => !(data.clearEnemy ?? []).includes(x.name) && (!x.limit || x.limit(data, msg.friend)));
                 if (filteredEnemys.length && !data.endressFlg) {
                     /** 1度も倒した事のない敵 */
@@ -350,7 +357,7 @@ export default class extends Module {
                 return data.enemy.event(msg);
             }
 
-            /** バフを得た数。行数のコントロールに使用 */ 
+            /** バフを得た数。行数のコントロールに使用 */
             let buff = 0;
 
             if ((data.info ?? 0) < 1 && ((100 + lv * 3) + ((data.winCount ?? 0) * 5)) >= 300) {
