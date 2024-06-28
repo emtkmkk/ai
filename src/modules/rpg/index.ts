@@ -538,7 +538,7 @@ export default class extends Module {
                                 if (item.effect >= 100 && heal >= 50) {
                                     message += `もこチキの体力が特大回復！\n${heal}ポイント回復した！\n`
                                 } else if (item.effect >= 70 && heal >= 35) {
-                                    message += `もこチキの体力が大回復！\n${heal}ポイント回復した！`
+                                    message += `もこチキの体力が大回復！\n${heal}ポイント回復した！\n`
                                 } else if (item.effect > 30 && heal >= 15) {
                                     message += `もこチキの体力が回復！\n${heal}ポイント回復した！\n`
                                 } else {
