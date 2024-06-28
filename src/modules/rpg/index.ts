@@ -617,7 +617,7 @@ export default class extends Module {
                     if (playerHp > dmg || (count === 3 && data.enemy.fire && (data.thirdFire ?? 0) <= 2)) {
                         playerHp -= dmg
                         message += (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n"
-                        if (noItemDmg - dmg > 0) {
+                        if (noItemDmg - dmg > 1) {
                             message += `(道具効果: -${noItemDmg - dmg})\n`
                         }
                         if (playerHp <= 0 && !data.enemy.notEndure) {
@@ -654,7 +654,7 @@ export default class extends Module {
                 // メッセージの出力
                 message += (crit ? `**${data.enemy.atkmsg(dmg)}**` : data.enemy.atkmsg(dmg)) + "\n"
                 enemyHp -= dmg
-                if (dmg - noItemDmg > 0) {
+                if (dmg - noItemDmg > 1) {
                     message += `(道具効果: +${dmg - noItemDmg})\n`
                 }
                 // 敵のHPが0以下になった場合は、以降の攻撃をキャンセル
@@ -716,7 +716,7 @@ export default class extends Module {
                         const noItemDmg = this.getEnemyDmg(data, def - itemBonus.def, tp, count, crit, enemyAtk, rng);
                         playerHp -= dmg
                         message += (i === 0 ? "\n" : "") + (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n"
-                        if (noItemDmg - dmg > 0) {
+                        if (noItemDmg - dmg > 1) {
                             message += `(道具効果: -${noItemDmg - dmg})\n`
                         }
                         if (dmg > maxDmg) maxDmg = dmg;
