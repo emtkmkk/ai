@@ -407,6 +407,10 @@ export default class extends Module {
             let bonus = 0;
             /** 連続攻撃中断の場合の攻撃可能回数 0は最後まで攻撃 */
             let abort = 0;
+            /** 使用したアイテム */
+            let item;
+            /** アイテムによって増加したステータス */
+            let itemBonus = { atk: 0, def: 0 };
 
             if (isSuper) {
                 const superColor = colors.find((x) => x.alwaysSuper)?.name ?? colors.find((x) => x.default)?.name ?? colors[0]?.name;
@@ -444,7 +448,6 @@ export default class extends Module {
             if (rpgItems.length && Math.random() < 0.5 + ((1 - playerHpPercent) * 0.5)) {
                 //アイテム
                 buff += 1
-                let item;
                 if (data.enemy.pLToR) {
                     let isPlus = Math.random() < 0.5;
                     item = rpgItems.filter((x) => isPlus ? x.mind > 0 : x.mind <= 0).sort(() => Math.random() - 0.5)[0];
@@ -480,10 +483,13 @@ export default class extends Module {
                         message += `${item.name}を取り出し、装備した！\n`
                         if (data.enemy.lToR) {
                             mindMsg(item.mind)
-                            atk = atk * (1 + (item.mind * 0.0025))
-                            def = def * (1 + (item.mind * 0.0025))
+                            itemBonus.atk = atk * (item.mind * 0.0025);
+                            itemBonus.def = def * (item.mind * 0.0025);
+                            atk = atk + itemBonus.atk;
+                            def = def + itemBonus.def;
                         } else {
-                            atk = atk + (lv * 4) * (item.effect * 0.005)
+                            itemBonus.atk = (lv * 4) * (item.effect * 0.005);
+                            atk = atk + itemBonus.atk;
                             if (item.effect >= 100) {
                                 message += `もこチキのパワーが特大アップ！\n`
                             } else if (item.effect >= 70) {
@@ -499,10 +505,13 @@ export default class extends Module {
                         message += `${item.name}を取り出し、装備した！\n`
                         if (data.enemy.pLToR) {
                             mindMsg(item.mind)
-                            atk = atk * (1 + (item.mind * 0.0025))
-                            def = def * (1 + (item.mind * 0.0025))
+                            itemBonus.atk = atk * (item.mind * 0.0025);
+                            itemBonus.def = def * (item.mind * 0.0025);
+                            atk = atk + itemBonus.atk;
+                            def = def + itemBonus.def;
                         } else {
-                            def = def + (lv * 4) * (item.effect * 0.005)
+                            itemBonus.def = (lv * 4) * (item.effect * 0.005);
+                            def = def + itemBonus.def;
                             if (item.effect >= 100) {
                                 message += `もこチキの防御が特大アップ！\n`
                             } else if (item.effect >= 70) {
@@ -518,8 +527,10 @@ export default class extends Module {
                         message += `${item.name}を取り出し、食べた！\n`
                         if (data.enemy.pLToR) {
                             mindMsg(item.mind)
-                            atk = atk * (1 + (item.mind * 0.0025))
-                            def = def * (1 + (item.mind * 0.0025))
+                            itemBonus.atk = atk * (item.mind * 0.0025);
+                            itemBonus.def = def * (item.mind * 0.0025);
+                            atk = atk + itemBonus.atk;
+                            def = def + itemBonus.def;
                         } else {
                             const heal = Math.round(((100 + lv * 3) - playerHp) * (item.effect * 0.005))
                             playerHp += heal
@@ -540,8 +551,10 @@ export default class extends Module {
                         message += `${item.name}を取り出し、食べた！\n`
                         if (data.enemy.pLToR) {
                             mindMsg(item.mind)
-                            atk = atk * (1 + (item.mind * 0.0025))
-                            def = def * (1 + (item.mind * 0.0025))
+                            itemBonus.atk = atk * (item.mind * 0.0025);
+                            itemBonus.def = def * (item.mind * 0.0025);
+                            atk = atk + itemBonus.atk;
+                            def = def + itemBonus.def;
                         } else {
                             const dmg = Math.round(playerHp * (item.effect * 0.003));
                             playerHp -= dmg;
@@ -596,12 +609,17 @@ export default class extends Module {
                 const crit = Math.random() < playerHpPercent - enemyHpPercent;
                 // 予測最大ダメージが相手のHPの何割かで先制攻撃の確率が判定される
                 if (Math.random() < predictedDmg / enemyHp || (count === 3 && data.enemy.fire && (data.thirdFire ?? 0) <= 2)) {
+                    const rng = (0.2 + Math.random() * 1.6);
                     /** ダメージ */
-                    const dmg = this.getEnemyDmg(data, def, tp, count, crit, enemyAtk)
+                    const dmg = this.getEnemyDmg(data, def, tp, count, crit, enemyAtk, rng)
+                    const noItemDmg = this.getEnemyDmg(data, def - itemBonus.def, tp, count, crit, enemyAtk, rng)
                     // ダメージが負けるほど多くなる場合は、先制攻撃しない
                     if (playerHp > dmg || (count === 3 && data.enemy.fire && (data.thirdFire ?? 0) <= 2)) {
                         playerHp -= dmg
                         message += (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n"
+                        if (noItemDmg - dmg > 0) {
+                            message += `(道具効果: -${noItemDmg - dmg})\n`
+                        }
                         if (playerHp <= 0 && !data.enemy.notEndure) {
                             message += serifs.rpg.endure + "\n"
                             playerHp = 1;
@@ -618,10 +636,12 @@ export default class extends Module {
             // 自身攻撃の処理
             // spdの回数分、以下の処理を繰り返す
             for (let i = 0; i < spd; i++) {
+                const rng = (0.2 + Math.random() * 1.6);
                 /** クリティカルかどうか */
                 let crit = Math.random() < enemyHpPercent - playerHpPercent;
                 /** ダメージ */
-                let dmg = this.getAtkDmg(data, atk, tp, count, crit, enemyDef, enemyMaxHp)
+                let dmg = this.getAtkDmg(data, atk, tp, count, crit, enemyDef, enemyMaxHp, rng)
+                const noItemDmg = this.getAtkDmg(data, atk - itemBonus.atk, tp, count, crit, enemyDef, enemyMaxHp, rng)
                 // 最大ダメージ制限処理
                 if (maxdmg && maxdmg > 0 && dmg > Math.round(maxdmg * (1 / ((abort || spd) - i)))) {
                     // 最大ダメージ制限を超えるダメージの場合は、ダメージが制限される。
@@ -634,6 +654,9 @@ export default class extends Module {
                 // メッセージの出力
                 message += (crit ? `**${data.enemy.atkmsg(dmg)}**` : data.enemy.atkmsg(dmg)) + "\n"
                 enemyHp -= dmg
+                if (dmg - noItemDmg > 0) {
+                    message += `(道具効果: +${dmg - noItemDmg})\n`
+                }
                 // 敵のHPが0以下になった場合は、以降の攻撃をキャンセル
                 if (enemyHp <= 0) break;
                 // 攻撃が中断される場合
@@ -685,12 +708,17 @@ export default class extends Module {
                 let maxDmg = 0;
                 if (!enemyTurnFinished) {
                     for (let i = 0; i < (data.enemy.spd ?? 1); i++) {
+                        const rng = (0.2 + Math.random() * 1.6);
                         /** クリティカルかどうか */
                         const crit = Math.random() < playerHpPercent - enemyHpPercent;
                         /** ダメージ */
-                        const dmg = this.getEnemyDmg(data, def, tp, count, crit, enemyAtk)
+                        const dmg = this.getEnemyDmg(data, def, tp, count, crit, enemyAtk, rng);
+                        const noItemDmg = this.getEnemyDmg(data, def - itemBonus.def, tp, count, crit, enemyAtk, rng);
                         playerHp -= dmg
-                        message += "\n" + (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n"
+                        message += (i === 0 ? "\n" : "") + (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n"
+                        if (noItemDmg - dmg > 0) {
+                            message += `(道具効果: -${noItemDmg - dmg})\n`
+                        }
                         if (dmg > maxDmg) maxDmg = dmg;
                         if (data.enemy.fire && count > (data.thirdFire ?? 0)) data.thirdFire = count;
                     }
