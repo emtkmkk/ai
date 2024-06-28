@@ -536,16 +536,17 @@ export default class extends Module {
                             atk = atk * (1 + (item.mind * 0.0025))
                             def = def * (1 + (item.mind * 0.0025))
                         } else {
+                            const heal = Math.round(((100 + lv * 3) - playerHp) * (item.effect * 0.005))
+                            playerHp += heal
                             if (item.effect >= 100) {
-                                message += `もこチキの体力が特大回復！\n`
+                                message += `もこチキの体力が特大回復！\n${heal}ポイント回復した！\n`
                             } else if (item.effect >= 70) {
-                                message += `もこチキの体力が大回復！\n`
+                                message += `もこチキの体力が大回復！\n${heal}ポイント回復した！`
                             } else if (item.effect > 30) {
-                                message += `もこチキの体力が回復！\n`
+                                message += `もこチキの体力が回復！\n${heal}ポイント回復した！\n`
                             } else {
-                                message += `もこチキの体力が小回復！\n`
+                                message += `もこチキの体力が小回復！\n${heal}ポイント回復した！\n`
                             }
-                            playerHp += Math.round(((100 + lv * 3) - playerHp) * (item.effect * 0.005))
                         }
                         break;
                     case "poison":
@@ -565,14 +566,15 @@ export default class extends Module {
                             atk = atk * (1 + (item.mind * 0.0025))
                             def = def * (1 + (item.mind * 0.0025))
                         } else {
+                            const dmg = Math.round(playerHp * (item.effect * 0.003));
+                            playerHp -= dmg;
                             if (item.effect >= 70) {
-                                message += `もこチキはかなり調子が悪くなった…\n`
+                                message += `もこチキはかなり調子が悪くなった…\n${dmg}ポイントのダメージ！\n`
                             } else if (item.effect > 30) {
-                                message += `もこチキは調子が悪くなった…\n`
+                                message += `もこチキは調子が悪くなった…\n${dmg}ポイントのダメージ！\n`
                             } else {
-                                message += `あまり美味しくなかったようだ…\n`
+                                message += `あまり美味しくなかったようだ…\n${dmg}ポイントのダメージ！\n`
                             }
-                            playerHp -= Math.round(playerHp * (item.effect * 0.0025))
                         }
                         break;
                     default:
