@@ -6,6 +6,7 @@ import getDate from "@/utils/get-date";
 import autobind from "autobind-decorator";
 import { colorReply, colors } from "./colors";
 import { endressEnemy, enemys } from "./enemys";
+import { rpgItems } from "./items";
 import Friend from "@/friend";
 
 export default class extends Module {
@@ -36,6 +37,7 @@ export default class extends Module {
 				const rpgData = this.ai.moduleData.findOne({ type: "rpg" });
 				if (rpgData) {
 					rpgData.maxLv += 1;
+					console.log("maxLv : " + rpgData.maxLv);
 					this.ai.moduleData.update(rpgData);
 				} else {
 					const maxLv = this.ai.friends
@@ -50,6 +52,7 @@ export default class extends Module {
 									: cur.perModulesData.rpg.lv,
 							0
 						);
+					console.log("maxLv : " + maxLv);
 					this.ai.moduleData.insert({ type: "rpg", maxLv: maxLv });
 				}
 				const me =
@@ -259,8 +262,8 @@ export default class extends Module {
 						? "/12"
 						: "/18")
 			) {
+				const rpgData = this.ai.moduleData.findOne({ type: "rpg" });
 				if (msg.includes([serifs.rpg.command.onemore])) {
-					const rpgData = this.ai.moduleData.findOne({ type: "rpg" });
 					if (data.lastOnemorePlayedAt === getDate()) {
 						msg.reply(serifs.rpg.oneMore.tired(data.lv < rpgData.maxLv));
 						return {
@@ -275,13 +278,25 @@ export default class extends Module {
 					}
 					data.lastOnemorePlayedAt = getDate();
 				} else {
-					msg.reply(serifs.rpg.tired(new Date()));
+					msg.reply(
+						serifs.rpg.tired(
+							new Date(),
+							data.lv < rpgData.maxLv && data.lastOnemorePlayedAt !== getDate()
+						)
+					);
 					return {
 						reaction: ":neofox_confused:",
 					};
 				}
 			} else {
 				if (msg.includes([serifs.rpg.command.onemore])) {
+					if (data.lastOnemorePlayedAt === getDate()) {
+						const rpgData = this.ai.moduleData.findOne({ type: "rpg" });
+						msg.reply(serifs.rpg.oneMore.tired(data.lv < rpgData.maxLv));
+						return {
+							reaction: ":neofox_confused:",
+						};
+					}
 					msg.reply(serifs.rpg.oneMore.err);
 					return {
 						reaction: ":neofox_confused:",
@@ -599,6 +614,155 @@ export default class extends Module {
 				message += serifs.rpg.haisui + "\n";
 				atk = atk + Math.round(def * (enemyHpPercent - playerHpPercent));
 				def = Math.round(def * (1 - (enemyHpPercent - playerHpPercent)));
+			}
+
+			if (rpgItems.length && Math.random() < 0.5) {
+				//アイテム
+				buff += 1;
+				let item;
+				if (data.enemy.pLToR) {
+					let isPlus = Math.random() < 0.5;
+					item = rpgItems
+						.filter((x) => (isPlus ? x.mind > 0 : x.mind <= 0))
+						.sort(() => Math.random() - 0.5)[0];
+				} else {
+					let types = ["weapon", "armor"];
+					if (count !== 1 || data.enemy.pLToR) types.push("medicine");
+					if (count !== 1 || data.enemy.pLToR) types.push("poison");
+					const type = types.sort(() => Math.random() - 0.5)[0];
+					if (type !== "weapon" || !data.enemy.lToR) {
+						item = rpgItems
+							.filter((x) => x.type === type)
+							.sort(() => Math.random() - 0.5)[0];
+					} else {
+						let isPlus = Math.random() < 0.5;
+						item = rpgItems
+							.filter(
+								(x) => x.type === type && (isPlus ? x.mind > 0 : x.mind <= 0)
+							)
+							.sort(() => Math.random() - 0.5)[0];
+					}
+				}
+				switch (item.type) {
+					case "weapon":
+						message += `${item.name}を取り出し、装備した！\n`;
+						if (data.enemy.lToR) {
+							if (item.mind >= 100) {
+								message += `阨ちゃんの気合が特大アップ！\n`;
+							} else if (item.mind >= 70) {
+								message += `阨ちゃんの気合が大アップ！\n`;
+							} else if (item.mind > 30) {
+								message += `阨ちゃんの気合がアップ！\n`;
+							} else if (item.mind > 0) {
+								message += `阨ちゃんの気合が小アップ！\n`;
+							} else {
+								message += `あまり良い気分ではないようだ…\n`;
+							}
+							atk = atk * (1 + item.mind * 0.0025);
+							def = def * (1 + item.mind * 0.0025);
+						} else {
+							if (item.effect >= 100) {
+								message += `阨ちゃんのパワーが特大アップ！\n`;
+							} else if (item.effect >= 70) {
+								message += `阨ちゃんのパワーが大アップ！\n`;
+							} else if (item.effect > 30) {
+								message += `阨ちゃんのパワーがアップ！\n`;
+							} else {
+								message += `阨ちゃんのパワーが小アップ！\n`;
+							}
+							atk = atk * (1 + item.effect * 0.005);
+						}
+						break;
+					case "armor":
+						message += `${item.name}を取り出し、装備した！\n`;
+						if (data.enemy.pLToR) {
+							if (item.mind >= 100) {
+								message += `阨ちゃんの気合が特大アップ！\n`;
+							} else if (item.mind >= 70) {
+								message += `阨ちゃんの気合が大アップ！\n`;
+							} else if (item.mind > 30) {
+								message += `阨ちゃんの気合がアップ！\n`;
+							} else if (item.mind > 0) {
+								message += `阨ちゃんの気合が小アップ！\n`;
+							} else {
+								message += `あまり良い気分ではないようだ…\n`;
+							}
+							atk = atk * (1 + item.mind * 0.0025);
+							def = def * (1 + item.mind * 0.0025);
+						} else {
+							if (item.effect >= 100) {
+								message += `阨ちゃんの防御が特大アップ！\n`;
+							} else if (item.effect >= 70) {
+								message += `阨ちゃんの防御が大アップ！\n`;
+							} else if (item.effect > 30) {
+								message += `阨ちゃんの防御がアップ！\n`;
+							} else {
+								message += `阨ちゃんの防御が小アップ！\n`;
+							}
+							def = def * (1 + item.effect * 0.005);
+						}
+						break;
+					case "medicine":
+						message += `${item.name}を取り出し、食べた！\n`;
+						if (data.enemy.pLToR) {
+							if (item.mind >= 100) {
+								message += `阨ちゃんの気合が特大アップ！\n`;
+							} else if (item.mind >= 70) {
+								message += `阨ちゃんの気合が大アップ！\n`;
+							} else if (item.mind > 30) {
+								message += `阨ちゃんの気合がアップ！\n`;
+							} else if (item.mind > 0) {
+								message += `阨ちゃんの気合が小アップ！\n`;
+							} else {
+								message += `あまり良い気分ではないようだ…\n`;
+							}
+							atk = atk * (1 + item.mind * 0.0025);
+							def = def * (1 + item.mind * 0.0025);
+						} else {
+							if (item.effect >= 100) {
+								message += `阨ちゃんの体力が特大回復！\n`;
+							} else if (item.effect >= 70) {
+								message += `阨ちゃんの体力が大回復！\n`;
+							} else if (item.effect > 30) {
+								message += `阨ちゃんの体力が回復！\n`;
+							} else {
+								message += `阨ちゃんの体力が小回復！\n`;
+							}
+							playerHp += Math.round(
+								(100 + lv * 3 - playerHp) * (item.effect * 0.005)
+							);
+						}
+						break;
+					case "poison":
+						message += `${item.name}を取り出し、食べた！\n`;
+						if (data.enemy.pLToR) {
+							if (item.mind >= 100) {
+								message += `阨ちゃんの気合が特大アップ！\n`;
+							} else if (item.mind >= 70) {
+								message += `阨ちゃんの気合が大アップ！\n`;
+							} else if (item.mind > 30) {
+								message += `阨ちゃんの気合がアップ！\n`;
+							} else if (item.mind > 0) {
+								message += `阨ちゃんの気合が小アップ！\n`;
+							} else {
+								message += `あまり良い気分ではないようだ…\n`;
+							}
+							atk = atk * (1 + item.mind * 0.0025);
+							def = def * (1 + item.mind * 0.0025);
+						} else {
+							if (item.effect >= 70) {
+								message += `阨ちゃんはかなり調子が悪くなった…\n`;
+							} else if (item.effect > 30) {
+								message += `阨ちゃんは調子が悪くなった…\n`;
+							} else {
+								message += `あまり美味しくなかったようだ…\n`;
+							}
+							playerHp -= Math.round(playerHp * (item.effect * 0.0025));
+						}
+						break;
+					default:
+						break;
+				}
 			}
 
 			// 敵のステータスを計算
