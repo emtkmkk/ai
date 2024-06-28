@@ -460,21 +460,26 @@ export default class extends Module {
                         item = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind <= 0)).sort(() => Math.random() - 0.5)[0];
                     }
                 }
+                const mindMsg = (mind) => {
+                    if (mind >= 100) {
+                        message += `もこチキの気合が特大アップ！\n`
+                    } else if (mind >= 70) {
+                        message += `もこチキの気合が大アップ！\n`
+                    } else if (mind > 30) {
+                        message += `もこチキの気合がアップ！\n`
+                    } else if (mind > 0) {
+                        message += `もこチキの気合が小アップ！\n`
+                    } else if (mind > -50) {
+                        message += `あまり良い気分ではないようだ…\n`
+                    } else {
+                        message += `もこチキの気合が下がった…\n`
+                    }
+                }
                 switch (item.type) {
                     case "weapon":
                         message += `${item.name}を取り出し、装備した！\n`
                         if (data.enemy.lToR) {
-                            if (item.mind >= 100) {
-                                message += `もこチキの気合が特大アップ！\n`
-                            } else if (item.mind >= 70) {
-                                message += `もこチキの気合が大アップ！\n`
-                            } else if (item.mind > 30) {
-                                message += `もこチキの気合がアップ！\n`
-                            } else if (item.mind > 0) {
-                                message += `もこチキの気合が小アップ！\n`
-                            } else {
-                                message += `あまり良い気分ではないようだ…\n`
-                            }
+                            mindMsg(item.mind)
                             atk = atk * (1 + (item.mind * 0.0025))
                             def = def * (1 + (item.mind * 0.0025))
                         } else {
@@ -493,17 +498,7 @@ export default class extends Module {
                     case "armor":
                         message += `${item.name}を取り出し、装備した！\n`
                         if (data.enemy.pLToR) {
-                            if (item.mind >= 100) {
-                                message += `もこチキの気合が特大アップ！\n`
-                            } else if (item.mind >= 70) {
-                                message += `もこチキの気合が大アップ！\n`
-                            } else if (item.mind > 30) {
-                                message += `もこチキの気合がアップ！\n`
-                            } else if (item.mind > 0) {
-                                message += `もこチキの気合が小アップ！\n`
-                            } else {
-                                message += `あまり良い気分ではないようだ…\n`
-                            }
+                            mindMsg(item.mind)
                             atk = atk * (1 + (item.mind * 0.0025))
                             def = def * (1 + (item.mind * 0.0025))
                         } else {
@@ -522,17 +517,7 @@ export default class extends Module {
                     case "medicine":
                         message += `${item.name}を取り出し、食べた！\n`
                         if (data.enemy.pLToR) {
-                            if (item.mind >= 100) {
-                                message += `もこチキの気合が特大アップ！\n`
-                            } else if (item.mind >= 70) {
-                                message += `もこチキの気合が大アップ！\n`
-                            } else if (item.mind > 30) {
-                                message += `もこチキの気合がアップ！\n`
-                            } else if (item.mind > 0) {
-                                message += `もこチキの気合が小アップ！\n`
-                            } else {
-                                message += `あまり良い気分ではないようだ…\n`
-                            }
+                            mindMsg(item.mind)
                             atk = atk * (1 + (item.mind * 0.0025))
                             def = def * (1 + (item.mind * 0.0025))
                         } else {
@@ -552,17 +537,7 @@ export default class extends Module {
                     case "poison":
                         message += `${item.name}を取り出し、食べた！\n`
                         if (data.enemy.pLToR) {
-                            if (item.mind >= 100) {
-                                message += `もこチキの気合が特大アップ！\n`
-                            } else if (item.mind >= 70) {
-                                message += `もこチキの気合が大アップ！\n`
-                            } else if (item.mind > 30) {
-                                message += `もこチキの気合がアップ！\n`
-                            } else if (item.mind > 0) {
-                                message += `もこチキの気合が小アップ！\n`
-                            } else {
-                                message += `あまり良い気分ではないようだ…\n`
-                            }
+                            mindMsg(item.mind)
                             atk = atk * (1 + (item.mind * 0.0025))
                             def = def * (1 + (item.mind * 0.0025))
                         } else {
