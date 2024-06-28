@@ -441,7 +441,7 @@ export default class extends Module {
                 def = Math.round(def * (1 - (enemyHpPercent - playerHpPercent)))
             }
 
-            if (rpgItems.length && Math.random() < 0.5) {
+            if (rpgItems.length && Math.random() < 0.5 + ((1 - playerHpPercent) * 0.5)) {
                 //アイテム
                 buff += 1
                 let item;
@@ -483,6 +483,7 @@ export default class extends Module {
                             atk = atk * (1 + (item.mind * 0.0025))
                             def = def * (1 + (item.mind * 0.0025))
                         } else {
+                            atk = atk + (lv * 4) * (item.effect * 0.005)
                             if (item.effect >= 100) {
                                 message += `もこチキのパワーが特大アップ！\n`
                             } else if (item.effect >= 70) {
@@ -492,7 +493,6 @@ export default class extends Module {
                             } else {
                                 message += `もこチキのパワーが小アップ！\n`
                             }
-                            atk = atk * (1 + (item.effect * 0.005))
                         }
                         break;
                     case "armor":
@@ -502,6 +502,7 @@ export default class extends Module {
                             atk = atk * (1 + (item.mind * 0.0025))
                             def = def * (1 + (item.mind * 0.0025))
                         } else {
+                            def = def + (lv * 4) * (item.effect * 0.005)
                             if (item.effect >= 100) {
                                 message += `もこチキの防御が特大アップ！\n`
                             } else if (item.effect >= 70) {
@@ -511,7 +512,6 @@ export default class extends Module {
                             } else {
                                 message += `もこチキの防御が小アップ！\n`
                             }
-                            def = def * (1 + (item.effect * 0.005))
                         }
                         break;
                     case "medicine":
@@ -523,14 +523,16 @@ export default class extends Module {
                         } else {
                             const heal = Math.round(((100 + lv * 3) - playerHp) * (item.effect * 0.005))
                             playerHp += heal
-                            if (item.effect >= 100) {
-                                message += `もこチキの体力が特大回復！\n${heal}ポイント回復した！\n`
-                            } else if (item.effect >= 70) {
-                                message += `もこチキの体力が大回復！\n${heal}ポイント回復した！`
-                            } else if (item.effect > 30) {
-                                message += `もこチキの体力が回復！\n${heal}ポイント回復した！\n`
-                            } else {
-                                message += `もこチキの体力が小回復！\n${heal}ポイント回復した！\n`
+                            if (heal > 0) {
+                                if (item.effect >= 100 && heal >= 50) {
+                                    message += `もこチキの体力が特大回復！\n${heal}ポイント回復した！\n`
+                                } else if (item.effect >= 70 && heal >= 35) {
+                                    message += `もこチキの体力が大回復！\n${heal}ポイント回復した！`
+                                } else if (item.effect > 30 && heal >= 15) {
+                                    message += `もこチキの体力が回復！\n${heal}ポイント回復した！\n`
+                                } else {
+                                    message += `もこチキの体力が小回復！\n${heal}ポイント回復した！\n`
+                                }
                             }
                         }
                         break;
@@ -543,12 +545,12 @@ export default class extends Module {
                         } else {
                             const dmg = Math.round(playerHp * (item.effect * 0.003));
                             playerHp -= dmg;
-                            if (item.effect >= 70) {
-                                message += `もこチキはかなり調子が悪くなった…\n${dmg}ポイントのダメージ！\n`
-                            } else if (item.effect > 30) {
-                                message += `もこチキは調子が悪くなった…\n${dmg}ポイントのダメージ！\n`
+                            if (item.effect >= 70 && dmg > 0) {
+                                message += `もこチキはかなり調子が悪くなった…${dmg}ポイントのダメージを受けた！\n`
+                            } else if (item.effect > 30 && dmg > 0) {
+                                message += `もこチキは調子が悪くなった…${dmg}ポイントのダメージを受けた！\n`
                             } else {
-                                message += `あまり美味しくなかったようだ…\n${dmg}ポイントのダメージ！\n`
+                                message += `あまり美味しくなかったようだ…${dmg > 0 ? `\n${dmg}ポイントのダメージを受けた！` : ""}\n`
                             }
                         }
                         break;
