@@ -432,6 +432,14 @@ export default class extends Module {
                 message += serifs.rpg.spdUp + "\n"
                 spd = 2;
             }
+            
+            // HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
+            if (playerHpPercent <= (1 / 7) && (enemyHpPercent - playerHpPercent) >= 0.5) {
+                buff += 1
+                message += serifs.rpg.haisui + "\n"
+                atk = atk + Math.round(def * (enemyHpPercent - playerHpPercent))
+                def = Math.round(def * (1 - (enemyHpPercent - playerHpPercent)))
+            }
 
             if (rpgItems.length && Math.random() < 0.5) {
                 //アイテム
@@ -546,14 +554,6 @@ export default class extends Module {
                     default:
                         break;
                 }
-            }
-
-            // HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
-            if (playerHpPercent <= (1 / 7) && (enemyHpPercent - playerHpPercent) >= 0.5) {
-                buff += 1
-                message += serifs.rpg.haisui + "\n"
-                atk = atk + Math.round(def * (enemyHpPercent - playerHpPercent))
-                def = Math.round(def * (1 - (enemyHpPercent - playerHpPercent)))
             }
 
             // 敵のステータスを計算
