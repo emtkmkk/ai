@@ -718,7 +718,7 @@ export default class extends Module {
                         if (data.enemy.fire && count > (data.thirdFire ?? 0)) data.thirdFire = count;
                     }
                     // HPが0で食いしばりが可能な場合、食いしばる
-                    if (playerHp <= 0 && !data.enemy.notEndure && count === 1 && Math.random() < 0.05 + (0.1 * (data.endure ?? 0))) {
+                    if (playerHp <= 0 && !data.enemy.notEndure && Math.random() < (0.1 + (0.1 * (data.endure ?? 0)) - (count * 0.05))) {
                         message += serifs.rpg.endure + "\n"
                         playerHp = 1;
                         data.endure = Math.max(data.endure - 1, 0);
