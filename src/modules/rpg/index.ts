@@ -432,7 +432,7 @@ export default class extends Module {
                 message += serifs.rpg.spdUp + "\n"
                 spd = 2;
             }
-            
+
             // HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
             if (playerHpPercent <= (1 / 7) && (enemyHpPercent - playerHpPercent) >= 0.5) {
                 buff += 1
@@ -464,15 +464,21 @@ export default class extends Module {
                     case "weapon":
                         message += `${item.name}を取り出し、装備した！\n`
                         if (data.enemy.lToR) {
-                            if (item.mind >= 0) {
+                            if (item.mind >= 100) {
+                                message += `もこチキの気合が特大アップ！\n`
+                            } else if (item.mind >= 70) {
+                                message += `もこチキの気合が大アップ！\n`
+                            } else if (item.mind > 30) {
                                 message += `もこチキの気合がアップ！\n`
+                            } else if (item.mind > 0) {
+                                message += `もこチキの気合が小アップ！\n`
                             } else {
                                 message += `あまり良い気分ではないようだ…\n`
                             }
                             atk = atk * (1 + (item.mind * 0.0025))
                             def = def * (1 + (item.mind * 0.0025))
                         } else {
-                           if (item.effect >= 100) {
+                            if (item.effect >= 100) {
                                 message += `もこチキのパワーが特大アップ！\n`
                             } else if (item.effect >= 70) {
                                 message += `もこチキのパワーが大アップ！\n`
@@ -487,8 +493,14 @@ export default class extends Module {
                     case "armor":
                         message += `${item.name}を取り出し、装備した！\n`
                         if (data.enemy.pLToR) {
-                            if (item.mind >= 0) {
+                            if (item.mind >= 100) {
+                                message += `もこチキの気合が特大アップ！\n`
+                            } else if (item.mind >= 70) {
+                                message += `もこチキの気合が大アップ！\n`
+                            } else if (item.mind > 30) {
                                 message += `もこチキの気合がアップ！\n`
+                            } else if (item.mind > 0) {
+                                message += `もこチキの気合が小アップ！\n`
                             } else {
                                 message += `あまり良い気分ではないようだ…\n`
                             }
@@ -510,8 +522,14 @@ export default class extends Module {
                     case "medicine":
                         message += `${item.name}を取り出し、食べた！\n`
                         if (data.enemy.pLToR) {
-                            if (item.mind >= 0) {
+                            if (item.mind >= 100) {
+                                message += `もこチキの気合が特大アップ！\n`
+                            } else if (item.mind >= 70) {
+                                message += `もこチキの気合が大アップ！\n`
+                            } else if (item.mind > 30) {
                                 message += `もこチキの気合がアップ！\n`
+                            } else if (item.mind > 0) {
+                                message += `もこチキの気合が小アップ！\n`
                             } else {
                                 message += `あまり良い気分ではないようだ…\n`
                             }
@@ -533,8 +551,14 @@ export default class extends Module {
                     case "poison":
                         message += `${item.name}を取り出し、食べた！\n`
                         if (data.enemy.pLToR) {
-                            if (item.mind >= 0) {
+                            if (item.mind >= 100) {
+                                message += `もこチキの気合が特大アップ！\n`
+                            } else if (item.mind >= 70) {
+                                message += `もこチキの気合が大アップ！\n`
+                            } else if (item.mind > 30) {
                                 message += `もこチキの気合がアップ！\n`
+                            } else if (item.mind > 0) {
+                                message += `もこチキの気合が小アップ！\n`
                             } else {
                                 message += `あまり良い気分ではないようだ…\n`
                             }
