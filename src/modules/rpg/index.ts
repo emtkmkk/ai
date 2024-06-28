@@ -559,9 +559,9 @@ export default class extends Module {
                             const dmg = Math.round(playerHp * (item.effect * 0.003));
                             playerHp -= dmg;
                             if (item.effect >= 70 && dmg > 0) {
-                                message += `もこチキはかなり調子が悪くなった…${dmg}ポイントのダメージを受けた！\n`
+                                message += `もこチキはかなり調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`
                             } else if (item.effect > 30 && dmg > 0) {
-                                message += `もこチキは調子が悪くなった…${dmg}ポイントのダメージを受けた！\n`
+                                message += `もこチキは調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`
                             } else {
                                 message += `あまり美味しくなかったようだ…${dmg > 0 ? `\n${dmg}ポイントのダメージを受けた！` : ""}\n`
                             }
