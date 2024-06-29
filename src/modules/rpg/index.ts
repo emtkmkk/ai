@@ -450,17 +450,17 @@ export default class extends Module {
                 buff += 1
                 if (data.enemy.pLToR) {
                     let isPlus = Math.random() < 0.5;
-                    item = rpgItems.filter((x) => isPlus ? x.mind > 0 : x.mind <= 0).sort(() => Math.random() - 0.5)[0];
+                    item = rpgItems.filter((x) => isPlus ? x.mind > 0 : x.mind < 0).sort(() => Math.random() - 0.5)[0];
                 } else {
                     let types = ["weapon", "armor"];
                     if (count !== 1 || data.enemy.pLToR) types.push("medicine");
                     if (count !== 1 || data.enemy.pLToR) types.push("poison");
                     const type = types.sort(() => Math.random() - 0.5)[0]
                     if (type !== "weapon" || !data.enemy.lToR) {
-                        item = rpgItems.filter((x) => x.type === type).sort(() => Math.random() - 0.5)[0];
+                        item = rpgItems.filter((x) => x.type === type && x.effect > 0).sort(() => Math.random() - 0.5)[0];
                     } else {
                         let isPlus = Math.random() < 0.5;
-                        item = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind <= 0)).sort(() => Math.random() - 0.5)[0];
+                        item = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind < 0)).sort(() => Math.random() - 0.5)[0];
                     }
                 }
                 const mindMsg = (mind) => {
