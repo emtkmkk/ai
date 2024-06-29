@@ -736,7 +736,7 @@ export default class extends Module {
                     if (data.enemy.name !== endressEnemy(data).name) {
                         message += "\n" + data.enemy.losemsg + "\n\n" + serifs.rpg.lose
                     } else {
-                        const minusStage = Math.min((data.endress ?? 0), 3)
+                        const minusStage = Math.min((data.endress ?? 0), 3 - ((data.endress ?? 0) == (data.maxEndress ?? -1) ? 0 : (data.endress ?? 0) > ((data.maxEndress ?? -1) / 2) ? 1 : 2))
                         message += "\n" + data.enemy.losemsg + (minusStage ? `\n` + serifs.rpg.journey.lose(minusStage) : "")
                         if ((data.endress ?? 0) > (data.maxEndress ?? -1)) data.maxEndress = data.endress;
                         data.endress = (data.endress ?? 0) - minusStage;
