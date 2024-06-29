@@ -569,5 +569,10 @@ export const rpgItems: Item[] = [
     { name: "多目的特異点", type: "weapon", effect: 60, mind: 30 },
     { name: "オーバークロックされたリップクリーム", type: "weapon", effect: 10, mind: 30 },
     { name: "チョコレートコーティング裁判所", type: "poison", effect: 80, mind: -40 },
-    { name: "ゆっくりメンサのプラチナの蛇口", type: "weapon", effect: 40, mind: 20 }
+    { name: "ゆっくりメンサのプラチナの蛇口", type: "weapon", effect: 40, mind: 20 },
+	{ name: "暴炎神龍の剣", type: "weapon", effect: 200, mind: 0 },
+	{ name: "暴炎神龍の盾", type: "armor", effect: 200, mind: 0 },
+	{ name: "暴炎神龍セット", type: "weapon", effect: 0, mind: 200 },
+	{ name: "【令和最新版】仙豆", type: "medicine", effect: 200, mind: 0 },
+	{ name: "【絶対口に入れるな！】超最凶最悪猛猛毒", type: "poison", effect: 200, mind: -200 },
 ]
