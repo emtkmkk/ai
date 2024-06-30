@@ -34,7 +34,7 @@ export default class extends Module {
                     this.ai.moduleData.insert({ type: 'rpg', maxLv: maxLv });
                 }
                 const filteredColors = colors.filter((x) => x.id > 1 && !x.reverseStatus && !x.alwaysSuper).map((x) => x.name);
-                const me = Math.random() < 0.8 ? colors.find((x) => x.default)?.name ?? colors[0].name : filteredColors[Math.floor(Math.random * filteredColors.length)];
+                const me = Math.random() < 0.8 ? colors.find((x) => x.default)?.name ?? colors[0].name : filteredColors[Math.floor(Math.random() * filteredColors.length)];
                 this.ai.post({
                     text: serifs.rpg.remind(me, hours),
                 })
