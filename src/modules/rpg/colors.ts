@@ -85,8 +85,8 @@ export const colors: Color[] = [
         id: 9,
         name: ":mk_hero_9p:",
         keyword: "9",
-        unlock: (data) => unlockCount(data, [9]) >= 8 || (data.superCount ?? 0) >= Math.ceil(100 * (7 - unlockCount(data, [9], true)) / 7),
-        message: (data) => unlockCount(data, [9]) >= 8 || (data.superCount ?? 0) >= Math.ceil(100 * (7 - unlockCount(data, [9], true)) / 7) ? `${serifs.rpg.color.unlock} (踏ん張り発動率: **${10 + (data.endure ?? 0) * 5}** %)` : `色を8種類解放する、または${Math.ceil(100 * (7 - unlockCount(data, [9], true)) / 7)}回覚醒すると解放されます。(**${unlockCount(data, [9])}** / 8) (**${(data.superCount ?? 0)}** / ${Math.ceil(100 * (7 - unlockCount(data, [9], true)) / 7)})`,
+        unlock: (data) => unlockCount(data, [9]) >= 8 || (data.superCount ?? 0) >= Math.ceil(100 * (7 - unlockCount(data, [9], true)) / 7) - unlockCount(data, [9], true),
+        message: (data) => unlockCount(data, [9]) >= 8 || (data.superCount ?? 0) >= Math.ceil(100 * (7 - unlockCount(data, [9], true)) / 7) - unlockCount(data, [9], true) ? `${serifs.rpg.color.unlock} (気合耐え発動率: **${10 + (data.endure ?? 0) * 5}** %)` : `色を8種類解放する、または${Math.ceil(100 * (7 - unlockCount(data, [9], true)) / 7) - unlockCount(data, [9], true)}回覚醒すると解放されます。(**${unlockCount(data, [9])}** / 8) (**${(data.superCount ?? 0)}** / ${Math.ceil(100 * (7 - unlockCount(data, [9], true)) / 7) - unlockCount(data, [9], true)})`,
         alwaysSuper: true,
     }
 ]
