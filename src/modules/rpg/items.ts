@@ -361,4 +361,9 @@ export const rpgItems: Item[] = [
 	{ name: 'えっちな触手', type: 'poison', effect: 50, mind: -60 },
 	{ name: '寄生されたぬいぐるみ', type: 'poison', effect: 50, mind: -25 },
 	{ name: '偽炭水化物', type: 'poison', effect: 45, mind: -20 },
+
+	{ name: '把安蛇暗銅羅無様の矛', type: 'weapon', effect: 200, mind: 0 },
+	{ name: '把安蛇暗銅羅無様の盾', type: 'armor', effect: 200, mind: 0 },
+	{ name: '把安蛇暗銅羅無様の加護', type: 'weapon', effect: 0, mind: 200 },
+	{ name: '把安蛇暗銅羅無焼き', type: 'medicine', effect: 200, mind: 0 },
 ];
