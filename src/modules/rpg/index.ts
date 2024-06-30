@@ -33,7 +33,8 @@ export default class extends Module {
                     console.log("maxLv : " + maxLv);
                     this.ai.moduleData.insert({ type: 'rpg', maxLv: maxLv });
                 }
-                const me = Math.random() < 0.8 ? colors.find((x) => x.default)?.name ?? colors[0].name : colors.filter((x) => x.id > 1 && !x.reverseStatus && !x.alwaysSuper).map((x) => x.name).sort(() => Math.random() - 0.5)[0];
+                const filteredColors = colors.filter((x) => x.id > 1 && !x.reverseStatus && !x.alwaysSuper).map((x) => x.name);
+                const me = Math.random() < 0.8 ? colors.find((x) => x.default)?.name ?? colors[0].name : filteredColors[Math.floor(Math.random * filteredColors.length)];
                 this.ai.post({
                     text: serifs.rpg.remind(me, hours),
                 })
@@ -450,17 +451,20 @@ export default class extends Module {
                 buff += 1
                 if (data.enemy.pLToR) {
                     let isPlus = Math.random() < 0.5;
-                    item = rpgItems.filter((x) => isPlus ? x.mind > 0 : x.mind < 0).sort(() => Math.random() - 0.5)[0];
+                    const items = rpgItems.filter((x) => isPlus ? x.mind > 0 : x.mind < 0);
+                    item = items[Math.floor(Math.random() * items.length)];
                 } else {
                     let types = ["weapon", "armor"];
                     if (count !== 1 || data.enemy.pLToR) types.push("medicine");
                     if (count !== 1 || data.enemy.pLToR) types.push("poison");
-                    const type = types.sort(() => Math.random() - 0.5)[0]
+                    const type = types[Math.floor(Math.random() * types.length)]
                     if (type !== "weapon" || !data.enemy.lToR) {
-                        item = rpgItems.filter((x) => x.type === type && x.effect > 0).sort(() => Math.random() - 0.5)[0];
+                        const items = rpgItems.filter((x) => x.type === type && x.effect > 0);
+                        item = items[Math.floor(Math.random() * items.length)];
                     } else {
                         let isPlus = Math.random() < 0.5;
-                        item = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind < 0)).sort(() => Math.random() - 0.5)[0];
+                        const items = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind < 0));
+                        item = items[Math.floor(Math.random() * items.length)];
                     }
                 }
                 const mindMsg = (mind) => {
