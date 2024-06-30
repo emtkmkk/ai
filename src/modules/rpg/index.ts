@@ -39,13 +39,11 @@ export default class extends Module {
 					console.log('maxLv : ' + maxLv);
 					this.ai.moduleData.insert({ type: 'rpg', maxLv: maxLv });
 				}
+				const filteredColors = colors.filter((x) => x.id > 1 && !x.reverseStatus && !x.alwaysSuper).map((x) => x.name);
 				const me =
 					Math.random() < 0.8
 						? colors.find((x) => x.default)?.name ?? colors[0].name
-						: colors
-								.filter((x) => x.id > 1 && !x.reverseStatus && !x.alwaysSuper)
-								.map((x) => x.name)
-								.sort(() => Math.random() - 0.5)[0];
+						: filteredColors[Math.floor(Math.random() * filteredColors.length)];
 				this.ai.post({
 					text: serifs.rpg.remind(me, hours),
 				});
@@ -278,9 +276,9 @@ export default class extends Module {
 			/** 現在の敵と戦ってるターン数。 敵がいない場合は1 */
 			let count = data.count ?? 1;
 
-			// 修行モード（エンドレスモード）のフラグ
+			// 旅モード（エンドレスモード）のフラグ
 			if (msg.includes([serifs.rpg.command.journey])) {
-				// 現在戦っている敵がいない場合で修行モード指定がある場合はON
+				// 現在戦っている敵がいない場合で旅モード指定がある場合はON
 				if (!data.enemy || count === 1 || data.endressFlg) {
 					data.endressFlg = true;
 				} else {
@@ -290,7 +288,7 @@ export default class extends Module {
 					};
 				}
 			} else {
-				// 現在戦っている敵がいない場合で修行モード指定がない場合はOFF
+				// 現在戦っている敵がいない場合で旅モード指定がない場合はOFF
 				if (!data.enemy || count === 1) {
 					data.endressFlg = false;
 				}
@@ -367,8 +365,8 @@ export default class extends Module {
 						data.enemy = filteredEnemys[Math.floor(filteredEnemys.length * Math.random())];
 					}
 				} else {
-					// 修行モード（エンドレスモード）
-					// 倒す敵がいなくてこのモードに入った場合、修行モード任意入場フラグをOFFにする
+					// 旅モード（エンドレスモード）
+					// 倒す敵がいなくてこのモードに入った場合、旅モード任意入場フラグをOFFにする
 					if (!filteredEnemys.length) {
 						if (!data.allClear) {
 							data.allClear = lv - 1;
@@ -516,19 +514,20 @@ export default class extends Module {
 				buff += 1;
 				if (data.enemy.pLToR) {
 					let isPlus = Math.random() < 0.5;
-					item = rpgItems.filter((x) => (isPlus ? x.mind > 0 : x.mind <= 0)).sort(() => Math.random() - 0.5)[0];
+					const items = rpgItems.filter((x) => (isPlus ? x.mind > 0 : x.mind < 0));
+					item = items[Math.floor(Math.random() * items.length)];
 				} else {
 					let types = ['weapon', 'armor'];
 					if (count !== 1 || data.enemy.pLToR) types.push('medicine');
 					if (count !== 1 || data.enemy.pLToR) types.push('poison');
-					const type = types.sort(() => Math.random() - 0.5)[0];
+					const type = types[Math.floor(Math.random() * types.length)];
 					if (type !== 'weapon' || !data.enemy.lToR) {
-						item = rpgItems.filter((x) => x.type === type).sort(() => Math.random() - 0.5)[0];
+						const items = rpgItems.filter((x) => x.type === type && x.effect > 0);
+						item = items[Math.floor(Math.random() * items.length)];
 					} else {
 						let isPlus = Math.random() < 0.5;
-						item = rpgItems
-							.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind <= 0))
-							.sort(() => Math.random() - 0.5)[0];
+						const items = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind < 0));
+						item = items[Math.floor(Math.random() * items.length)];
 					}
 				}
 				const mindMsg = (mind) => {
@@ -806,12 +805,16 @@ export default class extends Module {
 					if (data.enemy.name !== endressEnemy(data).name) {
 						message += '\n' + data.enemy.losemsg + '\n\n' + serifs.rpg.lose;
 					} else {
-						const minusStage = Math.min(data.endress ?? 0, 3);
+						const minusStage = Math.min(
+							data.endress ?? 0,
+							3 -
+								((data.endress ?? 0) == (data.maxEndress ?? -1) ? 0 : (data.endress ?? 0) > (data.maxEndress ?? -1) / 2 ? 1 : 2)
+						);
 						message += '\n' + data.enemy.losemsg + (minusStage ? `\n` + serifs.rpg.journey.lose(minusStage) : '');
 						if ((data.endress ?? 0) > (data.maxEndress ?? -1)) data.maxEndress = data.endress;
 						data.endress = (data.endress ?? 0) - minusStage;
 					}
-					// これが任意に入った修行モードだった場合は、各種フラグをリセットしない
+					// これが任意に入った旅モードだった場合は、各種フラグをリセットしない
 					if (!data.endressFlg) {
 						data.streak = 0;
 						data.clearEnemy = [];
