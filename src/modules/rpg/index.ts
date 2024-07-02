@@ -15,11 +15,15 @@ export default class extends Module {
     @autobind
     public install() {
         const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
-        if (!rpgData) {
-            const maxLv = this.ai.friends.find().filter((x) => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1).reduce((acc, cur) => acc > cur.perModulesData.rpg.lv ? acc : cur.perModulesData.rpg.lv, 0)
-            console.log("maxLv : " + maxLv);
+        const maxLv = this.ai.friends.find().filter((x) => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1).reduce((acc, cur) => acc > cur.perModulesData.rpg.lv ? acc : cur.perModulesData.rpg.lv, 0)
+		console.log("maxLv : " + maxLv);
+		if (!rpgData) {
             this.ai.moduleData.insert({ type: 'rpg', maxLv: maxLv });
-        }
+        } else {
+			const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
+			rpgData.maxLv　= Math.max(rpgData.maxLv, maxLv);
+			this.ai.moduleData.update(rpgData);
+		}
         setInterval(() => {
             const hours = new Date().getHours()
             if ((hours === 0 || hours === 12 || hours === 18) && new Date().getMinutes() >= 1 && new Date().getMinutes() < 6) {
