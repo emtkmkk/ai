@@ -1,4 +1,4 @@
-const invalidChars = [
+export const invalidChars = [
 	'@',
 	'#',
 	'*',

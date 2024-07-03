@@ -3,8 +3,8 @@ import * as loki from 'lokijs';
 import Module from '@/module';
 import Message from '@/message';
 import serifs from '@/serifs';
-import { safeForInterpolate } from '@/utils/safe-for-interpolate';
-import { checkNgWord } from '@/utils/check-ng-word';
+import { invalidChars, safeForInterpolate } from '@/utils/safe-for-interpolate';
+import { checkNgWord, ngword } from '@/utils/check-ng-word';
 import { acct } from '@/utils/acct';
 import { genItem, itemPrefixes } from '@/vocabulary';
 import Friend, { FriendDoc } from '@/friend';
@@ -591,10 +591,18 @@ export default class extends Module {
 		let debug = false
 		if (msg.includes(['-d'])) debug = true;
 
-		let inputWord;
+		let inputWord: string | undefined;
 		if (/^[^\s]{1,10}(の|で)(たくさん)?(バナナス|バニャニャス|ばななす|ばにゃにゃす)/.test(msg.extractedText)) {
 			inputWord = /^([^\s]+)(の|で)(たくさん)?(バナナス|バニャニャス|ばななす|ばにゃにゃす)/.exec(msg.extractedText)?.[1];
 		}
+		
+		invalidChars.forEach((x) => {
+			if (inputWord) inputWord = inputWord.replaceAll(x,"");
+		});
+		
+		ngword.forEach((x) => {
+			if (inputWord) inputWord = inputWord.replaceAll(x,"");
+		});
 
 		const words = this.learnedKeywords.find()?.filter((x) => x.keyword.length >= 3 && !/^[0-9]/.test(x.keyword) && !/[0-9]$/.test(x.keyword));
 		const exWords = words?.map((x) => ({ ...x, keyword: x.keyword.replaceAll(/^[!-\/:-@[-`{-~！？]/g, "").replaceAll(/[!-\/:-@[-`{-~！？]$/g, "") }));
