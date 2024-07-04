@@ -136,7 +136,7 @@ export const colorReply = (module: Module, msg: Message) => {
                 serifs.rpg.color.info,
                 "",
                 serifs.rpg.color.list,
-                ...colors.filter((x) => !x.hidden || x.unlock).map((x) => `${x.keyword}: ${x.name} ${x.message(data)}`)
+                ...colors.filter((x) => !x.hidden || x.unlock(data)).map((x) => `${x.keyword}: ${x.name} ${x.message(data)}`)
             ].join("\n"));
 
             return {
