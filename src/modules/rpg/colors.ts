@@ -19,6 +19,8 @@ type Color = {
     reverseStatus?: boolean;
     /** 常に覚醒になる効果があるかどうか */
     alwaysSuper?: boolean;
+    /** 隠し色かどうか */
+    hidden?: boolean;
 }
 
 /** 色一覧 */
@@ -88,6 +90,14 @@ export const colors: Color[] = [
         unlock: (data) => unlockCount(data, [9]) >= 8 || (data.superCount ?? 0) >= Math.ceil(100 * (7 - unlockCount(data, [9], true)) / 7) - unlockCount(data, [9], true),
         message: (data) => unlockCount(data, [9]) >= 8 || (data.superCount ?? 0) >= Math.ceil(100 * (7 - unlockCount(data, [9], true)) / 7) - unlockCount(data, [9], true) ? `${serifs.rpg.color.unlock} (気合耐え発動率: **${10 + (data.endure ?? 0) * 5}** %)` : `色を8種類解放する、または${Math.ceil(100 * (7 - unlockCount(data, [9], true)) / 7) - unlockCount(data, [9], true)}回覚醒すると解放されます。(**${unlockCount(data, [9])}** / 8) (**${(data.superCount ?? 0)}** / ${Math.ceil(100 * (7 - unlockCount(data, [9], true)) / 7) - unlockCount(data, [9], true)})`,
         alwaysSuper: true,
+    },
+    {
+        id: 10,
+        name: ":mk_chicken_t:",
+        keyword: "0",
+        unlock: (data) => (data.maxEndress ?? 0) >= 29,
+        message: (data) => `${serifs.rpg.color.unlock}`,
+        hidden: true,
     }
 ]
 
@@ -126,7 +136,7 @@ export const colorReply = (module: Module, msg: Message) => {
                 serifs.rpg.color.info,
                 "",
                 serifs.rpg.color.list,
-                ...colors.map((x) => `${x.keyword}: ${x.name} ${x.message(data)}`)
+                ...colors.filter((x) => !x.hidden || x.unlock).map((x) => `${x.keyword}: ${x.name} ${x.message(data)}`)
             ].join("\n"));
 
             return {
