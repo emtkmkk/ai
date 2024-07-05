@@ -218,15 +218,26 @@ export default class extends Module {
 				filteredDoc = doc.filter((x) => x.user.host == null);
 			}
 			
-			if (filteredDoc.length !== 1) return { reaction: ":mk_hotchicken:" };
+			if (filteredDoc.length !== 1) {
+				msg.reply(`そのユーザは私が知らないユーザの様です！\n@${exp[1]}@${exp[2]} から \`@mkck@mkkey.net リンク ${acct(msg.user)}\`と送信していただけると上手く行く可能性があります！`);
+				return { reaction: ":mk_hotchicken:" };
+			}
 	
-			if (filteredDoc[0].userId === msg.userId) return { reaction: ":mk_hotchicken:" };
+			if (filteredDoc[0].userId === msg.userId) {
+				msg.reply(`自身のアカウントとリンクはできないです……`);
+				return { reaction: ":mk_hotchicken:" };
+			}
 	
 			if (!msg.friend.doc.linkedAccounts) msg.friend.doc.linkedAccounts = [];
 
-			if (msg.friend.doc.linkedAccounts.includes(filteredDoc[0].userId)) return { reaction: ":mk_hotchicken:" };
+			if (msg.friend.doc.linkedAccounts.includes(filteredDoc[0].userId)) {
+				msg.reply(`そのアカウントは既にリンク済みです！`);
+				return { reaction: ":mk_hotchicken:" };
+			}
 			
 			msg.friend.doc.linkedAccounts?.push(filteredDoc[0].userId);
+
+			msg.friend.doc.linkedAccounts = Array.from(new Set(msg.friend.doc.linkedAccounts));
 	
 			msg.friend.save();
 
