@@ -218,7 +218,7 @@ export default class extends Module {
 				filteredDoc = doc.filter((x) => x.user.host == null);
 			}
 			
-			if (filteredDoc.length !== 1) {
+			if (filteredDoc.length !== 1 || (filteredDoc[0].userId === msg.userId && (exp?.[2] && exp?.[2] !== "mkkey.net"))) {
 				msg.reply(`そのユーザは私が知らないユーザの様です！\n@${exp[1]}@${exp[2]} から \`@mkck@mkkey.net リンク ${acct(msg.user)}\`と送信していただけると上手く行く可能性があります！`);
 				return { reaction: ":mk_hotchicken:" };
 			}
