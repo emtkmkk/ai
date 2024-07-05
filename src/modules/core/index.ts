@@ -73,7 +73,8 @@ export default class extends Module {
             const chart = await this.ai.api('charts/user/notes', {
                 span: 'day',
                 limit: 2,
-                userId: msg.userId
+                userId: msg.userId,
+				addInfo: true,
             })
 
 			let totalPostCount = 0;
@@ -113,7 +114,7 @@ export default class extends Module {
                     const chart = await this.ai.api('charts/user/notes', {
                         span: 'day',
                         limit: 2,
-                        userId: userId
+                        userId: userId,
                     })
 
 					// チャートがない場合
@@ -139,6 +140,19 @@ export default class extends Module {
 					}
                 }
             }
+			if (chart.add) {
+				const userstats = chart.add.filter((x) => !msg.friend.doc.linkedAccounts?.includes(x.id))
+				let postCount = 0;
+				for (const userstat of userstats) {
+					postCount += Math.max(
+						(userstat.diffs.normal?.[0] ?? 0) + (userstat.diffs.reply?.[0] ?? 0) + (userstat.diffs.withFile?.[0] ?? 0),
+						(userstat.diffs.normal?.[1] ?? 0) + (userstat.diffs.reply?.[1] ?? 0) + (userstat.diffs.withFile?.[1] ?? 0)
+					);
+				}
+				totalPostCount += Math.floor(postCount * 0.3)
+
+				message += "\n" + "同一IDのユーザの投稿数: " + postCount + ` (× 30% = ${Math.floor(postCount * 0.3)})`
+			}
 			message += "\n\n" + "リンク内合計投稿数: " + totalPostCount
 			msg.reply(`${message}`,{
 				visibility: 'specified',

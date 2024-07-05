@@ -130,6 +130,7 @@ export default class extends Module {
                 `${serifs.rpg.nowStatus}`,
                 `${serifs.rpg.status.atk} : ${Math.round(atk)}`,
                 `${serifs.rpg.status.post} : ${Math.round(postCount - (isSuper ? 200 : 0))}\n\n`,
+                "★".repeat(Math.floor(tp)) + "☆".repeat(5 - Math.floor(tp))
             ].filter(Boolean).join("\n")
 
             cw += serifs.rpg.trial.cw(data.lv)
@@ -905,7 +906,8 @@ export default class extends Module {
         const chart = await this.ai.api('charts/user/notes', {
             span: 'day',
             limit: 2,
-            userId: msg.userId
+            userId: msg.userId,
+            addInfo: true
         })
 
         // チャートがない場合
@@ -961,6 +963,17 @@ export default class extends Module {
                         (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
                     );
                 }
+            }
+            if (chart.add) {
+                const userstats = chart.add.filter((x) => !msg.friend.doc.linkedAccounts?.includes(x.id))
+                let total = 0;
+                for (const userstat of userstats) {
+                    total += Math.max(
+                        (userstat.diffs.normal?.[0] ?? 0) + (userstat.diffs.reply?.[0] ?? 0) + (userstat.diffs.withFile?.[0] ?? 0),
+                        (userstat.diffs.normal?.[1] ?? 0) + (userstat.diffs.reply?.[1] ?? 0) + (userstat.diffs.withFile?.[1] ?? 0)
+                    );
+                }
+                postCount += Math.floor(total * 0.3)
             }
             return postCount + bonus;
         }
