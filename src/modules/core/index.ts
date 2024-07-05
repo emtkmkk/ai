@@ -49,8 +49,10 @@ export default class extends Module {
 		if (!this.list) {
 			this.list = await this.ai.api("users/lists/create", { name: "Linked" }) as List
 			if (!this.list) return
+			console.log("Linked List Create: " + this.list.id)
 		}
 		if (this.list) {
+			console.log("Linked List: " + this.list.id)
 			const friends = this.ai.friends.find() ?? [];
 			const linkedUsers = friends.filter((x) => x.linkedAccounts)
 			const listUserIds = new Set(this.list.userIds);
@@ -68,7 +70,8 @@ export default class extends Module {
 			}
 	
 			newLinkedUserIds.forEach(async (x)=> {
-				await this.ai.api("users/lists/push", { listId: this.list.id, userId: x })
+				if (this.list?.id) await this.ai.api("users/lists/push", { listId: this.list.id, userId: x })
+				console.log("Linked Account List Push: " + x)
 			})
 		}
 	}
