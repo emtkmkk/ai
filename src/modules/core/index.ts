@@ -12,6 +12,13 @@ import config from '@/config';
 
 const titles = ['さん', 'くん', '君', 'ちゃん', '様', '先生'];
 
+type List = {
+	id: string;
+	createdAt: any;
+	name: string;
+	userIds: string[];
+}
+
 export default class extends Module {
 	public readonly name = 'core';
 
@@ -20,15 +27,50 @@ export default class extends Module {
 		learnedAt: number;
 	}>;
 
+	private list: List | undefined;
+
 	@autobind
 	public install() {
 		this.learnedKeywords = this.ai.getCollection('_keyword_learnedKeywords', {
 			indices: ['userId']
 		});
+		// リンクしているユーザをリストに追加
+		this.linkAccountListAdd();
 		return {
 			mentionHook: this.mentionHook,
 			contextHook: this.contextHook
 		};
+	}
+
+	@autobind
+	private async linkAccountListAdd() {
+		const lists = await this.ai.api("users/lists/list", {}) as List[]
+		this.list = lists.find((x) => x.name === "Linked");
+		if (!this.list) {
+			this.list = await this.ai.api("users/lists/create", { name: "Linked" }) as List
+			if (!this.list) return
+		}
+		if (this.list) {
+			const friends = this.ai.friends.find() ?? [];
+			const linkedUsers = friends.filter((x) => x.linkedAccounts)
+			const listUserIds = new Set(this.list.userIds);
+			let newLinkedUserIds = new Set();
+	
+			for (const linkedUser of linkedUsers) {
+				if (linkedUser.linkedAccounts !== Array.from(new Set(linkedUser.linkedAccounts))){
+					linkedUser.linkedAccounts = Array.from(new Set(linkedUser.linkedAccounts));
+				}
+				for (const linkedId of linkedUser.linkedAccounts!) {
+					if (!listUserIds.has(linkedId)) {
+						newLinkedUserIds.add(linkedId)
+					}
+				}
+			}
+	
+			newLinkedUserIds.forEach(async (x)=> {
+				await this.ai.api("users/lists/push", { listId: this.list.id, userId: x })
+			})
+		}
 	}
 
 	@autobind
@@ -184,6 +226,8 @@ export default class extends Module {
 			msg.friend.doc.linkedAccounts?.push(filteredDoc[0].userId);
 	
 			msg.friend.save();
+
+			this.linkAccountListAdd();
 	
 			if (filteredDoc[0].linkedAccounts?.includes(msg.friend.userId)) {
 				msg.reply(`アカウントのリンクに成功しました！\n投稿数が使用される際にリンクしたアカウントの合計投稿数で計算されるようになります！\n\n\`リンク\`と話しかけてもらえれば、リンクしているアカウントの情報を表示します！`);
