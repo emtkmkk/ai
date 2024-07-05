@@ -148,7 +148,7 @@ export default class extends Module {
                 message += serifs.rpg.trial.atk(dmg) + "\n"
             }
 
-            message += `\n${serifs.rpg.end}\n\n${serifs.rpg.trial.result(totalDmg)}${data.bestScore ? serifs.rpg.trial.best(data.bestScore) : ""}`
+            message += `\n${serifs.rpg.end}\n\n${serifs.rpg.trial.result(totalDmg)}\n${serifs.rpg.trial.random(Math.round(totalDmg * (isSuper ? 0.5 : 0.2)), Math.round(totalDmg * 1.8))}\n${data.bestScore ? serifs.rpg.trial.best(data.bestScore) : ""}`
 
             data.bestScore = Math.max(data.bestScore ?? 0, totalDmg)
 
@@ -491,6 +491,7 @@ export default class extends Module {
                         message += `${item.name}を取り出し、装備した！\n`
                         if (data.enemy.lToR) {
                             mindMsg(item.mind)
+                            if (item.mind < 0 && isSuper) item.mind = item.mind / 2
                             itemBonus.atk = atk * (item.mind * 0.0025);
                             itemBonus.def = def * (item.mind * 0.0025);
                             atk = atk + itemBonus.atk;
@@ -513,6 +514,7 @@ export default class extends Module {
                         message += `${item.name}を取り出し、装備した！\n`
                         if (data.enemy.pLToR) {
                             mindMsg(item.mind)
+                            if (item.mind < 0 && isSuper) item.mind = item.mind / 2
                             itemBonus.atk = atk * (item.mind * 0.0025);
                             itemBonus.def = def * (item.mind * 0.0025);
                             atk = atk + itemBonus.atk;
@@ -535,6 +537,7 @@ export default class extends Module {
                         message += `${item.name}を取り出し、食べた！\n`
                         if (data.enemy.pLToR) {
                             mindMsg(item.mind)
+                            if (item.mind < 0 && isSuper) item.mind = item.mind / 2
                             itemBonus.atk = atk * (item.mind * 0.0025);
                             itemBonus.def = def * (item.mind * 0.0025);
                             atk = atk + itemBonus.atk;
@@ -559,12 +562,13 @@ export default class extends Module {
                         message += `${item.name}を取り出し、食べた！\n`
                         if (data.enemy.pLToR) {
                             mindMsg(item.mind)
+                            if (item.mind < 0 && isSuper) item.mind = item.mind / 2
                             itemBonus.atk = atk * (item.mind * 0.0025);
                             itemBonus.def = def * (item.mind * 0.0025);
                             atk = atk + itemBonus.atk;
                             def = def + itemBonus.def;
                         } else {
-                            const dmg = Math.round(playerHp * (item.effect * 0.003));
+                            const dmg = Math.round(playerHp * (item.effect * 0.003) * (isSuper ? 0.5 : 1));
                             playerHp -= dmg;
                             if (item.effect >= 70 && dmg > 0) {
                                 message += `もこチキはかなり調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`
@@ -617,7 +621,7 @@ export default class extends Module {
                 const crit = Math.random() < playerHpPercent - enemyHpPercent;
                 // 予測最大ダメージが相手のHPの何割かで先制攻撃の確率が判定される
                 if (Math.random() < predictedDmg / enemyHp || (count === 3 && data.enemy.fire && (data.thirdFire ?? 0) <= 2)) {
-                    const rng = (0.2 + Math.random() * 1.6);
+                    const rng = isSuper ? (0.2 + Math.random() * 1.3) : (0.2 + Math.random() * 1.6);
                     /** ダメージ */
                     const dmg = this.getEnemyDmg(data, def, tp, count, crit, enemyAtk, rng)
                     const noItemDmg = this.getEnemyDmg(data, def - itemBonus.def, tp, count, crit, enemyAtk, rng)
@@ -644,7 +648,7 @@ export default class extends Module {
             // 自身攻撃の処理
             // spdの回数分、以下の処理を繰り返す
             for (let i = 0; i < spd; i++) {
-                const rng = (0.2 + Math.random() * 1.6);
+                const rng = isSuper ? (0.5 + Math.random() * 1.3) : (0.2 + Math.random() * 1.6);
                 /** クリティカルかどうか */
                 let crit = Math.random() < enemyHpPercent - playerHpPercent;
                 /** ダメージ */
@@ -716,7 +720,7 @@ export default class extends Module {
                 let maxDmg = 0;
                 if (!enemyTurnFinished) {
                     for (let i = 0; i < (data.enemy.spd ?? 1); i++) {
-                        const rng = (0.2 + Math.random() * 1.6);
+                        const rng = isSuper ? (0.2 + Math.random() * 1.3) : (0.2 + Math.random() * 1.6);
                         /** クリティカルかどうか */
                         const crit = Math.random() < playerHpPercent - enemyHpPercent;
                         /** ダメージ */
