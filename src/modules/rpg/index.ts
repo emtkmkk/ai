@@ -129,8 +129,8 @@ export default class extends Module {
             message += [
                 `${serifs.rpg.nowStatus}`,
                 `${serifs.rpg.status.atk} : ${Math.round(atk)}`,
-                `${serifs.rpg.status.post} : ${Math.round(postCount - (isSuper ? 200 : 0))}\n\n`,
-                "★".repeat(Math.floor(tp)) + "☆".repeat(5 - Math.floor(tp))
+                `${serifs.rpg.status.post} : ${Math.round(postCount - (isSuper ? 200 : 0))}`,
+                "★".repeat(Math.floor(tp)) + "☆".repeat(5 - Math.floor(tp)) + "\n\n"
             ].filter(Boolean).join("\n")
 
             cw += serifs.rpg.trial.cw(data.lv)
