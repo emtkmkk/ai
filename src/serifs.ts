@@ -477,8 +477,9 @@ export default {
 			tired: `全力を出して疲れてしまったみたいです。Lvが上がったら、もう一度試してみてください。`,
 			cw: (lv) => `もこチキは自分の力を確認するようだ。(Lv${lv})`,
 			atk: (dmg) => `もこチキは木人に攻撃！\n${dmg}ポイントのダメージ！`,
-			result: (totalDmg) => `合計${totalDmg}ポイントのダメージ！\n(ダメージ幅: ${Math.round(totalDmg * 0.2)} ~ ${Math.round(totalDmg * 1.8)})`,
-			best: (bestScore) => `\n(これまでのベスト: **${bestScore}**)`,
+			result: (totalDmg) => `合計${totalDmg}ポイントのダメージ！`,
+			random: (down, up) => `(ダメージ幅: ${down} ~ ${up})`,
+			best: (bestScore) => `(これまでのベスト: **${bestScore}**)`,
 		},
 		oneMore: {
 			tired: (flg) => `\n今日は既におかわりRPGをプレイしている様です。${flg ? "\n明日になるとまたおかわりRPGがプレイ可能になります。" : ""}`,
@@ -486,7 +487,7 @@ export default {
 			err: "おかわりRPGの前に通常のRPGをプレイする必要があります！"
 		},
 		info: "もこチキの状況判断能力がアップ！\n今後、状況が細かく\n分析出来るようになる事があるぞ！",
-		infoPercent: "%？",
+		infoPercent: "%",
 		newColor: (unlockColors) => `\n\n条件を満たしたので、\n新しい色が解放されました！\n\n$[x2 ${unlockColors}]\n\n「RPG 色」と話しかけて確認してみてね！`,
 		color: {
 			info: "色を変更する場合、`rpg 色変更 <数字>`と話しかけてね",
