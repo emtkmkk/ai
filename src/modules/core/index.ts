@@ -593,7 +593,7 @@ export default class extends Module {
 		? `数取り : ${msg.friend.doc.kazutoriData?.winCount} / ${msg.friend.doc.kazutoriData?.playCount}${msg.friend.doc.kazutoriData?.rate > 0 ? ` (${msg.friend.doc.kazutoriData?.rate})` : ""}${msg.friend.doc.kazutoriData?.medal ? "\nトロフィー : " + msg.friend.doc.kazutoriData?.medal : ""}` 
 		: undefined;
 
-		const bonus = msg.friend.doc.perModulesData?.rpg ? (((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) + ((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0))) : 0;
+		const bonus = msg.friend.doc.perModulesData?.rpg ? (((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) + ((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0))) / 2 : 0;
 		const rpg = msg.friend.doc.perModulesData?.rpg 
 			? [
 				serifs.rpg.rpgMode + ((msg.friend.doc.perModulesData.rpg.clearHistory ?? []).includes("ending") ? " ⭐" : ""),
