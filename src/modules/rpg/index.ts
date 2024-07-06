@@ -112,9 +112,9 @@ export default class extends Module {
             let message = ""
 
             // ここで残りのステータスを計算しなおす
-			const bonus = Math.floor((((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) + ((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0))) * ((200 + (data.atk ?? 0) + (data.def ?? 0)) / 200))
-            let atk = 5 + (data.atk ?? 0) + bonus;
-            let def = 5 + (data.def ?? 0) + bonus;
+					const bonus = Math.floor((((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) + ((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0))))
+            let atk = Math.max(5 + (data.atk ?? 0) + Math.floor(bonus * ((100 + (data.atk ?? 0)) / 100)), 15);
+            let def = Math.max(5 + (data.def ?? 0) + Math.floor(bonus * ((100 + (data.def ?? 0)) / 100)), 15);
             let spd = Math.floor((msg.friend.love ?? 0) / 100) + 1;
             if (color.reverseStatus) {
                 // カラーによるパラメータ逆転
@@ -390,11 +390,11 @@ export default class extends Module {
             }
 
             // ここで残りのステータスを計算しなおす
-            const bonus = Math.floor((((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) + ((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0))) * ((200 + (data.atk ?? 0) + (data.def ?? 0)) / 200))
+            const bonus = Math.floor((((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) + ((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0))))
 			/** プレイヤーの攻撃力 */
-            let atk = Math.max(5 + (data.atk ?? 0) + bonus, 15)
+            let atk = Math.max(5 + (data.atk ?? 0) + Math.floor(bonus * ((100 + (data.atk ?? 0)) / 100)), 15)
             /** プレイヤーの防御力 */
-            let def = Math.max(5 + (data.def ?? 0) + bonus, 15)
+            let def = Math.max(5 + (data.def ?? 0) + Math.floor(bonus * ((100 + (data.def ?? 0)) / 100)), 15)
             /** プレイヤーの行動回数 */
             let spd = Math.floor((msg.friend.love ?? 0) / 100) + 1;
             if (color.reverseStatus) {
