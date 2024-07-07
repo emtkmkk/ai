@@ -12,6 +12,13 @@ import config from '@/config';
 
 const titles = ['さん', 'くん', '君', 'ちゃん', '様', '先生'];
 
+type List = {
+	id: string;
+	createdAt: any;
+	name: string;
+	userIds: string[];
+};
+
 export default class extends Module {
 	public readonly name = 'core';
 
@@ -20,15 +27,53 @@ export default class extends Module {
 		learnedAt: number;
 	}>;
 
+	private list: List | undefined;
+
 	@autobind
 	public install() {
 		this.learnedKeywords = this.ai.getCollection('_keyword_learnedKeywords', {
 			indices: ['userId'],
 		});
+		// リンクしているユーザをリストに追加
+		this.linkAccountListAdd();
 		return {
 			mentionHook: this.mentionHook,
 			contextHook: this.contextHook,
 		};
+	}
+
+	@autobind
+	private async linkAccountListAdd() {
+		const lists = (await this.ai.api('users/lists/list', {})) as List[];
+		this.list = lists.find((x) => x.name === 'Linked');
+		if (!this.list) {
+			this.list = (await this.ai.api('users/lists/create', { name: 'Linked' })) as List;
+			if (!this.list) return;
+			console.log('Linked List Create: ' + this.list.id);
+		}
+		if (this.list) {
+			console.log('Linked List: ' + this.list.id);
+			const friends = this.ai.friends.find() ?? [];
+			const linkedUsers = friends.filter((x) => x.linkedAccounts);
+			const listUserIds = new Set(this.list.userIds);
+			let newLinkedUserIds = new Set();
+
+			for (const linkedUser of linkedUsers) {
+				if (linkedUser.linkedAccounts !== Array.from(new Set(linkedUser.linkedAccounts))) {
+					linkedUser.linkedAccounts = Array.from(new Set(linkedUser.linkedAccounts));
+				}
+				for (const linkedId of linkedUser.linkedAccounts!) {
+					if (!listUserIds.has(linkedId)) {
+						newLinkedUserIds.add(linkedId);
+					}
+				}
+			}
+
+			newLinkedUserIds.forEach(async (x) => {
+				if (this.list?.id) await this.ai.api('users/lists/push', { listId: this.list.id, userId: x });
+				console.log('Linked Account List Push: ' + x);
+			});
+		}
 	}
 
 	@autobind
@@ -71,6 +116,7 @@ export default class extends Module {
 				span: 'day',
 				limit: 2,
 				userId: msg.userId,
+				addInfo: true,
 			});
 
 			let totalPostCount = 0;
@@ -141,6 +187,19 @@ export default class extends Module {
 					}
 				}
 			}
+			if (chart.add) {
+				const userstats = chart.add.filter((x) => !msg.friend.doc.linkedAccounts?.includes(x.id));
+				let postCount = 0;
+				for (const userstat of userstats) {
+					postCount += Math.max(
+						(userstat.diffs.normal?.[0] ?? 0) + (userstat.diffs.reply?.[0] ?? 0) + (userstat.diffs.withFile?.[0] ?? 0),
+						(userstat.diffs.normal?.[1] ?? 0) + (userstat.diffs.reply?.[1] ?? 0) + (userstat.diffs.withFile?.[1] ?? 0)
+					);
+				}
+				totalPostCount += Math.floor(postCount * 0.3);
+
+				message += '\n' + '同一IDのユーザの投稿数: ' + postCount + ` (× 30% = ${Math.floor(postCount * 0.3)})`;
+			}
 			message += '\n\n' + 'リンク内合計投稿数: ' + totalPostCount;
 			msg.reply(`${message}`, {
 				visibility: 'specified',
@@ -170,6 +229,8 @@ export default class extends Module {
 			msg.friend.doc.linkedAccounts?.push(filteredDoc[0].userId);
 
 			msg.friend.save();
+
+			this.linkAccountListAdd();
 
 			if (filteredDoc[0].linkedAccounts?.includes(msg.friend.userId)) {
 				msg.reply(

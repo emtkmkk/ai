@@ -15,13 +15,17 @@ export default class extends Module {
 	@autobind
 	public install() {
 		const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
+		const maxLv = this.ai.friends
+			.find()
+			.filter((x) => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1)
+			.reduce((acc, cur) => (acc > cur.perModulesData.rpg.lv ? acc : cur.perModulesData.rpg.lv), 0);
+		console.log('maxLv : ' + maxLv);
 		if (!rpgData) {
-			const maxLv = this.ai.friends
-				.find()
-				.filter((x) => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1)
-				.reduce((acc, cur) => (acc > cur.perModulesData.rpg.lv ? acc : cur.perModulesData.rpg.lv), 0);
-			console.log('maxLv : ' + maxLv);
 			this.ai.moduleData.insert({ type: 'rpg', maxLv: maxLv });
+		} else {
+			const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
+			rpgData.maxLv = Math.max(rpgData.maxLv, maxLv);
+			this.ai.moduleData.update(rpgData);
 		}
 		setInterval(() => {
 			const hours = new Date().getHours();
@@ -39,7 +43,9 @@ export default class extends Module {
 					console.log('maxLv : ' + maxLv);
 					this.ai.moduleData.insert({ type: 'rpg', maxLv: maxLv });
 				}
-				const filteredColors = colors.filter((x) => x.id > 1 && !x.reverseStatus && !x.alwaysSuper).map((x) => x.name);
+				const filteredColors = colors
+					.filter((x) => x.id > 1 && !x.reverseStatus && !x.alwaysSuper && !x.hidden)
+					.map((x) => x.name);
 				const me =
 					Math.random() < 0.8
 						? colors.find((x) => x.default)?.name ?? colors[0].name
@@ -120,22 +126,13 @@ export default class extends Module {
 			let message = '';
 
 			// ここで残りのステータスを計算しなおす
-			let atk =
-				5 +
-				(data.atk ?? 0) +
-				Math.floor(
-					((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3) + (msg.friend.doc.kazutoriData?.medal ?? 0)) *
-						(100 + (data.atk ?? 0))) /
-						100
-				);
-			let def =
-				5 +
-				(data.def ?? 0) +
-				Math.floor(
-					((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7) + (msg.friend.doc.kazutoriData?.medal ?? 0)) *
-						(100 + (data.def ?? 0))) /
-						100
-				);
+			const bonus =
+				(Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3) +
+					(msg.friend.doc.kazutoriData?.medal ?? 0) +
+					(Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7) + (msg.friend.doc.kazutoriData?.medal ?? 0))) /
+				2;
+			let atk = Math.max(5 + (data.atk ?? 0) + Math.floor(bonus * ((100 + (data.atk ?? 0)) / 100)), 15);
+			let def = Math.max(5 + (data.def ?? 0) + Math.floor(bonus * ((100 + (data.def ?? 0)) / 100)), 15);
 			let spd = Math.floor((msg.friend.love ?? 0) / 100) + 1;
 			if (color.reverseStatus) {
 				// カラーによるパラメータ逆転
@@ -151,7 +148,8 @@ export default class extends Module {
 			message += [
 				`${serifs.rpg.nowStatus}`,
 				`${serifs.rpg.status.atk} : ${Math.round(atk)}`,
-				`${serifs.rpg.status.post} : ${Math.round(postCount - (isSuper ? 200 : 0))}\n\n`,
+				`${serifs.rpg.status.post} : ${Math.round(postCount - (isSuper ? 200 : 0))}`,
+				'★'.repeat(Math.floor(tp)) + '☆'.repeat(5 - Math.floor(tp)) + '\n\n',
 			]
 				.filter(Boolean)
 				.join('\n');
@@ -171,9 +169,10 @@ export default class extends Module {
 				message += serifs.rpg.trial.atk(dmg) + '\n';
 			}
 
-			message += `\n${serifs.rpg.end}\n\n${serifs.rpg.trial.result(totalDmg)}${
-				data.bestScore ? serifs.rpg.trial.best(data.bestScore) : ''
-			}`;
+			message += `\n${serifs.rpg.end}\n\n${serifs.rpg.trial.result(totalDmg)}\n${serifs.rpg.trial.random(
+				Math.round(totalDmg * (isSuper ? 0.5 : 0.2)),
+				Math.round(totalDmg * 1.8)
+			)}\n${data.bestScore ? serifs.rpg.trial.best(data.bestScore) : ''}`;
 
 			data.bestScore = Math.max(data.bestScore ?? 0, totalDmg);
 
@@ -430,24 +429,15 @@ export default class extends Module {
 			}
 
 			// ここで残りのステータスを計算しなおす
+			const stbonus =
+				(Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3) +
+					(msg.friend.doc.kazutoriData?.medal ?? 0) +
+					(Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7) + (msg.friend.doc.kazutoriData?.medal ?? 0))) /
+				2;
 			/** プレイヤーの攻撃力 */
-			let atk =
-				5 +
-				(data.atk ?? 0) +
-				Math.floor(
-					((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3) + (msg.friend.doc.kazutoriData?.medal ?? 0)) *
-						(100 + (data.atk ?? 0))) /
-						100
-				);
+			let atk = Math.max(5 + (data.atk ?? 0) + Math.floor(stbonus * ((100 + (data.atk ?? 0)) / 100)), 15);
 			/** プレイヤーの防御力 */
-			let def =
-				5 +
-				(data.def ?? 0) +
-				Math.floor(
-					((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7) + (msg.friend.doc.kazutoriData?.medal ?? 0)) *
-						(100 + (data.def ?? 0))) /
-						100
-				);
+			let def = Math.max(5 + (data.def ?? 0) + Math.floor(stbonus * ((100 + (data.def ?? 0)) / 100)), 15);
 			/** プレイヤーの行動回数 */
 			let spd = Math.floor((msg.friend.love ?? 0) / 100) + 1;
 			if (color.reverseStatus) {
@@ -550,6 +540,7 @@ export default class extends Module {
 						message += `${item.name}を取り出し、装備した！\n`;
 						if (data.enemy.lToR) {
 							mindMsg(item.mind);
+							if (item.mind < 0 && isSuper) item.mind = item.mind / 2;
 							itemBonus.atk = atk * (item.mind * 0.0025);
 							itemBonus.def = def * (item.mind * 0.0025);
 							atk = atk + itemBonus.atk;
@@ -572,6 +563,7 @@ export default class extends Module {
 						message += `${item.name}を取り出し、装備した！\n`;
 						if (data.enemy.pLToR) {
 							mindMsg(item.mind);
+							if (item.mind < 0 && isSuper) item.mind = item.mind / 2;
 							itemBonus.atk = atk * (item.mind * 0.0025);
 							itemBonus.def = def * (item.mind * 0.0025);
 							atk = atk + itemBonus.atk;
@@ -594,6 +586,7 @@ export default class extends Module {
 						message += `${item.name}を取り出し、食べた！\n`;
 						if (data.enemy.pLToR) {
 							mindMsg(item.mind);
+							if (item.mind < 0 && isSuper) item.mind = item.mind / 2;
 							itemBonus.atk = atk * (item.mind * 0.0025);
 							itemBonus.def = def * (item.mind * 0.0025);
 							atk = atk + itemBonus.atk;
@@ -618,12 +611,13 @@ export default class extends Module {
 						message += `${item.name}を取り出し、食べた！\n`;
 						if (data.enemy.pLToR) {
 							mindMsg(item.mind);
+							if (item.mind < 0 && isSuper) item.mind = item.mind / 2;
 							itemBonus.atk = atk * (item.mind * 0.0025);
 							itemBonus.def = def * (item.mind * 0.0025);
 							atk = atk + itemBonus.atk;
 							def = def + itemBonus.def;
 						} else {
-							const dmg = Math.round(playerHp * (item.effect * 0.003));
+							const dmg = Math.round(playerHp * (item.effect * 0.003) * (isSuper ? 0.5 : 1));
 							playerHp -= dmg;
 							if (item.effect >= 70 && dmg > 0) {
 								message += `阨ちゃんはかなり調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`;
@@ -678,7 +672,7 @@ export default class extends Module {
 				const crit = Math.random() < playerHpPercent - enemyHpPercent;
 				// 予測最大ダメージが相手のHPの何割かで先制攻撃の確率が判定される
 				if (Math.random() < predictedDmg / enemyHp || (count === 3 && data.enemy.fire && (data.thirdFire ?? 0) <= 2)) {
-					const rng = 0.2 + Math.random() * 1.6;
+					const rng = isSuper ? 0.2 + Math.random() * 1.3 : 0.2 + Math.random() * 1.6;
 					/** ダメージ */
 					const dmg = this.getEnemyDmg(data, def, tp, count, crit, enemyAtk, rng);
 					const noItemDmg = this.getEnemyDmg(data, def - itemBonus.def, tp, count, crit, enemyAtk, rng);
@@ -705,7 +699,7 @@ export default class extends Module {
 			// 自身攻撃の処理
 			// spdの回数分、以下の処理を繰り返す
 			for (let i = 0; i < spd; i++) {
-				const rng = 0.2 + Math.random() * 1.6;
+				const rng = isSuper ? 0.5 + Math.random() * 1.3 : 0.2 + Math.random() * 1.6;
 				/** クリティカルかどうか */
 				let crit = Math.random() < enemyHpPercent - playerHpPercent;
 				/** ダメージ */
@@ -777,7 +771,7 @@ export default class extends Module {
 				let maxDmg = 0;
 				if (!enemyTurnFinished) {
 					for (let i = 0; i < (data.enemy.spd ?? 1); i++) {
-						const rng = 0.2 + Math.random() * 1.6;
+						const rng = isSuper ? 0.2 + Math.random() * 1.3 : 0.2 + Math.random() * 1.6;
 						/** クリティカルかどうか */
 						const crit = Math.random() < playerHpPercent - enemyHpPercent;
 						/** ダメージ */
@@ -806,9 +800,9 @@ export default class extends Module {
 						message += '\n' + data.enemy.losemsg + '\n\n' + serifs.rpg.lose;
 					} else {
 						const minusStage = Math.min(
-							data.endress ?? 0,
+							Math.ceil((data.endress ?? 0) / 2),
 							3 -
-								((data.endress ?? 0) == (data.maxEndress ?? -1) ? 0 : (data.endress ?? 0) > (data.maxEndress ?? -1) / 2 ? 1 : 2)
+								((data.endress ?? 0) > (data.maxEndress ?? -1) ? 0 : (data.endress ?? 0) >= (data.maxEndress ?? -1) / 2 ? 1 : 2)
 						);
 						message += '\n' + data.enemy.losemsg + (minusStage ? `\n` + serifs.rpg.journey.lose(minusStage) : '');
 						if ((data.endress ?? 0) > (data.maxEndress ?? -1)) data.maxEndress = data.endress;
@@ -984,6 +978,7 @@ export default class extends Module {
 			span: 'day',
 			limit: 2,
 			userId: msg.userId,
+			addInfo: true,
 		});
 
 		// チャートがない場合
@@ -1039,6 +1034,17 @@ export default class extends Module {
 						(chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
 					);
 				}
+			}
+			if (chart.add) {
+				const userstats = chart.add.filter((x) => !msg.friend.doc.linkedAccounts?.includes(x.id));
+				let total = 0;
+				for (const userstat of userstats) {
+					total += Math.max(
+						(userstat.diffs.normal?.[0] ?? 0) + (userstat.diffs.reply?.[0] ?? 0) + (userstat.diffs.withFile?.[0] ?? 0),
+						(userstat.diffs.normal?.[1] ?? 0) + (userstat.diffs.reply?.[1] ?? 0) + (userstat.diffs.withFile?.[1] ?? 0)
+					);
+				}
+				postCount += Math.floor(total * 0.3);
 			}
 			return postCount + bonus;
 		}
