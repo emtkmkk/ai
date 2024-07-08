@@ -605,7 +605,7 @@ export const enemys: Enemy[] = [
 		mark: '☆',
 		mark2: '★',
 		lToR: true,
-		atkmsg: (dmg) => `阨ちゃんはタルに点火した！\n$n ${Math.floor(dmg * 4.57)}メートル飛んだ！`,
+		atkmsg: (dmg) => `阨ちゃんはタルに点火した！\n$n ${dmg * 10}メートル飛んだ！`,
 		defmsg: (dmg) => `阨ちゃんは疲れて${dmg}ポイントのダメージ！`,
 		winmsg: ':ddquino:は満足したようだ！',
 		losemsg: '阨ちゃんは倒れてしまった…',
