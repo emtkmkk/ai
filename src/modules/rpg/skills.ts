@@ -164,6 +164,6 @@ export const skills: Skill[] = [
 ]
 
 export const getSkill = (data) => {
-    const filteredSkills = skills.filter((x) => !data.skill?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique));
+    const filteredSkills = skills.filter((x) => !data.skills?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique));
     return filteredSkills[Math.floor(Math.random() * filteredSkills.length)];
 }
