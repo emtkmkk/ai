@@ -1037,7 +1037,7 @@ export default class extends Module {
                 addMessage += `\n` + serifs.rpg.info
             }
 
-            const skillCounts = [40, 80, 150, 300, 500].filter((x) => data.lv >= x).length
+            const skillCounts = [30, 80, 150, 240, 350].filter((x) => data.lv >= x).length
 
             if ((data.skills ?? []).length < skillCounts) {
                 if (!data.skills) data.skills = []
