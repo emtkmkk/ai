@@ -504,7 +504,7 @@ export default {
 		},
 		info: "もこチキの状況判断能力がアップ！\n今後、状況が細かく\n分析出来るようになる事があるぞ！",
 		infoPercent: "%",
-		newSkill: (newSkill) => `\n\n新しいスキル\n「${newSkill}」\nを手に入れました！`,
+		newSkill: (newSkill) => `新しいスキル\n「${newSkill}」\nを手に入れました！`,
 		newColor: (unlockColors) => `\n\n条件を満たしたので、\n新しい色が解放されました！\n\n$[x2 ${unlockColors}]\n\n「RPG 色」と話しかけて確認してみてね！`,
 		color: {
 			info: "色を変更する場合、`rpg 色変更 <数字>`と話しかけてね",
