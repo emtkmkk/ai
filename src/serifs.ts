@@ -446,7 +446,7 @@ export default {
 			post: "投稿数",
 			pen: "防御貫通",
 			rndM: "安定感",
-			rndP: "ムラッ気",
+			rndP: "不安定",
 		},
 		dmg: {
 			give: "与ダメージ",
