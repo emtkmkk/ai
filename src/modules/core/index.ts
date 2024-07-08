@@ -594,6 +594,10 @@ export default class extends Module {
 							: ''
 					}`,
 					lovep >= 100 ? `  ${serifs.rpg.status.spd} : ${Math.floor(lovep / 100) + 1}` : '',
+					msg.friend.doc.perModulesData.rpg.skills ? `  ${serifs.rpg.status.skill} : ` : undefined,
+					...(msg.friend.doc.perModulesData.rpg.skills
+						? msg.friend.doc.perModulesData.rpg.skills.map((x) => '    ' + x.name)
+						: []),
 			  ]
 					.filter(Boolean)
 					.join('\n')
