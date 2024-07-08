@@ -543,7 +543,7 @@ export default class extends Module {
                     for (let i = 0; i < (skillEffects.armorSelect ?? 0); i++) {
                         types.push("armor");
                     }
-                    if (count !== 1 || data.enemy.pLToR || !skillEffects.lowHpFood) {
+                    if ((count !== 1 || data.enemy.pLToR) && !skillEffects.lowHpFood) {
                         types.push("medicine");
                         types.push("poison");
                         for (let i = 0; i < (skillEffects.foodSelect ?? 0); i++) {
