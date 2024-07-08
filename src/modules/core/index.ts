@@ -602,8 +602,8 @@ export default class extends Module {
 				`  ${serifs.rpg.status.atk} : ${msg.friend.doc.perModulesData.rpg.atk ?? 0}${bonus >= 1 ? ` (+${Math.floor(bonus * ((100 + (msg.friend.doc.perModulesData.rpg.atk ?? 0)) / 100))})` : ""}`,
 				`  ${serifs.rpg.status.def} : ${msg.friend.doc.perModulesData.rpg.def ?? 0}${bonus >= 1 ? ` (+${Math.floor(bonus * ((100 + (msg.friend.doc.perModulesData.rpg.def ?? 0)) / 100))})` : ""}`,
 				lovep >= 100 ? `  ${serifs.rpg.status.spd} : ${Math.floor(lovep / 100) + 1}` : "",
-				msg.friend.doc.perModulesData.rpg.skill ? `  ${serifs.rpg.status.skill} : ` : undefined,
-				...(msg.friend.doc.perModulesData.rpg.skill ? msg.friend.doc.perModulesData.rpg.skill.map((x) => x.name) : []),
+				msg.friend.doc.perModulesData.rpg.skills ? `  ${serifs.rpg.status.skill} : ` : undefined,
+				...(msg.friend.doc.perModulesData.rpg.skills ? msg.friend.doc.perModulesData.rpg.skills.map((x) => x.name) : []),
 			].filter(Boolean).join("\n")
 			: ""
 
