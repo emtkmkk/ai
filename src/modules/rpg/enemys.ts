@@ -39,6 +39,8 @@ type Enemy = {
     winmsg?: string;
     /** 敗北時のメッセージ */
     losemsg?: string;
+    /** 逃走スキル発動時の特殊メッセージ */
+    escapemsg?: string;
     /** 最大HP 未指定なら300 */
     maxhp?: number | ((hp: number) => number);
     /**
@@ -120,6 +122,7 @@ export const endressEnemy = (data): Enemy => ({
     abortmsg: "もこチキは面白いものを見つけたみたいだ。",
     winmsg: "宿が見えてきた。\n今回はここで休むようだ。\n\n次のステージへ続く…",
     losemsg: "もこチキは疲れてしまった…",
+    escapemsg: "もこチキは疲れてしまったが、\n焦ることもないなと思い、\nその場で休憩を始めた。",
     atk: 1.5 + (0.1 * (data.endress ?? 0)),
     def: 2 + (0.3 * (data.endress ?? 0)),
     atkx: 3 + (0.05 * (data.endress ?? 0)),
