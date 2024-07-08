@@ -773,6 +773,11 @@ export default class extends Module {
                     }
                 }
 
+				if (!data.enemy.abort && skillEffects.abortDown) {
+					// 効果がない場合は、パワーに還元される（弱）
+                    atk = atk * (1 + skillEffects.abortDown / 4);
+				}
+
                 const defDmgX = 1 * 
                     (1 + (skillEffects.defDmgUp ?? 0)) *
                     (count === 1 && skillEffects.firstTurnResist ? (1 - (skillEffects.firstTurnResist ?? 0)) : 1) *
