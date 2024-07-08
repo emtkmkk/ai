@@ -1039,10 +1039,10 @@ export default class extends Module {
 
             const skillCounts = [40, 80, 150, 300, 500].filter((x) => data.lv >= x).length
 
-            if ((data.skill ?? []).length < skillCounts) {
-                if (!data.skill) data.skill = []
+            if ((data.skills ?? []).length < skillCounts) {
+                if (!data.skills) data.skills = []
                 const skill = getSkill(data);
-                data.skill.push(skill);
+                data.skills.push(skill);
                 addMessage += `\n` + serifs.rpg.newSkill(skill.name);
             }
 
@@ -1287,7 +1287,8 @@ export default class extends Module {
     @autobind
     private aggregateSkillsEffects(data: { skills: Skill[] }): SkillEffect {
         const aggregatedEffect: SkillEffect = {};
-    
+
+			if (!data.skills) return aggregatedEffect;
         data.skills.forEach(_skill => {
             const skill = skills.find((x) => x.name === _skill.name) ?? _skill;
             Object.entries(skill.effect).forEach(([key, value]) => {
