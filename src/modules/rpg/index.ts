@@ -715,6 +715,9 @@ export default class extends Module {
 
             for (let actionX = 0; actionX < plusActionX + 1; actionX++) {
 
+                /** バフを得た数。行数のコントロールに使用 */
+                let buff = 0;
+
                 /** プレイヤーのHP割合 */
                 let playerHpPercent = playerHp / (100 + lv * 3);
                 /** 敵のHP割合 */
@@ -726,6 +729,8 @@ export default class extends Module {
 
                 // 土属性剣攻撃
                 if (skillEffects.dart && isBattle && maxdmg) {
+                    buff += 1
+                    message += serifs.rpg.dartSkill + "\n"
                     maxdmg = maxdmg * (1 + skillEffects.dart)
                 } else if (skillEffects.dart && !isBattle) {
                     // 非戦闘時は、パワーに還元される
@@ -739,17 +744,24 @@ export default class extends Module {
 
                 // 炎属性剣攻撃
                 if (skillEffects.fire && isBattle) {
+                    buff += 1
+                    message += serifs.rpg.fireSkill + "\n"
                     trueDmg = Math.ceil(lv * skillEffects.fire)
                 } else if (skillEffects.fire && !isBattle) {
                     // 非戦闘時は、パワーに還元される
                     atk = atk + lv * 3.5 * skillEffects.fire;
                 }
-
+                
                 // 毒属性剣攻撃
                 if (skillEffects.weak && count > 1) {
+                    buff += 1
+                    message += serifs.rpg.weakSkill(data.enemy.dname ?? data.enemy.name) + "\n"
                     enemyAtk = enemyAtk * (1 - (skillEffects.weak * (count - 1)))
                     enemyDef = enemyDef * (1 - (skillEffects.weak * (count - 1)))
                 }
+
+                // バフが1つでも付与された場合、改行を追加する
+                if (buff > 0) message += "\n"
 
                 // 敵が中断能力持ちの場合、ここで何回攻撃可能か判定
                 for (let i = 1; i < spd; i++) {
