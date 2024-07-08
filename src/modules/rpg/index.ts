@@ -576,9 +576,7 @@ export default class extends Module {
 			const itemEquip = 0.5 + (1 - playerHpPercent) * 0.5;
 			if (
 				rpgItems.length &&
-				count === 1 &&
-				skillEffects.firstTurnItem &&
-				Math.random() < itemEquip * (1 + (skillEffects.itemEquip ?? 0))
+				((count === 1 && skillEffects.firstTurnItem) || Math.random() < itemEquip * (1 + (skillEffects.itemEquip ?? 0)))
 			) {
 				//アイテム
 				buff += 1;
@@ -594,7 +592,7 @@ export default class extends Module {
 					for (let i = 0; i < (skillEffects.armorSelect ?? 0); i++) {
 						types.push('armor');
 					}
-					if (count !== 1 || data.enemy.pLToR || !skillEffects.lowHpFood) {
+					if ((count !== 1 || data.enemy.pLToR) && !skillEffects.lowHpFood) {
 						types.push('medicine');
 						types.push('poison');
 						for (let i = 0; i < (skillEffects.foodSelect ?? 0); i++) {
@@ -826,6 +824,11 @@ export default class extends Module {
 						abort = i;
 						break;
 					}
+				}
+
+				if (!data.enemy.abort && skillEffects.abortDown) {
+					// 効果がない場合は、パワーに還元される（弱）
+					atk = atk * (1 + skillEffects.abortDown / 4);
 				}
 
 				const defDmgX =

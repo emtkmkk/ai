@@ -166,7 +166,7 @@ export const skills: Skill[] = [
 export const getSkill = (data) => {
 	const filteredSkills = skills.filter(
 		(x) =>
-			!data.skill
+			!data.skills
 				?.filter((y) => y.unique)
 				.map((y) => y.unique)
 				.includes(x.unique)
