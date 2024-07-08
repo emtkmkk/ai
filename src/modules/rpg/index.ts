@@ -754,8 +754,10 @@ export default class extends Module {
                 
                 // 毒属性剣攻撃
                 if (skillEffects.weak && count > 1) {
-                    buff += 1
-                    message += serifs.rpg.weakSkill(data.enemy.dname ?? data.enemy.name) + "\n"
+					if (isBattle) {
+						buff += 1
+						message += serifs.rpg.weakSkill(data.enemy.dname ?? data.enemy.name) + "\n"
+					}
                     enemyAtk = enemyAtk * (1 - (skillEffects.weak * (count - 1)))
                     enemyDef = enemyDef * (1 - (skillEffects.weak * (count - 1)))
                 }
