@@ -528,7 +528,7 @@ export default class extends Module {
             }
 
             const itemEquip = 0.5 + ((1 - playerHpPercent) * 0.5);
-            if (rpgItems.length && ((count === 1 && skillEffects.firstTurnItem) && Math.random() < itemEquip * (1 + (skillEffects.itemEquip ?? 0))) ) {
+            if (rpgItems.length && ((count === 1 && skillEffects.firstTurnItem) || Math.random() < itemEquip * (1 + (skillEffects.itemEquip ?? 0))) ) {
                 //アイテム
                 buff += 1
                 if (data.enemy.pLToR) {
