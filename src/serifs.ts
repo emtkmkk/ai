@@ -472,6 +472,7 @@ export default {
 		darkSkill: (dmg) => `スキル「闇属性剣攻撃」発動！\n${dmg}ポイントのダメージを与えた！`,
 		weakSkill: (enemyName) => `スキル「毒属性剣攻撃」発動！\n${enemyName}は弱体化している！`,
 		sevenFeverSkill: (num) => `スキル「７フィーバー！」発動！\nステータス+${num}%！`,
+		chargeSkill: `スキル「不運チャージ」発動！\n次回、良い事あるかも！`,
 		haisui: "もこチキは決死の覚悟をした！\nパワーが上がり、防御が下がった！",
 		endure: "もこチキは気合で耐えた！",
 		fireAtk: (enemyName) => `もこチキの追い打ち炎攻撃！\n${enemyName}が次に受けるダメージが上昇した！`,
@@ -508,6 +509,7 @@ export default {
 		info: "もこチキの状況判断能力がアップ！\n今後、状況が細かく\n分析出来るようになる事があるぞ！",
 		infoPercent: "%",
 		newSkill: (newSkill) => `新しいスキル\n「${newSkill}」\nを手に入れました！`,
+		moveToSkill: (oldSkill, newSkill) => `スキル\n「${oldSkill}」が、\n「${newSkill}」\nに変化しました！`,
 		newColor: (unlockColors) => `\n\n条件を満たしたので、\n新しい色が解放されました！\n\n$[x2 ${unlockColors}]\n\n「RPG 色」と話しかけて確認してみてね！`,
 		color: {
 			info: "色を変更する場合、`rpg 色変更 <数字>`と話しかけてね",

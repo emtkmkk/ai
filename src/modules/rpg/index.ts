@@ -352,6 +352,8 @@ export default class extends Module {
             const lv = data.lv ?? 1
             /** プレイヤーのHP */
             let playerHp = data.php ?? 100;
+            /** 開始時のチャージ */
+            const startCharge = data.charge;
 
             // 敵情報
             if (!data.enemy || count === 1) {
@@ -464,7 +466,13 @@ export default class extends Module {
             let itemBonus = { atk: 0, def: 0 };
             
             /** これって戦闘？ */
-            let isBattle = !data.enemy.hpmsg && !data.enemy.lToR && !data.enemy.pLToR
+            let isBattle = data.enemy.atkmsg(0).includes("ダメージ");
+
+            /** これって物理戦闘？ */
+            let isPhysical = !data.enemy.atkmsg(0).includes("精神");
+
+            /** ダメージ発生源は疲れ？ */
+            let isTired = data.enemy.defmsg(0).includes("疲");
 
             if (isSuper) {
                 const superColor = colors.find((x) => x.alwaysSuper)?.name ?? colors.find((x) => x.default)?.name ?? colors[0]?.name;
@@ -503,11 +511,11 @@ export default class extends Module {
             // 風魔法発動時
             let spdUp = spd * (skillEffects.spdUp ?? 0)
             if (Math.random() < spdUp % 1) spdUp = Math.floor(spdUp) + 1;
-            if (isBattle && spdUp) {
+            if ((isBattle && isPhysical) && spdUp) {
                 buff += 1
                 message += serifs.rpg.windSkill(spdUp) + "\n"
                 spd = spd + spdUp;
-            } else if (!isBattle) {
+            } else if (!(isBattle && isPhysical)) {
                 // 非戦闘時は速度は上がらないが、パワーに還元される
                 atk = atk * (1 + (skillEffects.spdUp ?? 0));
             }
@@ -555,12 +563,12 @@ export default class extends Module {
                         types = ["medicine", "poison"]
                     }
                     const type = types[Math.floor(Math.random() * types.length)]
-                    if (type !== "weapon" || !data.enemy.lToR) {
-                        const items = rpgItems.filter((x) => x.type === type && x.effect > 0);
-                        item = items[Math.floor(Math.random() * items.length)];
-                    } else {
+                    if ((type === "weapon" && !(isBattle && isPhysical)) || (type === "armor" && isTired) || data.enemy.pLToR) {
                         let isPlus = Math.random() < (0.5 + (skillEffects.mindMinusAvoid ?? 0));
                         const items = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind < 0));
+                        item = items[Math.floor(Math.random() * items.length)];
+                    } else {
+                        const items = rpgItems.filter((x) => x.type === type && x.effect > 0);
                         item = items[Math.floor(Math.random() * items.length)];
                     }
                 }
@@ -596,7 +604,7 @@ export default class extends Module {
                 switch (item.type) {
                     case "weapon":
                         message += `${item.name}を取り出し、装備した！\n`
-                        if (!isBattle) {
+                        if (!(isBattle && isPhysical)) {
                             mindMsg(item.mind)
                             if (item.mind < 0 && isSuper) item.mind = item.mind / 2
                             itemBonus.atk = atk * (item.mind * 0.0025);
@@ -619,7 +627,7 @@ export default class extends Module {
                         break;
                     case "armor":
                         message += `${item.name}を取り出し、装備した！\n`
-                        if (data.enemy.pLToR) {
+                        if (isTired) {
                             mindMsg(item.mind)
                             if (item.mind < 0 && isSuper) item.mind = item.mind / 2
                             itemBonus.atk = atk * (item.mind * 0.0025);
@@ -728,11 +736,11 @@ export default class extends Module {
                 let maxdmg = data.enemy.maxdmg ? enemyMaxHp * data.enemy.maxdmg : undefined
 
                 // 土属性剣攻撃
-                if (skillEffects.dart && isBattle && maxdmg) {
+                if (skillEffects.dart && (isBattle && isPhysical) && maxdmg) {
                     buff += 1
                     message += serifs.rpg.dartSkill + "\n"
                     maxdmg = maxdmg * (1 + skillEffects.dart)
-                } else if (skillEffects.dart && !isBattle) {
+                } else if (skillEffects.dart && !(isBattle && isPhysical)) {
                     // 非戦闘時は、パワーに還元される
                     atk = atk * (1 + skillEffects.dart / 2);
                 } else if (skillEffects.dart && !maxdmg) {
@@ -743,18 +751,18 @@ export default class extends Module {
                 let trueDmg = 0;
 
                 // 炎属性剣攻撃
-                if (skillEffects.fire && isBattle) {
+                if (skillEffects.fire && (isBattle && isPhysical)) {
                     buff += 1
                     message += serifs.rpg.fireSkill + "\n"
                     trueDmg = Math.ceil(lv * skillEffects.fire)
-                } else if (skillEffects.fire && !isBattle) {
+                } else if (skillEffects.fire && !(isBattle && isPhysical)) {
                     // 非戦闘時は、パワーに還元される
                     atk = atk + lv * 3.5 * skillEffects.fire;
                 }
                 
                 // 毒属性剣攻撃
                 if (skillEffects.weak && count > 1) {
-					if (isBattle) {
+					if (isBattle && isPhysical) {
 						buff += 1
 						message += serifs.rpg.weakSkill(data.enemy.dname ?? data.enemy.name) + "\n"
 					}
@@ -799,12 +807,12 @@ export default class extends Module {
 
                 // 敵先制攻撃の処理
                 // spdが1ではない、または戦闘ではない場合は先制攻撃しない
-                if (!data.enemy.spd && !data.enemy.hpmsg) {
+                if (!data.enemy.spd && !data.enemy.hpmsg && !isTired) {
                     /** クリティカルかどうか */
                     const crit = Math.random() < (playerHpPercent - enemyHpPercent) * (1 - (skillEffects.enemyCritDown ?? 0));
                     // 予測最大ダメージが相手のHPの何割かで先制攻撃の確率が判定される
                     if (Math.random() < predictedDmg / enemyHp || (count === 3 && data.enemy.fire && (data.thirdFire ?? 0) <= 2)) {
-                        const rng = (defMinRnd + Math.random() * defMaxRnd) * defDmgX;
+                        const rng = (defMinRnd + this.random(data,startCharge,skillEffects) * defMaxRnd) * defDmgX;
                         const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
                         /** ダメージ */
                         const dmg = this.getEnemyDmg(data, def, tp, count, crit ? critDmg : false, enemyAtk, rng)
@@ -832,9 +840,9 @@ export default class extends Module {
                 // 自身攻撃の処理
                 // spdの回数分、以下の処理を繰り返す
                 for (let i = 0; i < spd; i++) {
-                    const rng = (atkMinRnd + Math.random() * atkMaxRnd) * (1 + (skillEffects.atkDmgUp ?? 0)) * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1);
+                    const rng = (atkMinRnd + this.random(data,startCharge,skillEffects) * atkMaxRnd) * (1 + (skillEffects.atkDmgUp ?? 0)) * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1);
                     /** クリティカルかどうか */
-                    let crit = Math.random() < (enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0));
+                    let crit = Math.random() < ((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0))) + (skillEffects.critUpFixed ?? 0);
                     const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
                     /** ダメージ */
                     let dmg = this.getAtkDmg(data, atk, tp, count, crit ? critDmg : false, enemyDef, enemyMaxHp, rng) + trueDmg
@@ -864,7 +872,7 @@ export default class extends Module {
                 }
 
                 // 覚醒状態でこれが戦闘なら炎で追加攻撃
-                if (isSuper && enemyHp > 0 && isBattle) {
+                if (isSuper && enemyHp > 0 && (isBattle && isPhysical)) {
                     message += serifs.rpg.fireAtk(data.enemy.dname ?? data.enemy.name) + `\n`
                     data.fireAtk = (data.fireAtk ?? 0) + 10;
                 }
@@ -904,18 +912,18 @@ export default class extends Module {
                     let enemyAtkX = 1;
                     // 攻撃後発動スキル効果
                     // 氷属性剣攻撃
-                    if (isBattle && Math.random() < (skillEffects.ice ?? 0)) {
+                    if ((isBattle && isPhysical && !isTired) && Math.random() < (skillEffects.ice ?? 0)) {
                         message += serifs.rpg.iceSkill(data.enemy.dname ?? data.enemy.name) + `\n`
                         enemyTurnFinished = true;
-                    } else if (!isBattle) {
+                    } else if (!(isBattle && isPhysical && !isTired)) {
                         // 非戦闘時は氷の効果はないが、防御に還元される
                         def = def * (1 + (skillEffects.ice ?? 0));
                     }
                     // 光属性剣攻撃
-                    if (isBattle && Math.random() < (skillEffects.light ?? 0)) {
+                    if ((isBattle && isPhysical && !isTired) && Math.random() < (skillEffects.light ?? 0)) {
                         message += serifs.rpg.lightSkill(data.enemy.dname ?? data.enemy.name) + `\n`
                         enemyAtkX = enemyAtkX * 0.5;
-                    } else if (!isBattle) {
+                    } else if (!(isBattle && isPhysical && !isTired)) {
                         // 非戦闘時は光の効果はないが、防御に還元される
                         def = def * (1 + (skillEffects.light ?? 0) / 2);
                     }
@@ -923,11 +931,11 @@ export default class extends Module {
                     if (data.enemy.spd && data.enemy.spd >= 2 && Math.random() < (skillEffects.dark ?? 0) * 2) {
                         message += serifs.rpg.spdDownSkill(data.enemy.dname ?? data.enemy.name) + `\n`
                         data.enemy.spd = 1;
-                    } else if (isBattle && data.ehp > 150 && Math.random() < (skillEffects.dark ?? 0)) {
+                    } else if ((isBattle && isPhysical) && data.ehp > 150 && Math.random() < (skillEffects.dark ?? 0)) {
                         const dmg = Math.floor(enemyHp / 2)
                         message += serifs.rpg.darkSkill(dmg) + `\n`
                         enemyHp -= dmg
-                    } else if (!isBattle) {
+                    } else if (!(isBattle && isPhysical)) {
                         // 非戦闘時は闇の効果はないが、防御に還元される
                         def = def * (1 + (skillEffects.dark ?? 0) / 3);
                     }
@@ -936,7 +944,7 @@ export default class extends Module {
                     let maxDmg = 0;
                     if (!enemyTurnFinished) {
                         for (let i = 0; i < (data.enemy.spd ?? 1); i++) {
-                            const rng = (defMinRnd + Math.random() * defMaxRnd) * defDmgX * enemyAtkX;
+                            const rng = (defMinRnd + this.random(data,startCharge,skillEffects) * defMaxRnd) * defDmgX * enemyAtkX;
                             /** クリティカルかどうか */
                             const crit = Math.random() < (playerHpPercent - enemyHpPercent) * (1 - (skillEffects.enemyCritDown ?? 0));
                             const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
@@ -1014,6 +1022,10 @@ export default class extends Module {
                 }
             }
 
+            if (skillEffects.charge && data.charge) {
+                message += "\n\n" + serifs.rpg.chargeSkill
+            }
+
             // レベルアップ処理
             data.lv = (data.lv ?? 1) + 1;
             let atkUp = (2 + Math.floor(Math.random() * 4));
@@ -1056,13 +1068,41 @@ export default class extends Module {
                 addMessage += `\n` + serifs.rpg.info
             }
 
+            let oldSkillName = "";
+
+            if (data.skills?.length) {
+                const uniques = new Set()
+                for (const _skill of data.skills as Skill[]) {
+                    const skill = skills.find((x) => x.name === _skill.name) ?? _skill;
+                    if (uniques.has(skill.unique)) {
+                        oldSkillName = skill.name
+                        data.skills = data.skills.filter((x: Skill) => x.name !== oldSkillName)
+                    } else {
+                        uniques.add(skill.unique)
+                    }
+                    if (skill.moveTo) {
+                        const moveToSkill = skills.find((x) => x.name === skill.moveTo);
+                        if (moveToSkill) {
+                            oldSkillName = skill.name;
+                            data.skills = data.skills.filter((x: Skill) => x.name !== oldSkillName);
+                            data.skills.push(moveToSkill);
+                            addMessage += `\n` + serifs.rpg.moveToSkill(oldSkillName, moveToSkill.name);
+                        }
+                    }
+                }
+            }
+
             const skillCounts = [20, 50, 100, 175, 255].filter((x) => data.lv >= x).length
 
             if ((data.skills ?? []).length < skillCounts) {
                 if (!data.skills) data.skills = []
                 const skill = getSkill(data);
                 data.skills.push(skill);
-                addMessage += `\n` + serifs.rpg.newSkill(skill.name);
+                if (oldSkillName) {
+                    addMessage += `\n` + serifs.rpg.moveToSkill(oldSkillName, skill.name);
+                } else {
+                    addMessage += `\n` + serifs.rpg.newSkill(skill.name);
+                }
             }
 
 
@@ -1307,7 +1347,7 @@ export default class extends Module {
     private aggregateSkillsEffects(data: { skills: Skill[] }): SkillEffect {
         const aggregatedEffect: SkillEffect = {};
 
-			if (!data.skills) return aggregatedEffect;
+		if (!data.skills) return aggregatedEffect;
         data.skills.forEach(_skill => {
             const skill = skills.find((x) => x.name === _skill.name) ?? _skill;
             Object.entries(skill.effect).forEach(([key, value]) => {
@@ -1346,6 +1386,25 @@ export default class extends Module {
       
         return totalSevens;
       }
+
+    @autobind
+    private random(data, startCharge = 0, skillEffects) {
+        let rnd = Math.random();
+        if (skillEffects.charge) {
+            const charge = Math.min(startCharge, data.charge)
+            if (charge > 0) {
+                rnd = (charge / 2) + (rnd * (1 - (charge / 2)));
+            }
+            if (rnd < 0.5) {
+                data.charge += 0.5 - rnd;
+            }
+            if (rnd > 0.5) {
+                data.charge -= rnd - 0.5;
+            }
+            if (data.charge < 0) data.charge = 0;
+        }
+        return rnd;
+    }
 
     /**
      * valで指定された値が関数の場合、計算し値を返します。

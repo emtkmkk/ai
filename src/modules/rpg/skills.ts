@@ -91,6 +91,8 @@ export type SkillEffect = {
     abortDown?: number;
     /** クリティカル率がn%上昇 */
     critUp?: number;
+    /** クリティカル率がn%上昇(固定値) */
+    critUpFixed?: number;
     /** クリティカルダメージがn%上昇 */
     critDmgUp?: number;
     /** 被クリティカル率がn%減少 */
@@ -101,6 +103,8 @@ export type SkillEffect = {
     loseBonus?: number;
     /** ７フィーバー */
     sevenFever?: number;
+    /** チャージ */
+    charge?: number;
 };
 
 export type Skill = {
@@ -110,6 +114,10 @@ export type Skill = {
     effect: SkillEffect;
     /** ユニークキー 同じキーを持っているスキルは入手不可 */
     unique?: string;
+    /** 移動先 スキル名を変更した際に */
+    moveTo?: string;
+    /** スキル変更が出来ない場合 */
+    cantReroll?: boolean;
 };
 
 export const skills: Skill[] = [
@@ -129,7 +137,7 @@ export const skills: Skill[] = [
     { name: `粘り強い`, effect: { tenacious: 0.2 } },
     { name: `高速RPG`, effect: { plusActionX: 1 } },
     { name: `1時間先取りRPG`, effect: { atkUp: 0.05, defUp: 0.05, rpgTime: -1 } },
-    { name: `伝説`, effect: { atkUp: 0.06, defUp: 0.06 } },
+    { name: `伝説`, effect: { atkUp: 0.07, defUp: 0.07 }, unique: "legend" },
     { name: `脳筋`, effect: { atkDmgUp: 0.21, defDmgUp: 0.1 } },
     { name: `慎重`, effect: { atkDmgUp: -0.1, defDmgUp: -0.21 } },
     { name: `連続・毎日ボーナス強化`, effect: { continuousBonusUp: 0.5 } },
@@ -141,7 +149,7 @@ export const skills: Skill[] = [
     { name: `${serifs.rpg.status.pen}+10%`, effect: { arpen: 0.1 } },
     { name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndM}4`, effect: { atkRndMin: 0.4, atkRndMax: -0.2 }, unique: "rnd" },
     { name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndM}5`, effect: { atkRndMin: 0.7, atkRndMax: -0.5 }, unique: "rnd" },
-    { name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndP}`, effect: { atkRndMin: -0.15, atkRndMax: 0.4 }, unique: "rnd" },
+    { name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndP}`, effect: { atkRndMin: -0.15, atkRndMax: 0.5, critUpFixed: 0.02 }, unique: "rnd" },
     { name: `${serifs.rpg.dmg.take}${serifs.rpg.status.rndM}`, effect: { defRndMin: 0, defRndMax: -0.2 }, unique: "rnd" },
     { name: `${serifs.rpg.dmg.take}${serifs.rpg.status.rndP}`, effect: { defRndMin: -0.2, defRndMax: 0 }, unique: "rnd" },
     { name: `準備を怠らない`, effect: { firstTurnItem: 1 }, unique: "firstTurnItem" },
@@ -153,17 +161,20 @@ export const skills: Skill[] = [
     { name: `なんでも口に入れない`, effect: { poisonAvoid: 0.5 } },
     { name: `道具の選択が上手い`, effect: { mindMinusAvoid: 0.15 } },
     { name: `お腹が空いてから食べる`, effect: { lowHpFood: 1, foodBoost: 0.2, poisonResist: 0.2 } },
-    { name: `たまにたくさん成長`, effect: { statusBonus: 1 }, unique: "status" },
+    { name: `たまにたくさん成長`, effect: { statusBonus: 1 }, unique: "status", cantReroll: true},
     { name: `連続攻撃完遂率上昇`, effect: { abortDown: 0.3 } },
-    { name: `クリティカル率上昇`, effect: { critUp: 0.3 } },
-    { name: `クリティカルダメージ上昇`, effect: { critDmgUp: 0.3 } },
-    { name: `敵のクリティカル率減少`, effect: { enemyCritDown: 0.3 } },
-    { name: `敵のクリティカルダメージ減少`, effect: { enemyCritDmgDown: 0.3 } },
-    { name: `負けた時、しっかり反省`, effect: { loseBonus: 1 }, unique: "loseBonus" },
+    { name: `クリティカル性能上昇`, effect: { critUp: 0.2, critUpFixed: 0.03, critDmgUp: 0.2 }},
+    { name: `敵のクリティカル性能減少`, effect: { enemyCritDown: 0.3, enemyCritDmgDown: 0.3 }},
+    { name: `クリティカル上昇`, effect: { critUp: 0.3 }, moveTo: "クリティカル性能上昇"},
+    { name: `クリティカルダメージ上昇`, effect: { critDmgUp: 0.3 }, moveTo: "クリティカル性能上昇" },
+    { name: `敵のクリティカル率減少`, effect: { enemyCritDown: 0.3 }, moveTo: "敵のクリティカル性能減少" },
+    { name: `敵のクリティカルダメージ減少`, effect: { enemyCritDmgDown: 0.3 }, moveTo: "敵のクリティカル性能減少" },
+    { name: `負けた時、しっかり反省`, effect: { loseBonus: 1 }, unique: "loseBonus", cantReroll: true},
     { name: `７フィーバー！`, effect: { sevenFever: 1 } },
+    { name: `不運チャージ`, effect: { charge: 1 } },
 ]
 
 export const getSkill = (data) => {
-    const filteredSkills = skills.filter((x) => !data.skills?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique));
+    const filteredSkills = skills.filter((x) => !x.moveTo && !data.skills?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique));
     return filteredSkills[Math.floor(Math.random() * filteredSkills.length)];
 }
