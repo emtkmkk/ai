@@ -1145,7 +1145,7 @@ export default class extends Module {
                 const getNum = calcRerollOrbCount - (data.totalRerollOrb ?? 0)
                 data.rerollOrb = (data.rerollOrb ?? 0) + getNum
                 data.totalRerollOrb = (data.totalRerollOrb ?? 0) + getNum
-                addMessage += `\n` + serifs.rpg.getRerollOrb(getNum);
+                message += serifs.rpg.getRerollOrb(getNum);
             }
 
             msg.friend.setPerModulesData(this, data);
