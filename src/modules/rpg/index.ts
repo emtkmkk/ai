@@ -1099,7 +1099,7 @@ export default class extends Module {
                 for (const _skill of data.skills as Skill[]) {
                     const skill = skills.find((x) => x.name === _skill.name) ?? _skill;
                   
-									  if (skill.unique || uniques.has(skill.unique)) {
+									  if (skill.unique && uniques.has(skill.unique)) {
                         oldSkillName = skill.name
                         data.skills = data.skills.filter((x: Skill) => x.name !== oldSkillName)
                     } else {
