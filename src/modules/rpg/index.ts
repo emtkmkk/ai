@@ -491,7 +491,7 @@ export default class extends Module {
             let sevenFever = skillEffects.sevenFever ? this.sevenFever([data.lv, data.atk, data.def]) * skillEffects.sevenFever : 0;
             if (sevenFever) {
                 buff += 1;
-                message += serifs.rpg.sevenFeverSkill(sevenFever) + "\n";
+                message += serifs.rpg.skill.sevenFever(sevenFever) + "\n";
                 atk = atk * (1 + (sevenFever / 100));
                 def = def * (1 + (sevenFever / 100));
             }
@@ -513,7 +513,7 @@ export default class extends Module {
             if (Math.random() < spdUp % 1) spdUp = Math.floor(spdUp) + 1;
             if ((isBattle && isPhysical) && spdUp) {
                 buff += 1
-                message += serifs.rpg.windSkill(spdUp) + "\n"
+                message += serifs.rpg.skill.wind(spdUp) + "\n"
                 spd = spd + spdUp;
             } else if (!(isBattle && isPhysical)) {
                 // 非戦闘時は速度は上がらないが、パワーに還元される
@@ -523,6 +523,8 @@ export default class extends Module {
             // 非戦闘なら非戦闘時スキルが発動
             if (!isBattle) {
                 atk = atk * (1 + (skillEffects.notBattleBonusAtk ?? 0));
+            }
+            if (isTired) {
                 def = def * (1 + (skillEffects.notBattleBonusDef ?? 0));
             }
 
@@ -535,10 +537,11 @@ export default class extends Module {
                 def = Math.round(def * (1 - effect))
             }
 
-            const itemEquip = 0.5 + ((1 - playerHpPercent) * 0.5);
+            const itemEquip = 0.4 + ((1 - playerHpPercent) * 0.6);
             if (rpgItems.length && ((count === 1 && skillEffects.firstTurnItem) || Math.random() < itemEquip * (1 + (skillEffects.itemEquip ?? 0))) ) {
                 //アイテム
                 buff += 1
+                if ((count === 1 && skillEffects.firstTurnItem)) message += serifs.rpg.skill.firstItem
                 if (data.enemy.pLToR) {
                     let isPlus = Math.random() < 0.5;
                     const items = rpgItems.filter((x) => isPlus ? x.mind > 0 : x.mind < 0);
@@ -560,6 +563,7 @@ export default class extends Module {
                         }
                     }
                     if ((count !== 1 || data.enemy.pLToR) && skillEffects.lowHpFood && Math.random() < skillEffects.lowHpFood * playerHpPercent) {
+                        if (playerHpPercent < 0.5) message += serifs.rpg.skill.lowHpFood
                         types = ["medicine", "poison"]
                     }
                     const type = types[Math.floor(Math.random() * types.length)]
@@ -714,6 +718,20 @@ export default class extends Module {
                 const bonus = Math.floor((enemyStrongs / 4) * skillEffects.enemyStatusBonus);
                 atk = atk * (1 + (bonus / 100))
                 def = def * (1 + (bonus / 100))
+                if (bonus / skillEffects.enemyStatusBonus >= 5) {
+                    buff += 1
+                    message += serifs.rpg.skill.enemyStatusBonus + "\n"
+                }
+            }
+            
+            if (skillEffects.firstTurnResist && count === 1 && isBattle && isPhysical) {
+                buff += 1
+                message += serifs.rpg.skill.firstTurnResist + "\n"
+            }
+            
+            if (skillEffects.tenacious && playerHpPercent < 0.5 && isBattle && isPhysical) {
+                buff += 1
+                message += serifs.rpg.skill.tenacious + "\n"
             }
 
             // バフが1つでも付与された場合、改行を追加する
@@ -738,7 +756,7 @@ export default class extends Module {
                 // 土属性剣攻撃
                 if (skillEffects.dart && (isBattle && isPhysical) && maxdmg) {
                     buff += 1
-                    message += serifs.rpg.dartSkill + "\n"
+                    message += serifs.rpg.skill.dart + "\n"
                     maxdmg = maxdmg * (1 + skillEffects.dart)
                 } else if (skillEffects.dart && !(isBattle && isPhysical)) {
                     // 非戦闘時は、パワーに還元される
@@ -753,7 +771,7 @@ export default class extends Module {
                 // 炎属性剣攻撃
                 if (skillEffects.fire && (isBattle && isPhysical)) {
                     buff += 1
-                    message += serifs.rpg.fireSkill + "\n"
+                    message += serifs.rpg.skill.fire + "\n"
                     trueDmg = Math.ceil(lv * skillEffects.fire)
                 } else if (skillEffects.fire && !(isBattle && isPhysical)) {
                     // 非戦闘時は、パワーに還元される
@@ -764,7 +782,7 @@ export default class extends Module {
                 if (skillEffects.weak && count > 1) {
 					if (isBattle && isPhysical) {
 						buff += 1
-						message += serifs.rpg.weakSkill(data.enemy.dname ?? data.enemy.name) + "\n"
+						message += serifs.rpg.skill.weak(data.enemy.dname ?? data.enemy.name) + "\n"
 					}
                     enemyAtk = enemyAtk * (1 - (skillEffects.weak * (count - 1)))
                     enemyDef = enemyDef * (1 - (skillEffects.weak * (count - 1)))
@@ -913,7 +931,7 @@ export default class extends Module {
                     // 攻撃後発動スキル効果
                     // 氷属性剣攻撃
                     if ((isBattle && isPhysical && !isTired) && Math.random() < (skillEffects.ice ?? 0)) {
-                        message += serifs.rpg.iceSkill(data.enemy.dname ?? data.enemy.name) + `\n`
+                        message += serifs.rpg.skill.ice(data.enemy.dname ?? data.enemy.name) + `\n`
                         enemyTurnFinished = true;
                     } else if (!(isBattle && isPhysical && !isTired)) {
                         // 非戦闘時は氷の効果はないが、防御に還元される
@@ -921,7 +939,7 @@ export default class extends Module {
                     }
                     // 光属性剣攻撃
                     if ((isBattle && isPhysical && !isTired) && Math.random() < (skillEffects.light ?? 0)) {
-                        message += serifs.rpg.lightSkill(data.enemy.dname ?? data.enemy.name) + `\n`
+                        message += serifs.rpg.skill.light(data.enemy.dname ?? data.enemy.name) + `\n`
                         enemyAtkX = enemyAtkX * 0.5;
                     } else if (!(isBattle && isPhysical && !isTired)) {
                         // 非戦闘時は光の効果はないが、防御に還元される
@@ -929,11 +947,11 @@ export default class extends Module {
                     }
                     // 闇属性剣攻撃
                     if (data.enemy.spd && data.enemy.spd >= 2 && Math.random() < (skillEffects.dark ?? 0) * 2) {
-                        message += serifs.rpg.spdDownSkill(data.enemy.dname ?? data.enemy.name) + `\n`
+                        message += serifs.rpg.skill.spdDown(data.enemy.dname ?? data.enemy.name) + `\n`
                         data.enemy.spd = 1;
                     } else if ((isBattle && isPhysical) && data.ehp > 150 && Math.random() < (skillEffects.dark ?? 0)) {
                         const dmg = Math.floor(enemyHp / 2)
-                        message += serifs.rpg.darkSkill(dmg) + `\n`
+                        message += serifs.rpg.skill.dark(dmg) + `\n`
                         enemyHp -= dmg
                     } else if (!(isBattle && isPhysical)) {
                         // 非戦闘時は闇の効果はないが、防御に還元される
@@ -1022,8 +1040,10 @@ export default class extends Module {
                 }
             }
 
-            if (skillEffects.charge && data.charge) {
-                message += "\n\n" + serifs.rpg.chargeSkill
+            if (skillEffects.charge && data.charge > 0) {
+                message += "\n\n" + serifs.rpg.skill.charge
+            } else if (data.charge < 0) {
+                data.charge = 0;
             }
 
             // レベルアップ処理
@@ -1086,7 +1106,7 @@ export default class extends Module {
                             oldSkillName = skill.name;
                             data.skills = data.skills.filter((x: Skill) => x.name !== oldSkillName);
                             data.skills.push(moveToSkill);
-                            addMessage += `\n` + serifs.rpg.moveToSkill(oldSkillName, moveToSkill.name);
+                            addMessage += `\n` + serifs.rpg.moveToSkill(oldSkillName, moveTo.name);
                         }
                     }
                 }
@@ -1401,7 +1421,6 @@ export default class extends Module {
             if (rnd > 0.5) {
                 data.charge -= rnd - 0.5;
             }
-            if (data.charge < 0) data.charge = 0;
         }
         return rnd;
     }
