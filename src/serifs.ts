@@ -431,15 +431,23 @@ export default {
 		},
 		super: (me) => `$[x2 ${me}]\n\n**阨ちゃんは覚醒状態になった！**\n行動回数+**2**！\nパワー・防御が**超**アップ！`,
 		spdUp: '阨ちゃんは体の調子が良さそうだ！\n行動回数+1！',
-		spdDownSkill: (enemyName) => `スキル「闇属性妖術」発動！\n${enemyName}の行動速度が低下した！`,
-		fireSkill: `スキル「炎属性妖術」発動！\n攻撃時最低ダメージが上昇！`,
-		iceSkill: (enemyName) => `スキル「氷属性妖術」発動！\n${enemyName}は凍って動けなくなった！`,
-		windSkill: (num) => `スキル「風属性妖術」発動！\n行動回数+${num}！`,
-		dartSkill: `スキル「土属性妖術」発動！\n攻撃時最高ダメージが上昇！`,
-		lightSkill: (enemyName) => `スキル「光属性妖術」発動！\n${enemyName}の攻撃が弱体化した！`,
-		darkSkill: (dmg) => `スキル「闇属性妖術」発動！\n${dmg}ポイントのダメージを与えた！`,
-		weakSkill: (enemyName) => `スキル「毒属性妖術」発動！\n${enemyName}は弱体化している！`,
-		sevenFeverSkill: (num) => `スキル「７フィーバー！」発動！\nステータス+${num}%！`,
+		skill: {
+			firstItem: 'スキル「準備を怠らない」発動！\n',
+			spdDown: (enemyName) => `スキル「闇属性妖術」発動！\n${enemyName}の行動速度が低下した！`,
+			fire: `スキル「炎属性妖術」発動！\n攻撃時最低ダメージが上昇！`,
+			ice: (enemyName) => `スキル「氷属性妖術」発動！\n${enemyName}は凍って動けなくなった！`,
+			wind: (num) => `スキル「風属性妖術」発動！\n行動回数+${num}！`,
+			dart: `スキル「土属性妖術」発動！\n攻撃時最高ダメージが上昇！`,
+			light: (enemyName) => `スキル「光属性妖術」発動！\n${enemyName}の攻撃が弱体化した！`,
+			dark: (dmg) => `スキル「闇属性妖術」発動！\n${dmg}ポイントのダメージを与えた！`,
+			weak: (enemyName) => `スキル「毒属性妖術」発動！\n${enemyName}は弱体化している！`,
+			sevenFever: (num) => `スキル「７フィーバー！」発動！\nステータス+${num}%！`,
+			charge: `スキル「不運チャージ」発動！\n次回、良い事あるかも！`,
+			enemyStatusBonus: `スキル「強敵と戦うのが好き」発動！\nパワー・防御がアップした！`,
+			firstTurnResist: `スキル「油断しない」発動！\nもこチキは相手を警戒している…`,
+			tenacious: `スキル「粘り強い」発動！\nもこチキの防御がアップ！`,
+			lowHpFood: `スキル「お腹が空いてから食べる」発動！\n`,
+		},
 		haisui: '阨ちゃんは決死の覚悟をした！\nパワーが上がり、防御が下がった！',
 		endure: '阨ちゃんは気合で耐えた！',
 		fireAtk: (enemyName) => `阨ちゃんの追い打ち狐火攻撃！\n${enemyName}が次に受けるダメージが上昇した！`,
@@ -450,6 +458,8 @@ export default {
 		next: '次回へ続く……',
 		nextPlay: (date) =>
 			`次は${date.getHours() < 12 ? '12時以降に' : date.getHours() < 18 ? '18時以降に' : '明日以降に'}遊べるのじゃ。`,
+		getRerollOrb: (num) =>
+			`\n\nスキル変更珠を${num > 1 ? `${num}個` : ''}拾いました！\n「RPG スキル」と話しかけて確認してみて欲しいのじゃ！`,
 		player: {
 			mark: '☆',
 			mark2: '★',
@@ -478,7 +488,8 @@ export default {
 		},
 		info: '阨ちゃんの状況判断能力がアップ！\n今後、状況が細かく\n分析出来るようになる事があるのじゃ！',
 		infoPercent: '%',
-		newSkill: (newSkill) => `新しいスキル\n「${newSkill}」\nを手に入れました！`,
+		newSkill: (newSkill) => `新しいスキル\n「${newSkill}」\nを手に入れたのじゃ！`,
+		moveToSkill: (oldSkill, newSkill) => `スキル\n「${oldSkill}」が、\n「${newSkill}」\nに変化したのじゃ！`,
 		newColor: (unlockColors) =>
 			`\n\n条件を満たしたので、\n新しい色が解放されたのじゃ！\n\n$[x2 ${unlockColors}]\n\n「RPG 色」と話しかけて確認してみてほしいのじゃ！`,
 		color: {
@@ -487,6 +498,10 @@ export default {
 			default: '初期解放',
 			unlock: '解放済み',
 		},
+		skills: {
+			info: (num) => `スキルを変更する場合、\`rpg スキル変更 <数字>\`と話しかけて欲しいのじゃ！ (変更珠所持数: ${num})`,
+			list: '所持スキル一覧',
+		},
 		command: {
 			rpg: 'rpg',
 			color: '色',
@@ -494,6 +509,7 @@ export default {
 			journey: '修行モード',
 			change: '変更',
 			onemore: 'おかわり',
+			skill: 'スキル',
 		},
 	},
 
