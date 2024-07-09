@@ -7,7 +7,7 @@ import autobind from 'autobind-decorator';
 import { colorReply, colors } from './colors';
 import { endressEnemy, enemys } from './enemys';
 import { rpgItems } from './items';
-import { skills, Skill, SkillEffect, getSkill } from './skills';
+import { skills, Skill, SkillEffect, getSkill, skillReply } from './skills';
 import Friend from '@/friend';
 
 export default class extends Module {
@@ -72,6 +72,10 @@ export default class extends Module {
         if (msg.includes([serifs.rpg.command.rpg]) && msg.includes([serifs.rpg.command.color])) {
             // 色モード
             return colorReply(this, msg);
+        }
+        if (msg.includes([serifs.rpg.command.rpg]) && msg.includes([serifs.rpg.command.skill])) {
+            // スキルモード
+            return skillReply(this, msg);
         }
         if (msg.includes([serifs.rpg.command.rpg]) && msg.includes([serifs.rpg.command.trial])) {
             // データを読み込み
@@ -1134,6 +1138,15 @@ export default class extends Module {
                 addMessage,
                 `\n${serifs.rpg.nextPlay(new Date())}`,
             ].filter(Boolean).join("\n")
+
+            const calcRerollOrbCount = Math.floor((data.lv - 50) / 10)
+
+            if ((data.totalRerollOrb ?? 0) < calcRerollOrbCount) {
+                const getNum = calcRerollOrbCount - (data.totalRerollOrb ?? 0)
+                data.rerollOrb = (data.rerollOrb ?? 0) + getNum
+                data.totalRerollOrb = (data.totalRerollOrb ?? 0) + getNum
+                addMessage += `\n` + serifs.rpg.getRerollOrb(getNum);
+            }
 
             msg.friend.setPerModulesData(this, data);
 

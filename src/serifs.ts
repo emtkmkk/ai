@@ -489,6 +489,7 @@ export default {
 		escapeNotBattle: "もこチキは一旦諦めて別の事をするようだ。",
 		next: "次回へ続く……",
 		nextPlay: (date) => `次回は${date.getHours() < 12 ? "12時以降に" : date.getHours() < 18 ? "18時以降に" : "明日以降に"}遊べます。`,
+		getRerollOrb: (num) => `\n\nスキル変更珠を${num > 1 ? `${num}個` : ""}拾いました！\n「RPG スキル」と話しかけて確認してみてね！`,
 		player: {
 			mark: "☆",
 			mark2: "★",
@@ -524,6 +525,10 @@ export default {
 			default: "初期解放",
 			unlock: "解放済み",
 		},
+		skills: {
+			info: (num) => `スキルを変更する場合、\`rpg スキル変更 <数字>\`と話しかけてね (変更珠所持数: ${num})`,
+			list: "所持スキル一覧",
+		},
 		command: {
 			rpg: "rpg",
 			color: "色",
@@ -531,6 +536,7 @@ export default {
 			journey: "旅モード",
 			change: "変更",
 			onemore: "おかわり",
+			skill: "スキル",
 		}
 	},
 
