@@ -136,7 +136,7 @@ export const skills: Skill[] = [
     { name: `闇属性剣攻撃`, desc: `戦闘時、たまにいろんな効果が発生します`, effect: { dark: 0.1 } },
     { name: `毒属性剣攻撃`, desc: `戦闘時、ターン経過ごとに相手が弱体化します`, effect: { weak: 0.05 } },
     { name: `テキパキこなす`, desc: `戦闘以外の事の効率が上がります`, effect: { notBattleBonusAtk: 0.2 } },
-    { name: `疲れにくい`, desc: `疲れを感じにくくなります`, effect: { notBattleBonusDef: 0.2 } },
+    { name: `疲れにくい`, desc: `疲れでダメージを受ける際にそのダメージを軽減します`, effect: { notBattleBonusDef: 0.2 } },
     { name: `油断しない`, desc: `ターン1に受けるダメージを大きく軽減します`, effect: { firstTurnResist: 0.3 } },
     { name: `粘り強い`, desc: `体力が減るほど受けるダメージを軽減します`, effect: { tenacious: 0.2 } },
     { name: `高速RPG`, desc: `1回のRPGでお互いに2回行動します`, effect: { plusActionX: 1 } },
