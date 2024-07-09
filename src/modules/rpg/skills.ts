@@ -199,7 +199,7 @@ export const skillReply = (module: Module, msg: Message) => {
 
     if (msg.includes([serifs.rpg.command.change])) {
         if (!data.rerollOrb || data.rerollOrb <= 0) return { reaction: 'confused' };
-        for (let i = 0; i < data.skill.length; i++) {
+        for (let i = 0; i < data.skills.length; i++) {
             if (msg.includes([String(i + 1)])) {
                 if (!playerSkills[i].cantReroll) {
                     const oldSkillName = playerSkills[i].name
