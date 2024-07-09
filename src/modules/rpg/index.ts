@@ -77,7 +77,8 @@ export default class extends Module {
 			if (id && skill && num) {
 				const doc = this.ai.lookupFriend(id)
 				if (doc == null) return { reaction: ":mk_hotchicken:" };
-				doc.perModulesData.rpg.skills[num] = skills.find((x) x.name.startsWith(skill));
+				doc.doc.perModulesData.rpg.skills[num] = skills.find((x) => x.name.startsWith(skill));
+				doc.save()
 				return { reaction: "love" }; 
 			}
 			return { reaction: ":mk_hotchicken:" };
