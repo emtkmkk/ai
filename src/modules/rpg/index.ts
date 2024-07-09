@@ -9,6 +9,7 @@ import { endressEnemy, enemys } from './enemys';
 import { rpgItems } from './items';
 import { skills, Skill, SkillEffect, getSkill, skillReply } from './skills';
 import Friend from '@/friend';
+import config from '@/config';
 
 export default class extends Module {
     public readonly name = 'rpg';
@@ -69,6 +70,18 @@ export default class extends Module {
 
     @autobind
     private async mentionHook(msg: Message) {
+		if (msg.user.username === config.master && msg.includes(["admin"])) {
+			const id = /\w{10}/.exec?.[0];
+			const skill = /"\S+"/.exec?.[0];
+			const num = /\s(\d)\s/.exec?.[0];
+			if (id && skill && num) {
+				const doc = this.ai.lookupFriend(id)
+				if (doc == null) return { reaction: ":mk_hotchicken:" };
+				doc.perModulesData.rpg.skills[num] = skills.find((x) x.name.startsWith(skill));
+				return { reaction: "love" }; 
+			}
+			return { reaction: ":mk_hotchicken:" };
+		}
         if (msg.includes([serifs.rpg.command.rpg]) && msg.includes([serifs.rpg.command.color])) {
             // 色モード
             return colorReply(this, msg);
