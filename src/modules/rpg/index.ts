@@ -71,16 +71,31 @@ export default class extends Module {
     @autobind
     private async mentionHook(msg: Message) {
 		if (msg.user.username === config.master && msg.includes([serifs.rpg.command.rpg]) && msg.includes(["admin"])) {
-			const id = /\w{10}/.exec(msg.extractedText)?.[0];
-			const skill = /"(\S+)"/.exec(msg.extractedText)?.[1];
-			const num = /\s(\d)\s/.exec(msg.extractedText)?.[1];
-			if (id && skill && num) {
-				const doc = this.ai.lookupFriend(id)
-				if (doc == null) return { reaction: ":mk_hotchicken:" };
-				doc.doc.perModulesData.rpg.skills[num] = skills.find((x) => x.name.startsWith(skill));
-				doc.save()
-				return { reaction: "love" }; 
-			}
+            if (msg.includes(["revert"])){
+                const id = /\w{10}/.exec(msg.extractedText)?.[0];
+                if (id) {
+                    const friend = this.ai.lookupFriend(id)
+                    if (friend == null) return { reaction: ":mk_hotchicken:" };
+                    friend.doc.perModulesData.rpg.lastPlayedAt = "";
+                    friend.doc.perModulesData.rpg.lv = friend.doc.perModulesData.rpg.lv - 1;
+                    friend.doc.perModulesData.rpg.atk = friend.doc.perModulesData.rpg.atk - 4;
+                    friend.doc.perModulesData.rpg.def = friend.doc.perModulesData.rpg.def - 3;
+                    friend.save();
+                    return { reaction: "love" }; 
+                }
+            }
+            if (msg.includes(["skilledit"])){
+                const id = /\w{10}/.exec(msg.extractedText)?.[0];
+                const skill = /"(\S+)"/.exec(msg.extractedText)?.[1];
+                const num = /\s(\d)\s/.exec(msg.extractedText)?.[1];
+                if (id && skill && num) {
+                    const friend = this.ai.lookupFriend(id)
+                    if (friend == null) return { reaction: ":mk_hotchicken:" };
+                    friend.doc.perModulesData.rpg.skills[num] = skills.find((x) => x.name.startsWith(skill));
+                    friend.save()
+                    return { reaction: "love" }; 
+                }
+            }
 			return { reaction: ":mk_hotchicken:" };
 		}
         if (msg.includes([serifs.rpg.command.rpg]) && msg.includes([serifs.rpg.command.color])) {
@@ -417,7 +432,8 @@ export default class extends Module {
                 cw += `${data.enemy.short} ${count}${serifs.rpg.turn}`
                 // 前ターン時点のステータスを表示
                 let mehp = (typeof data.enemy.maxhp === "function") ? data.enemy.maxhp((100 + lv * 3)) : Math.min((100 + lv * 3) + ((data.winCount ?? 0) * 5), (data.enemy.maxhp ?? 300));
-                let ehp = Math.min(data.ehp ?? 100, mehp);
+                let ehp = Math.min(data.ehp ?? mehp, mehp);
+                if (!data.php) data.php = (100 + lv * 3);
                 data.count -= 1;
                 message += this.showStatus(data, playerHp, ehp, mehp, me) + "\n\n"
                 data.count += 1;
@@ -732,7 +748,7 @@ export default class extends Module {
             let enemyDef = (typeof data.enemy.def === "function") ? data.enemy.def(atk, def, spd) : lv * 3.5 * data.enemy.def;
 
             if (skillEffects.enemyStatusBonus) {
-                const enemyStrongs = (enemyAtk / (lv * 3.5)) * (data.enemy.atkx ?? 3) + (enemyDef / (lv * 3.5)) * (data.enemy.defx ?? 3);
+                const enemyStrongs = (enemyAtk / (lv * 3.5)) * (this.getVal(data.enemy.atkx, [tp]) ?? 3) + (enemyDef / (lv * 3.5)) * (this.getVal(data.enemy.defx, [tp]) ?? 3);
                 const bonus = Math.floor((enemyStrongs / 4) * skillEffects.enemyStatusBonus);
                 atk = atk * (1 + (bonus / 100))
                 def = def * (1 + (bonus / 100))
