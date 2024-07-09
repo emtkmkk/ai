@@ -161,6 +161,9 @@ export default class extends Module {
             }
             atk = atk * (1 + (skillEffects.atkUp ?? 0));
             atk = atk * (1 + (skillEffects.spdUp ?? 0));
+            atk = atk * (1 + ((skillEffects.critUpFixed ?? 0) * (1 + (skillEffects.critDmgUp ?? 0))));
+            atk = atk * (1 + (skillEffects.dart ?? 0) / 3);
+            atk = atk * (1 + (skillEffects.abortDown ?? 0) / 4);
             def = def * (1 + (skillEffects.defUp ?? 0));
 
             if (isSuper) {
@@ -171,7 +174,7 @@ export default class extends Module {
                 `${serifs.rpg.nowStatus}`,
                 `${serifs.rpg.status.atk} : ${Math.round(atk)}`,
                 `${serifs.rpg.status.post} : ${Math.round(postCount - (isSuper ? 200 : 0))}`,
-                "★".repeat(Math.floor(tp)) + "☆".repeat(5 - Math.floor(tp)) + "\n\n"
+                "★".repeat(Math.floor(tp)) + "☆".repeat(Math.max(5 - Math.floor(tp), 0)) + "\n\n"
             ].filter(Boolean).join("\n")
 
             cw += serifs.rpg.trial.cw(data.lv)
@@ -188,17 +191,25 @@ export default class extends Module {
                 trueDmg = Math.ceil(data.lv * skillEffects.fire)
             }
 
+            // ７フィーバー
+            let sevenFever = skillEffects.sevenFever ? this.sevenFever([data.lv, data.atk, data.def]) * skillEffects.sevenFever : 0;
+            if (sevenFever) {
+                atk = atk * (1 + (sevenFever / 100));
+                def = def * (1 + (sevenFever / 100));
+            }
+
             let totalDmg = 0;
 
+            const minRnd = 0.2 + (isSuper ? 0.3 : 0) + (skillEffects.atkRndMin ?? 0)
+            const maxRnd = 1.8 + (skillEffects.atkRndMax ?? 0)
+
             for (let i = 0; i < spd; i++) {
-                let dmg = this.getAtkDmg(data, atk, tp, 1, false, edef, 0, 1, 3) + trueDmg;
+                const rng = 1 * (1 + (skillEffects.atkDmgUp ?? 0)) * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1) 
+                let dmg = this.getAtkDmg(data, atk, tp, 1, false, edef, 0, rng, 3) + trueDmg;
                 totalDmg += dmg
                 // メッセージの出力
                 message += serifs.rpg.trial.atk(dmg) + "\n"
             }
-
-            const minRnd = 0.2 + (isSuper ? 0.3 : 0) + (skillEffects.atkRndMin ?? 0)
-            const maxRnd = 1.8 + (skillEffects.atkRndMax ?? 0)
 
             message += `\n${serifs.rpg.end}\n\n${serifs.rpg.trial.result(totalDmg)}\n${serifs.rpg.trial.random(Math.round(totalDmg * minRnd), Math.round(totalDmg * maxRnd))}\n${data.bestScore ? serifs.rpg.trial.best(data.bestScore) : ""}`
 
