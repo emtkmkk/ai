@@ -72,7 +72,7 @@ export default class extends Module {
     private async mentionHook(msg: Message) {
 		if (msg.user.username === config.master && msg.includes(["admin"])) {
 			const id = /\w{10}/.exec(msg.extractedText)?.[0];
-			const skill = /"\S+"/.exec(msg.extractedText)?.[0];
+			const skill = /"(\S+)"/.exec(msg.extractedText)?.[1];
 			const num = /\s(\d)\s/.exec(msg.extractedText)?.[1];
 			if (id && skill && num) {
 				const doc = this.ai.lookupFriend(id)
