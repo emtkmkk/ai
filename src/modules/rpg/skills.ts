@@ -204,7 +204,7 @@ export const skillReply = (module: Module, msg: Message) => {
                 if (!playerSkills[i].cantReroll) {
                     const oldSkillName = playerSkills[i].name
                     data.skills[i] = getRerollSkill(data, oldSkillName)
-                    msg.reply(`\n` + serifs.rpg.moveToSkill(oldSkillName, playerSkills[i].name))
+                    msg.reply(`\n` + serifs.rpg.moveToSkill(oldSkillName, data.skills[i].name))
                     data.rerollOrb -= 1
                     msg.friend.setPerModulesData(module, data);
                     return {
