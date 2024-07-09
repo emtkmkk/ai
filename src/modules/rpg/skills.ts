@@ -194,15 +194,17 @@ export const skillReply = (module: Module, msg: Message) => {
     // データを読み込み
     const data = msg.friend.getPerModulesData(module);
     if (!data) return false;
+    
+    const playerSkills = data.skills.map((x) => skills.find((y) => x.name === y.name) ?? x)
 
     if (msg.includes([serifs.rpg.command.change])) {
         if (!data.rerollOrb || data.rerollOrb <= 0) return { reaction: 'confused' };
         for (let i = 0; i < data.skill.length; i++) {
             if (msg.includes([String(i + 1)])) {
-                if (!data.skills[i].cantReroll) {
-                    const oldSkillName = data.skills[i].name
+                if (!playerSkills[i].cantReroll) {
+                    const oldSkillName = playerSkills[i].name
                     data.skills[i] = getRerollSkill(data, oldSkillName)
-                    msg.reply(`\n` + serifs.rpg.moveToSkill(oldSkillName, data.skills[i].name))
+                    msg.reply(`\n` + serifs.rpg.moveToSkill(oldSkillName, playerSkills[i].name))
                     data.rerollOrb -= 1
                     msg.friend.setPerModulesData(module, data);
                     return {
@@ -223,7 +225,7 @@ export const skillReply = (module: Module, msg: Message) => {
     msg.reply([
         data.rerollOrb && data.rerollOrb > 0 ? serifs.rpg.skills.info(data.rerollOrb) + "\n" : "",
         serifs.rpg.skills.list,
-        ...data.skills.map((x, index) => `[${index + 1}] ${x.name}${x.desc ? `\n${x.desc}` : ""}`)
+        ...playerSkills.map((x, index) => `[${index + 1}] ${x.name}${x.desc ? `\n${x.desc}` : ""}`)
     ].filter(Boolean).join("\n"));
 
     return {
