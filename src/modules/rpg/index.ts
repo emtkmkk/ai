@@ -1110,7 +1110,7 @@ export default class extends Module {
                             oldSkillName = skill.name;
                             data.skills = data.skills.filter((x: Skill) => x.name !== oldSkillName);
                             data.skills.push(moveToSkill);
-                            addMessage += `\n` + serifs.rpg.moveToSkill(oldSkillName, moveTo.name);
+                            addMessage += `\n` + serifs.rpg.moveToSkill(oldSkillName, moveToSkill.name);
                         }
                     }
                 }
