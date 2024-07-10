@@ -2352,6 +2352,9 @@ export default class extends Module {
 			isEnded: false
 		});
 
+		// 処理の流れ上、実際にnullになることは無さそうだけど一応
+		if (raid == null) return;
+
 		if (raid.attackers.some(x => x.user.id == msg.userId)) {
 			msg.reply('すでに参加済みの様です！').then(reply => {
 				raid.replyKey.push(msg.userId);
@@ -2362,9 +2365,6 @@ export default class extends Module {
 				reaction: 'confused'
 			};
 		}
-
-		// 処理の流れ上、実際にnullになることは無さそうだけど一応
-		if (raid == null) return;
 
         const enemy = [...raidEnemys].find((x) => raid.enemy.name === x.name);
 
