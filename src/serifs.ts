@@ -437,6 +437,8 @@ export default {
 		onagare: (enemyName) => `${enemyName}は帰っていきました……`,
 		finishCw: (enemyName) => `${enemyName}討滅戦の結果発表です！`,
 		finish: (enemyName) => `みなさんのお陰で${enemyName}を撃退できました！\nありがとうございます！`,
+		finalAttack: (dmg) => `もこチキの全力の一撃！\n${dmg}ポイントのダメージを与えた！`,
+		timeUp: (enemyName, maxHp) => `${enemyName}の最後の一撃！\n${"9".repeat(maxHp.length)}ポイントのダメージを与えた！`,
 		totalDmg: (dmg) => `合計 ${dmg} ダメージを与えた！`,
 		nowStatus: "現在のステータス",
 		lvUp: "今回のレベルアップ :",

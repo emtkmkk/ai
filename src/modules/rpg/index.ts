@@ -1328,7 +1328,7 @@ export default class extends Module {
             ? PlayerHpInfoStr
             : `${playerHp} / ${100 + (data.lv ?? 1) * 3}`
 
-        const debuff = [false ? serifs.rpg.fire + data.count : ""].filter(Boolean).join(" ")
+        const debuff = [data.enemy?.fire ? serifs.rpg.fire + data.count : ""].filter(Boolean).join(" ")
 
         return `\n${"与えたダメージ"} : ${totalDmg}\n${me} : ${data.info >= 3 ? playerHpStr : data.info ? PlayerHpInfoStr : playerHpMarkStr}${debuff ? `\n${debuff}` : ""}`
     }
@@ -1865,15 +1865,6 @@ export default class extends Module {
             def = def * (1 + (skillEffects.notBattleBonusDef ?? 0));
         }
 
-        // HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
-        if (playerHpPercent <= (1 / 7) * (1 + (skillEffects.haisuiUp ?? 0)) && (enemyHpPercent - playerHpPercent) >= 0.5 / (1 + (skillEffects.haisuiUp ?? 0))) {
-            buff += 1
-            message += serifs.rpg.haisui + "\n"
-            const effect = Math.min((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.haisuiUp ?? 0)), 1)
-            atk = atk + Math.round(def * effect)
-            def = Math.round(def * (1 - effect))
-        }
-
         const itemEquip = 0.4 + ((1 - playerHpPercent) * 0.6);
         if (rpgItems.length && ((count === 1 && skillEffects.firstTurnItem) || Math.random() < itemEquip * (1 + (skillEffects.itemEquip ?? 0))) ) {
             //アイテム
@@ -2091,6 +2082,15 @@ export default class extends Module {
             /** 敵のHP割合 */
             let enemyHpPercent = enemyHp / enemyMaxHp;
 
+            // HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
+            if (playerHpPercent <= (1 / 7) * (1 + (skillEffects.haisuiUp ?? 0)) && (enemyHpPercent - playerHpPercent) >= 0.5 / (1 + (skillEffects.haisuiUp ?? 0))) {
+                buff += 1
+                message += serifs.rpg.haisui + "\n"
+                const effect = Math.min((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.haisuiUp ?? 0)), 1)
+                atk = atk + Math.round(def * effect)
+                def = Math.round(def * (1 - effect))
+            }
+
             // 敵に最大ダメージ制限がある場合、ここで計算
             /** 1ターンに与えられる最大ダメージ量 */
             let maxdmg = enemy.maxdmg ? enemyMaxHp * enemy.maxdmg : undefined
@@ -2163,6 +2163,8 @@ export default class extends Module {
             /** 敵のターンが既に完了したかのフラグ */
             let enemyTurnFinished = false
 
+            const _data = { ...data, enemy }
+
             // 敵先制攻撃の処理
             // spdが1ではない、または戦闘ではない場合は先制攻撃しない
             if (!enemy.spd && !enemy.hpmsg && !isTired) {
@@ -2173,8 +2175,8 @@ export default class extends Module {
                     const rng = (defMinRnd + this.random(data,startCharge,skillEffects) * defMaxRnd) * defDmgX;
                     const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
                     /** ダメージ */
-                    const dmg = this.getEnemyDmg(data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng, this.getVal(enemy.atkx, [tp]))
-                    const noItemDmg = this.getEnemyDmg(data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng, this.getVal(enemy.atkx, [tp]))
+                    const dmg = this.getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng, this.getVal(enemy.atkx, [tp]))
+                    const noItemDmg = this.getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng, this.getVal(enemy.atkx, [tp]))
                     // ダメージが負けるほど多くなる場合は、先制攻撃しない
                     if (playerHp > dmg || (count === 3 && enemy.fire && (data.thirdFire ?? 0) <= 2)) {
                         playerHp -= dmg
@@ -2230,7 +2232,6 @@ export default class extends Module {
 
             // 勝利処理
             if (enemyHp <= 0) {
-                // エンドレスモードかどうかでメッセージ変更
                 message += "\n" + enemy.winmsg + "\n\n" + serifs.rpg.win
                 break;
             } else {
@@ -2257,9 +2258,9 @@ export default class extends Module {
                     message += serifs.rpg.skill.spdDown(enemy.dname ?? enemy.name) + `\n`
                     enemy.spd = 1;
                 } else if ((isBattle && isPhysical) && enemyHp > 150 && Math.random() < (skillEffects.dark ?? 0)) {
-                    const dmg = Math.floor(enemyHp / 2)
+                    const dmg = Math.floor(300 / 2)
                     message += serifs.rpg.skill.dark(enemy.dname ?? enemy.name, dmg) + `\n`
-                    enemyHp -= dmg
+                    totalDmg += dmg
                 } else if (!(isBattle && isPhysical)) {
                     // 非戦闘時は闇の効果はないが、防御に還元される
                     def = def * (1 + (skillEffects.dark ?? 0) * 0.3);
@@ -2274,8 +2275,8 @@ export default class extends Module {
                         const crit = Math.random() < (playerHpPercent - enemyHpPercent) * (1 - (skillEffects.enemyCritDown ?? 0));
                         const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
                         /** ダメージ */
-                        const dmg = this.getEnemyDmg(data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng, this.getVal(enemy.atkx, [tp]));
-                        const noItemDmg = this.getEnemyDmg(data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng, this.getVal(enemy.atkx, [tp]));
+                        const dmg = this.getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng, this.getVal(enemy.atkx, [tp]));
+                        const noItemDmg = this.getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng, this.getVal(enemy.atkx, [tp]));
                         playerHp -= dmg
                         message += (i === 0 ? "\n" : "") + (crit ? `**${enemy.defmsg(dmg)}**` : enemy.defmsg(dmg)) + "\n"
                         if (noItemDmg - dmg > 1) {
@@ -2300,13 +2301,19 @@ export default class extends Module {
                 } else {
                     // 決着がつかない場合
                     if (actionX === plusActionX) {
-                        message += this.showStatusDmg(data, playerHp, totalDmg, enemyMaxHp, me) + "\n\nタイムアップ！";
+                        message += this.showStatusDmg(_data, playerHp, totalDmg, enemyMaxHp, me);
                     } else {
-                        message += this.showStatusDmg(data, playerHp, totalDmg, enemyMaxHp, me) + "\n\n"
+                        message += this.showStatusDmg(_data, playerHp, totalDmg, enemyMaxHp, me) + "\n\n"
                     }
                     count = count + 1
                 }
             }
+        }
+
+        if (playerHp > 0) {
+            const dmg = Math.round(playerHp / (100 + lv * 3) * 200)
+            message += "\n\n" + serifs.rpg.finalAttack(dmg) + `\n\n` + serifs.rpg.timeUp(enemy.name, (100 + lv * 3)) + "\n\n" + enemy.losemsg
+            totalDmg += dmg
         }
 
         if (skillEffects.charge && data.charge > 0) {
