@@ -1,6 +1,31 @@
 import Message from "@/message";
 import Module from "@/module";
 import serifs from "@/serifs";
+import 藍 from '@/ai';
+
+export let skillNameCountMap = new Map();
+let ai: 藍;
+
+export function skillCalculate(_ai: 藍 = ai) {
+    skillNameCountMap = new Map();
+    if (_ai) ai = _ai
+    const friends = ai.friends.find().filter((x) => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1 && x.perModulesData.rpg.skills?.length)
+    friends.forEach(friend => {
+        const skills = friend.perModulesData.rpg.skills;
+        if (skills && Array.isArray(skills)) {
+            skills.forEach(skill => {
+                const skillName = skill.name;
+                if (skillName) {
+                    if (skillNameCountMap.has(skillName)) {
+                        skillNameCountMap.set(skillName, skillNameCountMap.get(skillName) + 1);
+                    } else {
+                        skillNameCountMap.set(skillName, 1);
+                    }
+                }
+            });
+        }
+    });
+}
 
 export type SkillEffect = {
     /** パワーがn%上昇 */
@@ -181,13 +206,59 @@ export const skills: Skill[] = [
 ]
 
 export const getSkill = (data) => {
+    // フィルタリングされたスキルの配列を作成
     const filteredSkills = skills.filter((x) => !x.moveTo && !data.skills?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique));
-    return filteredSkills[Math.floor(Math.random() * filteredSkills.length)];
+    
+    // スキルの合計重みを計算
+    const totalWeight = filteredSkills.reduce((total, skill) => {
+        const skillCount = skillNameCountMap.get(skill.name) || 0; // デフォルトを0に設定
+        return total + 1 / (1 + skillCount); // 出現回数に応じて重みを計算
+    }, 0);
+
+    // 0からtotalWeightまでのランダム値を生成
+    let randomValue = Math.random() * totalWeight;
+    
+    // ランダム値に基づいてスキルを選択
+    for (let skill of filteredSkills) {
+        const skillCount = skillNameCountMap.get(skill.name) || 0; // デフォルトを0に設定
+        const weight = 1 / (1 + skillCount); // 出現回数に応じて重みを計算
+        
+        if (randomValue < weight) {
+            return skill; // ランダム値が現在のスキルの重み未満であればそのスキルを選択
+        }
+        
+        randomValue -= weight; // ランダム値を減少させる
+    }
+
+    return null; // ここに来るのはおかしいよ
 }
 
 export const getRerollSkill = (data, oldSkillName = "") => {
+    // フィルタリングされたスキルの配列を作成
     const filteredSkills = skills.filter((x) => !x.moveTo && !x.cantReroll && x.name != oldSkillName && !data.skills?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique));
-    return filteredSkills[Math.floor(Math.random() * filteredSkills.length)];
+    
+    // スキルの合計重みを計算
+    const totalWeight = filteredSkills.reduce((total, skill) => {
+        const skillCount = skillNameCountMap.get(skill.name) || 0; // デフォルトを0に設定
+        return total + (1 / (1 + (skillCount / 2))); // 出現回数に応じて重みを計算
+    }, 0);
+
+    // 0からtotalWeightまでのランダム値を生成
+    let randomValue = Math.random() * totalWeight;
+    
+    // ランダム値に基づいてスキルを選択
+    for (let skill of filteredSkills) {
+        const skillCount = skillNameCountMap.get(skill.name) || 0; // デフォルトを0に設定
+        const weight = 1 / (1 + (skillCount / 2)); // 出現回数に応じて重みを計算
+        
+        if (randomValue < weight) {
+            return skill; // ランダム値が現在のスキルの重み未満であればそのスキルを選択
+        }
+        
+        randomValue -= weight; // ランダム値を減少させる
+    }
+
+    return null; // ここに来るのはおかしいよ
 }
 
 /** スキルに関しての情報を返す */
@@ -196,6 +267,8 @@ export const skillReply = (module: Module, msg: Message) => {
     // データを読み込み
     const data = msg.friend.getPerModulesData(module);
     if (!data) return false;
+
+    if (!data.skills?.length) return { reaction: 'confused' };
     
     const playerSkills = data.skills.map((x) => skills.find((y) => x.name === y.name) ?? x)
 
@@ -209,6 +282,7 @@ export const skillReply = (module: Module, msg: Message) => {
                     msg.reply(`\n` + serifs.rpg.moveToSkill(oldSkillName, data.skills[i].name))
                     data.rerollOrb -= 1
                     msg.friend.setPerModulesData(module, data);
+                    skillCalculate();
                     return {
                         reaction: 'love'
                     };

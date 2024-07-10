@@ -7,7 +7,7 @@ import autobind from 'autobind-decorator';
 import { colorReply, colors } from './colors';
 import { endressEnemy, enemys } from './enemys';
 import { rpgItems } from './items';
-import { skills, Skill, SkillEffect, getSkill, skillReply } from './skills';
+import { skills, Skill, SkillEffect, getSkill, skillReply, skillCalculate } from './skills';
 import Friend from '@/friend';
 import config from '@/config';
 
@@ -63,6 +63,7 @@ export default class extends Module {
                 });
             }
         }, 1000 * 60 * 5);
+        skillCalculate(this.ai);
         return {
             mentionHook: this.mentionHook
         };
