@@ -1714,7 +1714,7 @@ export default class extends Module {
         const skillEffects = this.aggregateSkillsEffects(data);
 
         /** 現在の敵と戦ってるターン数。 敵がいない場合は1 */
-        let count = data.count ?? 1
+        let count = 1
 
         /** 使用中の色情報 */
         const color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
