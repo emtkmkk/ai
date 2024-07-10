@@ -1330,11 +1330,7 @@ export default class extends Module {
 
         const debuff = [data.enemy.fire ? serifs.rpg.fire + data.count : ""].filter(Boolean).join(" ")
 
-        if (data.enemy.pLToR) {
-            return `\n${data.enemy.hpmsg ? serifs.rpg.player.hpmsg : "与えたダメージ"} : ${totalDmg}\n${data.enemy.hpmsg ?? data.enemy.dname ?? data.enemy.name} : ${data.info ? PlayerHpInfoStr : playerHpMarkStr}${debuff ? `\n${debuff}` : ""}`
-        } else {
-            return `\n${data.enemy.hpmsg ?? "与えたダメージ"} : ${totalDmg}\n${data.enemy.hpmsg ? serifs.rpg.player.hpmsg : me} : ${data.info >= 3 ? playerHpStr : data.info ? PlayerHpInfoStr : playerHpMarkStr}${debuff ? `\n${debuff}` : ""}`
-        }
+        return `\n${data.enemy.hpmsg ?? "与えたダメージ"} : ${totalDmg}\n${me} : ${data.info >= 3 ? playerHpStr : data.info ? PlayerHpInfoStr : playerHpMarkStr}${debuff ? `\n${debuff}` : ""}`
     }
 
     /**
@@ -2176,8 +2172,8 @@ export default class extends Module {
                     const rng = (defMinRnd + this.random(data,startCharge,skillEffects) * defMaxRnd) * defDmgX;
                     const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
                     /** ダメージ */
-                    const dmg = this.getEnemyDmg(data, def, tp, count, crit ? critDmg : false, enemyAtk, rng, enemy.atkx)
-                    const noItemDmg = this.getEnemyDmg(data, def - itemBonus.def, tp, count, crit ? critDmg : false, enemyAtk, rng, enemy.atkx)
+                    const dmg = this.getEnemyDmg(data, def, tp, count, crit ? critDmg : false, enemyAtk, rng, this.getVal(enemy.atkx, [tp]))
+                    const noItemDmg = this.getEnemyDmg(data, def - itemBonus.def, tp, count, crit ? critDmg : false, enemyAtk, rng, this.getVal(enemy.atkx, [tp]))
                     // ダメージが負けるほど多くなる場合は、先制攻撃しない
                     if (playerHp > dmg || (count === 3 && enemy.fire && (data.thirdFire ?? 0) <= 2)) {
                         playerHp -= dmg
@@ -2205,8 +2201,8 @@ export default class extends Module {
                 let crit = Math.random() < ((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0))) + (skillEffects.critUpFixed ?? 0);
                 const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
                 /** ダメージ */
-                let dmg = this.getAtkDmg(data, atk, tp, count, crit ? critDmg : false, enemyDef, enemyMaxHp, rng, enemy.defx) + trueDmg
-                const noItemDmg = this.getAtkDmg(data, atk - itemBonus.atk, tp, count, crit, enemyDef, enemyMaxHp, rng, enemy.defx) + trueDmg
+                let dmg = this.getAtkDmg(data, atk, tp, count, crit ? critDmg : false, enemyDef, enemyMaxHp, rng, this.getVal(enemy.defx, [tp])) + trueDmg
+                const noItemDmg = this.getAtkDmg(data, atk - itemBonus.atk, tp, count, crit, enemyDef, enemyMaxHp, rng, this.getVal(enemy.defx, [tp])) + trueDmg
                 // 最大ダメージ制限処理
                 if (maxdmg && maxdmg > 0 && dmg > Math.round(maxdmg * (1 / ((abort || spd) - i)))) {
                     // 最大ダメージ制限を超えるダメージの場合は、ダメージが制限される。
@@ -2218,7 +2214,7 @@ export default class extends Module {
                 }
                 // メッセージの出力
                 message += (crit ? `**${enemy.atkmsg(dmg)}**` : enemy.atkmsg(dmg)) + "\n"
-                enemyHp -= dmg
+                totalDmg += dmg
                 if (dmg - noItemDmg > 1) {
                     message += `(道具効果: +${dmg - noItemDmg})\n`
                 }
@@ -2277,8 +2273,8 @@ export default class extends Module {
                         const crit = Math.random() < (playerHpPercent - enemyHpPercent) * (1 - (skillEffects.enemyCritDown ?? 0));
                         const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
                         /** ダメージ */
-                        const dmg = this.getEnemyDmg(data, def, tp, count, crit ? critDmg : false, enemyAtk, rng, enemy.atkx);
-                        const noItemDmg = this.getEnemyDmg(data, def - itemBonus.def, tp, count, crit ? critDmg : false, enemyAtk, rng, enemy.atkx);
+                        const dmg = this.getEnemyDmg(data, def, tp, count, crit ? critDmg : false, enemyAtk, rng, this.getVal(enemy.atkx, [tp]));
+                        const noItemDmg = this.getEnemyDmg(data, def - itemBonus.def, tp, count, crit ? critDmg : false, enemyAtk, rng, this.getVal(enemy.atkx, [tp]));
                         playerHp -= dmg
                         message += (i === 0 ? "\n" : "") + (crit ? `**${enemy.defmsg(dmg)}**` : enemy.defmsg(dmg)) + "\n"
                         if (noItemDmg - dmg > 1) {
@@ -2302,9 +2298,9 @@ export default class extends Module {
                 } else {
                     // 決着がつかない場合
                     if (actionX === plusActionX) {
-                        message += this.showStatusDmg(data, playerHp, enemyMaxHp-enemyHp, enemyMaxHp, me) + "\n\n";
+                        message += this.showStatusDmg(data, playerHp, totalDmg, enemyMaxHp, me) + "\n\n";
                     } else {
-                        message += this.showStatusDmg(data, playerHp, enemyMaxHp-enemyHp, enemyMaxHp, me) + "\n\n"
+                        message += this.showStatusDmg(data, playerHp, totalDmg, enemyMaxHp, me) + "\n\n"
                     }
                     count = count + 1
                 }
