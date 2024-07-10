@@ -2173,8 +2173,8 @@ export default class extends Module {
                     const rng = (defMinRnd + this.random(data,startCharge,skillEffects) * defMaxRnd) * defDmgX;
                     const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
                     /** ダメージ */
-                    const dmg = this.getEnemyDmg(data, def, tp, count, crit ? critDmg : false, enemyAtk, rng, this.getVal(enemy.atkx, [tp]))
-                    const noItemDmg = this.getEnemyDmg(data, def - itemBonus.def, tp, count, crit ? critDmg : false, enemyAtk, rng, this.getVal(enemy.atkx, [tp]))
+                    const dmg = this.getEnemyDmg(data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng, this.getVal(enemy.atkx, [tp]))
+                    const noItemDmg = this.getEnemyDmg(data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng, this.getVal(enemy.atkx, [tp]))
                     // ダメージが負けるほど多くなる場合は、先制攻撃しない
                     if (playerHp > dmg || (count === 3 && enemy.fire && (data.thirdFire ?? 0) <= 2)) {
                         playerHp -= dmg
@@ -2202,8 +2202,8 @@ export default class extends Module {
                 let crit = Math.random() < ((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0))) + (skillEffects.critUpFixed ?? 0);
                 const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
                 /** ダメージ */
-                let dmg = this.getAtkDmg(data, atk, tp, count, crit ? critDmg : false, enemyDef, enemyMaxHp, rng, this.getVal(enemy.defx, [tp])) + trueDmg
-                const noItemDmg = this.getAtkDmg(data, atk - itemBonus.atk, tp, count, crit, enemyDef, enemyMaxHp, rng, this.getVal(enemy.defx, [tp])) + trueDmg
+                let dmg = this.getAtkDmg(data, atk, tp, 1, crit ? critDmg : false, enemyDef, enemyMaxHp, rng, this.getVal(enemy.defx, [tp])) + trueDmg
+                const noItemDmg = this.getAtkDmg(data, atk - itemBonus.atk, tp, 1, crit, enemyDef, enemyMaxHp, rng, this.getVal(enemy.defx, [tp])) + trueDmg
                 // 最大ダメージ制限処理
                 if (maxdmg && maxdmg > 0 && dmg > Math.round(maxdmg * (1 / ((abort || spd) - i)))) {
                     // 最大ダメージ制限を超えるダメージの場合は、ダメージが制限される。
@@ -2274,8 +2274,8 @@ export default class extends Module {
                         const crit = Math.random() < (playerHpPercent - enemyHpPercent) * (1 - (skillEffects.enemyCritDown ?? 0));
                         const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
                         /** ダメージ */
-                        const dmg = this.getEnemyDmg(data, def, tp, count, crit ? critDmg : false, enemyAtk, rng, this.getVal(enemy.atkx, [tp]));
-                        const noItemDmg = this.getEnemyDmg(data, def - itemBonus.def, tp, count, crit ? critDmg : false, enemyAtk, rng, this.getVal(enemy.atkx, [tp]));
+                        const dmg = this.getEnemyDmg(data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng, this.getVal(enemy.atkx, [tp]));
+                        const noItemDmg = this.getEnemyDmg(data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng, this.getVal(enemy.atkx, [tp]));
                         playerHp -= dmg
                         message += (i === 0 ? "\n" : "") + (crit ? `**${enemy.defmsg(dmg)}**` : enemy.defmsg(dmg)) + "\n"
                         if (noItemDmg - dmg > 1) {
