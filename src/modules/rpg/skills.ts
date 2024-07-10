@@ -206,8 +206,9 @@ export const skills: Skill[] = [
 ]
 
 export const getSkill = (data) => {
+	const playerSkills = data.skills.map((x) => skills.find((y) => x.name === y.name) ?? x)
     // フィルタリングされたスキルの配列を作成
-    const filteredSkills = skills.filter((x) => !x.moveTo && !data.skills?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique));
+    const filteredSkills = skills.filter((x) => !x.moveTo && !playerSkills?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique));
     
     // スキルの合計重みを計算
     const totalWeight = filteredSkills.reduce((total, skill) => {
@@ -234,8 +235,9 @@ export const getSkill = (data) => {
 }
 
 export const getRerollSkill = (data, oldSkillName = "") => {
+	const playerSkills = data.skills.map((x) => skills.find((y) => x.name === y.name) ?? x)
     // フィルタリングされたスキルの配列を作成
-    const filteredSkills = skills.filter((x) => !x.moveTo && !x.cantReroll && x.name != oldSkillName && !data.skills?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique));
+    const filteredSkills = skills.filter((x) => !x.moveTo && !x.cantReroll && x.name != oldSkillName && !playerSkills?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique));
     
     // スキルの合計重みを計算
     const totalWeight = filteredSkills.reduce((total, skill) => {
