@@ -2302,9 +2302,9 @@ export default class extends Module {
                 } else {
                     // 決着がつかない場合
                     if (actionX === plusActionX) {
-                        message += this.showStatusDmg(data, playerHp, enemyHp, enemyMaxHp, me) + "\n\n";
+                        message += this.showStatusDmg(data, playerHp, enemyMaxHp-enemyHp, enemyMaxHp, me) + "\n\n";
                     } else {
-                        message += this.showStatusDmg(data, playerHp, enemyHp, enemyMaxHp, me) + "\n\n"
+                        message += this.showStatusDmg(data, playerHp, enemyMaxHp-enemyHp, enemyMaxHp, me) + "\n\n"
                     }
                     count = count + 1
                 }
@@ -2319,7 +2319,7 @@ export default class extends Module {
 
         msg.friend.setPerModulesData(this, data);
 
-        message += "\n\n" + serifs.rpg.totalDmg
+        message += "\n\n" + serifs.rpg.totalDmg(totalDmg)
 
         // 色解禁確認
         const newColorData = colors.map((x) => x.unlock(data));
