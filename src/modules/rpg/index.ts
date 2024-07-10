@@ -5,17 +5,53 @@ import { acct } from '@/utils/acct';
 import getDate from '@/utils/get-date';
 import autobind from 'autobind-decorator';
 import { colorReply, colors } from './colors';
-import { endressEnemy, enemys } from './enemys';
+import { endressEnemy, enemys, Enemy, raidEnemys } from './enemys';
 import { rpgItems } from './items';
 import { skills, Skill, SkillEffect, getSkill, skillReply, skillCalculate } from './skills';
+import { User } from '@/misskey/user';
 import Friend from '@/friend';
 import config from '@/config';
+import * as loki from 'lokijs';
+
+type Raid = {
+	attackers: {
+		user: {
+			id: string;
+			username: string;
+			host: User['host'];
+		};
+        me: string;
+		dmg: number;
+	}[];
+    enemy: Enemy;
+	isEnded: boolean;
+	startedAt: number;
+	finishedAt: number;
+	postId: string;
+	triggerUserId: string | undefined;
+	replyKey: string[];
+};
 
 export default class extends Module {
     public readonly name = 'rpg';
 
+	private raids: loki.Collection<Raid>;
+
     @autobind
     public install() {
+		this.raids = this.ai.getCollection('rpgRaid');
+
+		this.crawleGameEnd();
+		setInterval(this.crawleGameEnd, 1000);
+        /*
+		setInterval(() => {
+			const hours = new Date().getHours()
+			const rnd = 0.1 * this.ai.activeFactor;
+			if (Math.random() < rnd) {
+				this.start();
+			}
+		}, 1000 * 60 * 60 * 3);
+        */
         const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
         const maxLv = this.ai.friends.find().filter((x) => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1).reduce((acc, cur) => acc > cur.perModulesData.rpg.lv ? acc : cur.perModulesData.rpg.lv, 0)
         console.log("maxLv : " + maxLv);
@@ -65,7 +101,8 @@ export default class extends Module {
         }, 1000 * 60 * 5);
         skillCalculate(this.ai);
         return {
-            mentionHook: this.mentionHook
+            mentionHook: this.mentionHook,
+			contextHook: this.contextHook
         };
     }
 
@@ -97,7 +134,10 @@ export default class extends Module {
                     return { reaction: "love" }; 
                 }
             }
-			return { reaction: ":mk_hotchicken:" };
+            if (msg.includes(["startRaid"])){
+                this.start();
+                return { reaction: "love" }; 
+            }
 		}
         if (msg.includes([serifs.rpg.command.rpg]) && msg.includes([serifs.rpg.command.color])) {
             // 色モード
@@ -1266,6 +1306,38 @@ export default class extends Module {
     }
 
     /**
+     * ステータスを作成し、返します。
+     * @param data RPGモジュールのData
+     * @param playerHp プレイヤーのHP
+     * @param enemyHp 敵のHP
+     * @param enemyMaxHp 敵の最大HP
+     * @param me 自分の姿
+     */
+    @autobind
+    private showStatusDmg(data, playerHp: number, totalDmg: number, enemyMaxHp: number, me = colors.find((x) => x.default)?.name ?? colors[0].name): string {
+
+        // プレイヤー
+        const playerHpMarkCount = Math.min(Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 7)), 7)
+        const playerHpMarkStr = data.enemy.pLToR
+            ? serifs.rpg.player.mark2.repeat(7 - playerHpMarkCount) + serifs.rpg.player.mark.repeat(playerHpMarkCount)
+            : serifs.rpg.player.mark2.repeat(playerHpMarkCount) + serifs.rpg.player.mark.repeat(7 - playerHpMarkCount)
+        const PlayerHpInfoStr = data.enemy.pLToR
+            ? (Math.ceil((100 - Math.min(Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 100)), 100)) / 5) * 5) + " " + serifs.rpg.infoPercent
+            : (Math.ceil((Math.min(Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 100)), 100)) / 5) * 5) + " " + serifs.rpg.infoPercent
+        const playerHpStr = data.enemy.pLToR
+            ? PlayerHpInfoStr
+            : `${playerHp} / ${100 + (data.lv ?? 1) * 3}`
+
+        const debuff = [data.enemy.fire ? serifs.rpg.fire + data.count : ""].filter(Boolean).join(" ")
+
+        if (data.enemy.pLToR) {
+            return `\n${data.enemy.hpmsg ? serifs.rpg.player.hpmsg : "与えたダメージ"} : ${totalDmg}\n${data.enemy.hpmsg ?? data.enemy.dname ?? data.enemy.name} : ${data.info ? PlayerHpInfoStr : playerHpMarkStr}${debuff ? `\n${debuff}` : ""}`
+        } else {
+            return `\n${data.enemy.hpmsg ?? "与えたダメージ"} : ${totalDmg}\n${data.enemy.hpmsg ? serifs.rpg.player.hpmsg : me} : ${data.info >= 3 ? playerHpStr : data.info ? PlayerHpInfoStr : playerHpMarkStr}${debuff ? `\n${debuff}` : ""}`
+        }
+    }
+
+    /**
      * ユーザの投稿数を取得します
      * @param data RPGモジュールのData
      * @param msg Message
@@ -1390,7 +1462,7 @@ export default class extends Module {
     @autobind
     private getAtkDmg(data, atk: number, tp: number, count: number, crit: number | boolean, enemyDef: number, enemyMaxHp: number, rng = (0.2 + Math.random() * 1.6), defx?: number) {
         let dmg = Math.round((atk * tp * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * rng * (crit ? typeof crit === "number" ? (2 * crit) : 2 : 1)) * (1 / (((enemyDef * (defx ?? this.getVal(data.enemy.defx, [tp]) ?? 3)) + 100) / 100)))
-        if (data.fireAtk > 0) {
+        if (data.fireAtk > 0 && enemyMaxHp < 10000) {
             dmg += Math.round((data.fireAtk) * enemyMaxHp * 0.01)
             data.fireAtk = (data.fireAtk ?? 0) - 1;
         }
@@ -1440,9 +1512,9 @@ export default class extends Module {
             });
         });
 
-        if (aggregatedEffect.itemEquip && aggregatedEffect.itemEquip > 1) {
-            aggregatedEffect.itemBoost = (aggregatedEffect.itemBoost ?? 0) + (aggregatedEffect.itemEquip - 1)
-            aggregatedEffect.itemEquip = 1;
+        if (aggregatedEffect.itemEquip && aggregatedEffect.itemEquip > 1.5) {
+            aggregatedEffect.itemBoost = (aggregatedEffect.itemBoost ?? 0) + (aggregatedEffect.itemEquip - 1.5)
+            aggregatedEffect.itemEquip = 1.5;
         }
 
         if (aggregatedEffect.poisonAvoid && aggregatedEffect.poisonAvoid > 1) {
@@ -1519,4 +1591,796 @@ export default class extends Module {
         }
         return val
     }
+
+    
+	@autobind
+	private async start(triggerUserId?, flg?) {
+
+		this.ai.decActiveFactor();
+
+		const games = this.raids.find({});
+
+		const recentGame = games.length == 0 ? null : games[games.length - 1];
+
+		const enemy = raidEnemys[Math.floor(Math.random() * raidEnemys.length)]
+
+        /*
+		// ゲーム開始条件判定
+		const h = new Date().getHours()
+		if (
+			recentGame && (
+				!recentGame.isEnded ||
+				(
+					(h > 0 && h < 8) ||
+					(
+						Date.now() - recentGame.startedAt < 1000 * 60 * 60 * 12
+					)
+				)
+			)
+		) return
+        */
+        let limitMinutes = 10;
+
+		// 機嫌が低い場合、受付時間を延長
+		if (this.ai.activeFactor < 0.75) {
+			limitMinutes = Math.floor(1 / (1 - Math.min((1 - this.ai.activeFactor) * 1.2 * (0.7 + Math.random() * 0.3), 0.8)) * limitMinutes / 5) * 5;
+		}
+
+		const post = await this.ai.post({
+			text: serifs.rpg.intro(enemy.dname ?? enemy.name, Math.ceil((Date.now() + 1000 * 60 * limitMinutes) / 1000)),
+		});
+
+		this.raids.insertOne({
+			attackers: [],
+            enemy,
+			isEnded: false,
+			startedAt: Date.now(),
+			finishedAt: Date.now() + 1000 * 60 * limitMinutes,
+			postId: post.id,
+			triggerUserId,
+			replyKey: triggerUserId ? [triggerUserId] : [],
+		});
+
+		this.subscribeReply(null, post.id);
+
+		this.log('New raid started');
+	}
+
+    /**
+	 * 終了すべきゲームがないかチェック
+	 */
+	@autobind
+	private crawleGameEnd() {
+		const raid = this.raids.findOne({
+			isEnded: false
+		});
+
+		if (raid == null) return;
+
+		// 制限時間が経過していたら
+		if (Date.now() - (raid.finishedAt ?? raid.startedAt + 1000 * 60 * 10) >= 0) {
+			this.finish(raid);
+		}
+	}
+    
+	/**
+	 * ゲームを終わらせる
+	 */
+	@autobind
+	private finish(raid: Raid) {
+		raid.isEnded = true;
+		this.raids.update(raid);
+
+		this.log('raid finished');
+
+		// お流れ
+		if (raid.attackers?.filter((x) => x.dmg > 1).length < 1) {
+			this.ai.decActiveFactor((raid.finishedAt.valueOf() - raid.startedAt.valueOf()) / (60 * 1000 * 100));
+
+			this.ai.post({
+				text: serifs.rpg.onagare,
+				renoteId: raid.postId
+			});
+
+			return;
+		}
+
+		let results: string[] = [];
+
+		for (let attacker of raid.attackers) {
+		    results.push(`${attacker.me} ${acct(attacker.user)}: ${attacker.dmg} ダメージ`);
+		}
+
+		const text = results.join('\n') + '\n\n' + serifs.rpg.finish(raid.enemy.name);
+
+		this.ai.post({
+			text: text,
+			cw: serifs.rpg.finishCw,
+			renoteId: raid.postId
+		});
+
+		this.unsubscribeReply(null);
+		raid.replyKey.forEach((x) => this.unsubscribeReply(x));
+	}
+
+    @autobind
+    private async getTotalDmg(msg, enemy: Enemy) {
+        // データを読み込み
+        const data = msg.friend.getPerModulesData(this);
+        // 各種データがない場合は、初期化
+        if (!data.clearEnemy) data.clearEnemy = [data.preEnemy ?? ""].filter(Boolean);
+        if (!data.clearHistory) data.clearHistory = data.clearEnemy;
+        if (!data.lv) return {
+            reaction: 'confused'
+        };
+        const colorData = colors.map((x) => x.unlock(data));
+        // 所持しているスキル効果を読み込み
+        const skillEffects = this.aggregateSkillsEffects(data);
+
+        /** 現在の敵と戦ってるターン数。 敵がいない場合は1 */
+        let count = data.count ?? 1
+
+        /** 使用中の色情報 */
+        const color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
+
+        if (colors.find((x) => x.alwaysSuper)?.unlock(data)) {
+            data.superUnlockCount = (data.superUnlockCount ?? 0) + 1
+        }
+
+        /** 覚醒状態か？*/
+        const isSuper = Math.random() < (0.02 + Math.max(data.superPoint / 200, 0)) || (data.lv ?? 1) % 100 === 0 || color.alwaysSuper;
+
+        /** 投稿数（今日と明日の多い方）*/
+        let postCount = await this.getPostCount(data, msg, (isSuper ? 200 : 0))
+
+        postCount = postCount + (Math.min(Math.max(10, postCount / 2), 25))
+
+        // 投稿数に応じてステータス倍率を得る
+        // 連続プレイの場合は倍率アップ
+        /** ステータス倍率（投稿数） */
+        let tp = this.getPostX(postCount) * (1 + (skillEffects.postXUp ?? 0));
+
+        if (!isSuper) {
+            data.superPoint = Math.max(data.superPoint ?? 0 - (tp - 2), -3)
+        } else {
+            data.superPoint = 0;
+        }
+
+
+        /** 画面に出力するメッセージ:CW */
+        let cw = acct(msg.user) + " ";
+        /** 画面に出力するメッセージ:Text */
+        let message = ""
+
+        /** プレイヤーの見た目 */
+        let me = color.name
+
+        // ステータスを計算
+        /** プレイヤーのLv */
+        const lv = data.lv ?? 1
+        /** 開始時のチャージ */
+        const startCharge = data.charge;
+
+        // 敵情報
+        // 敵が消された？？
+        if (!enemy) enemy = endressEnemy(data);
+        // 敵の開始メッセージなどを設定
+        cw += `${enemy.msg}`
+        message += `$[x2 ${me}]\n\n${serifs.rpg.start}\n\n`;
+
+        /** バフを得た数。行数のコントロールに使用 */
+        let buff = 0;
+
+        // ここで残りのステータスを計算しなおす
+        const stbonus = (((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) + ((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0))) / 2
+        /** プレイヤーの攻撃力 */
+        let atk = Math.max(5 + (data.atk ?? 0) + Math.floor(stbonus * ((100 + (data.atk ?? 0)) / 100)), 5)
+        /** プレイヤーの防御力 */
+        let def = Math.max(5 + (data.def ?? 0) + Math.floor(stbonus * ((100 + (data.def ?? 0)) / 100)), 5)
+        /** プレイヤーの行動回数 */
+        let spd = Math.floor((msg.friend.love ?? 0) / 100) + 1;
+        if (color.reverseStatus) {
+            // カラーによるパラメータ逆転
+            const _atk = atk;
+            atk = def
+            def = _atk
+        }
+        atk = atk * (1 + (skillEffects.atkUp ?? 0));
+        def = def * (1 + (skillEffects.defUp ?? 0));
+        /** 敵の最大HP */
+        let enemyMaxHp = 100000;
+        /** 敵のHP */
+        let enemyHp = 100000;
+        /** 連続攻撃中断の場合の攻撃可能回数 0は最後まで攻撃 */
+        let abort = 0;
+        /** プレイヤーのHP */
+        let playerHp = (100 + lv * 3);
+        /** プレイヤーのHP割合 */
+        let playerHpPercent = playerHp / (100 + lv * 3);
+        /** 敵のHP割合 */
+        let enemyHpPercent = 1;
+        /** 使用したアイテム */
+        let item;
+        /** アイテムによって増加したステータス */
+        let itemBonus = { atk: 0, def: 0 };
+        
+        /** これって戦闘？ */
+        let isBattle = enemy.atkmsg(0).includes("ダメージ");
+
+        /** これって物理戦闘？ */
+        let isPhysical = !enemy.atkmsg(0).includes("精神");
+
+        /** ダメージ発生源は疲れ？ */
+        let isTired = enemy.defmsg(0).includes("疲");
+
+        let totalDmg = 0;
+
+        if (isSuper) {
+            const superColor = colors.find((x) => x.alwaysSuper)?.name ?? colors.find((x) => x.default)?.name ?? colors[0]?.name;
+            if (me !== superColor) {
+                // バフが1つでも付与された場合、改行を追加する
+                if (buff > 0) message += "\n"
+                buff += 1;
+                me = superColor;
+                message += serifs.rpg.super(me) + `\n`;
+                data.superCount = (data.superCount ?? 0) + 1
+            }
+            spd += 2;
+        }
+
+        // ７フィーバー
+        let sevenFever = skillEffects.sevenFever ? this.sevenFever([data.lv, data.atk, data.def]) * skillEffects.sevenFever : 0;
+        if (sevenFever) {
+            buff += 1;
+            message += serifs.rpg.skill.sevenFever(sevenFever) + "\n";
+            atk = atk * (1 + (sevenFever / 100));
+            def = def * (1 + (sevenFever / 100));
+        }
+
+        // spdが低い場合、確率でspdが+1。
+        if (spd === 2 && Math.random() < 0.1) {
+            buff += 1
+            message += serifs.rpg.spdUp + "\n"
+            spd = 3;
+        }
+        if (spd === 1 && Math.random() < 0.5) {
+            buff += 1
+            message += serifs.rpg.spdUp + "\n"
+            spd = 2;
+        }
+
+        // 風魔法発動時
+        let spdUp = spd * (skillEffects.spdUp ?? 0)
+        if (Math.random() < spdUp % 1) spdUp = Math.floor(spdUp) + 1;
+        if ((isBattle && isPhysical) && spdUp) {
+            buff += 1
+            message += serifs.rpg.skill.wind(spdUp) + "\n"
+            spd = spd + spdUp;
+        } else if (!(isBattle && isPhysical)) {
+            // 非戦闘時は速度は上がらないが、パワーに還元される
+            atk = atk * (1 + (skillEffects.spdUp ?? 0));
+        }
+        
+        // 非戦闘なら非戦闘時スキルが発動
+        if (!isBattle) {
+            atk = atk * (1 + (skillEffects.notBattleBonusAtk ?? 0));
+        }
+        if (isTired) {
+            def = def * (1 + (skillEffects.notBattleBonusDef ?? 0));
+        }
+
+        // HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
+        if (playerHpPercent <= (1 / 7) * (1 + (skillEffects.haisuiUp ?? 0)) && (enemyHpPercent - playerHpPercent) >= 0.5 / (1 + (skillEffects.haisuiUp ?? 0))) {
+            buff += 1
+            message += serifs.rpg.haisui + "\n"
+            const effect = Math.min((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.haisuiUp ?? 0)), 1)
+            atk = atk + Math.round(def * effect)
+            def = Math.round(def * (1 - effect))
+        }
+
+        const itemEquip = 0.4 + ((1 - playerHpPercent) * 0.6);
+        if (rpgItems.length && ((count === 1 && skillEffects.firstTurnItem) || Math.random() < itemEquip * (1 + (skillEffects.itemEquip ?? 0))) ) {
+            //アイテム
+            buff += 1
+            if ((count === 1 && skillEffects.firstTurnItem)) message += serifs.rpg.skill.firstItem
+            if (enemy.pLToR) {
+                let isPlus = Math.random() < 0.5;
+                const items = rpgItems.filter((x) => isPlus ? x.mind > 0 : x.mind < 0);
+                item = items[Math.floor(Math.random() * items.length)];
+            } else {
+                let types = ["weapon", "armor"];
+                for (let i = 0; i < (skillEffects.weaponSelect ?? 0); i++) {
+                    types.push("weapon");
+                }
+                for (let i = 0; i < (skillEffects.armorSelect ?? 0); i++) {
+                    types.push("armor");
+                }
+                if ((count !== 1 || enemy.pLToR) && !skillEffects.lowHpFood) {
+                    types.push("medicine");
+                    types.push("poison");
+                    for (let i = 0; i < (skillEffects.foodSelect ?? 0); i++) {
+                        types.push("medicine");
+                        types.push("poison");
+                    }
+                }
+                if ((count !== 1 || enemy.pLToR) && skillEffects.lowHpFood && Math.random() < skillEffects.lowHpFood * playerHpPercent) {
+                    if (playerHpPercent < 0.5) message += serifs.rpg.skill.lowHpFood
+                    types = ["medicine", "poison"]
+                }
+                const type = types[Math.floor(Math.random() * types.length)]
+                if ((type === "weapon" && !(isBattle && isPhysical)) || (type === "armor" && isTired) || enemy.pLToR) {
+                    let isPlus = Math.random() < (0.5 + (skillEffects.mindMinusAvoid ?? 0) + (count === 1 ? skillEffects.firstTurnMindMinusAvoid ?? 0 : 0));
+                    const items = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind < 0));
+                    item = items[Math.floor(Math.random() * items.length)];
+                } else {
+                    const items = rpgItems.filter((x) => x.type === type && x.effect > 0);
+                    item = items[Math.floor(Math.random() * items.length)];
+                }
+            }
+            const mindMsg = (mind) => {
+                if (mind >= 100) {
+                    message += `もこチキの気合が特大アップ！\n`
+                } else if (mind >= 70) {
+                    message += `もこチキの気合が大アップ！\n`
+                } else if (mind > 30) {
+                    message += `もこチキの気合がアップ！\n`
+                } else if (mind > 0) {
+                    message += `もこチキの気合が小アップ！\n`
+                } else if (mind > -50) {
+                    message += `あまり良い気分ではないようだ…\n`
+                } else {
+                    message += `もこチキの気合が下がった…\n`
+                }
+            }
+            if (item.type !== "poison") {
+                item.effect = Math.round(item.effect * (1 + (skillEffects.itemBoost ?? 0)))
+                if (item.type === "weapon") item.effect = Math.round(item.effect * (1 + (skillEffects.weaponBoost ?? 0)))
+                if (item.type === "armor") item.effect = Math.round(item.effect * (1 + (skillEffects.armorBoost ?? 0)))
+                if (item.type === "medicine") item.effect = Math.round(item.effect * (1 + (skillEffects.foodBoost ?? 0)))
+            } else {
+                item.effect = Math.round(item.effect / (1 + (skillEffects.itemBoost ?? 0)))
+                item.effect = Math.round(item.effect / (1 + (skillEffects.poisonResist ?? 0)))
+            }
+            if (item.mind < 0) {
+                item.mind = Math.round(item.mind / (1 + (skillEffects.itemBoost ?? 0)))
+            } else {
+                item.mind = Math.round(item.mind * (1 + (skillEffects.itemBoost ?? 0)))
+            }
+            switch (item.type) {
+                case "weapon":
+                    message += `${item.name}を取り出し、装備した！\n`
+                    if (!(isBattle && isPhysical)) {
+                        mindMsg(item.mind)
+                        if (item.mind < 0 && isSuper) item.mind = item.mind / 2
+                        itemBonus.atk = atk * (item.mind * 0.0025);
+                        itemBonus.def = def * (item.mind * 0.0025);
+                        atk = atk + itemBonus.atk;
+                        def = def + itemBonus.def;
+                    } else {
+                        itemBonus.atk = (lv * 4) * (item.effect * 0.005);
+                        atk = atk + itemBonus.atk;
+                        if (item.effect >= 100) {
+                            message += `もこチキのパワーが特大アップ！\n`
+                        } else if (item.effect >= 70) {
+                            message += `もこチキのパワーが大アップ！\n`
+                        } else if (item.effect > 30) {
+                            message += `もこチキのパワーがアップ！\n`
+                        } else {
+                            message += `もこチキのパワーが小アップ！\n`
+                        }
+                    }
+                    break;
+                case "armor":
+                    message += `${item.name}を取り出し、装備した！\n`
+                    if (isTired) {
+                        mindMsg(item.mind)
+                        if (item.mind < 0 && isSuper) item.mind = item.mind / 2
+                        itemBonus.atk = atk * (item.mind * 0.0025);
+                        itemBonus.def = def * (item.mind * 0.0025);
+                        atk = atk + itemBonus.atk;
+                        def = def + itemBonus.def;
+                    } else {
+                        itemBonus.def = (lv * 4) * (item.effect * 0.005);
+                        def = def + itemBonus.def;
+                        if (item.effect >= 100) {
+                            message += `もこチキの防御が特大アップ！\n`
+                        } else if (item.effect >= 70) {
+                            message += `もこチキの防御が大アップ！\n`
+                        } else if (item.effect > 30) {
+                            message += `もこチキの防御がアップ！\n`
+                        } else {
+                            message += `もこチキの防御が小アップ！\n`
+                        }
+                    }
+                    break;
+                case "medicine":
+                    message += `${item.name}を取り出し、食べた！\n`
+                    if (enemy.pLToR) {
+                        mindMsg(item.mind)
+                        if (item.mind < 0 && isSuper) item.mind = item.mind / 2
+                        itemBonus.atk = atk * (item.mind * 0.0025);
+                        itemBonus.def = def * (item.mind * 0.0025);
+                        atk = atk + itemBonus.atk;
+                        def = def + itemBonus.def;
+                    } else {
+                        const heal = Math.round(((100 + lv * 3) - playerHp) * (item.effect * 0.005))
+                        playerHp += heal
+                        if (heal > 0) {
+                            if (item.effect >= 100 && heal >= 50) {
+                                message += `もこチキの体力が特大回復！\n${heal}ポイント回復した！\n`
+                            } else if (item.effect >= 70 && heal >= 35) {
+                                message += `もこチキの体力が大回復！\n${heal}ポイント回復した！\n`
+                            } else if (item.effect > 30 && heal >= 15) {
+                                message += `もこチキの体力が回復！\n${heal}ポイント回復した！\n`
+                            } else {
+                                message += `もこチキの体力が小回復！\n${heal}ポイント回復した！\n`
+                            }
+                        }
+                    }
+                    break;
+                case "poison":
+                    if (Math.random() < (skillEffects.poisonAvoid ?? 0)) {
+                        message += `${item.name}を取り出したが、美味しそうでなかったので捨てた！\n`
+                    } else {
+                        message += `${item.name}を取り出し、食べた！\n`
+                        if (enemy.pLToR) {
+                            mindMsg(item.mind)
+                            if (item.mind < 0 && isSuper) item.mind = item.mind / 2
+                            itemBonus.atk = atk * (item.mind * 0.0025);
+                            itemBonus.def = def * (item.mind * 0.0025);
+                            atk = atk + itemBonus.atk;
+                            def = def + itemBonus.def;
+                        } else {
+                            const dmg = Math.round(playerHp * (item.effect * 0.003) * (isSuper ? 0.5 : 1));
+                            playerHp -= dmg;
+                            if (item.effect >= 70 && dmg > 0) {
+                                message += `もこチキはかなり調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`
+                            } else if (item.effect > 30 && dmg > 0) {
+                                message += `もこチキは調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`
+                            } else {
+                                message += `あまり美味しくなかったようだ…${dmg > 0 ? `\n${dmg}ポイントのダメージを受けた！` : ""}\n`
+                            }
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        // 敵のステータスを計算
+        /** 敵の攻撃力 */
+        let enemyAtk = (typeof enemy.atk === "function") ? enemy.atk(atk, def, spd) : lv * 3.5 * (enemy.atk ?? 1);
+        /** 敵の防御力 */
+        let enemyDef = (typeof enemy.def === "function") ? enemy.def(atk, def, spd) : lv * 3.5 * (enemy.def ?? 1);
+
+        if (skillEffects.enemyStatusBonus) {
+            const enemyStrongs = (enemyAtk / (lv * 3.5)) * (this.getVal(enemy.atkx, [tp]) ?? 3) + (enemyDef / (lv * 3.5)) * (this.getVal(enemy.defx, [tp]) ?? 3);
+            const bonus = Math.floor((enemyStrongs / 4) * skillEffects.enemyStatusBonus);
+            atk = atk * (1 + (bonus / 100))
+            def = def * (1 + (bonus / 100))
+            if (bonus / skillEffects.enemyStatusBonus >= 5) {
+                buff += 1
+                message += serifs.rpg.skill.enemyStatusBonus + "\n"
+            }
+        }
+        
+        if (skillEffects.firstTurnResist && count === 1 && isBattle && isPhysical) {
+            buff += 1
+            message += serifs.rpg.skill.firstTurnResist + "\n"
+        }
+        
+        if (skillEffects.tenacious && playerHpPercent < 0.5 && isBattle && isPhysical) {
+            buff += 1
+            message += serifs.rpg.skill.tenacious + "\n"
+        }
+
+        // バフが1つでも付与された場合、改行を追加する
+        if (buff > 0) message += "\n"
+
+        if (skillEffects.plusActionX) {
+            atk = atk * (1 + (skillEffects.plusActionX ?? 0) / 10)
+        }
+
+        const plusActionX = 100
+
+        for (let actionX = 0; actionX < plusActionX + 1; actionX++) {
+
+            /** バフを得た数。行数のコントロールに使用 */
+            let buff = 0;
+
+            /** プレイヤーのHP割合 */
+            let playerHpPercent = playerHp / (100 + lv * 3);
+            /** 敵のHP割合 */
+            let enemyHpPercent = enemyHp / enemyMaxHp;
+
+            // 敵に最大ダメージ制限がある場合、ここで計算
+            /** 1ターンに与えられる最大ダメージ量 */
+            let maxdmg = enemy.maxdmg ? enemyMaxHp * enemy.maxdmg : undefined
+
+            // 土属性剣攻撃
+            if (skillEffects.dart && isBattle && isPhysical && maxdmg) {
+                buff += 1
+                message += serifs.rpg.skill.dart + "\n"
+                maxdmg = maxdmg * (1 + skillEffects.dart)
+            } else if (skillEffects.dart && !(isBattle && isPhysical && maxdmg)) {
+                // 効果がない場合非戦闘時は、パワーに還元される
+                atk = atk * (1 + skillEffects.dart * 0.5);
+            }
+
+            let trueDmg = 0;
+
+            // 炎属性剣攻撃
+            if (skillEffects.fire && (isBattle && isPhysical)) {
+                buff += 1
+                message += serifs.rpg.skill.fire + "\n"
+                trueDmg = Math.ceil(lv * skillEffects.fire)
+            } else if (skillEffects.fire && !(isBattle && isPhysical)) {
+                // 非戦闘時は、パワーに還元される
+                atk = atk + lv * 3.75 * skillEffects.fire;
+            }
+            
+            // 毒属性剣攻撃
+            if (skillEffects.weak && count > 1) {
+                if (isBattle && isPhysical) {
+                    buff += 1
+                    message += serifs.rpg.skill.weak(enemy.dname ?? enemy.name) + "\n"
+                }
+                enemyAtk = Math.max(enemyAtk * (1 - (skillEffects.weak * (count - 1))), 0)
+                enemyDef = Math.max(enemyDef * (1 - (skillEffects.weak * (count - 1))), 0)
+            }
+
+            // バフが1つでも付与された場合、改行を追加する
+            if (buff > 0) message += "\n"
+
+            // 敵が中断能力持ちの場合、ここで何回攻撃可能か判定
+            for (let i = 1; i < spd; i++) {
+                if (enemy.abort && Math.random() < enemy.abort * (1 - (skillEffects.abortDown ?? 0))) {
+                    abort = i;
+                    break;
+                }
+            }
+
+            if (!enemy.abort && skillEffects.abortDown) {
+                // 効果がない場合は、パワーに還元される
+                atk = atk * (1 + skillEffects.abortDown * (1/3));
+            }
+
+            const defDmgX = Math.max(1 * 
+                (1 + Math.max(skillEffects.defDmgUp ?? 0, -0.9)) *
+                (count === 1 && skillEffects.firstTurnResist ? (1 - (skillEffects.firstTurnResist ?? 0)) : 1) *
+                (count === 2 && skillEffects.firstTurnResist && skillEffects.firstTurnResist > 1 ? (1 - ((skillEffects.firstTurnResist ?? 0) - 1)) : 1) *
+                (1 - Math.min((skillEffects.tenacious ?? 0) * (1 - playerHpPercent), 0.9)), 0)
+
+            const atkMinRnd = Math.max(0.2 + (isSuper ? 0.3 : 0) + (skillEffects.atkRndMin ?? 0), 0)
+            const atkMaxRnd = Math.max(1.6 + (isSuper ? -0.3 : 0) + (skillEffects.atkRndMax ?? 0), 0)
+            const defMinRnd = Math.max(0.2 + (skillEffects.defRndMin ?? 0), 0)
+            const defMaxRnd = Math.max(1.6 + (isSuper ? -0.3 : 0) + (skillEffects.defRndMax ?? 0), 0)
+
+            /** 予測最大ダメージ */
+            let predictedDmg = Math.round((atk * tp * (atkMinRnd + atkMaxRnd)) * (1 / (((enemyDef * (this.getVal(enemy.defx, [tp]) ?? 3)) + 100) / 100))) * (abort || spd);
+
+            // 予測最大ダメージは最大ダメージ制限を超えない
+            if (maxdmg && predictedDmg > maxdmg) predictedDmg = maxdmg;
+
+            /** 敵のターンが既に完了したかのフラグ */
+            let enemyTurnFinished = false
+
+            // 敵先制攻撃の処理
+            // spdが1ではない、または戦闘ではない場合は先制攻撃しない
+            if (!enemy.spd && !enemy.hpmsg && !isTired) {
+                /** クリティカルかどうか */
+                const crit = Math.random() < (playerHpPercent - enemyHpPercent) * (1 - (skillEffects.enemyCritDown ?? 0));
+                // 予測最大ダメージが相手のHPの何割かで先制攻撃の確率が判定される
+                if (Math.random() < predictedDmg / enemyHp || (count === 3 && enemy.fire && (data.thirdFire ?? 0) <= 2)) {
+                    const rng = (defMinRnd + this.random(data,startCharge,skillEffects) * defMaxRnd) * defDmgX;
+                    const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
+                    /** ダメージ */
+                    const dmg = this.getEnemyDmg(data, def, tp, count, crit ? critDmg : false, enemyAtk, rng)
+                    const noItemDmg = this.getEnemyDmg(data, def - itemBonus.def, tp, count, crit ? critDmg : false, enemyAtk, rng)
+                    // ダメージが負けるほど多くなる場合は、先制攻撃しない
+                    if (playerHp > dmg || (count === 3 && enemy.fire && (data.thirdFire ?? 0) <= 2)) {
+                        playerHp -= dmg
+                        message += (crit ? `**${enemy.defmsg(dmg)}**` : enemy.defmsg(dmg)) + "\n"
+                        if (noItemDmg - dmg > 1) {
+                            message += `(道具効果: -${noItemDmg - dmg})\n`
+                        }
+                        if (playerHp <= 0 && !enemy.notEndure) {
+                            message += serifs.rpg.endure + "\n"
+                            playerHp = 1;
+                        }
+                        message += "\n";
+                        enemyTurnFinished = true;
+                        if (enemy.fire && count > (data.thirdFire ?? 0)) data.thirdFire = count;
+                        if (dmg > (data.superMuscle ?? 0)) data.superMuscle = dmg;
+                    }
+                }
+            }
+
+            // 自身攻撃の処理
+            // spdの回数分、以下の処理を繰り返す
+            for (let i = 0; i < spd; i++) {
+                const rng = (atkMinRnd + this.random(data,startCharge,skillEffects) * atkMaxRnd) * (1 + (skillEffects.atkDmgUp ?? 0)) * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1);
+                /** クリティカルかどうか */
+                let crit = Math.random() < ((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0))) + (skillEffects.critUpFixed ?? 0);
+                const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
+                /** ダメージ */
+                let dmg = this.getAtkDmg(data, atk, tp, count, crit ? critDmg : false, enemyDef, enemyMaxHp, rng) + trueDmg
+                const noItemDmg = this.getAtkDmg(data, atk - itemBonus.atk, tp, count, crit, enemyDef, enemyMaxHp, rng) + trueDmg
+                // 最大ダメージ制限処理
+                if (maxdmg && maxdmg > 0 && dmg > Math.round(maxdmg * (1 / ((abort || spd) - i)))) {
+                    // 最大ダメージ制限を超えるダメージの場合は、ダメージが制限される。
+                    dmg = Math.round(maxdmg * (1 / ((abort || spd) - i)))
+                    maxdmg -= dmg
+                    crit = false;
+                } else if (maxdmg && maxdmg > 0) {
+                    maxdmg -= dmg
+                }
+                // メッセージの出力
+                message += (crit ? `**${enemy.atkmsg(dmg)}**` : enemy.atkmsg(dmg)) + "\n"
+                enemyHp -= dmg
+                if (dmg - noItemDmg > 1) {
+                    message += `(道具効果: +${dmg - noItemDmg})\n`
+                }
+                // 敵のHPが0以下になった場合は、以降の攻撃をキャンセル
+                if (enemyHp <= 0) break;
+                // 攻撃が中断される場合
+                if ((i + 1) === abort) {
+                    if (enemy.abortmsg) message += enemy.abortmsg + "\n"
+                    break;
+                }
+            }
+
+            // 勝利処理
+            if (enemyHp <= 0) {
+                // エンドレスモードかどうかでメッセージ変更
+                message += "\n" + enemy.winmsg + "\n\n" + serifs.rpg.win
+                break;
+            } else {
+                let enemyAtkX = 1;
+                // 攻撃後発動スキル効果
+                // 氷属性剣攻撃
+                if ((isBattle && isPhysical && !isTired) && Math.random() < (skillEffects.ice ?? 0)) {
+                    message += serifs.rpg.skill.ice(enemy.dname ?? enemy.name) + `\n`
+                    enemyTurnFinished = true;
+                } else if (!(isBattle && isPhysical && !isTired)) {
+                    // 非戦闘時は氷の効果はないが、防御に還元される
+                    def = def * (1 + (skillEffects.ice ?? 0));
+                }
+                // 光属性剣攻撃
+                if ((isBattle && isPhysical && !isTired) && Math.random() < (skillEffects.light ?? 0)) {
+                    message += serifs.rpg.skill.light(enemy.dname ?? enemy.name) + `\n`
+                    enemyAtkX = enemyAtkX * 0.5;
+                } else if (!(isBattle && isPhysical && !isTired)) {
+                    // 非戦闘時は光の効果はないが、防御に還元される
+                    def = def * (1 + (skillEffects.light ?? 0) * 0.5);
+                }
+                // 闇属性剣攻撃
+                if (enemy.spd && enemy.spd >= 2 && Math.random() < (skillEffects.dark ?? 0) * 2) {
+                    message += serifs.rpg.skill.spdDown(enemy.dname ?? enemy.name) + `\n`
+                    enemy.spd = 1;
+                } else if ((isBattle && isPhysical) && enemyHp > 150 && Math.random() < (skillEffects.dark ?? 0)) {
+                    const dmg = Math.floor(enemyHp / 2)
+                    message += serifs.rpg.skill.dark(enemy.dname ?? enemy.name, dmg) + `\n`
+                    enemyHp -= dmg
+                } else if (!(isBattle && isPhysical)) {
+                    // 非戦闘時は闇の効果はないが、防御に還元される
+                    def = def * (1 + (skillEffects.dark ?? 0) * 0.3);
+                }
+                // 敵のターンが既に終了していない場合
+                /** 受けた最大ダメージ */
+                let maxDmg = 0;
+                if (!enemyTurnFinished) {
+                    for (let i = 0; i < (enemy.spd ?? 1); i++) {
+                        const rng = (defMinRnd + this.random(data,startCharge,skillEffects) * defMaxRnd) * defDmgX * enemyAtkX;
+                        /** クリティカルかどうか */
+                        const crit = Math.random() < (playerHpPercent - enemyHpPercent) * (1 - (skillEffects.enemyCritDown ?? 0));
+                        const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
+                        /** ダメージ */
+                        const dmg = this.getEnemyDmg(data, def, tp, count, crit ? critDmg : false, enemyAtk, rng);
+                        const noItemDmg = this.getEnemyDmg(data, def - itemBonus.def, tp, count, crit ? critDmg : false, enemyAtk, rng);
+                        playerHp -= dmg
+                        message += (i === 0 ? "\n" : "") + (crit ? `**${enemy.defmsg(dmg)}**` : enemy.defmsg(dmg)) + "\n"
+                        if (noItemDmg - dmg > 1) {
+                            message += `(道具効果: -${noItemDmg - dmg})\n`
+                        }
+                        if (dmg > maxDmg) maxDmg = dmg;
+                        if (enemy.fire && count > (data.thirdFire ?? 0)) data.thirdFire = count;
+                    }
+                    // HPが0で食いしばりが可能な場合、食いしばる
+                    const endure = 0.1 - (count * 0.05)
+                    if (playerHp <= 0 && !enemy.notEndure && Math.random() < endure * (1 + (skillEffects.endureUp ?? 0))) {
+                        message += serifs.rpg.endure + "\n"
+                        playerHp = 1;
+                    }
+                    if (maxDmg > (data.superMuscle ?? 0) && playerHp > 0) data.superMuscle = maxDmg;
+                }
+                // 敗北処理
+                if (playerHp <= 0) {
+                    message += "\n" + enemy.losemsg + "\n\n" + serifs.rpg.lose
+                    break;
+                } else {
+                    // 決着がつかない場合
+                    if (actionX === plusActionX) {
+                        message += this.showStatusDmg(data, playerHp, enemyHp, enemyMaxHp, me) + "\n\n";
+                    } else {
+                        message += this.showStatusDmg(data, playerHp, enemyHp, enemyMaxHp, me) + "\n\n"
+                    }
+                    count = count + 1
+                }
+            }
+        }
+
+        if (skillEffects.charge && data.charge > 0) {
+            message += "\n\n" + serifs.rpg.skill.charge
+        } else if (data.charge < 0) {
+            data.charge = 0;
+        }
+
+        msg.friend.setPerModulesData(this, data);
+
+        message += "\n\n" + serifs.rpg.totalDmg
+
+        // 色解禁確認
+        const newColorData = colors.map((x) => x.unlock(data));
+        /** 解禁した色 */
+        let unlockColors = "";
+        for (let i = 0; i < newColorData.length; i++) {
+            if (!colorData[i] && newColorData[i]) {
+                unlockColors += colors[i].name
+            }
+        }
+        if (unlockColors) {
+            message += serifs.rpg.newColor(unlockColors)
+        }
+
+        msg.reply(`<center>${message}</center>`, {
+            cw,
+            visibility: 'public'
+        });
+
+        return {
+            totalDmg,
+            me
+        };
+    }
+
+    
+	@autobind
+	private async contextHook(key: any, msg: Message) {
+		if (!msg.includes(["参加"])) return {
+			reaction: 'hmm'
+		};
+
+		const raid = this.raids.findOne({
+			isEnded: false
+		});
+
+		// 処理の流れ上、実際にnullになることは無さそうだけど一応
+		if (raid == null) return;
+
+        const enemy = [...raidEnemys].find((x) => raid.enemy.name === x.name);
+
+        if (!enemy) return;
+
+        const num = await this.getTotalDmg(msg, enemy)
+
+		this.log(`damage ${num.totalDmg} by ${msg.user.id}`);
+
+		raid.attackers.push({
+			user: {
+				id: msg.user.id,
+				username: msg.user.username,
+				host: msg.user.host,
+			},
+			dmg: num.totalDmg ?? 0,
+            me: num.me ?? "",
+		});
+
+		this.raids.update(raid);
+
+		return {
+			reaction: num.me
+		};
+	}
 }

@@ -433,6 +433,11 @@ export default {
 
 	rpg: {
 		remind: (me, hours) => `<center>$[x2 ${me}]\n\n${hours}時です！\nRPGモードの時間ですよ～\n\n毎日3回プレイして、\n私を強くしてください！\n\n「RPG」と話しかけてね\n（ここに返信でも大丈夫ですよ！）</center>`,
+		intro: (enemyName, time) => `<center>$[x3 ${enemyName}]\n\nすごく大きい敵がやってきました！\n\nこのままではもこきーが\n荒らされてしまいます…\nTLのみなさんで倒しましょう！\n\nこの投稿に「参加」と返信して、\nあなたのもこチキと戦いましょう！\n(RPGモードのプレイが1回以上必要です)\n\n$[unixtime.countdown ${time}]`,
+		onagare: (enemyName) => `${enemyName}は帰っていきました……`,
+		finishCw: (enemyName) => `${enemyName}討滅戦の結果発表です！`,
+		finish: (enemyName) => `みなさんのお陰で${enemyName}を撃退できました！\nありがとうございます！`,
+		totalDmg: (dmg) => `合計 ${dmg} ダメージを与えた！`,
 		nowStatus: "現在のステータス",
 		lvUp: "今回のレベルアップ :",
 		rpgMode: "RPGモード : ",

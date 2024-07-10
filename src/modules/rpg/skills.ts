@@ -257,7 +257,8 @@ export const getRerollSkill = (data, oldSkillName = "") => {
         
         randomValue -= weight; // ランダム値を減少させる
     }
-	return filteredSkills[0];
+    
+	return filteredSkills[0]; // ここに来るのはおかしいよ
 }
 
 /** スキルに関しての情報を返す */
