@@ -1330,7 +1330,7 @@ export default class extends Module {
 
         const debuff = [false ? serifs.rpg.fire + data.count : ""].filter(Boolean).join(" ")
 
-        return `\n${data.enemy.hpmsg ?? "与えたダメージ"} : ${totalDmg}\n${me} : ${data.info >= 3 ? playerHpStr : data.info ? PlayerHpInfoStr : playerHpMarkStr}${debuff ? `\n${debuff}` : ""}`
+        return `\n${"与えたダメージ"} : ${totalDmg}\n${me} : ${data.info >= 3 ? playerHpStr : data.info ? PlayerHpInfoStr : playerHpMarkStr}${debuff ? `\n${debuff}` : ""}`
     }
 
     /**
