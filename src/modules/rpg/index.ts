@@ -2354,8 +2354,8 @@ export default class extends Module {
 
 		if (raid.attackers.some(x => x.user.id == msg.userId)) {
 			msg.reply('すでに参加済みの様です！').then(reply => {
-				game.replyKey.push(msg.userId);
-				this.games.update(game);
+				raid.replyKey.push(msg.userId);
+				this.raids.update(raid);
 				this.subscribeReply(msg.userId, reply.id);
 			});
 			return {
