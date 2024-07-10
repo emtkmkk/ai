@@ -109,7 +109,10 @@ export const enemys: Enemy[] = [
 ];
 
 export const raidEnemys: Enemy[] = [
-    { name: ":mkck_scandinavia:", msg: ":mkck_scandinavia:討伐戦！", short: "", mark: "☆", mark2: "★", atkmsg: (dmg) => `もこチキの攻撃！\n${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mkck_scandinavia:の押しつぶし攻撃！\n${dmg}ポイントのダメージ！`, winmsg: ":mkck_scandinavia:を撃退した！", losemsg: "もこチキはやられてしまった…", maxhp: 100000, atk: 3, def: 3, atkx: 5, defx: 5 },
+    { name: ":mkck_scandinavia:", msg: "巨大:mkck_scandinavia:討伐戦！", short: "", mark: "☆", mark2: "★", atkmsg: (dmg) => `もこチキの攻撃！\n${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mkck_scandinavia:の押しつぶし攻撃！\n${dmg}ポイントのダメージ！`, winmsg: ":mkck_scandinavia:を撃退した！", losemsg: "もこチキはやられてしまった…", maxhp: 100000, atk: 4, def: 2, atkx: 6, defx: 4 },
+	{ name: ":oha_chicken:", msg: "巨大:oha_chicken:討伐戦！", short: "", mark: "☆", mark2: "★", atkmsg: (dmg) => `もこチキの攻撃！\n${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:oha_chicken:の大声挨拶攻撃！\n${dmg}ポイントのダメージ！`, winmsg: ":oha_chicken:を撃退した！", losemsg: "もこチキはやられてしまった…", maxhp: 100000, atk: 3, def: 3, atkx: 5, defx: 5 },
+	{ name: ":mk_ultrawidechicken:", msg: ":mk_ultrawidechicken:討伐戦！", short: "", mark: "☆", mark2: "★", atkmsg: (dmg) => `もこチキの攻撃！\n${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mk_ultrawidechicken:の回転攻撃！\n${dmg}ポイントのダメージ！`, winmsg: ":mk_ultrawidechicken:を撃退した！", losemsg: "もこチキはやられてしまった…", maxhp: 100000, atk: 2, def: 4, atkx: 4, defx: 6 },
+	{ name: ":muscle_mkchicken:", msg: "巨大:muscle_mkchicken:討伐戦！", short: "", mark: "☆", mark2: "★", atkmsg: (dmg) => `もこチキの攻撃！\n${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:muscle_mkchicken:の巨大マッスルアタック！\n${dmg}ポイントのダメージ！`, winmsg: ":muscle_mkchicken:を撃退した！", losemsg: "もこチキはやられてしまった…", maxhp: 100000, atk: 8, def: 1, atkx: 8, defx: 3 },
 ]
 
 /*
