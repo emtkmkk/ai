@@ -162,8 +162,8 @@ export default class extends Module {
             atk = atk * (1 + (skillEffects.atkUp ?? 0));
             atk = atk * (1 + (skillEffects.spdUp ?? 0));
             atk = atk * (1 + ((skillEffects.critUpFixed ?? 0) * (1 + (skillEffects.critDmgUp ?? 0))));
-            atk = atk * (1 + (skillEffects.dart ?? 0) / 3);
-            atk = atk * (1 + (skillEffects.abortDown ?? 0) / 4);
+            atk = atk * (1 + (skillEffects.dart ?? 0) * 0.5);
+            atk = atk * (1 + (skillEffects.abortDown ?? 0) * (1/3));
             def = def * (1 + (skillEffects.defUp ?? 0));
 
             if (isSuper) {
@@ -198,20 +198,27 @@ export default class extends Module {
                 def = def * (1 + (sevenFever / 100));
             }
 
+            let minTotalDmg = 0;
             let totalDmg = 0;
+            let maxTotalDmg = 0;
 
-            const minRnd = 0.2 + (isSuper ? 0.3 : 0) + (skillEffects.atkRndMin ?? 0)
-            const maxRnd = 1.8 + (skillEffects.atkRndMax ?? 0)
+            const minRnd = Math.max(0.2 + (isSuper ? 0.3 : 0) + (skillEffects.atkRndMin ?? 0), 0)
+            const maxRnd = Math.max(1.6 + (skillEffects.atkRndMax ?? 0), 0)
 
             for (let i = 0; i < spd; i++) {
-                const rng = 1 * (1 + (skillEffects.atkDmgUp ?? 0)) * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1) 
-                let dmg = this.getAtkDmg(data, atk, tp, 1, false, edef, 0, rng, 3) + trueDmg;
+                const buff = (1 + (skillEffects.atkDmgUp ?? 0)) * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1);
+                const rng = (minRnd + (maxRnd / 2))
+                let minDmg = this.getAtkDmg(data, atk, tp, 1, false, edef, 0, minRnd * buff, 3) + trueDmg;
+                minTotalDmg += minDmg
+                let dmg = this.getAtkDmg(data, atk, tp, 1, false, edef, 0, rng * buff, 3) + trueDmg;
                 totalDmg += dmg
+                let maxDmg = this.getAtkDmg(data, atk, tp, 1, false, edef, 0, (minRnd + maxRnd) * buff, 3) + trueDmg;
+                maxTotalDmg += maxDmg
                 // メッセージの出力
                 message += serifs.rpg.trial.atk(dmg) + "\n"
             }
 
-            message += `\n${serifs.rpg.end}\n\n${serifs.rpg.trial.result(totalDmg)}\n${serifs.rpg.trial.random(Math.round(totalDmg * minRnd), Math.round(totalDmg * maxRnd))}\n${data.bestScore ? serifs.rpg.trial.best(data.bestScore) : ""}`
+            message += `\n${serifs.rpg.end}\n\n${serifs.rpg.trial.result(totalDmg)}\n${serifs.rpg.trial.random(minTotalDmg, maxTotalDmg)}\n${data.bestScore ? serifs.rpg.trial.best(data.bestScore) : ""}`
 
             data.bestScore = Math.max(data.bestScore ?? 0, totalDmg)
 
@@ -613,7 +620,7 @@ export default class extends Module {
                     }
                     const type = types[Math.floor(Math.random() * types.length)]
                     if ((type === "weapon" && !(isBattle && isPhysical)) || (type === "armor" && isTired) || data.enemy.pLToR) {
-                        let isPlus = Math.random() < (0.5 + (skillEffects.mindMinusAvoid ?? 0));
+                        let isPlus = Math.random() < (0.5 + (skillEffects.mindMinusAvoid ?? 0) + (count === 1 ? skillEffects.firstTurnMindMinusAvoid ?? 0 : 0));
                         const items = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind < 0));
                         item = items[Math.floor(Math.random() * items.length)];
                     } else {
@@ -799,16 +806,13 @@ export default class extends Module {
                 let maxdmg = data.enemy.maxdmg ? enemyMaxHp * data.enemy.maxdmg : undefined
 
                 // 土属性剣攻撃
-                if (skillEffects.dart && (isBattle && isPhysical) && maxdmg) {
+                if (skillEffects.dart && isBattle && isPhysical && maxdmg) {
                     buff += 1
                     message += serifs.rpg.skill.dart + "\n"
                     maxdmg = maxdmg * (1 + skillEffects.dart)
-                } else if (skillEffects.dart && !(isBattle && isPhysical)) {
-                    // 非戦闘時は、パワーに還元される
-                    atk = atk * (1 + skillEffects.dart / 2);
-                } else if (skillEffects.dart && !maxdmg) {
-                    // 効果がない場合は、パワーに還元される（弱）
-                    atk = atk * (1 + skillEffects.dart / 3);
+                } else if (skillEffects.dart && !(isBattle && isPhysical && maxdmg)) {
+                    // 効果がない場合非戦闘時は、パワーに還元される
+                    atk = atk * (1 + skillEffects.dart * 0.5);
                 }
 
                 let trueDmg = 0;
@@ -820,7 +824,7 @@ export default class extends Module {
                     trueDmg = Math.ceil(lv * skillEffects.fire)
                 } else if (skillEffects.fire && !(isBattle && isPhysical)) {
                     // 非戦闘時は、パワーに還元される
-                    atk = atk + lv * 3.5 * skillEffects.fire;
+                    atk = atk + lv * 3.75 * skillEffects.fire;
                 }
                 
                 // 毒属性剣攻撃
@@ -829,8 +833,8 @@ export default class extends Module {
 						buff += 1
 						message += serifs.rpg.skill.weak(data.enemy.dname ?? data.enemy.name) + "\n"
 					}
-                    enemyAtk = enemyAtk * (1 - (skillEffects.weak * (count - 1)))
-                    enemyDef = enemyDef * (1 - (skillEffects.weak * (count - 1)))
+                    enemyAtk = Math.max(enemyAtk * (1 - (skillEffects.weak * (count - 1))), 0)
+                    enemyDef = Math.max(enemyDef * (1 - (skillEffects.weak * (count - 1))), 0)
                 }
 
                 // バフが1つでも付与された場合、改行を追加する
@@ -845,14 +849,15 @@ export default class extends Module {
                 }
 
 				if (!data.enemy.abort && skillEffects.abortDown) {
-					// 効果がない場合は、パワーに還元される（弱）
-                    atk = atk * (1 + skillEffects.abortDown / 4);
+					// 効果がない場合は、パワーに還元される
+                    atk = atk * (1 + skillEffects.abortDown * (1/3));
 				}
 
-                const defDmgX = 1 * 
-                    (1 + (skillEffects.defDmgUp ?? 0)) *
+                const defDmgX = Math.max(1 * 
+                    (1 + Math.max(skillEffects.defDmgUp ?? 0, -0.9)) *
                     (count === 1 && skillEffects.firstTurnResist ? (1 - (skillEffects.firstTurnResist ?? 0)) : 1) *
-                    (1 - ((skillEffects.tenacious ?? 0) * (1 - playerHpPercent)))
+                    (count === 2 && skillEffects.firstTurnResist && skillEffects.firstTurnResist > 1 ? (1 - ((skillEffects.firstTurnResist ?? 0) - 1)) : 1) *
+                    (1 - Math.min((skillEffects.tenacious ?? 0) * (1 - playerHpPercent), 0.9)), 0)
 
                 const atkMinRnd = Math.max(0.2 + (isSuper ? 0.3 : 0) + (skillEffects.atkRndMin ?? 0), 0)
                 const atkMaxRnd = Math.max(1.6 + (isSuper ? -0.3 : 0) + (skillEffects.atkRndMax ?? 0), 0)
@@ -988,7 +993,7 @@ export default class extends Module {
                         enemyAtkX = enemyAtkX * 0.5;
                     } else if (!(isBattle && isPhysical && !isTired)) {
                         // 非戦闘時は光の効果はないが、防御に還元される
-                        def = def * (1 + (skillEffects.light ?? 0) / 2);
+                        def = def * (1 + (skillEffects.light ?? 0) * 0.5);
                     }
                     // 闇属性剣攻撃
                     if (data.enemy.spd && data.enemy.spd >= 2 && Math.random() < (skillEffects.dark ?? 0) * 2) {
@@ -996,11 +1001,11 @@ export default class extends Module {
                         data.enemy.spd = 1;
                     } else if ((isBattle && isPhysical) && data.ehp > 150 && Math.random() < (skillEffects.dark ?? 0)) {
                         const dmg = Math.floor(enemyHp / 2)
-                        message += serifs.rpg.skill.dark(dmg) + `\n`
+                        message += serifs.rpg.skill.dark(data.enemy.dname ?? data.enemy.name, dmg) + `\n`
                         enemyHp -= dmg
                     } else if (!(isBattle && isPhysical)) {
                         // 非戦闘時は闇の効果はないが、防御に還元される
-                        def = def * (1 + (skillEffects.dark ?? 0) / 3);
+                        def = def * (1 + (skillEffects.dark ?? 0) * 0.3);
                     }
                     // 敵のターンが既に終了していない場合
                     /** 受けた最大ダメージ */
@@ -1433,6 +1438,26 @@ export default class extends Module {
                 }
             });
         });
+
+        if (aggregatedEffect.itemEquip && aggregatedEffect.itemEquip > 1) {
+            aggregatedEffect.itemBoost = (aggregatedEffect.itemBoost ?? 0) + (aggregatedEffect.itemEquip - 1)
+            aggregatedEffect.itemEquip = 1;
+        }
+
+        if (aggregatedEffect.poisonAvoid && aggregatedEffect.poisonAvoid > 1) {
+            aggregatedEffect.mindMinusAvoid = (aggregatedEffect.mindMinusAvoid ?? 0) + (aggregatedEffect.poisonAvoid - 1) * 0.6
+            aggregatedEffect.poisonAvoid = 1;
+        }
+
+        if (aggregatedEffect.abortDown && aggregatedEffect.abortDown > 1) {
+            aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) + (aggregatedEffect.abortDown - 1) * (1/3)
+            aggregatedEffect.abortDown = 1;
+        }
+
+        if (aggregatedEffect.enemyCritDown && aggregatedEffect.enemyCritDown > 1) {
+            aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) + (aggregatedEffect.enemyCritDown - 1) * (1/3)
+            aggregatedEffect.enemyCritDown = 1;
+        }
     
         return aggregatedEffect;
     }

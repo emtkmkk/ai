@@ -63,6 +63,8 @@ export type SkillEffect = {
     defRndMax?: number;
     /** 最初のターンに必ずアイテムを使用する */
     firstTurnItem?: number;
+    /** 最初のターンに気合が下がるアイテムをn%で回避 */
+    firstTurnMindMinusAvoid?: number;
     /** アイテム使用率がn%上昇 */
     itemEquip?: number;
     /** アイテム効果がn%上昇 デメリットがn%減少 */
@@ -132,32 +134,32 @@ export const skills: Skill[] = [
     { name: `雷属性剣攻撃`, desc: `戦闘時、連続攻撃をすればダメージが上がります`, effect: { thunder: 0.2 } },
     { name: `風属性剣攻撃`, desc: `戦闘時、たまに行動回数が上がります`, effect: { spdUp: 0.1 } },
     { name: `土属性剣攻撃`, desc: `戦闘時、最大ダメージが上昇します`, effect: { dart: 0.2 } },
-    { name: `光属性剣攻撃`, desc: `戦闘時、たまに相手の攻撃力を下げます`, effect: { light: 0.2 } },
-    { name: `闇属性剣攻撃`, desc: `戦闘時、たまにいろんな効果が発生します`, effect: { dark: 0.1 } },
+    { name: `光属性剣攻撃`, desc: `戦闘時、たまに敵の攻撃力を下げます`, effect: { light: 0.2 } },
+    { name: `闇属性剣攻撃`, desc: `戦闘時、たまに敵の周辺に高重力領域が発生させます`, effect: { dark: 0.1 } },
     { name: `毒属性剣攻撃`, desc: `戦闘時、ターン経過ごとに相手が弱体化します`, effect: { weak: 0.05 } },
     { name: `テキパキこなす`, desc: `戦闘以外の事の効率が上がります`, effect: { notBattleBonusAtk: 0.2 } },
-    { name: `疲れにくい`, desc: `疲れでダメージを受ける際にそのダメージを軽減します`, effect: { notBattleBonusDef: 0.2 } },
+    { name: `疲れにくい`, desc: `疲れでダメージを受ける際にそのダメージを軽減します`, effect: { notBattleBonusDef: 0.18 } },
     { name: `油断しない`, desc: `ターン1に受けるダメージを大きく軽減します`, effect: { firstTurnResist: 0.3 } },
     { name: `粘り強い`, desc: `体力が減るほど受けるダメージを軽減します`, effect: { tenacious: 0.2 } },
     { name: `高速RPG`, desc: `1回のRPGでお互いに2回行動します`, effect: { plusActionX: 1 } },
     { name: `1時間先取りRPG`, desc: `1時間早くRPGをプレイする事が出来ます`, effect: { atkUp: 0.05, defUp: 0.05, rpgTime: -1 } },
     { name: `伝説`, desc: `パワー・防御が7%上がります`, effect: { atkUp: 0.07, defUp: 0.07 }, unique: "legend" },
-    { name: `脳筋`, desc: `与えるダメージが上がりますが、受けるダメージも上がります`, effect: { atkDmgUp: 0.21, defDmgUp: 0.1 } },
-    { name: `慎重`, desc: `与えるダメージが下がりますが、受けるダメージも下がります`, effect: { atkDmgUp: -0.1, defDmgUp: -0.21 } },
+    { name: `脳筋`, desc: `与えるダメージが上がりますが、受けるダメージも上がります`, effect: { atkDmgUp: 0.18, defDmgUp: 0.08 } },
+    { name: `慎重`, desc: `与えるダメージが下がりますが、受けるダメージも下がります`, effect: { atkDmgUp: -0.08, defDmgUp: -0.18 } },
     { name: `連続・毎日ボーナス強化`, desc: `連続・毎日ボーナスの上昇量が上がります`, effect: { continuousBonusUp: 0.5 } },
     { name: `負けそうなら逃げる`, desc: `逃げると負けた事になりません 連続で発動しにくい`, effect: { escape: 1 } },
     { name: `気合で頑張る`, desc: `パワー・防御が少し上がり、気合耐えの確率が上がります`, effect: { atkUp: 0.03, defUp: 0.03, endureUp: 0.5 } },
-    { name: `すぐ決死の覚悟をする`, desc: `決死の覚悟の発動条件が緩くなり、効果量が上がります`, effect: { haisuiUp: 0.5 } },
-    { name: `投稿数ボーナス量アップ`, desc: `投稿数によるステータスボーナスが上昇します`, effect: { postXUp: 0.075 } },
+    { name: `すぐ決死の覚悟をする`, desc: `決死の覚悟の発動条件が緩くなり、効果量が上がります`, effect: { atkUp: 0.08, haisuiUp: 0.5 } },
+    { name: `投稿数ボーナス量アップ`, desc: `投稿数によるステータスボーナスが上昇します`, effect: { postXUp: 0.05 } },
     { name: `強敵と戦うのが好き`, desc: `敵が強ければステータスが上昇します`, effect: { enemyStatusBonus: 1 } },
     { name: `${serifs.rpg.status.pen}+10%`, desc: `相手の防御の影響を減少させます`, effect: { arpen: 0.1 } },
     { name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndM}4`, desc: `乱数幅が20~180 -> 60~160になります`, effect: { atkRndMin: 0.4, atkRndMax: -0.2 }, unique: "rnd" },
     { name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndM}5`, desc: `乱数幅が20~180 -> 90~130になります`, effect: { atkRndMin: 0.7, atkRndMax: -0.5 }, unique: "rnd" },
     { name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndP}`, desc: `乱数幅が20~180 -> 5~230になります クリティカル率も上がります`, effect: { atkRndMin: -0.15, atkRndMax: 0.5, critUpFixed: 0.02 }, unique: "rnd" },
-    { name: `${serifs.rpg.dmg.take}${serifs.rpg.status.rndM}`, desc: `敵の最大ダメージを減少させます`, effect: { defRndMin: 0, defRndMax: -0.2 }, unique: "rnd" },
-    { name: `${serifs.rpg.dmg.take}${serifs.rpg.status.rndP}`, desc: `敵の最小ダメージを減少させます`, effect: { defRndMin: -0.2, defRndMax: 0 }, unique: "rnd" },
-    { name: `準備を怠らない`, desc: `ターン1にて、必ず武器か防具を装備します`, effect: { firstTurnItem: 1 }, unique: "firstTurnItem" },
-    { name: `道具大好き`, desc: `道具の装備率が上がります`, effect: { itemEquip: 0.4 } },
+    { name: `${serifs.rpg.dmg.take}${serifs.rpg.status.rndM}`, desc: `敵から受ける最大ダメージを減少させます`, effect: { defRndMin: 0, defRndMax: -0.2 }, unique: "rnd" },
+    { name: `${serifs.rpg.dmg.take}${serifs.rpg.status.rndP}`, desc: `敵から受ける最小ダメージを減少させます`, effect: { defRndMin: -0.2, defRndMax: 0 }, unique: "rnd" },
+    { name: `準備を怠らない`, desc: `ターン1にて、必ず良い効果がある武器か防具を装備し、受けるダメージもすこし軽減します。`, effect: { firstTurnResist: 0.1, firstTurnItem: 1, firstTurnMindMinusAvoid: 1, itemEquip: -0.2 }, unique: "firstTurnItem" },
+    { name: `道具大好き`, desc: `道具の使用率が上がります`, effect: { itemEquip: 0.4 } },
     { name: `道具の扱いが上手い`, desc: `道具の効果量が上がります`, effect: { itemBoost: 0.4 } },
     { name: `武器が大好き`, desc: `武器を装備しやすくなり、武器の効果量が上がります`, effect: { weaponSelect: 1, weaponBoost: 0.6 }, unique: "itemSelect" },
     { name: `防具が大好き`, desc: `防具を装備しやすくなり、防具の効果量が上がります`, effect: { armorSelect: 1, armorBoost: 0.6 }, unique: "itemSelect" },
@@ -173,9 +175,9 @@ export const skills: Skill[] = [
     { name: `クリティカルダメージ上昇`, effect: { critDmgUp: 0.3 }, moveTo: "クリティカル性能上昇" },
     { name: `敵のクリティカル率減少`, effect: { enemyCritDown: 0.3 }, moveTo: "敵のクリティカル性能減少" },
     { name: `敵のクリティカルダメージ減少`, effect: { enemyCritDmgDown: 0.3 }, moveTo: "敵のクリティカル性能減少" },
-    { name: `負けた時、しっかり反省`, desc: `敗北時のボーナスが上昇します ★変更不可`, effect: { loseBonus: 1 }, unique: "loseBonus", cantReroll: true},
+    { name: `負けた時、しっかり反省`, desc: `敗北時のボーナスが上昇します ★変更不可`, effect: { loseBonus: 1 }, unique: "loseBonus", cantReroll: true },
     { name: `７フィーバー！`, desc: `Lv・パワー・防御の値に「7」が含まれている程ステータスアップ`, effect: { sevenFever: 1 } },
-    { name: `不運チャージ`, desc: `不運だった場合、次回幸運になりやすくなります`, effect: { charge: 1 } },
+    { name: `不運チャージ`, desc: `不運だった場合、次回幸運になりやすくなります`, effect: { atkUp: 0.05, defUp: 0.05, charge: 1 } },
 ]
 
 export const getSkill = (data) => {
