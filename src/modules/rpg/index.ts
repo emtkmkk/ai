@@ -1674,7 +1674,7 @@ export default class extends Module {
 			this.ai.decActiveFactor((raid.finishedAt.valueOf() - raid.startedAt.valueOf()) / (60 * 1000 * 100));
 
 			this.ai.post({
-				text: serifs.rpg.onagare,
+				text: serifs.rpg.onagare(raid.enemy.name),
 				renoteId: raid.postId
 			});
 
@@ -1691,7 +1691,7 @@ export default class extends Module {
 
 		this.ai.post({
 			text: text,
-			cw: serifs.rpg.finishCw,
+			cw: serifs.rpg.finishCw(raid.enemy.name),
 			renoteId: raid.postId
 		});
 
