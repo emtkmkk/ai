@@ -2352,6 +2352,17 @@ export default class extends Module {
 			isEnded: false
 		});
 
+		if (raid.attackers.some(x => x.user.id == msg.userId)) {
+			msg.reply('すでに参加済みの様です！').then(reply => {
+				game.replyKey.push(msg.userId);
+				this.games.update(game);
+				this.subscribeReply(msg.userId, reply.id);
+			});
+			return {
+				reaction: 'confused'
+			};
+		}
+
 		// 処理の流れ上、実際にnullになることは無さそうだけど一応
 		if (raid == null) return;
 
