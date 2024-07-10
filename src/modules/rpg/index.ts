@@ -1318,13 +1318,13 @@ export default class extends Module {
 
         // プレイヤー
         const playerHpMarkCount = Math.min(Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 7)), 7)
-        const playerHpMarkStr = data.enemy.pLToR
+        const playerHpMarkStr = false
             ? serifs.rpg.player.mark2.repeat(7 - playerHpMarkCount) + serifs.rpg.player.mark.repeat(playerHpMarkCount)
             : serifs.rpg.player.mark2.repeat(playerHpMarkCount) + serifs.rpg.player.mark.repeat(7 - playerHpMarkCount)
-        const PlayerHpInfoStr = data.enemy.pLToR
+        const PlayerHpInfoStr = false
             ? (Math.ceil((100 - Math.min(Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 100)), 100)) / 5) * 5) + " " + serifs.rpg.infoPercent
             : (Math.ceil((Math.min(Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 100)), 100)) / 5) * 5) + " " + serifs.rpg.infoPercent
-        const playerHpStr = data.enemy.pLToR
+        const playerHpStr = false
             ? PlayerHpInfoStr
             : `${playerHp} / ${100 + (data.lv ?? 1) * 3}`
 
@@ -1684,7 +1684,7 @@ export default class extends Module {
 		let results: string[] = [];
 
 		for (let attacker of raid.attackers) {
-		    results.push(`${attacker.me} ${acct(attacker.user)}: ${attacker.dmg} ダメージ`);
+		    if (attacker.dmg > 0) results.push(`${attacker.me} ${acct(attacker.user)}: ${attacker.dmg} ダメージ`);
 		}
 
 		const text = results.join('\n') + '\n\n' + serifs.rpg.finish(raid.enemy.name);
