@@ -2078,7 +2078,8 @@ export default class extends Module {
             atk = atk * (1 + (skillEffects.plusActionX ?? 0) / 10)
         }
 
-        const plusActionX = 100
+        const plusActionX = 5
+
 
         for (let actionX = 0; actionX < plusActionX + 1; actionX++) {
 
@@ -2293,12 +2294,13 @@ export default class extends Module {
                 }
                 // 敗北処理
                 if (playerHp <= 0) {
-                    message += "\n" + enemy.losemsg + "\n\n" + serifs.rpg.lose
+                    message += "\n" + enemy.losemsg
+
                     break;
                 } else {
                     // 決着がつかない場合
                     if (actionX === plusActionX) {
-                        message += this.showStatusDmg(data, playerHp, totalDmg, enemyMaxHp, me) + "\n\n";
+                        message += this.showStatusDmg(data, playerHp, totalDmg, enemyMaxHp, me) + "\n\nタイムアップ！";
                     } else {
                         message += this.showStatusDmg(data, playerHp, totalDmg, enemyMaxHp, me) + "\n\n"
                     }
