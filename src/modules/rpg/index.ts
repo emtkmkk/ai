@@ -1186,7 +1186,7 @@ export default class extends Module {
                 `\n${serifs.rpg.nextPlay(new Date())}`,
             ].filter(Boolean).join("\n")
 
-            const calcRerollOrbCount = data.lv > 255 ? 32 + Math.floor((data.lv - 254) / 2) : data.lv > 170 ? 15 + Math.floor((data.lv - 170) / 5) : data.lv > 100 ? 5 + Math.floor((data.lv - 100) / 7) : Math.floor((data.lv - 50) / 10)
+            const calcRerollOrbCount = data.lv > 255 ? 32 + Math.floor((data.lv - 254) / 2) + Math.floor((data.lv - 256) / 64) * 16 : data.lv > 170 ? 15 + Math.floor((data.lv - 170) / 5) : data.lv > 100 ? 5 + Math.floor((data.lv - 100) / 7) : Math.floor((data.lv - 50) / 10)
 
             if ((data.totalRerollOrb ?? 0) < calcRerollOrbCount) {
                 const getNum = calcRerollOrbCount - (data.totalRerollOrb ?? 0)
