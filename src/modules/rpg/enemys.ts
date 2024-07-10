@@ -133,6 +133,7 @@ export const summerEnemys: Enemy[] = [
     { name: "夏休みの宿題", msg: "もこチキは夏休みの宿題がまだ残っているようだ…", limit: (data) => data.clearEnemySummer.length >= summerEnemys.length - 1 short: "夏休みの宿題着手中", hpmsg: "完了度", atkmsg: dmg => `もこチキは夏休みの宿題を進めた！\n完了度が${dmg}ポイントアップ！`, defmsg: dmg => `もこチキは疲れで${dmg}ポイントのダメージ！`, winmsg: "もこチキは夏休みの宿題を完了！\nやったー！", losemsg: "もこチキは疲れてしまった…", atk: 0.05, def: 20, atkx: 3, defx: 5, ltoR: true }
 ];
 
+/*
 /** 旅モードの場合の敵 */
 export const endressEnemy = (data): Enemy => ({
     name: "旅モード",
@@ -154,6 +155,7 @@ export const endressEnemy = (data): Enemy => ({
     defx: 3 + (0.15 * (data.endress ?? 0)),
     abort: 0.01,
 })
+*/
 
 export const ending = (msg: Message): any => {
     const data = msg.friend.getPerModulesData(new rpg);
