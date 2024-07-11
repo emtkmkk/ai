@@ -331,10 +331,28 @@ export default class extends Module {
                 const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
                 if (msg.includes([serifs.rpg.command.onemore])) {
                     if (data.lastOnemorePlayedAt === getDate()) {
-                        msg.reply(serifs.rpg.oneMore.tired(data.lv < rpgData.maxLv));
-                        return {
-                            reaction: 'confused'
-                        };
+                        const needCoin = 10;
+                        if (needCoin <= (data.coin ?? 0)) {
+                            if (data.lv >= rpgData.maxLv) {
+                                msg.reply(serifs.rpg.oneMore.maxLv);
+                                return {
+                                    reaction: 'confused'
+                                };
+                            }
+                            if (!data.replayOkawari) {
+                                const reply = await msg.reply(serifs.rpg.oneMore.buyQuestion(needCoin, data.coin));
+                                this.subscribeReply("replayOkawari:" + msg.userId, reply.id, {message: msg});
+                                return { reaction:'love' };
+                            } else {
+                                data.coin -= needCoin;
+                                data.replayOkawari = false;
+                            }
+                        } else {
+                            msg.reply(serifs.rpg.oneMore.tired(data.lv < rpgData.maxLv));
+                            return {
+                                reaction: 'confused'
+                            };
+                        }
                     }
                     if (data.lv >= rpgData.maxLv) {
                         msg.reply(serifs.rpg.oneMore.maxLv);
@@ -1670,7 +1688,7 @@ export default class extends Module {
             replyKey: triggerUserId ? [triggerUserId] : [],
         });
 
-        this.subscribeReply(null, post.id);
+        this.subscribeReply(post.id, post.id);
 
         this.log('New raid started');
     }
@@ -1772,7 +1790,7 @@ export default class extends Module {
             renoteId: raid.postId
         });
 
-        this.unsubscribeReply(null);
+        this.unsubscribeReply(raid.postId);
         raid.replyKey.forEach((x) => this.unsubscribeReply(x));
     }
 
@@ -2001,7 +2019,7 @@ export default class extends Module {
                 message += serifs.rpg.skill.tenacious + "\n"
             }
 
-					  item = undefined;
+            item = undefined;
             atk = atk - (itemBonus.atk ?? 0);
             def = def - (itemBonus.def ?? 0);
             itemBonus = { atk: 0, def: 0 };
@@ -2445,7 +2463,7 @@ export default class extends Module {
             message += serifs.rpg.newColor(unlockColors)
         }
 
-        msg.reply(`<center>${message}</center>`, {
+        const reply = await msg.reply(`<center>${message}</center>`, {
             cw,
             visibility: 'public'
         });
@@ -2456,18 +2474,43 @@ export default class extends Module {
             lv,
             count,
             mark,
+            reply,
         };
     }
 
 
     @autobind
-    private async contextHook(key: any, msg: Message) {
-        if (!msg.includes(["参加"])) return {
+    private async contextHook(key: any, msg: Message, data: any) {
+        if (key.startWith("replayOkawari:")) {
+            if (key.replace("replayOkawari:","") !== msg.userId) {
+                return {
+                    reaction: 'hmm'
+                };
+            }
+            if (msg.text.includes('はい')) {
+                this.unsubscribeReply(key);
+                if (msg.friend.doc?.perModulesData?.rpg) msg.friend.doc.perModulesData.rpg.replayOkawari = true;
+                msg.friend.save()
+                if (data.msg) return this.mentionHook(data.msg);
+                return { reaction: 'hmm' }
+            } else if (msg.text.includes('いいえ')) {
+                this.unsubscribeReply(key);
+                return { reaction: ':mk_muscleok:' }
+            } else {
+                msg.reply(serifs.core.yesOrNo).then(reply => {
+                    this.subscribeReply("replayOkawari:" + msg.userId, reply.id);
+                });
+                return { reaction: 'hmm' }
+            }
+        }
+
+        if (!msg.extractedText.trim()) return {
             reaction: 'hmm'
         };
 
         const raid = this.raids.findOne({
-            isEnded: false
+            isEnded: false,
+            postId: key,
         });
 
         // 処理の流れ上、実際にnullになることは無さそうだけど一応
@@ -2475,9 +2518,9 @@ export default class extends Module {
 
         if (raid.attackers.some(x => x.user.id == msg.userId)) {
             msg.reply('すでに参加済みの様です！').then(reply => {
-                raid.replyKey.push(msg.userId);
+                raid.replyKey.push(raid.postId + ":" + reply.id);
+                this.subscribeReply(raid.postId + ":" + reply.id, reply.id);
                 this.raids.update(raid);
-                this.subscribeReply(msg.userId, reply.id);
             });
             return {
                 reaction: 'confused'
@@ -2504,6 +2547,10 @@ export default class extends Module {
             count: result.count ?? 1,
             mark: result.mark ?? ":blank:",
         });
+        if (result.reply) {
+            raid.replyKey.push(raid.postId + ":" + result.reply.id);
+            this.subscribeReply(raid.postId + ":" + result.reply.id, result.reply.id);
+        }
 
         this.raids.update(raid);
 
