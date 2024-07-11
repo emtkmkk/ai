@@ -186,7 +186,12 @@ export default class extends Module {
             // 所持しているスキル効果を読み込み
             const skillEffects = this.aggregateSkillsEffects(data);
 
-            const color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
+            let color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
+
+            if (!color.unlock(data)) {
+                data.color === (colors.find((x) => x.default) ?? colors[0]).id;
+                color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
+            }
 
             // 覚醒状態か？
             const isSuper = color.alwaysSuper;
@@ -415,7 +420,12 @@ export default class extends Module {
             data.lastPlayedAt = nowTimeStr;
 
             /** 使用中の色情報 */
-            const color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
+            let color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
+
+            if (!color.unlock(data)) {
+                data.color === (colors.find((x) => x.default) ?? colors[0]).id;
+                color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
+            }
 
             if (colors.find((x) => x.alwaysSuper)?.unlock(data)) {
                 data.superUnlockCount = (data.superUnlockCount ?? 0) + 1
@@ -1747,7 +1757,12 @@ export default class extends Module {
         let count = 1
 
         /** 使用中の色情報 */
-        const color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
+        let color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
+
+        if (!color.unlock(data)) {
+            data.color === (colors.find((x) => x.default) ?? colors[0]).id;
+            color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
+        }
 
         if (colors.find((x) => x.alwaysSuper)?.unlock(data)) {
             data.superUnlockCount = (data.superUnlockCount ?? 0) + 1
