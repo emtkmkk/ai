@@ -548,7 +548,7 @@ export default class extends Module {
 	@autobind
 	private getLove(msg: Message): boolean {
 		if (!msg.text) return false;
-		if (!msg.text.includes('好感度') && !msg.text.includes('懐き度')) return false;
+		if (!msg.text.includes('好感度') && !msg.text.includes('懐き度') && !msg.text.includes('なつき度')) return false;
 
 		const lovep = msg.friend.love || 0;
 		let love = "";
@@ -604,6 +604,7 @@ export default class extends Module {
 				lovep >= 100 ? `  ${serifs.rpg.status.spd} : ${Math.floor(lovep / 100) + 1}` : "",
 				msg.friend.doc.perModulesData.rpg.skills ? `  ${serifs.rpg.status.skill} : ` : undefined,
 				...(msg.friend.doc.perModulesData.rpg.skills ? msg.friend.doc.perModulesData.rpg.skills.map((x) => "    "　+ x.name) : []),
+				msg.friend.doc.perModulesData.rpg.coin ? `  ${serifs.rpg.status.coin} : ${msg.friend.doc.perModulesData.rpg.coin}` : "",
 			].filter(Boolean).join("\n")
 			: ""
 

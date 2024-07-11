@@ -22,6 +22,9 @@ type Raid = {
 		};
         me: string;
 		dmg: number;
+        lv: number;
+        count: number;
+        mark: string;
 	}[];
     enemy: Enemy;
 	isEnded: boolean;
@@ -1670,7 +1673,7 @@ export default class extends Module {
 		this.log('raid finished');
 
 		// お流れ
-		if (raid.attackers?.filter((x) => x.dmg > 1).length < 1) {
+		if (raid.attackers?.filter((x) => x.dmg > 1).length) {
 			this.ai.decActiveFactor((raid.finishedAt.valueOf() - raid.startedAt.valueOf()) / (60 * 1000 * 100));
 
 			this.ai.post({
@@ -1683,11 +1686,25 @@ export default class extends Module {
 
 		let results: string[] = [];
 
-		for (let attacker of raid.attackers) {
-		    if (attacker.dmg > 0) results.push(`${attacker.me} ${acct(attacker.user)}: ${attacker.dmg} ダメージ`);
-		}
+        let sortAttackers = raid.attackers.sort((a,b) => b.dmg - a.dmg);
 
-		const text = results.join('\n') + '\n\n' + serifs.rpg.finish(raid.enemy.name);
+		for (let attacker of sortAttackers) {
+		    if (attacker.dmg > 0) results.push(`${attacker.me} ${acct(attacker.user)}:\n${attacker.mark} Lv${attacker.lv} ${attacker.count}T ${attacker.dmg.toLocaleString()}ダメージ`);
+		}
+        
+        if (sortAttackers.length > 1) results.push(`合計: ${sortAttackers.length}人 ${sortAttackers.reduce((pre, cur) => pre + cur.dmg, 0).toLocaleString()}ダメージ`)
+
+		const score = Math.max(Math.floor(Math.log2(sortAttackers.reduce((pre, cur) => pre + cur.dmg, 0) / 1024) + 1), 1);
+        
+        const text = results.join('\n') + '\n\n' + serifs.rpg.finish(raid.enemy.name, score);
+
+        sortAttackers.forEach((x) => {
+            const friend = this.ai.lookupFriend(x.user.id)
+            if (!friend) return;
+            const data = friend.getPerModulesData(this);
+            data.coin = (data.coin ?? 0) + (score ?? 1);
+            friend.setPerModulesData(this, data);
+        })
 
 		this.ai.post({
 			text: text,
@@ -1865,176 +1882,6 @@ export default class extends Module {
             def = def * (1 + (skillEffects.notBattleBonusDef ?? 0));
         }
 
-        const itemEquip = 0.4 + ((1 - playerHpPercent) * 0.6);
-        if (rpgItems.length && ((count === 1 && skillEffects.firstTurnItem) || Math.random() < itemEquip * (1 + (skillEffects.itemEquip ?? 0))) ) {
-            //アイテム
-            buff += 1
-            if ((count === 1 && skillEffects.firstTurnItem)) message += serifs.rpg.skill.firstItem
-            if (enemy.pLToR) {
-                let isPlus = Math.random() < 0.5;
-                const items = rpgItems.filter((x) => isPlus ? x.mind > 0 : x.mind < 0);
-                item = items[Math.floor(Math.random() * items.length)];
-            } else {
-                let types = ["weapon", "armor"];
-                for (let i = 0; i < (skillEffects.weaponSelect ?? 0); i++) {
-                    types.push("weapon");
-                }
-                for (let i = 0; i < (skillEffects.armorSelect ?? 0); i++) {
-                    types.push("armor");
-                }
-                if ((count !== 1 || enemy.pLToR) && !skillEffects.lowHpFood) {
-                    types.push("medicine");
-                    types.push("poison");
-                    for (let i = 0; i < (skillEffects.foodSelect ?? 0); i++) {
-                        types.push("medicine");
-                        types.push("poison");
-                    }
-                }
-                if ((count !== 1 || enemy.pLToR) && skillEffects.lowHpFood && Math.random() < skillEffects.lowHpFood * playerHpPercent) {
-                    if (playerHpPercent < 0.5) message += serifs.rpg.skill.lowHpFood
-                    types = ["medicine", "poison"]
-                }
-                const type = types[Math.floor(Math.random() * types.length)]
-                if ((type === "weapon" && !(isBattle && isPhysical)) || (type === "armor" && isTired) || enemy.pLToR) {
-                    let isPlus = Math.random() < (0.5 + (skillEffects.mindMinusAvoid ?? 0) + (count === 1 ? skillEffects.firstTurnMindMinusAvoid ?? 0 : 0));
-                    const items = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind < 0));
-                    item = items[Math.floor(Math.random() * items.length)];
-                } else {
-                    const items = rpgItems.filter((x) => x.type === type && x.effect > 0);
-                    item = items[Math.floor(Math.random() * items.length)];
-                }
-            }
-            const mindMsg = (mind) => {
-                if (mind >= 100) {
-                    message += `もこチキの気合が特大アップ！\n`
-                } else if (mind >= 70) {
-                    message += `もこチキの気合が大アップ！\n`
-                } else if (mind > 30) {
-                    message += `もこチキの気合がアップ！\n`
-                } else if (mind > 0) {
-                    message += `もこチキの気合が小アップ！\n`
-                } else if (mind > -50) {
-                    message += `あまり良い気分ではないようだ…\n`
-                } else {
-                    message += `もこチキの気合が下がった…\n`
-                }
-            }
-            if (item.type !== "poison") {
-                item.effect = Math.round(item.effect * (1 + (skillEffects.itemBoost ?? 0)))
-                if (item.type === "weapon") item.effect = Math.round(item.effect * (1 + (skillEffects.weaponBoost ?? 0)))
-                if (item.type === "armor") item.effect = Math.round(item.effect * (1 + (skillEffects.armorBoost ?? 0)))
-                if (item.type === "medicine") item.effect = Math.round(item.effect * (1 + (skillEffects.foodBoost ?? 0)))
-            } else {
-                item.effect = Math.round(item.effect / (1 + (skillEffects.itemBoost ?? 0)))
-                item.effect = Math.round(item.effect / (1 + (skillEffects.poisonResist ?? 0)))
-            }
-            if (item.mind < 0) {
-                item.mind = Math.round(item.mind / (1 + (skillEffects.itemBoost ?? 0)))
-            } else {
-                item.mind = Math.round(item.mind * (1 + (skillEffects.itemBoost ?? 0)))
-            }
-            switch (item.type) {
-                case "weapon":
-                    message += `${item.name}を取り出し、装備した！\n`
-                    if (!(isBattle && isPhysical)) {
-                        mindMsg(item.mind)
-                        if (item.mind < 0 && isSuper) item.mind = item.mind / 2
-                        itemBonus.atk = atk * (item.mind * 0.0025);
-                        itemBonus.def = def * (item.mind * 0.0025);
-                        atk = atk + itemBonus.atk;
-                        def = def + itemBonus.def;
-                    } else {
-                        itemBonus.atk = (lv * 4) * (item.effect * 0.005);
-                        atk = atk + itemBonus.atk;
-                        if (item.effect >= 100) {
-                            message += `もこチキのパワーが特大アップ！\n`
-                        } else if (item.effect >= 70) {
-                            message += `もこチキのパワーが大アップ！\n`
-                        } else if (item.effect > 30) {
-                            message += `もこチキのパワーがアップ！\n`
-                        } else {
-                            message += `もこチキのパワーが小アップ！\n`
-                        }
-                    }
-                    break;
-                case "armor":
-                    message += `${item.name}を取り出し、装備した！\n`
-                    if (isTired) {
-                        mindMsg(item.mind)
-                        if (item.mind < 0 && isSuper) item.mind = item.mind / 2
-                        itemBonus.atk = atk * (item.mind * 0.0025);
-                        itemBonus.def = def * (item.mind * 0.0025);
-                        atk = atk + itemBonus.atk;
-                        def = def + itemBonus.def;
-                    } else {
-                        itemBonus.def = (lv * 4) * (item.effect * 0.005);
-                        def = def + itemBonus.def;
-                        if (item.effect >= 100) {
-                            message += `もこチキの防御が特大アップ！\n`
-                        } else if (item.effect >= 70) {
-                            message += `もこチキの防御が大アップ！\n`
-                        } else if (item.effect > 30) {
-                            message += `もこチキの防御がアップ！\n`
-                        } else {
-                            message += `もこチキの防御が小アップ！\n`
-                        }
-                    }
-                    break;
-                case "medicine":
-                    message += `${item.name}を取り出し、食べた！\n`
-                    if (enemy.pLToR) {
-                        mindMsg(item.mind)
-                        if (item.mind < 0 && isSuper) item.mind = item.mind / 2
-                        itemBonus.atk = atk * (item.mind * 0.0025);
-                        itemBonus.def = def * (item.mind * 0.0025);
-                        atk = atk + itemBonus.atk;
-                        def = def + itemBonus.def;
-                    } else {
-                        const heal = Math.round(((100 + lv * 3) - playerHp) * (item.effect * 0.005))
-                        playerHp += heal
-                        if (heal > 0) {
-                            if (item.effect >= 100 && heal >= 50) {
-                                message += `もこチキの体力が特大回復！\n${heal}ポイント回復した！\n`
-                            } else if (item.effect >= 70 && heal >= 35) {
-                                message += `もこチキの体力が大回復！\n${heal}ポイント回復した！\n`
-                            } else if (item.effect > 30 && heal >= 15) {
-                                message += `もこチキの体力が回復！\n${heal}ポイント回復した！\n`
-                            } else {
-                                message += `もこチキの体力が小回復！\n${heal}ポイント回復した！\n`
-                            }
-                        }
-                    }
-                    break;
-                case "poison":
-                    if (Math.random() < (skillEffects.poisonAvoid ?? 0)) {
-                        message += `${item.name}を取り出したが、美味しそうでなかったので捨てた！\n`
-                    } else {
-                        message += `${item.name}を取り出し、食べた！\n`
-                        if (enemy.pLToR) {
-                            mindMsg(item.mind)
-                            if (item.mind < 0 && isSuper) item.mind = item.mind / 2
-                            itemBonus.atk = atk * (item.mind * 0.0025);
-                            itemBonus.def = def * (item.mind * 0.0025);
-                            atk = atk + itemBonus.atk;
-                            def = def + itemBonus.def;
-                        } else {
-                            const dmg = Math.round(playerHp * (item.effect * 0.003) * (isSuper ? 0.5 : 1));
-                            playerHp -= dmg;
-                            if (item.effect >= 70 && dmg > 0) {
-                                message += `もこチキはかなり調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`
-                            } else if (item.effect > 30 && dmg > 0) {
-                                message += `もこチキは調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`
-                            } else {
-                                message += `あまり美味しくなかったようだ…${dmg > 0 ? `\n${dmg}ポイントのダメージを受けた！` : ""}\n`
-                            }
-                        }
-                    }
-                    break;
-                default:
-                    break;
-            }
-        }
-
         // 敵のステータスを計算
         /** 敵の攻撃力 */
         let enemyAtk = (typeof enemy.atk === "function") ? enemy.atk(atk, def, spd) : lv * 3.5 * (enemy.atk ?? 1);
@@ -2056,17 +1903,16 @@ export default class extends Module {
             buff += 1
             message += serifs.rpg.skill.firstTurnResist + "\n"
         }
-        
-        if (skillEffects.tenacious && playerHpPercent < 0.5 && isBattle && isPhysical) {
-            buff += 1
-            message += serifs.rpg.skill.tenacious + "\n"
-        }
 
         // バフが1つでも付与された場合、改行を追加する
         if (buff > 0) message += "\n"
 
         if (skillEffects.plusActionX) {
             atk = atk * (1 + (skillEffects.plusActionX ?? 0) / 10)
+        }
+
+        if (skillEffects.escape) {
+            def = def * (1 + (skillEffects.escape ?? 0) / 10)
         }
 
         const plusActionX = 5
@@ -2082,6 +1928,11 @@ export default class extends Module {
             /** 敵のHP割合 */
             let enemyHpPercent = enemyHp / enemyMaxHp;
 
+            if (skillEffects.tenacious && playerHpPercent < 0.5 && isBattle && isPhysical) {
+                buff += 1
+                message += serifs.rpg.skill.tenacious + "\n"
+            }
+
             // HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
             if (playerHpPercent <= (1 / 7) * (1 + (skillEffects.haisuiUp ?? 0)) && (enemyHpPercent - playerHpPercent) >= 0.5 / (1 + (skillEffects.haisuiUp ?? 0))) {
                 buff += 1
@@ -2089,6 +1940,181 @@ export default class extends Module {
                 const effect = Math.min((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.haisuiUp ?? 0)), 1)
                 atk = atk + Math.round(def * effect)
                 def = Math.round(def * (1 - effect))
+            }
+
+            item = undefined;
+            atk = atk - (itemBonus.atk ?? 0);
+            def = def - (itemBonus.def ?? 0);
+            itemBonus = { atk: 0, def: 0 };
+
+            const itemEquip = 0.4 + ((1 - playerHpPercent) * 0.6);
+            if (rpgItems.length && ((count === 1 && skillEffects.firstTurnItem) || Math.random() < itemEquip * (1 + (skillEffects.itemEquip ?? 0))) ) {
+                //アイテム
+                buff += 1
+                if ((count === 1 && skillEffects.firstTurnItem)) message += serifs.rpg.skill.firstItem
+                if (enemy.pLToR) {
+                    let isPlus = Math.random() < 0.5;
+                    const items = rpgItems.filter((x) => isPlus ? x.mind > 0 : x.mind < 0);
+                    item = items[Math.floor(Math.random() * items.length)];
+                } else {
+                    let types = ["weapon", "armor"];
+                    for (let i = 0; i < (skillEffects.weaponSelect ?? 0); i++) {
+                        types.push("weapon");
+                    }
+                    for (let i = 0; i < (skillEffects.armorSelect ?? 0); i++) {
+                        types.push("armor");
+                    }
+                    if ((count !== 1 || enemy.pLToR) && !skillEffects.lowHpFood) {
+                        types.push("medicine");
+                        types.push("poison");
+                        for (let i = 0; i < (skillEffects.foodSelect ?? 0); i++) {
+                            types.push("medicine");
+                            types.push("poison");
+                        }
+                    }
+                    if ((count !== 1 || enemy.pLToR) && skillEffects.lowHpFood && Math.random() < skillEffects.lowHpFood * playerHpPercent) {
+                        if (playerHpPercent < 0.5) message += serifs.rpg.skill.lowHpFood
+                        types = ["medicine", "poison"]
+                    }
+                    const type = types[Math.floor(Math.random() * types.length)]
+                    if ((type === "weapon" && !(isBattle && isPhysical)) || (type === "armor" && isTired) || enemy.pLToR) {
+                        let isPlus = Math.random() < (0.5 + (skillEffects.mindMinusAvoid ?? 0) + (count === 1 ? skillEffects.firstTurnMindMinusAvoid ?? 0 : 0));
+                        const items = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind < 0));
+                        item = items[Math.floor(Math.random() * items.length)];
+                    } else {
+                        const items = rpgItems.filter((x) => x.type === type && x.effect > 0);
+                        item = items[Math.floor(Math.random() * items.length)];
+                    }
+                }
+                const mindMsg = (mind) => {
+                    if (mind >= 100) {
+                        message += `もこチキの気合が特大アップ！\n`
+                    } else if (mind >= 70) {
+                        message += `もこチキの気合が大アップ！\n`
+                    } else if (mind > 30) {
+                        message += `もこチキの気合がアップ！\n`
+                    } else if (mind > 0) {
+                        message += `もこチキの気合が小アップ！\n`
+                    } else if (mind > -50) {
+                        message += `あまり良い気分ではないようだ…\n`
+                    } else {
+                        message += `もこチキの気合が下がった…\n`
+                    }
+                }
+                if (item.type !== "poison") {
+                    item.effect = Math.round(item.effect * (1 + (skillEffects.itemBoost ?? 0)))
+                    if (item.type === "weapon") item.effect = Math.round(item.effect * (1 + (skillEffects.weaponBoost ?? 0)))
+                    if (item.type === "armor") item.effect = Math.round(item.effect * (1 + (skillEffects.armorBoost ?? 0)))
+                    if (item.type === "medicine") item.effect = Math.round(item.effect * (1 + (skillEffects.foodBoost ?? 0)))
+                } else {
+                    item.effect = Math.round(item.effect / (1 + (skillEffects.itemBoost ?? 0)))
+                    item.effect = Math.round(item.effect / (1 + (skillEffects.poisonResist ?? 0)))
+                }
+                if (item.mind < 0) {
+                    item.mind = Math.round(item.mind / (1 + (skillEffects.itemBoost ?? 0)))
+                } else {
+                    item.mind = Math.round(item.mind * (1 + (skillEffects.itemBoost ?? 0)))
+                }
+                switch (item.type) {
+                    case "weapon":
+                        message += `${item.name}を取り出し、装備した！\n`
+                        if (!(isBattle && isPhysical)) {
+                            mindMsg(item.mind)
+                            if (item.mind < 0 && isSuper) item.mind = item.mind / 2
+                            itemBonus.atk = atk * (item.mind * 0.0025);
+                            itemBonus.def = def * (item.mind * 0.0025);
+                            atk = atk + itemBonus.atk;
+                            def = def + itemBonus.def;
+                        } else {
+                            itemBonus.atk = (lv * 4) * (item.effect * 0.005);
+                            atk = atk + itemBonus.atk;
+                            if (item.effect >= 100) {
+                                message += `もこチキのパワーが特大アップ！\n`
+                            } else if (item.effect >= 70) {
+                                message += `もこチキのパワーが大アップ！\n`
+                            } else if (item.effect > 30) {
+                                message += `もこチキのパワーがアップ！\n`
+                            } else {
+                                message += `もこチキのパワーが小アップ！\n`
+                            }
+                        }
+                        break;
+                    case "armor":
+                        message += `${item.name}を取り出し、装備した！\n`
+                        if (isTired) {
+                            mindMsg(item.mind)
+                            if (item.mind < 0 && isSuper) item.mind = item.mind / 2
+                            itemBonus.atk = atk * (item.mind * 0.0025);
+                            itemBonus.def = def * (item.mind * 0.0025);
+                            atk = atk + itemBonus.atk;
+                            def = def + itemBonus.def;
+                        } else {
+                            itemBonus.def = (lv * 4) * (item.effect * 0.005);
+                            def = def + itemBonus.def;
+                            if (item.effect >= 100) {
+                                message += `もこチキの防御が特大アップ！\n`
+                            } else if (item.effect >= 70) {
+                                message += `もこチキの防御が大アップ！\n`
+                            } else if (item.effect > 30) {
+                                message += `もこチキの防御がアップ！\n`
+                            } else {
+                                message += `もこチキの防御が小アップ！\n`
+                            }
+                        }
+                        break;
+                    case "medicine":
+                        message += `${item.name}を取り出し、食べた！\n`
+                        if (enemy.pLToR) {
+                            mindMsg(item.mind)
+                            if (item.mind < 0 && isSuper) item.mind = item.mind / 2
+                            itemBonus.atk = atk * (item.mind * 0.0025);
+                            itemBonus.def = def * (item.mind * 0.0025);
+                            atk = atk + itemBonus.atk;
+                            def = def + itemBonus.def;
+                        } else {
+                            const heal = Math.round(((100 + lv * 3) - playerHp) * (item.effect * 0.005))
+                            playerHp += heal
+                            if (heal > 0) {
+                                if (item.effect >= 100 && heal >= 50) {
+                                    message += `もこチキの体力が特大回復！\n${heal}ポイント回復した！\n`
+                                } else if (item.effect >= 70 && heal >= 35) {
+                                    message += `もこチキの体力が大回復！\n${heal}ポイント回復した！\n`
+                                } else if (item.effect > 30 && heal >= 15) {
+                                    message += `もこチキの体力が回復！\n${heal}ポイント回復した！\n`
+                                } else {
+                                    message += `もこチキの体力が小回復！\n${heal}ポイント回復した！\n`
+                                }
+                            }
+                        }
+                        break;
+                    case "poison":
+                        if (Math.random() < (skillEffects.poisonAvoid ?? 0)) {
+                            message += `${item.name}を取り出したが、美味しそうでなかったので捨てた！\n`
+                        } else {
+                            message += `${item.name}を取り出し、食べた！\n`
+                            if (enemy.pLToR) {
+                                mindMsg(item.mind)
+                                if (item.mind < 0 && isSuper) item.mind = item.mind / 2
+                                itemBonus.atk = atk * (item.mind * 0.0025);
+                                itemBonus.def = def * (item.mind * 0.0025);
+                                atk = atk + itemBonus.atk;
+                                def = def + itemBonus.def;
+                            } else {
+                                const dmg = Math.round(playerHp * (item.effect * 0.003) * (isSuper ? 0.5 : 1));
+                                playerHp -= dmg;
+                                if (item.effect >= 70 && dmg > 0) {
+                                    message += `もこチキはかなり調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`
+                                } else if (item.effect > 30 && dmg > 0) {
+                                    message += `もこチキは調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`
+                                } else {
+                                    message += `あまり美味しくなかったようだ…${dmg > 0 ? `\n${dmg}ポイントのダメージを受けた！` : ""}\n`
+                                }
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                }
             }
 
             // 敵に最大ダメージ制限がある場合、ここで計算
@@ -2162,6 +2188,8 @@ export default class extends Module {
 
             /** 敵のターンが既に完了したかのフラグ */
             let enemyTurnFinished = false
+
+            let endureCount = 1 + (skillEffects.endureUp ?? 0) * 2;
 
             const _data = { ...data, enemy }
 
@@ -2286,10 +2314,11 @@ export default class extends Module {
                         if (enemy.fire && count > (data.thirdFire ?? 0)) data.thirdFire = count;
                     }
                     // HPが0で食いしばりが可能な場合、食いしばる
-                    const endure = 0.1 - (count * 0.05)
-                    if (playerHp <= 0 && !enemy.notEndure && Math.random() < endure * (1 + (skillEffects.endureUp ?? 0))) {
+                    const endure = (0.1 + (endureCount * 0.1)) - (count * 0.05)
+                    if (playerHp <= 0 && !enemy.notEndure && Math.random() < endure) {
                         message += serifs.rpg.endure + "\n"
                         playerHp = 1;
+                        endureCount -= 1;
                     }
                     if (maxDmg > (data.superMuscle ?? 0) && playerHp > 0) data.superMuscle = maxDmg;
                 }
@@ -2311,7 +2340,7 @@ export default class extends Module {
         }
 
         if (playerHp > 0) {
-            const dmg = Math.round(playerHp / (100 + lv * 3) * 200)
+            const dmg = Math.round(playerHp / (100 + lv * 3) * 1000)
             message += "\n\n" + serifs.rpg.finalAttack(dmg) + `\n\n` + serifs.rpg.timeUp(enemy.name, (100 + lv * 3)) + "\n\n" + enemy.losemsg
             totalDmg += dmg
         }
@@ -2322,9 +2351,19 @@ export default class extends Module {
             data.charge = 0;
         }
 
-        msg.friend.setPerModulesData(this, data);
+        let mark = ":blank:";
 
         message += "\n\n" + serifs.rpg.totalDmg(totalDmg)
+
+        if (!data.raidScore[enemy.name] || data.raidScore[enemy.name] < totalDmg) {
+            if (data.raidScore[enemy.name]) {
+                serifs.rpg.hiScore(data.raidScore[enemy.name], totalDmg)
+                mark = "🆙"
+            }
+            data.raidScore[enemy.name] = totalDmg;
+        }
+
+        msg.friend.setPerModulesData(this, data);
 
         // 色解禁確認
         const newColorData = colors.map((x) => x.unlock(data));
@@ -2346,7 +2385,10 @@ export default class extends Module {
 
         return {
             totalDmg,
-            me
+            me,
+            lv,
+            count,
+            mark,
         };
     }
 
@@ -2379,9 +2421,9 @@ export default class extends Module {
 
         if (!enemy) return;
 
-        const num = await this.getTotalDmg(msg, enemy)
+        const result = await this.getTotalDmg(msg, enemy)
 
-		this.log(`damage ${num.totalDmg} by ${msg.user.id}`);
+		this.log(`damage ${result.totalDmg} by ${msg.user.id}`);
 
 		raid.attackers.push({
 			user: {
@@ -2389,14 +2431,17 @@ export default class extends Module {
 				username: msg.user.username,
 				host: msg.user.host,
 			},
-			dmg: num.totalDmg ?? 0,
-            me: num.me ?? "",
+			dmg: result.totalDmg ?? 0,
+            me: result.me ?? "",
+            lv: result.lv ?? 1,
+            count: result.count ?? 1,
+            mark: result.mark ?? ":blank:",
 		});
 
 		this.raids.update(raid);
 
 		return {
-			reaction: num.me
+			reaction: result.me
 		};
 	}
 }
