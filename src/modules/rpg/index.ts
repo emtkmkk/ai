@@ -324,8 +324,10 @@ export default class extends Module {
             /** 現在の時間の文字列 */
             let nowTimeStr = getDate() + (new Date().getHours() < 12 ? "" : new Date().getHours() < 18 ? "/12" : "/18");
 
+            let nextTimeStr = new Date().getHours() < 12 ? getDate() + "/12" : new Date().getHours() < 18 ? getDate() + "/18" : getDate(1);
+
             // プレイ済でないかのチェック
-            if (data.lastPlayedAt === nowTimeStr) {
+            if (data.lastPlayedAt === nowTimeStr || data.lastPlayedAt === nextTimeStr) {
                 const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
                 if (msg.includes([serifs.rpg.command.onemore])) {
                     if (data.lastOnemorePlayedAt === getDate()) {
