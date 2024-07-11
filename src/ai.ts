@@ -452,6 +452,7 @@ export default class 藍 {
 	 */
 	@autobind
 	public subscribeReply(module: Module, key: string | null, id: string, data?: any) {
+		this.log(`+++ subscribe Reply: ${module.name} - ${key ? key : "null"} : ${id} : ${JSON.stringify(data)}`);
 		this.contexts.insertOne({
 			noteId: id,
 			module: module.name,
@@ -467,6 +468,7 @@ export default class 藍 {
 	 */
 	@autobind
 	public unsubscribeReply(module: Module, key: string | null) {
+		this.log(`--- unsubscribe Reply: ${module.name} - ${key ? key : "null"}`);
 		this.contexts.findAndRemove({
 			key: key,
 			module: module.name

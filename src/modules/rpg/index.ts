@@ -341,6 +341,7 @@ export default class extends Module {
                             }
                             if (!data.replayOkawari) {
                                 const reply = await msg.reply(serifs.rpg.oneMore.buyQuestion(needCoin, data.coin));
+                                this.log("replayOkawari SubscribeReply: " + reply.id);
                                 this.subscribeReply("replayOkawari:" + msg.userId, reply.id, { message: msg });
                                 return { reaction: 'love' };
                             } else {
