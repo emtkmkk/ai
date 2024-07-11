@@ -2355,6 +2355,7 @@ export default class extends Module {
 
         message += "\n\n" + serifs.rpg.totalDmg(totalDmg)
 
+			if (!data.raidScore) data.raidScore = {}
         if (!data.raidScore[enemy.name] || data.raidScore[enemy.name] < totalDmg) {
             if (data.raidScore[enemy.name]) {
                 serifs.rpg.hiScore(data.raidScore[enemy.name], totalDmg)
