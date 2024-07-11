@@ -1622,9 +1622,18 @@ export default class extends Module {
 
         const games = this.raids.find({});
 
-        const recentGame = games.length == 0 ? null : games[games.length - 1];
+		const recentGame = games.length == 0 ? null : games[games.length - 1];
 
-        const enemy = raidEnemys[Math.floor(Math.random() * raidEnemys.length)]
+		const penultimateGame = recentGame && games.length > 1 ? games[games.length - 2] : null;
+
+        const filteredRaidEnemys = 
+            raidEnemys.length > 2 && penultimateGame
+                ? raidEnemys.filter((x) => ![recentGame?.enemy.name, penultimateGame.enemy.name].includes(x.name))
+                : raidEnemys.length > 1 && recentGame
+                    ? raidEnemys.filter((x) => ![recentGame?.enemy.name].includes(x.name))
+                    : raidEnemys
+
+        const enemy = filteredRaidEnemys[Math.floor(Math.random() * filteredRaidEnemys.length)]
 
         /*
         // ゲーム開始条件判定
@@ -1711,13 +1720,37 @@ export default class extends Module {
 
         let sortAttackers = raid.attackers.sort((a, b) => b.dmg - a.dmg);
 
+        let levelSpace = String(raid.attackers.reduce((pre, cur) => pre > cur.lv ? pre : cur, 0)).length;
+
+        const score = Math.max(Math.floor(Math.log2(sortAttackers.reduce((pre, cur) => pre + cur.dmg, 0) / 512) + 1), 1);
+
         for (let attacker of sortAttackers) {
-            if (attacker.dmg > 0) results.push(`${attacker.me} ${acct(attacker.user)}:\n${attacker.mark} Lv${attacker.lv} ${attacker.count}T ${attacker.dmg.toLocaleString()}ダメージ`);
+            if (attacker.dmg > 0) results.push(`${attacker.me} ${acct(attacker.user)}:\n${attacker.mark} Lv${String(attacker.lv).padStart(levelSpace, ' ')} ${attacker.count}ターン ${attacker.dmg.toLocaleString()}ダメージ`);
         }
 
-        if (sortAttackers.length > 1) results.push(`合計: ${sortAttackers.length}人 ${sortAttackers.reduce((pre, cur) => pre + cur.dmg, 0).toLocaleString()}ダメージ`)
+        const total = sortAttackers.reduce((pre, cur) => pre + cur.dmg, 0);
 
-        const score = Math.max(Math.floor(Math.log2(sortAttackers.reduce((pre, cur) => pre + cur.dmg, 0) / 1024) + 1), 1);
+        if (sortAttackers.length > 1) {
+            results.push(`\n合計: ${sortAttackers.length}人 ${total.toLocaleString()}ダメージ\n評価: ${"★".repeat(score)}`)
+        } else {
+            results.push(`\n評価: ${"★".repeat(score)}`)
+        }
+
+        const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
+        if (rpgData) {
+            if (!rpgData.raidScore) rpgData.raidScore = {}
+            if (!rpgData.raidScoreDate) rpgData.raidScoreDate = {}
+            if (!rpgData.raidScore[raid.enemy.name] || rpgData.raidScore[raid.enemy.name] < total) {
+                if (rpgData.raidScore[raid.enemy.name]) {
+                    results.push("\n" + serifs.rpg.GlobalHiScore(rpgData.raidScore[raid.enemy.name], rpgData.raidScoreDate[raid.enemy.name] ?? "", total))
+                }
+                rpgData.raidScore[raid.enemy.name] = total;
+                rpgData.raidScoreDate[raid.enemy.name] = getDate();
+            }
+            this.ai.moduleData.update(rpgData);
+        } else {
+            this.ai.moduleData.insert({ type: 'rpg', maxLv: 1, raidScore: {[raid.enemy.name]: total}, raidScoreDate: {[raid.enemy.name]: getDate()} });
+        }
 
         const text = results.join('\n') + '\n\n' + serifs.rpg.finish(raid.enemy.name, score);
 
