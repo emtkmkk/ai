@@ -143,13 +143,13 @@ export default class extends Module {
             }
             if (msg.includes(["dataFix"])) {
                 const friends = this.ai.friends.find()
-                friends.filter((x) => x.perModulesData.rpg.thirdfire >= 5).forEach((x) => {
+                friends.filter((x) => x.perModulesData.rpg?.thirdfire >= 5).forEach((x) => {
                     x.perModulesData.rpg.thirdfire = 3;
                 })
                 friends.filter((x) => ["9qn9xf010u", "9tvekrql1i", "9d7af0fgb8"].includes(x.userId)).forEach((x) => {
                     x.perModulesData.rpg.thirdfire = 2;
                 })
-                friends.filter((x) => x.perModulesData.rpg.raidScore).forEach((x) => {
+                friends.filter((x) => x.perModulesData.rpg?.raidScore).forEach((x) => {
                     x.perModulesData.rpg.raidScore = {};
                 })
                 return { reaction: "love" };
