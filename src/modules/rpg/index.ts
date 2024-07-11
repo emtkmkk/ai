@@ -14,46 +14,46 @@ import config from '@/config';
 import * as loki from 'lokijs';
 
 type Raid = {
-	attackers: {
-		user: {
-			id: string;
-			username: string;
-			host: User['host'];
-		};
+    attackers: {
+        user: {
+            id: string;
+            username: string;
+            host: User['host'];
+        };
         me: string;
-		dmg: number;
+        dmg: number;
         lv: number;
         count: number;
         mark: string;
-	}[];
+    }[];
     enemy: Enemy;
-	isEnded: boolean;
-	startedAt: number;
-	finishedAt: number;
-	postId: string;
-	triggerUserId: string | undefined;
-	replyKey: string[];
+    isEnded: boolean;
+    startedAt: number;
+    finishedAt: number;
+    postId: string;
+    triggerUserId: string | undefined;
+    replyKey: string[];
 };
 
 export default class extends Module {
     public readonly name = 'rpg';
 
-	private raids: loki.Collection<Raid>;
+    private raids: loki.Collection<Raid>;
 
     @autobind
     public install() {
-		this.raids = this.ai.getCollection('rpgRaid');
+        this.raids = this.ai.getCollection('rpgRaid');
 
-		this.crawleGameEnd();
-		setInterval(this.crawleGameEnd, 1000);
+        this.crawleGameEnd();
+        setInterval(this.crawleGameEnd, 1000);
         /*
-		setInterval(() => {
-			const hours = new Date().getHours()
-			const rnd = 0.1 * this.ai.activeFactor;
-			if (Math.random() < rnd) {
-				this.start();
-			}
-		}, 1000 * 60 * 60 * 3);
+        setInterval(() => {
+            const hours = new Date().getHours()
+            const rnd = 0.1 * this.ai.activeFactor;
+            if (Math.random() < rnd) {
+                this.start();
+            }
+        }, 1000 * 60 * 60 * 3);
         */
         const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
         const maxLv = this.ai.friends.find().filter((x) => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1).reduce((acc, cur) => acc > cur.perModulesData.rpg.lv ? acc : cur.perModulesData.rpg.lv, 0)
@@ -105,14 +105,14 @@ export default class extends Module {
         skillCalculate(this.ai);
         return {
             mentionHook: this.mentionHook,
-			contextHook: this.contextHook
+            contextHook: this.contextHook
         };
     }
 
     @autobind
     private async mentionHook(msg: Message) {
-		if (msg.user.username === config.master && msg.includes([serifs.rpg.command.rpg]) && msg.includes(["admin"])) {
-            if (msg.includes(["revert"])){
+        if (msg.user.username === config.master && msg.includes([serifs.rpg.command.rpg]) && msg.includes(["admin"])) {
+            if (msg.includes(["revert"])) {
                 const id = /\w{10}/.exec(msg.extractedText)?.[0];
                 if (id) {
                     const friend = this.ai.lookupFriend(id)
@@ -122,10 +122,10 @@ export default class extends Module {
                     friend.doc.perModulesData.rpg.atk = friend.doc.perModulesData.rpg.atk - 4;
                     friend.doc.perModulesData.rpg.def = friend.doc.perModulesData.rpg.def - 3;
                     friend.save();
-                    return { reaction: "love" }; 
+                    return { reaction: "love" };
                 }
             }
-            if (msg.includes(["skilledit"])){
+            if (msg.includes(["skilledit"])) {
                 const id = /\w{10}/.exec(msg.extractedText)?.[0];
                 const skill = /"(\S+)"/.exec(msg.extractedText)?.[1];
                 const num = /\s(\d)\s/.exec(msg.extractedText)?.[1];
@@ -134,14 +134,27 @@ export default class extends Module {
                     if (friend == null) return { reaction: ":mk_hotchicken:" };
                     friend.doc.perModulesData.rpg.skills[num] = skills.find((x) => x.name.startsWith(skill));
                     friend.save()
-                    return { reaction: "love" }; 
+                    return { reaction: "love" };
                 }
             }
-            if (msg.includes(["startRaid"])){
+            if (msg.includes(["startRaid"])) {
                 this.start();
-                return { reaction: "love" }; 
+                return { reaction: "love" };
             }
-		}
+            if (msg.includes(["dataFix"])) {
+                const friends = this.ai.friends.find()
+                friends.filter((x) => x.perModulesData.rpg.thirdfire >= 5).forEach((x) => {
+                    x.perModulesData.rpg.thirdfire = 3;
+                })
+                friends.filter((x) => ["9qn9xf010u", "9tvekrql1i", "9d7af0fgb8"].includes(x.userId)).forEach((x) => {
+                    x.perModulesData.rpg.thirdfire = 2;
+                })
+                friends.filter((x) => x.perModulesData.rpg.raidScore).forEach((x) => {
+                    x.perModulesData.rpg.raidScore = {};
+                })
+                return { reaction: "love" };
+            }
+        }
         if (msg.includes([serifs.rpg.command.rpg]) && msg.includes([serifs.rpg.command.color])) {
             // 色モード
             return colorReply(this, msg);
@@ -207,7 +220,7 @@ export default class extends Module {
             atk = atk * (1 + (skillEffects.spdUp ?? 0));
             atk = atk * (1 + ((skillEffects.critUpFixed ?? 0) * (1 + (skillEffects.critDmgUp ?? 0))));
             atk = atk * (1 + (skillEffects.dart ?? 0) * 0.5);
-            atk = atk * (1 + (skillEffects.abortDown ?? 0) * (1/3));
+            atk = atk * (1 + (skillEffects.abortDown ?? 0) * (1 / 3));
             def = def * (1 + (skillEffects.defUp ?? 0));
 
             if (isSuper) {
@@ -332,8 +345,8 @@ export default class extends Module {
                         (skillEffects.rpgTime ?? 0) < 0 &&
                         new Date().getHours() < 24 - (skillEffects.rpgTime ?? 0) && data.lastPlayedAt !== getDate(1) ||
                         data.lastPlayedAt !== getDate() + (new Date().getHours() < 12 + (skillEffects.rpgTime ?? 0) ? "" : new Date().getHours() < 18 + (skillEffects.rpgTime ?? 0) ? "/12" : "/18")
-                    ){
-                        
+                    ) {
+
                         TimeStrBefore3 = TimeStrBefore2;
                         TimeStrBefore2 = TimeStrBefore1;
                         TimeStrBefore1 = nowTimeStr;
@@ -560,7 +573,7 @@ export default class extends Module {
             let item;
             /** アイテムによって増加したステータス */
             let itemBonus = { atk: 0, def: 0 };
-            
+
             /** これって戦闘？ */
             let isBattle = data.enemy.atkmsg(0).includes("ダメージ");
 
@@ -615,7 +628,7 @@ export default class extends Module {
                 // 非戦闘時は速度は上がらないが、パワーに還元される
                 atk = atk * (1 + (skillEffects.spdUp ?? 0));
             }
-            
+
             // 非戦闘なら非戦闘時スキルが発動
             if (!isBattle) {
                 atk = atk * (1 + (skillEffects.notBattleBonusAtk ?? 0));
@@ -634,7 +647,7 @@ export default class extends Module {
             }
 
             const itemEquip = 0.4 + ((1 - playerHpPercent) * 0.6);
-            if (rpgItems.length && ((count === 1 && skillEffects.firstTurnItem) || Math.random() < itemEquip * (1 + (skillEffects.itemEquip ?? 0))) ) {
+            if (rpgItems.length && ((count === 1 && skillEffects.firstTurnItem) || Math.random() < itemEquip * (1 + (skillEffects.itemEquip ?? 0)))) {
                 //アイテム
                 buff += 1
                 if ((count === 1 && skillEffects.firstTurnItem)) message += serifs.rpg.skill.firstItem
@@ -819,12 +832,12 @@ export default class extends Module {
                     message += serifs.rpg.skill.enemyStatusBonus + "\n"
                 }
             }
-            
+
             if (skillEffects.firstTurnResist && count === 1 && isBattle && isPhysical) {
                 buff += 1
                 message += serifs.rpg.skill.firstTurnResist + "\n"
             }
-            
+
             if (skillEffects.tenacious && playerHpPercent < 0.5 && isBattle && isPhysical) {
                 buff += 1
                 message += serifs.rpg.skill.tenacious + "\n"
@@ -870,13 +883,13 @@ export default class extends Module {
                     // 非戦闘時は、パワーに還元される
                     atk = atk + lv * 3.75 * skillEffects.fire;
                 }
-                
+
                 // 毒属性剣攻撃
                 if (skillEffects.weak && count > 1) {
-					if (isBattle && isPhysical) {
-						buff += 1
-						message += serifs.rpg.skill.weak(data.enemy.dname ?? data.enemy.name) + "\n"
-					}
+                    if (isBattle && isPhysical) {
+                        buff += 1
+                        message += serifs.rpg.skill.weak(data.enemy.dname ?? data.enemy.name) + "\n"
+                    }
                     enemyAtk = Math.max(enemyAtk * (1 - (skillEffects.weak * (count - 1))), 0)
                     enemyDef = Math.max(enemyDef * (1 - (skillEffects.weak * (count - 1))), 0)
                 }
@@ -892,12 +905,12 @@ export default class extends Module {
                     }
                 }
 
-				if (!data.enemy.abort && skillEffects.abortDown) {
-					// 効果がない場合は、パワーに還元される
-                    atk = atk * (1 + skillEffects.abortDown * (1/3));
-				}
+                if (!data.enemy.abort && skillEffects.abortDown) {
+                    // 効果がない場合は、パワーに還元される
+                    atk = atk * (1 + skillEffects.abortDown * (1 / 3));
+                }
 
-                const defDmgX = Math.max(1 * 
+                const defDmgX = Math.max(1 *
                     (1 + Math.max(skillEffects.defDmgUp ?? 0, -0.9)) *
                     (count === 1 && skillEffects.firstTurnResist ? (1 - (skillEffects.firstTurnResist ?? 0)) : 1) *
                     (count === 2 && skillEffects.firstTurnResist && skillEffects.firstTurnResist > 1 ? (1 - ((skillEffects.firstTurnResist ?? 0) - 1)) : 1) *
@@ -924,7 +937,7 @@ export default class extends Module {
                     const crit = Math.random() < (playerHpPercent - enemyHpPercent) * (1 - (skillEffects.enemyCritDown ?? 0));
                     // 予測最大ダメージが相手のHPの何割かで先制攻撃の確率が判定される
                     if (Math.random() < predictedDmg / enemyHp || (count === 3 && data.enemy.fire && (data.thirdFire ?? 0) <= 2)) {
-                        const rng = (defMinRnd + this.random(data,startCharge,skillEffects) * defMaxRnd) * defDmgX;
+                        const rng = (defMinRnd + this.random(data, startCharge, skillEffects) * defMaxRnd) * defDmgX;
                         const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
                         /** ダメージ */
                         const dmg = this.getEnemyDmg(data, def, tp, count, crit ? critDmg : false, enemyAtk, rng)
@@ -952,7 +965,7 @@ export default class extends Module {
                 // 自身攻撃の処理
                 // spdの回数分、以下の処理を繰り返す
                 for (let i = 0; i < spd; i++) {
-                    const rng = (atkMinRnd + this.random(data,startCharge,skillEffects) * atkMaxRnd) * (1 + (skillEffects.atkDmgUp ?? 0)) * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1);
+                    const rng = (atkMinRnd + this.random(data, startCharge, skillEffects) * atkMaxRnd) * (1 + (skillEffects.atkDmgUp ?? 0)) * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1);
                     /** クリティカルかどうか */
                     let crit = Math.random() < ((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0))) + (skillEffects.critUpFixed ?? 0);
                     const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
@@ -1056,7 +1069,7 @@ export default class extends Module {
                     let maxDmg = 0;
                     if (!enemyTurnFinished) {
                         for (let i = 0; i < (data.enemy.spd ?? 1); i++) {
-                            const rng = (defMinRnd + this.random(data,startCharge,skillEffects) * defMaxRnd) * defDmgX * enemyAtkX;
+                            const rng = (defMinRnd + this.random(data, startCharge, skillEffects) * defMaxRnd) * defDmgX * enemyAtkX;
                             /** クリティカルかどうか */
                             const crit = Math.random() < (playerHpPercent - enemyHpPercent) * (1 - (skillEffects.enemyCritDown ?? 0));
                             const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
@@ -1188,8 +1201,8 @@ export default class extends Module {
                 const uniques = new Set()
                 for (const _skill of data.skills as Skill[]) {
                     const skill = skills.find((x) => x.name === _skill.name) ?? _skill;
-                  
-									  if (skill.unique && uniques.has(skill.unique)) {
+
+                    if (skill.unique && uniques.has(skill.unique)) {
                         oldSkillName = skill.name
                         data.skills = data.skills.filter((x: Skill) => x.name !== oldSkillName)
                     } else {
@@ -1480,7 +1493,7 @@ export default class extends Module {
      * @returns プレイヤーが受けるダメージ
      */
     @autobind
-    private getEnemyDmg(data, def: number, tp: number, count: number, crit: number | boolean, enemyAtk: number, rng = (0.2 + Math.random() * 1.6),atkx?) {
+    private getEnemyDmg(data, def: number, tp: number, count: number, crit: number | boolean, enemyAtk: number, rng = (0.2 + Math.random() * 1.6), atkx?) {
         let dmg = Math.round((enemyAtk * (atkx ?? this.getVal(data.enemy.atkx, [tp]) ?? 3) * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * rng * (crit ? typeof crit === "number" ? (2 * crit) : 2 : 1)) * (1 / (((def * tp) + 100) / 100)))
         if (data.enemy?.fire) {
             dmg += Math.round(((data.count ?? count) - 1) * (100 + data.lv * 3) * data.enemy.fire)
@@ -1499,7 +1512,7 @@ export default class extends Module {
     private aggregateSkillsEffects(data: { skills: Skill[] }): SkillEffect {
         const aggregatedEffect: SkillEffect = {};
 
-		if (!data.skills) return aggregatedEffect;
+        if (!data.skills) return aggregatedEffect;
         data.skills.forEach(_skill => {
             const skill = skills.find((x) => x.name === _skill.name) ?? _skill;
             Object.entries(skill.effect).forEach(([key, value]) => {
@@ -1522,42 +1535,42 @@ export default class extends Module {
         }
 
         if (aggregatedEffect.abortDown && aggregatedEffect.abortDown > 1) {
-            aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) + (aggregatedEffect.abortDown - 1) * (1/3)
+            aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) + (aggregatedEffect.abortDown - 1) * (1 / 3)
             aggregatedEffect.abortDown = 1;
         }
 
         if (aggregatedEffect.enemyCritDown && aggregatedEffect.enemyCritDown > 1) {
-            aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) + (aggregatedEffect.enemyCritDown - 1) * (1/3)
+            aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) + (aggregatedEffect.enemyCritDown - 1) * (1 / 3)
             aggregatedEffect.enemyCritDown = 1;
         }
-    
+
         return aggregatedEffect;
     }
-    
+
     @autobind
     private sevenFever(arr: number[]) {
         let totalSevens = 0;
-      
+
         arr.forEach(number => {
-          // 数字を文字列に変換
-          let str = number.toString();
-      
-          // 正規表現で「7」の連続を見つける
-          let matches = str.match(/7+/g);
-          if (matches) {
-            matches.forEach(match => {
-              let length = match.length;
-      
-              // 連続する「7」の数によって特別なカウント
-              if (length >= 1) {
-                totalSevens += parseInt('7'.repeat(length));
-              }
-            });
-          }
+            // 数字を文字列に変換
+            let str = number.toString();
+
+            // 正規表現で「7」の連続を見つける
+            let matches = str.match(/7+/g);
+            if (matches) {
+                matches.forEach(match => {
+                    let length = match.length;
+
+                    // 連続する「7」の数によって特別なカウント
+                    if (length >= 1) {
+                        totalSevens += parseInt('7'.repeat(length));
+                    }
+                });
+            }
         });
-      
+
         return totalSevens;
-      }
+    }
 
     @autobind
     private random(data, startCharge = 0, skillEffects) {
@@ -1591,111 +1604,111 @@ export default class extends Module {
         return val
     }
 
-    
-	@autobind
-	private async start(triggerUserId?, flg?) {
 
-		this.ai.decActiveFactor();
+    @autobind
+    private async start(triggerUserId?, flg?) {
 
-		const games = this.raids.find({});
+        this.ai.decActiveFactor();
 
-		const recentGame = games.length == 0 ? null : games[games.length - 1];
+        const games = this.raids.find({});
 
-		const enemy = raidEnemys[Math.floor(Math.random() * raidEnemys.length)]
+        const recentGame = games.length == 0 ? null : games[games.length - 1];
+
+        const enemy = raidEnemys[Math.floor(Math.random() * raidEnemys.length)]
 
         /*
-		// ゲーム開始条件判定
-		const h = new Date().getHours()
-		if (
-			recentGame && (
-				!recentGame.isEnded ||
-				(
-					(h > 0 && h < 8) ||
-					(
-						Date.now() - recentGame.startedAt < 1000 * 60 * 60 * 12
-					)
-				)
-			)
-		) return
+        // ゲーム開始条件判定
+        const h = new Date().getHours()
+        if (
+            recentGame && (
+                !recentGame.isEnded ||
+                (
+                    (h > 0 && h < 8) ||
+                    (
+                        Date.now() - recentGame.startedAt < 1000 * 60 * 60 * 12
+                    )
+                )
+            )
+        ) return
         */
         let limitMinutes = 10;
 
-		// 機嫌が低い場合、受付時間を延長
-		if (this.ai.activeFactor < 0.75) {
-			limitMinutes = Math.floor(1 / (1 - Math.min((1 - this.ai.activeFactor) * 1.2 * (0.7 + Math.random() * 0.3), 0.8)) * limitMinutes / 5) * 5;
-		}
+        // 機嫌が低い場合、受付時間を延長
+        if (this.ai.activeFactor < 0.75) {
+            limitMinutes = Math.floor(1 / (1 - Math.min((1 - this.ai.activeFactor) * 1.2 * (0.7 + Math.random() * 0.3), 0.8)) * limitMinutes / 5) * 5;
+        }
 
-		const post = await this.ai.post({
-			text: serifs.rpg.intro(enemy.dname ?? enemy.name, Math.ceil((Date.now() + 1000 * 60 * limitMinutes) / 1000)),
-		});
+        const post = await this.ai.post({
+            text: serifs.rpg.intro(enemy.dname ?? enemy.name, Math.ceil((Date.now() + 1000 * 60 * limitMinutes) / 1000)),
+        });
 
-		this.raids.insertOne({
-			attackers: [],
+        this.raids.insertOne({
+            attackers: [],
             enemy,
-			isEnded: false,
-			startedAt: Date.now(),
-			finishedAt: Date.now() + 1000 * 60 * limitMinutes,
-			postId: post.id,
-			triggerUserId,
-			replyKey: triggerUserId ? [triggerUserId] : [],
-		});
+            isEnded: false,
+            startedAt: Date.now(),
+            finishedAt: Date.now() + 1000 * 60 * limitMinutes,
+            postId: post.id,
+            triggerUserId,
+            replyKey: triggerUserId ? [triggerUserId] : [],
+        });
 
-		this.subscribeReply(null, post.id);
+        this.subscribeReply(null, post.id);
 
-		this.log('New raid started');
-	}
+        this.log('New raid started');
+    }
 
     /**
-	 * 終了すべきゲームがないかチェック
-	 */
-	@autobind
-	private crawleGameEnd() {
-		const raid = this.raids.findOne({
-			isEnded: false
-		});
+     * 終了すべきゲームがないかチェック
+     */
+    @autobind
+    private crawleGameEnd() {
+        const raid = this.raids.findOne({
+            isEnded: false
+        });
 
-		if (raid == null) return;
+        if (raid == null) return;
 
-		// 制限時間が経過していたら
-		if (Date.now() - (raid.finishedAt ?? raid.startedAt + 1000 * 60 * 10) >= 0) {
-			this.finish(raid);
-		}
-	}
-    
-	/**
-	 * ゲームを終わらせる
-	 */
-	@autobind
-	private finish(raid: Raid) {
-		raid.isEnded = true;
-		this.raids.update(raid);
+        // 制限時間が経過していたら
+        if (Date.now() - (raid.finishedAt ?? raid.startedAt + 1000 * 60 * 10) >= 0) {
+            this.finish(raid);
+        }
+    }
 
-		this.log('raid finished');
+    /**
+     * ゲームを終わらせる
+     */
+    @autobind
+    private finish(raid: Raid) {
+        raid.isEnded = true;
+        this.raids.update(raid);
 
-		// お流れ
-		if (!raid.attackers?.filter((x) => x.dmg > 1).length) {
-			this.ai.decActiveFactor((raid.finishedAt.valueOf() - raid.startedAt.valueOf()) / (60 * 1000 * 100));
+        this.log('raid finished');
 
-			this.ai.post({
-				text: serifs.rpg.onagare(raid.enemy.name),
-				renoteId: raid.postId
-			});
+        // お流れ
+        if (!raid.attackers?.filter((x) => x.dmg > 1).length) {
+            this.ai.decActiveFactor((raid.finishedAt.valueOf() - raid.startedAt.valueOf()) / (60 * 1000 * 100));
 
-			return;
-		}
+            this.ai.post({
+                text: serifs.rpg.onagare(raid.enemy.name),
+                renoteId: raid.postId
+            });
 
-		let results: string[] = [];
+            return;
+        }
 
-        let sortAttackers = raid.attackers.sort((a,b) => b.dmg - a.dmg);
+        let results: string[] = [];
 
-		for (let attacker of sortAttackers) {
-		    if (attacker.dmg > 0) results.push(`${attacker.me} ${acct(attacker.user)}:\n${attacker.mark} Lv${attacker.lv} ${attacker.count}T ${attacker.dmg.toLocaleString()}ダメージ`);
-		}
-        
+        let sortAttackers = raid.attackers.sort((a, b) => b.dmg - a.dmg);
+
+        for (let attacker of sortAttackers) {
+            if (attacker.dmg > 0) results.push(`${attacker.me} ${acct(attacker.user)}:\n${attacker.mark} Lv${attacker.lv} ${attacker.count}T ${attacker.dmg.toLocaleString()}ダメージ`);
+        }
+
         if (sortAttackers.length > 1) results.push(`合計: ${sortAttackers.length}人 ${sortAttackers.reduce((pre, cur) => pre + cur.dmg, 0).toLocaleString()}ダメージ`)
 
-		const score = Math.max(Math.floor(Math.log2(sortAttackers.reduce((pre, cur) => pre + cur.dmg, 0) / 1024) + 1), 1);
-        
+        const score = Math.max(Math.floor(Math.log2(sortAttackers.reduce((pre, cur) => pre + cur.dmg, 0) / 1024) + 1), 1);
+
         const text = results.join('\n') + '\n\n' + serifs.rpg.finish(raid.enemy.name, score);
 
         sortAttackers.forEach((x) => {
@@ -1706,15 +1719,15 @@ export default class extends Module {
             friend.setPerModulesData(this, data);
         })
 
-		this.ai.post({
-			text: text,
-			cw: serifs.rpg.finishCw(raid.enemy.name),
-			renoteId: raid.postId
-		});
+        this.ai.post({
+            text: text,
+            cw: serifs.rpg.finishCw(raid.enemy.name),
+            renoteId: raid.postId
+        });
 
-		this.unsubscribeReply(null);
-		raid.replyKey.forEach((x) => this.unsubscribeReply(x));
-	}
+        this.unsubscribeReply(null);
+        raid.replyKey.forEach((x) => this.unsubscribeReply(x));
+    }
 
     @autobind
     private async getTotalDmg(msg, enemy: Enemy) {
@@ -1816,7 +1829,7 @@ export default class extends Module {
         let item;
         /** アイテムによって増加したステータス */
         let itemBonus = { atk: 0, def: 0 };
-        
+
         /** これって戦闘？ */
         let isBattle = enemy.atkmsg(0).includes("ダメージ");
 
@@ -1873,7 +1886,7 @@ export default class extends Module {
             // 非戦闘時は速度は上がらないが、パワーに還元される
             atk = atk * (1 + (skillEffects.spdUp ?? 0));
         }
-        
+
         // 非戦闘なら非戦闘時スキルが発動
         if (!isBattle) {
             atk = atk * (1 + (skillEffects.notBattleBonusAtk ?? 0));
@@ -1898,7 +1911,7 @@ export default class extends Module {
                 message += serifs.rpg.skill.enemyStatusBonus + "\n"
             }
         }
-        
+
         if (skillEffects.firstTurnResist && count === 1 && isBattle && isPhysical) {
             buff += 1
             message += serifs.rpg.skill.firstTurnResist + "\n"
@@ -1948,7 +1961,7 @@ export default class extends Module {
             itemBonus = { atk: 0, def: 0 };
 
             const itemEquip = 0.4 + ((1 - playerHpPercent) * 0.6);
-            if (rpgItems.length && ((count === 1 && skillEffects.firstTurnItem) || Math.random() < itemEquip * (1 + (skillEffects.itemEquip ?? 0))) ) {
+            if (rpgItems.length && ((count === 1 && skillEffects.firstTurnItem) || Math.random() < itemEquip * (1 + (skillEffects.itemEquip ?? 0)))) {
                 //アイテム
                 buff += 1
                 if ((count === 1 && skillEffects.firstTurnItem)) message += serifs.rpg.skill.firstItem
@@ -2142,7 +2155,7 @@ export default class extends Module {
                 // 非戦闘時は、パワーに還元される
                 atk = atk + lv * 3.75 * skillEffects.fire;
             }
-            
+
             // 毒属性剣攻撃
             if (skillEffects.weak && count > 1) {
                 if (isBattle && isPhysical) {
@@ -2166,10 +2179,10 @@ export default class extends Module {
 
             if (!enemy.abort && skillEffects.abortDown) {
                 // 効果がない場合は、パワーに還元される
-                atk = atk * (1 + skillEffects.abortDown * (1/3));
+                atk = atk * (1 + skillEffects.abortDown * (1 / 3));
             }
 
-            const defDmgX = Math.max(1 * 
+            const defDmgX = Math.max(1 *
                 (1 + Math.max(skillEffects.defDmgUp ?? 0, -0.9)) *
                 (count === 1 && skillEffects.firstTurnResist ? (1 - (skillEffects.firstTurnResist ?? 0)) : 1) *
                 (count === 2 && skillEffects.firstTurnResist && skillEffects.firstTurnResist > 1 ? (1 - ((skillEffects.firstTurnResist ?? 0) - 1)) : 1) *
@@ -2200,7 +2213,7 @@ export default class extends Module {
                 const crit = Math.random() < (playerHpPercent - enemyHpPercent) * (1 - (skillEffects.enemyCritDown ?? 0));
                 // 予測最大ダメージが相手のHPの何割かで先制攻撃の確率が判定される
                 if (Math.random() < predictedDmg / enemyHp || (count === 3 && enemy.fire && (data.thirdFire ?? 0) <= 2)) {
-                    const rng = (defMinRnd + this.random(data,startCharge,skillEffects) * defMaxRnd) * defDmgX;
+                    const rng = (defMinRnd + this.random(data, startCharge, skillEffects) * defMaxRnd) * defDmgX;
                     const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
                     /** ダメージ */
                     const dmg = this.getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng, this.getVal(enemy.atkx, [tp]))
@@ -2227,7 +2240,7 @@ export default class extends Module {
             // 自身攻撃の処理
             // spdの回数分、以下の処理を繰り返す
             for (let i = 0; i < spd; i++) {
-                const rng = (atkMinRnd + this.random(data,startCharge,skillEffects) * atkMaxRnd) * (1 + (skillEffects.atkDmgUp ?? 0)) * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1);
+                const rng = (atkMinRnd + this.random(data, startCharge, skillEffects) * atkMaxRnd) * (1 + (skillEffects.atkDmgUp ?? 0)) * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1);
                 /** クリティカルかどうか */
                 let crit = Math.random() < ((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0))) + (skillEffects.critUpFixed ?? 0);
                 const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
@@ -2298,7 +2311,7 @@ export default class extends Module {
                 let maxDmg = 0;
                 if (!enemyTurnFinished) {
                     for (let i = 0; i < (enemy.spd ?? 1); i++) {
-                        const rng = (defMinRnd + this.random(data,startCharge,skillEffects) * defMaxRnd) * defDmgX * enemyAtkX;
+                        const rng = (defMinRnd + this.random(data, startCharge, skillEffects) * defMaxRnd) * defDmgX * enemyAtkX;
                         /** クリティカルかどうか */
                         const crit = Math.random() < (playerHpPercent - enemyHpPercent) * (1 - (skillEffects.enemyCritDown ?? 0));
                         const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
@@ -2355,7 +2368,7 @@ export default class extends Module {
 
         message += "\n\n" + serifs.rpg.totalDmg(totalDmg)
 
-			if (!data.raidScore) data.raidScore = {}
+        if (!data.raidScore) data.raidScore = {}
         if (!data.raidScore[enemy.name] || data.raidScore[enemy.name] < totalDmg) {
             if (data.raidScore[enemy.name]) {
                 serifs.rpg.hiScore(data.raidScore[enemy.name], totalDmg)
@@ -2393,30 +2406,30 @@ export default class extends Module {
         };
     }
 
-    
-	@autobind
-	private async contextHook(key: any, msg: Message) {
-		if (!msg.includes(["参加"])) return {
-			reaction: 'hmm'
-		};
 
-		const raid = this.raids.findOne({
-			isEnded: false
-		});
+    @autobind
+    private async contextHook(key: any, msg: Message) {
+        if (!msg.includes(["参加"])) return {
+            reaction: 'hmm'
+        };
 
-		// 処理の流れ上、実際にnullになることは無さそうだけど一応
-		if (raid == null) return;
+        const raid = this.raids.findOne({
+            isEnded: false
+        });
 
-		if (raid.attackers.some(x => x.user.id == msg.userId)) {
-			msg.reply('すでに参加済みの様です！').then(reply => {
-				raid.replyKey.push(msg.userId);
-				this.raids.update(raid);
-				this.subscribeReply(msg.userId, reply.id);
-			});
-			return {
-				reaction: 'confused'
-			};
-		}
+        // 処理の流れ上、実際にnullになることは無さそうだけど一応
+        if (raid == null) return;
+
+        if (raid.attackers.some(x => x.user.id == msg.userId)) {
+            msg.reply('すでに参加済みの様です！').then(reply => {
+                raid.replyKey.push(msg.userId);
+                this.raids.update(raid);
+                this.subscribeReply(msg.userId, reply.id);
+            });
+            return {
+                reaction: 'confused'
+            };
+        }
 
         const enemy = [...raidEnemys].find((x) => raid.enemy.name === x.name);
 
@@ -2424,25 +2437,25 @@ export default class extends Module {
 
         const result = await this.getTotalDmg(msg, enemy)
 
-		this.log(`damage ${result.totalDmg} by ${msg.user.id}`);
+        this.log(`damage ${result.totalDmg} by ${msg.user.id}`);
 
-		raid.attackers.push({
-			user: {
-				id: msg.user.id,
-				username: msg.user.username,
-				host: msg.user.host,
-			},
-			dmg: result.totalDmg ?? 0,
+        raid.attackers.push({
+            user: {
+                id: msg.user.id,
+                username: msg.user.username,
+                host: msg.user.host,
+            },
+            dmg: result.totalDmg ?? 0,
             me: result.me ?? "",
             lv: result.lv ?? 1,
             count: result.count ?? 1,
             mark: result.mark ?? ":blank:",
-		});
+        });
 
-		this.raids.update(raid);
+        this.raids.update(raid);
 
-		return {
-			reaction: result.me
-		};
-	}
+        return {
+            reaction: result.me
+        };
+    }
 }
