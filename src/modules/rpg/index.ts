@@ -2191,7 +2191,7 @@ export default class extends Module {
 
             let endureCount = 1 + (skillEffects.endureUp ?? 0) * 2;
 
-            const _data = { ...data, enemy }
+            const _data = { ...data, enemy, count }
 
             // 敵先制攻撃の処理
             // spdが1ではない、または戦闘ではない場合は先制攻撃しない
