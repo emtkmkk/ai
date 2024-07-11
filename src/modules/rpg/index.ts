@@ -365,7 +365,7 @@ export default class extends Module {
                 } else {
                     if (
                         (skillEffects.rpgTime ?? 0) < 0 &&
-                        new Date().getHours() > 24 - (skillEffects.rpgTime ?? 0) && data.lastPlayedAt !== getDate(1) ||
+                        new Date().getHours() >= 24 - (skillEffects.rpgTime ?? 0) && data.lastPlayedAt !== getDate(1) ||
                         data.lastPlayedAt !== getDate() + (new Date().getHours() < 12 + (skillEffects.rpgTime ?? 0) ? "" : new Date().getHours() < 18 + (skillEffects.rpgTime ?? 0) ? "/12" : "/18")
                     ) {
 
