@@ -438,7 +438,7 @@ export default {
 		finishCw: (enemyName) => `${enemyName}討滅戦の結果発表です！`,
 		finish: (enemyName, score) => `みなさんのお陰で${enemyName}を撃退できました！\nありがとうございます！\nお礼にみなさんにもこコインを${score}枚プレゼントします！\nまたお願いします！`,
 		finalAttack: (dmg) => `もこチキの全力の一撃！\n${dmg}ポイントのダメージを与えた！`,
-		timeUp: (enemyName, maxHp) => `${enemyName}の最後の一撃！\n${"9".repeat(String(maxHp).length)}ポイントのダメージを与えた！`,
+		timeUp: (enemyName, maxHp) => `${enemyName}の最後の一撃！\nもこチキは${"9".repeat(String(maxHp).length)}ポイントのダメージ！`,
 		totalDmg: (dmg) => `合計 ${dmg} ダメージを与えた！`,
 		hiScore: (old, dmg) => `自己ベスト更新！\n${old} -> **${dmg}**`,
 		GlobalHiScore: (old, date, dmg) => `ベストダメージ更新！\n${old}(${date}) -> **${dmg}**`,
