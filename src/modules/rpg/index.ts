@@ -57,7 +57,7 @@ export default class extends Module {
         */
         const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
         const maxLv = this.ai.friends.find().filter((x) => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1).reduce((acc, cur) => acc > cur.perModulesData.rpg.lv ? acc : cur.perModulesData.rpg.lv, 0)
-        console.log("maxLv : " + maxLv);
+        this.log("maxLv : " + maxLv);
         if (!rpgData) {
             this.ai.moduleData.insert({ type: 'rpg', maxLv: maxLv });
         } else {
@@ -71,11 +71,11 @@ export default class extends Module {
                 const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
                 if (rpgData) {
                     rpgData.maxLv += 1;
-                    console.log("maxLv : " + rpgData.maxLv);
+                    this.log("maxLv : " + rpgData.maxLv);
                     this.ai.moduleData.update(rpgData);
                 } else {
                     const maxLv = this.ai.friends.find().filter((x) => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1).reduce((acc, cur) => acc > cur.perModulesData.rpg.lv ? acc : cur.perModulesData.rpg.lv, 0)
-                    console.log("maxLv : " + maxLv);
+                    this.log("maxLv : " + maxLv);
                     this.ai.moduleData.insert({ type: 'rpg', maxLv: maxLv });
                 }
                 const filteredColors = colors.filter((x) => x.id > 1 && !x.reverseStatus && !x.alwaysSuper && !x.hidden).map((x) => x.name);
@@ -144,12 +144,12 @@ export default class extends Module {
             if (msg.includes(["dataFix"])) {
                 const friends = this.ai.friends.find()
                 friends.filter((x) => x.perModulesData?.rpg && x.perModulesData.rpg.raidScore?.[":mkck_scandinavia:"] && x.perModulesData.rpg.raidScore?.[":mkck_scandinavia:"] > 10000).forEach((x) => {
-									const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
-            if (rpgData.raidScore?.[":mkck_scandinavia:"] ) rpgData.raidScore[":mkck_scandinavia:"] -= x.perModulesData.rpg.raidScore[":mkck_scandinavia:"]
-            this.ai.moduleData.update(rpgData);
+                    const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
+                    if (rpgData.raidScore?.[":mkck_scandinavia:"]) rpgData.raidScore[":mkck_scandinavia:"] -= x.perModulesData.rpg.raidScore[":mkck_scandinavia:"]
+                    this.ai.moduleData.update(rpgData);
                     x.perModulesData.rpg.raidScore[":mkck_scandinavia:"] = 0;
                 })
-							
+
                 return { reaction: "love" };
             }
         }
@@ -341,8 +341,8 @@ export default class extends Module {
                             }
                             if (!data.replayOkawari) {
                                 const reply = await msg.reply(serifs.rpg.oneMore.buyQuestion(needCoin, data.coin));
-                                this.subscribeReply("replayOkawari:" + msg.userId, reply.id, {message: msg});
-                                return { reaction:'love' };
+                                this.subscribeReply("replayOkawari:" + msg.userId, reply.id, { message: msg });
+                                return { reaction: 'love' };
                             } else {
                                 data.coin -= needCoin;
                                 data.replayOkawari = false;
@@ -1638,11 +1638,11 @@ export default class extends Module {
 
         const games = this.raids.find({});
 
-		const recentGame = games.length == 0 ? null : games[games.length - 1];
+        const recentGame = games.length == 0 ? null : games[games.length - 1];
 
-		const penultimateGame = recentGame && games.length > 1 ? games[games.length - 2] : null;
+        const penultimateGame = recentGame && games.length > 1 ? games[games.length - 2] : null;
 
-        const filteredRaidEnemys = 
+        const filteredRaidEnemys =
             raidEnemys.length > 2 && penultimateGame
                 ? raidEnemys.filter((x) => ![recentGame?.enemy.name, penultimateGame.enemy.name].includes(x.name))
                 : raidEnemys.length > 1 && recentGame
@@ -1771,7 +1771,7 @@ export default class extends Module {
             }
             this.ai.moduleData.update(rpgData);
         } else {
-            this.ai.moduleData.insert({ type: 'rpg', maxLv: 1, raidScore: {[raid.enemy.name]: total}, raidScoreDate: {[raid.enemy.name]: getDate()} });
+            this.ai.moduleData.insert({ type: 'rpg', maxLv: 1, raidScore: { [raid.enemy.name]: total }, raidScoreDate: { [raid.enemy.name]: getDate() } });
         }
 
         const text = results.join('\n') + '\n\n' + serifs.rpg.finish(raid.enemy.name, score);
@@ -2481,28 +2481,35 @@ export default class extends Module {
 
     @autobind
     private async contextHook(key: any, msg: Message, data: any) {
-        if (key.startsWith("replayOkawari:")) {
-            if (key.replace("replayOkawari:","") !== msg.userId) {
+        this.log("RPG contextHook")
+        if (typeof key === "string" && key.startsWith("replayOkawari:")) {
+            this.log("replayOkawari")
+            if (key.replace("replayOkawari:", "") !== msg.userId) {
+                this.log(msg.userId + " : " + key.replace("replayOkawari:", ""))
                 return {
                     reaction: 'hmm'
                 };
             }
             if (msg.text.includes('はい')) {
+                this.log("replayOkawari: Yes")
                 this.unsubscribeReply(key);
                 if (msg.friend.doc?.perModulesData?.rpg) msg.friend.doc.perModulesData.rpg.replayOkawari = true;
                 msg.friend.save()
                 if (data.message) return this.mentionHook(data.message);
                 return { reaction: 'hmm' }
             } else if (msg.text.includes('いいえ')) {
+                this.log("replayOkawari: No")
                 this.unsubscribeReply(key);
                 return { reaction: ':mk_muscleok:' }
             } else {
+                this.log("replayOkawari: ?")
                 msg.reply(serifs.core.yesOrNo).then(reply => {
                     this.subscribeReply("replayOkawari:" + msg.userId, reply.id);
                 });
                 return { reaction: 'hmm' }
             }
         }
+        this.log("raid : " + key)
 
         if (!msg.extractedText.trim()) return {
             reaction: 'hmm'
