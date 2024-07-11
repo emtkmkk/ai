@@ -2466,7 +2466,7 @@ export default class extends Module {
 
         const reply = await msg.reply(`<center>${message}</center>`, {
             cw,
-            visibility: 'public'
+            visibility: "specified"
         });
 
         return {
@@ -2511,6 +2511,8 @@ export default class extends Module {
             }
         }
         this.log("raid : " + key)
+
+			if (msg.includes([serifs.rpg.command.rpg])) return;
 
         if (!msg.extractedText.trim()) return {
             reaction: 'hmm'
