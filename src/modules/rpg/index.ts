@@ -103,7 +103,8 @@ export default class extends Module {
         skillCalculate(this.ai);
         return {
             mentionHook: this.mentionHook,
-            contextHook: this.contextHook
+            contextHook: this.contextHook,
+					timeoutCallback: this.timeoutCallback,
         };
     }
 
@@ -1690,6 +1691,12 @@ export default class extends Module {
 
         this.subscribeReply(post.id, post.id);
 
+			// タイマーセット
+			this.setTimeoutWithPersistence(1000 * 60 * 60 * limitMinutes / 2, {
+				id: post.id,
+			});
+			return;
+
         this.log('New raid started');
     }
 
@@ -2596,4 +2603,20 @@ export default class extends Module {
             reaction: result.me
         };
     }
+	@autobind
+	private timeoutCallback(data) {
+		const raid = this.raids.findOne({
+			isEnded: false,
+			postId: data.id
+		});
+		if (raid == null) return;
+
+		try {
+			this.ai.post({
+				renoteId: data.id
+			});
+		} catch (err) {
+			return;
+		}
+	}
 }
