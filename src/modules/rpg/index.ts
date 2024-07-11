@@ -2481,7 +2481,7 @@ export default class extends Module {
 
     @autobind
     private async contextHook(key: any, msg: Message, data: any) {
-        if (key.startWith("replayOkawari:")) {
+        if (key.startsWith("replayOkawari:")) {
             if (key.replace("replayOkawari:","") !== msg.userId) {
                 return {
                     reaction: 'hmm'
@@ -2510,7 +2510,7 @@ export default class extends Module {
 
         const raid = this.raids.findOne({
             isEnded: false,
-            postId: key,
+            postId: key.sprit(":")[0],
         });
 
         // 処理の流れ上、実際にnullになることは無さそうだけど一応
