@@ -2438,11 +2438,13 @@ export default class extends Module {
         if (!data.raidScore) data.raidScore = {}
         if (!data.raidScore[enemy.name] || data.raidScore[enemy.name] < totalDmg) {
             if (data.raidScore[enemy.name]) {
-                serifs.rpg.hiScore(data.raidScore[enemy.name], totalDmg)
+                message += "\n" + serifs.rpg.hiScore(data.raidScore[enemy.name], totalDmg)
                 if (mark === ":blank:") mark = "🆙";
             }
             data.raidScore[enemy.name] = totalDmg;
-        }
+        } else {
+					if (data.raidScore[enemy.name]) message += `\n（これまでのベスト: ${data.raidScore[enemy.name]}）`
+				}
 
         msg.friend.setPerModulesData(this, data);
 
