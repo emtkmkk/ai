@@ -452,7 +452,7 @@ export default class 藍 {
 	 */
 	@autobind
 	public subscribeReply(module: Module, key: string | null, id: string, data?: any) {
-		this.log(`+++ subscribe Reply: ${module.name} - ${key ? key : "null"} : ${id} : ${JSON.stringify(data)}`);
+		this.log(`+++ subscribe Reply: ${module.name} - ${key ? key : "null"} : ${id}${data ? " : " + JSON.stringify(data) : ""}`);
 		this.contexts.insertOne({
 			noteId: id,
 			module: module.name,

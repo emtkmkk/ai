@@ -342,7 +342,7 @@ export default class extends Module {
                             if (!data.replayOkawari) {
                                 const reply = await msg.reply(serifs.rpg.oneMore.buyQuestion(needCoin, data.coin));
                                 this.log("replayOkawari SubscribeReply: " + reply.id);
-                                this.subscribeReply("replayOkawari:" + msg.userId, reply.id, { message: msg });
+                                this.subscribeReply("replayOkawari:" + msg.userId, reply.id);
                                 return { reaction: 'love' };
                             } else {
                                 data.coin -= needCoin;
@@ -2496,8 +2496,8 @@ export default class extends Module {
                 this.unsubscribeReply(key);
                 if (msg.friend.doc?.perModulesData?.rpg) msg.friend.doc.perModulesData.rpg.replayOkawari = true;
                 msg.friend.save()
-                if (data.message) return this.mentionHook(data.message);
-                return { reaction: 'hmm' }
+                msg.reply(serifs.rpg.oneMore.buyComp);
+                return { reaction: ':mk_muscleok:' };
             } else if (msg.text.includes('いいえ')) {
                 this.log("replayOkawari: No")
                 this.unsubscribeReply(key);
