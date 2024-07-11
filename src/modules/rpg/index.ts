@@ -2491,7 +2491,7 @@ export default class extends Module {
                 this.unsubscribeReply(key);
                 if (msg.friend.doc?.perModulesData?.rpg) msg.friend.doc.perModulesData.rpg.replayOkawari = true;
                 msg.friend.save()
-                if (data.msg) return this.mentionHook(data.msg);
+                if (data.message) return this.mentionHook(data.message);
                 return { reaction: 'hmm' }
             } else if (msg.text.includes('いいえ')) {
                 this.unsubscribeReply(key);
