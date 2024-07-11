@@ -1673,7 +1673,7 @@ export default class extends Module {
 		this.log('raid finished');
 
 		// お流れ
-		if (raid.attackers?.filter((x) => x.dmg > 1).length) {
+		if (!raid.attackers?.filter((x) => x.dmg > 1).length) {
 			this.ai.decActiveFactor((raid.finishedAt.valueOf() - raid.startedAt.valueOf()) / (60 * 1000 * 100));
 
 			this.ai.post({
