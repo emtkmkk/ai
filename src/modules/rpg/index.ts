@@ -1734,7 +1734,18 @@ export default class extends Module {
 
         let results: string[] = [];
 
-        let sortAttackers = raid.attackers.sort((a, b) => b.dmg - a.dmg);
+			const seenIds = new Set();
+
+			
+
+        let sortAttackers = raid.attackers.filter((attacker) => {
+    if (seenIds.has(attacker.user.id)) {
+      return false;
+    } else {
+      seenIds.add(attacker.user.id);
+      return true;
+    }
+  }).sort((a, b) => b.dmg - a.dmg);
 
         let levelSpace = String(raid.attackers.reduce((pre, cur) => pre > cur.lv ? pre : cur.lv, 0)).length;
 
