@@ -2531,8 +2531,8 @@ export default class extends Module {
             reaction: 'hmm'
         };
 		
-		const data = msg.friend.getPerModulesData(this);
-		if (!data.lv) { 
+		const _data = msg.friend.getPerModulesData(this);
+		if (!_data.lv) { 
 			msg.reply("RPGモードを先に1回プレイしてください！")
 			return {
 				reaction: 'hmm'
