@@ -1483,7 +1483,7 @@ export default class extends Module {
     private getEnemyDmg(data, def: number, tp: number, count: number, crit: number | boolean, enemyAtk: number, rng = (0.2 + Math.random() * 1.6),atkx?) {
         let dmg = Math.round((enemyAtk * (atkx ?? this.getVal(data.enemy.atkx, [tp]) ?? 3) * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * rng * (crit ? typeof crit === "number" ? (2 * crit) : 2 : 1)) * (1 / (((def * tp) + 100) / 100)))
         if (data.enemy?.fire) {
-            dmg += Math.round((count - 1) * (100 + data.lv * 3) * data.enemy.fire)
+            dmg += Math.round(((data.count ?? count) - 1) * (100 + data.lv * 3) * data.enemy.fire)
         }
         return dmg;
     }
