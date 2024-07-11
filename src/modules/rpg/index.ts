@@ -49,7 +49,7 @@ export default class extends Module {
         setInterval(() => {
             const hours = new Date().getHours()
             const rnd = 0.1 * this.ai.activeFactor;
-            if ([8,12,18,21].includes(hours) && new Date().getMinutes === 15) {
+            if ([8,12,18,21].includes(hours) && new Date().getMinutes() === 15) {
                 this.start();
             }
         }, 1000 * 60 * 1);
