@@ -1667,12 +1667,7 @@ export default class extends Module {
             )
         ) return
         */
-        let limitMinutes = 10;
-
-        // 機嫌が低い場合、受付時間を延長
-        if (this.ai.activeFactor < 0.75) {
-            limitMinutes = Math.floor(1 / (1 - Math.min((1 - this.ai.activeFactor) * 1.2 * (0.7 + Math.random() * 0.3), 0.8)) * limitMinutes / 5) * 5;
-        }
+        let limitMinutes = 20;
 
         const post = await this.ai.post({
             text: serifs.rpg.intro(enemy.dname ?? enemy.name, Math.ceil((Date.now() + 1000 * 60 * limitMinutes) / 1000)),
@@ -2512,8 +2507,6 @@ export default class extends Module {
         }
         this.log("raid : " + key)
 
-			if (msg.includes([serifs.rpg.command.rpg])) return;
-
         if (!msg.extractedText.trim()) return {
             reaction: 'hmm'
         };
@@ -2557,10 +2550,6 @@ export default class extends Module {
             count: result.count ?? 1,
             mark: result.mark ?? ":blank:",
         });
-        if (result.reply) {
-            raid.replyKey.push(raid.postId + ":" + result.reply.id);
-            this.subscribeReply(raid.postId + ":" + result.reply.id, result.reply.id);
-        }
 
         this.raids.update(raid);
 
