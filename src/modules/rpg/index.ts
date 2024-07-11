@@ -143,15 +143,13 @@ export default class extends Module {
             }
             if (msg.includes(["dataFix"])) {
                 const friends = this.ai.friends.find()
-                friends.filter((x) => x.perModulesData?.rpg && x.perModulesData.rpg.thirdFire >= 5).forEach((x) => {
-                    x.perModulesData.rpg.thirdFire = 3;
+                friends.filter((x) => x.perModulesData?.rpg && x.perModulesData.rpg.raidScore?.[":mkck_scandinavia:"] && x.perModulesData.rpg.raidScore?.[":mkck_scandinavia:"] > 10000).forEach((x) => {
+									const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
+            if (rpgData.raidScore?.[":mkck_scandinavia:"] ) rpgData.raidScore?.[":mkck_scandinavia:"] -= x.perModulesData.rpg.raidScore?.[":mkck_scandinavia:"]
+            this.ai.moduleData.update(rpgData);
+                    x.perModulesData.rpg.raidScore?.[":mkck_scandinavia:"] = 0;
                 })
-                friends.filter((x) => ["9qn9xf010u", "9tvekrql1i", "9d7af0fgb8"].includes(x.userId)).forEach((x) => {
-                    x.perModulesData.rpg.thirdFire = 2;
-                })
-                friends.filter((x) => x.perModulesData?.rpg && x.perModulesData.rpg.raidScore).forEach((x) => {
-                    x.perModulesData.rpg.raidScore = {};
-                })
+							
                 return { reaction: "love" };
             }
         }
@@ -1720,7 +1718,7 @@ export default class extends Module {
 
         let sortAttackers = raid.attackers.sort((a, b) => b.dmg - a.dmg);
 
-        let levelSpace = String(raid.attackers.reduce((pre, cur) => pre > cur.lv ? pre : cur, 0)).length;
+        let levelSpace = String(raid.attackers.reduce((pre, cur) => pre > cur.lv ? pre : cur.lv, 0)).length;
 
         const total = sortAttackers.reduce((pre, cur) => pre + cur.dmg, 0);
 
