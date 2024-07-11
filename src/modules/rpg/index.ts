@@ -1722,13 +1722,19 @@ export default class extends Module {
 
         let levelSpace = String(raid.attackers.reduce((pre, cur) => pre > cur.lv ? pre : cur, 0)).length;
 
-        const score = Math.max(Math.floor(Math.log2(sortAttackers.reduce((pre, cur) => pre + cur.dmg, 0) / 512) + 1), 1);
+        const total = sortAttackers.reduce((pre, cur) => pre + cur.dmg, 0);
 
-        for (let attacker of sortAttackers) {
-            if (attacker.dmg > 0) results.push(`${attacker.me} ${acct(attacker.user)}:\n${attacker.mark} Lv${String(attacker.lv).padStart(levelSpace, ' ')} ${attacker.count}ターン ${attacker.dmg.toLocaleString()}ダメージ`);
+        const score = Math.max(Math.floor(Math.log2(total / (1024 / ((raid.enemy.power ?? 30) / 30))) + 1), 1);
+
+        if (sortAttackers?.[0]) {
+            if (sortAttackers?.[0].mark === ":blank:") {
+                sortAttackers[0].mark = "👑";
+            }
         }
 
-        const total = sortAttackers.reduce((pre, cur) => pre + cur.dmg, 0);
+        for (let attacker of sortAttackers) {
+            if (attacker.dmg > 0) results.push(`${attacker.me} ${acct(attacker.user)}:\n${attacker.mark === ":blank:" && attacker.dmg === 100 ? "💯" : attacker.mark} Lv${String(attacker.lv).padStart(levelSpace, ' ')} ${attacker.count}ターン ${attacker.dmg.toLocaleString()}ダメージ`);
+        }
 
         if (sortAttackers.length > 1) {
             results.push(`\n合計: ${sortAttackers.length}人 ${total.toLocaleString()}ダメージ\n評価: ${"★".repeat(score)}`)
@@ -1902,9 +1908,12 @@ export default class extends Module {
             spd += 2;
         }
 
+        let mark = ":blank:";
+
         // ７フィーバー
         let sevenFever = skillEffects.sevenFever ? this.sevenFever([data.lv, data.atk, data.def]) * skillEffects.sevenFever : 0;
         if (sevenFever) {
+            if (sevenFever / (skillEffects.sevenFever ?? 1) > 7) mark = "7️⃣";
             buff += 1;
             message += serifs.rpg.skill.sevenFever(sevenFever) + "\n";
             atk = atk * (1 + (sevenFever / 100));
@@ -2412,15 +2421,13 @@ export default class extends Module {
             data.charge = 0;
         }
 
-        let mark = ":blank:";
-
         message += "\n\n" + serifs.rpg.totalDmg(totalDmg)
 
         if (!data.raidScore) data.raidScore = {}
         if (!data.raidScore[enemy.name] || data.raidScore[enemy.name] < totalDmg) {
             if (data.raidScore[enemy.name]) {
                 serifs.rpg.hiScore(data.raidScore[enemy.name], totalDmg)
-                mark = "🆙"
+                if (mark === ":blank:") mark = "🆙";
             }
             data.raidScore[enemy.name] = totalDmg;
         }

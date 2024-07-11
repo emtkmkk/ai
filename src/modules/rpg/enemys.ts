@@ -78,6 +78,8 @@ export type Enemy = {
     fire?: number;
     /** 連続攻撃を中断する割合 0 ~ 1 連続攻撃毎に判定 */
     abort?: number;
+    /** 強さを表す数値 レイドボスの評価に使用 攻撃力 * 攻撃倍率 + 防御力 * 防御倍率 */
+    power?: number;
     /** エンディング時のメッセージ */
     endingmsg?: string;
     /** 独自イベントを指定 */
@@ -109,12 +111,12 @@ export const enemys: Enemy[] = [
 ];
 
 export const raidEnemys: Enemy[] = [
-    { name: ":mkck_scandinavia:", msg: "巨大:mkck_scandinavia:討伐戦！", short: "", mark: "☆", mark2: "★", atkmsg: (dmg) => `もこチキの攻撃！\n${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mkck_scandinavia:の押しつぶし攻撃！\n${dmg}ポイントのダメージ！`, winmsg: ":mkck_scandinavia:を撃退した！", losemsg: "もこチキはやられてしまった…", maxhp: 100000, atk: 4, def: 2, atkx: 6, defx: 4 },
-	{ name: ":oha_chicken:", msg: "巨大:oha_chicken:討伐戦！", short: "", mark: "☆", mark2: "★", atkmsg: (dmg) => `もこチキの攻撃！\n${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:oha_chicken:の大声挨拶攻撃！\n${dmg}ポイントのダメージ！`, winmsg: ":oha_chicken:を撃退した！", losemsg: "もこチキはやられてしまった…", maxhp: 100000, atk: 3, def: 3, atkx: 5, defx: 5 },
-	{ name: ":mk_ultrawidechicken:", msg: ":mk_ultrawidechicken:討伐戦！", short: "", mark: "☆", mark2: "★", atkmsg: (dmg) => `もこチキの攻撃！\n${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mk_ultrawidechicken:の回転攻撃！\n${dmg}ポイントのダメージ！`, winmsg: ":mk_ultrawidechicken:を撃退した！", losemsg: "もこチキはやられてしまった…", maxhp: 100000, atk: 2, def: 4, atkx: 4, defx: 6 },
-	{ name: ":muscle_mkchicken:", msg: "巨大:muscle_mkchicken:討伐戦！", short: "", mark: "☆", mark2: "★", atkmsg: (dmg) => `もこチキの攻撃！\n${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:muscle_mkchicken:の巨大マッスルアタック！\n${dmg}ポイントのダメージ！`, winmsg: ":muscle_mkchicken:を撃退した！", losemsg: "もこチキはやられてしまった…", maxhp: 100000, atk: 8, def: 1, atkx: 8, defx: 2 },
-    { name: ":mk_tatsu:", msg: "巨大:mk_tatsu:討伐戦！", short: "", mark: "☆", mark2: "★", atkmsg: (dmg) => `もこチキは羽を振って衝撃波を出した！\n:mk_tatsu:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mk_tatsu:の炎ブレス攻撃！\nもこチキは${dmg}ポイントのダメージ！\nもこチキが次に受けるダメージが上昇した！`, winmsg: "もこチキは:mk_tatsu:を懲らしめた！", losemsg: "もこチキはやられてしまった…", atk: 0.5, def: 2, atkx: 2, defx: 4, fire: 0.15 },
-    { name: ":mk_chickenda:", msg: ":mk_chickenda:討伐戦！", short: "", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの光魔法！\n:mk_chickenda:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mk_chickenda:の†！\nもこチキに${dmg}ポイントのダメージ！`, winmsg: ":mk_chickenda:は帰っていった！", losemsg: "もこチキはやられてしまった…", atk: 5, def: 5, atkx: 5, defx: 5 },
+    { name: ":mkck_scandinavia:", msg: "巨大:mkck_scandinavia:討伐戦！", short: "", mark: "☆", mark2: "★", atkmsg: (dmg) => `もこチキの攻撃！\n${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mkck_scandinavia:の押しつぶし攻撃！\n${dmg}ポイントのダメージ！`, winmsg: ":mkck_scandinavia:を撃退した！", losemsg: "もこチキはやられてしまった…", maxhp: 100000, atk: 4, def: 2, atkx: 6, defx: 4, power: 32 },
+	{ name: ":oha_chicken:", msg: "巨大:oha_chicken:討伐戦！", short: "", mark: "☆", mark2: "★", atkmsg: (dmg) => `もこチキの攻撃！\n${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:oha_chicken:の大声挨拶攻撃！\n${dmg}ポイントのダメージ！`, winmsg: ":oha_chicken:を撃退した！", losemsg: "もこチキはやられてしまった…", maxhp: 100000, atk: 3, def: 3, atkx: 5, defx: 5, power: 30 },
+	{ name: ":mk_ultrawidechicken:", msg: ":mk_ultrawidechicken:討伐戦！", short: "", mark: "☆", mark2: "★", atkmsg: (dmg) => `もこチキの攻撃！\n${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mk_ultrawidechicken:の回転攻撃！\n${dmg}ポイントのダメージ！`, winmsg: ":mk_ultrawidechicken:を撃退した！", losemsg: "もこチキはやられてしまった…", maxhp: 100000, atk: 2, def: 4, atkx: 4, defx: 6, power: 32 },
+	{ name: ":muscle_mkchicken:", msg: "巨大:muscle_mkchicken:討伐戦！", short: "", mark: "☆", mark2: "★", atkmsg: (dmg) => `もこチキの攻撃！\n${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:muscle_mkchicken:の巨大マッスルアタック！\n${dmg}ポイントのダメージ！`, winmsg: ":muscle_mkchicken:を撃退した！", losemsg: "もこチキはやられてしまった…", maxhp: 100000, atk: 7, def: 1, atkx: 7, defx: 2, power: 51 },
+    { name: ":mk_tatsu:", msg: "巨大:mk_tatsu:討伐戦！", short: "", mark: "☆", mark2: "★", atkmsg: (dmg) => `もこチキは羽を振って衝撃波を出した！\n:mk_tatsu:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mk_tatsu:の炎ブレス攻撃！\nもこチキは${dmg}ポイントのダメージ！\nもこチキが次に受けるダメージが上昇した！`, winmsg: "もこチキは:mk_tatsu:を懲らしめた！", losemsg: "もこチキはやられてしまった…", atk: 0.5, def: 2, atkx: 2, defx: 4, fire: 0.15, power: 15 },
+    { name: ":mk_chickenda:", msg: ":mk_chickenda:討伐戦！", short: "", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの光魔法！\n:mk_chickenda:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mk_chickenda:の†！\nもこチキに${dmg}ポイントのダメージ！`, winmsg: ":mk_chickenda:は帰っていった！", losemsg: "もこチキはやられてしまった…", atk: 5, def: 5, atkx: 5, defx: 5, power: 50 },
 ]
 
 /*
