@@ -145,9 +145,9 @@ export default class extends Module {
                 const friends = this.ai.friends.find()
                 friends.filter((x) => x.perModulesData?.rpg && x.perModulesData.rpg.raidScore?.[":mkck_scandinavia:"] && x.perModulesData.rpg.raidScore?.[":mkck_scandinavia:"] > 10000).forEach((x) => {
 									const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
-            if (rpgData.raidScore?.[":mkck_scandinavia:"] ) rpgData.raidScore?.[":mkck_scandinavia:"] -= x.perModulesData.rpg.raidScore?.[":mkck_scandinavia:"]
+            if (rpgData.raidScore?.[":mkck_scandinavia:"] ) rpgData.raidScore[":mkck_scandinavia:"] -= x.perModulesData.rpg.raidScore[":mkck_scandinavia:"]
             this.ai.moduleData.update(rpgData);
-                    x.perModulesData.rpg.raidScore?.[":mkck_scandinavia:"] = 0;
+                    x.perModulesData.rpg.raidScore[":mkck_scandinavia:"] = 0;
                 })
 							
                 return { reaction: "love" };
