@@ -1486,7 +1486,7 @@ export default class extends Module {
             dmg += Math.round((data.fireAtk) * enemyMaxHp * 0.01)
             data.fireAtk = (data.fireAtk ?? 0) - 1;
         }
-        return dmg;
+        return Math.max(dmg, 1);
     }
 
     /**
@@ -1506,7 +1506,7 @@ export default class extends Module {
         if (data.enemy?.fire) {
             dmg += Math.round(((data.count ?? count) - 1) * (100 + data.lv * 3) * data.enemy.fire)
         }
-        return dmg;
+        return Math.max(dmg, 1);
     }
 
     /**
@@ -2001,6 +2001,11 @@ export default class extends Module {
                 message += serifs.rpg.skill.tenacious + "\n"
             }
 
+					  item = undefined;
+            atk = atk - (itemBonus.atk ?? 0);
+            def = def - (itemBonus.def ?? 0);
+            itemBonus = { atk: 0, def: 0 };
+
             // HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
             if (playerHpPercent <= (1 / 7) * (1 + (skillEffects.haisuiUp ?? 0)) && (enemyHpPercent - playerHpPercent) >= 0.5 / (1 + (skillEffects.haisuiUp ?? 0))) {
                 buff += 1
@@ -2009,11 +2014,6 @@ export default class extends Module {
                 atk = atk + Math.round(def * effect)
                 def = Math.round(def * (1 - effect))
             }
-
-            item = undefined;
-            atk = atk - (itemBonus.atk ?? 0);
-            def = def - (itemBonus.def ?? 0);
-            itemBonus = { atk: 0, def: 0 };
 
             const itemEquip = 0.4 + ((1 - playerHpPercent) * 0.6);
             if (rpgItems.length && ((count === 1 && skillEffects.firstTurnItem) || Math.random() < itemEquip * (1 + (skillEffects.itemEquip ?? 0)))) {
