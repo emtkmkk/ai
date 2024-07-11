@@ -2510,7 +2510,7 @@ export default class extends Module {
 
         const raid = this.raids.findOne({
             isEnded: false,
-            postId: key.sprit(":")[0],
+            postId: key.split(":")[0],
         });
 
         // 処理の流れ上、実際にnullになることは無さそうだけど一応
