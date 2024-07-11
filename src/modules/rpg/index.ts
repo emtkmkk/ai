@@ -2530,6 +2530,14 @@ export default class extends Module {
         if (!msg.extractedText.trim()) return {
             reaction: 'hmm'
         };
+		
+		const data = msg.friend.getPerModulesData(this);
+		if (!data.lv) { 
+			msg.reply("RPGモードを先に1回プレイしてください！")
+			return {
+				reaction: 'hmm'
+			};
+		}
 
         const raid = this.raids.findOne({
             isEnded: false,
@@ -2538,7 +2546,7 @@ export default class extends Module {
 
         // 処理の流れ上、実際にnullになることは無さそうだけど一応
         if (raid == null) return;
-
+			
         if (raid.attackers.some(x => x.user.id == msg.userId)) {
             msg.reply('すでに参加済みの様です！').then(reply => {
                 raid.replyKey.push(raid.postId + ":" + reply.id);
@@ -2555,6 +2563,17 @@ export default class extends Module {
         if (!enemy) return;
 
         const result = await this.getTotalDmg(msg, enemy)
+			
+		if (raid.attackers.some(x => x.user.id == msg.userId)) {
+            msg.reply('すでに参加済みの様です！').then(reply => {
+                raid.replyKey.push(raid.postId + ":" + reply.id);
+                this.subscribeReply(raid.postId + ":" + reply.id, reply.id);
+                this.raids.update(raid);
+            });
+            return {
+                reaction: 'confused'
+            };
+		}
 
         this.log(`damage ${result.totalDmg} by ${msg.user.id}`);
 
