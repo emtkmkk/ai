@@ -183,7 +183,7 @@ export const skills: Skill[] = [
     { name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndP}`, desc: `乱数幅が20~180 -> 5~230になります クリティカル率も上がります`, effect: { atkRndMin: -0.15, atkRndMax: 0.5, critUpFixed: 0.02 }, unique: "rnd" },
     { name: `${serifs.rpg.dmg.take}${serifs.rpg.status.rndM}`, desc: `敵から受ける最大ダメージを減少させます`, effect: { defRndMin: 0, defRndMax: -0.2 }, unique: "rnd" },
     { name: `${serifs.rpg.dmg.take}${serifs.rpg.status.rndP}`, desc: `敵から受ける最小ダメージを減少させます`, effect: { defRndMin: -0.2, defRndMax: 0 }, unique: "rnd" },
-    { name: `準備を怠らない`, desc: `ターン1にて、必ず良い効果がある武器か防具を装備し、受けるダメージもすこし軽減します。`, effect: { firstTurnResist: 0.1, firstTurnItem: 1, firstTurnMindMinusAvoid: 1, itemEquip: -0.2 }, unique: "firstTurnItem" },
+    { name: `準備を怠らない`, desc: `ターン1にて、必ず良い効果がある武器か防具を装備します。`, effect: { firstTurnItem: 1, firstTurnMindMinusAvoid: 1, itemEquip: -0.15 }, unique: "firstTurnItem" },
     { name: `道具大好き`, desc: `道具の使用率が上がります`, effect: { itemEquip: 0.4 } },
     { name: `道具の扱いが上手い`, desc: `道具の効果量が上がります`, effect: { itemBoost: 0.4 } },
     { name: `武器が大好き`, desc: `武器を装備しやすくなり、武器の効果量が上がります`, effect: { weaponSelect: 1, weaponBoost: 0.6 }, unique: "itemSelect" },
@@ -281,7 +281,7 @@ export const skillReply = (module: Module, msg: Message) => {
                 if (!playerSkills[i].cantReroll) {
                     const oldSkillName = playerSkills[i].name
                     data.skills[i] = getRerollSkill(data, oldSkillName)
-                    msg.reply(`\n` + serifs.rpg.moveToSkill(oldSkillName, data.skills[i].name))
+                    msg.reply(`\n` + serifs.rpg.moveToSkill(oldSkillName, data.skills[i].name) + `\n効果: ${data.skills[i].desc}`)
                     data.rerollOrb -= 1
                     msg.friend.setPerModulesData(module, data);
                     skillCalculate();

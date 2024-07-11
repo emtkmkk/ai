@@ -46,15 +46,13 @@ export default class extends Module {
 
         this.crawleGameEnd();
         setInterval(this.crawleGameEnd, 1000);
-        /*
         setInterval(() => {
             const hours = new Date().getHours()
             const rnd = 0.1 * this.ai.activeFactor;
-            if (Math.random() < rnd) {
+            if ([8,12,18,21].includes(hours) && new Date().getMinutes === 15) {
                 this.start();
             }
-        }, 1000 * 60 * 60 * 3);
-        */
+        }, 1000 * 60 * 1);
         const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
         const maxLv = this.ai.friends.find().filter((x) => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1).reduce((acc, cur) => acc > cur.perModulesData.rpg.lv ? acc : cur.perModulesData.rpg.lv, 0)
         this.log("maxLv : " + maxLv);
@@ -633,12 +631,12 @@ export default class extends Module {
             }
 
             // spdが低い場合、確率でspdが+1。
-            if (spd === 2 && Math.random() < 0.1) {
+            if (spd === 2 && Math.random() < 0.2) {
                 buff += 1
                 message += serifs.rpg.spdUp + "\n"
                 spd = 3;
             }
-            if (spd === 1 && Math.random() < 0.5) {
+            if (spd === 1 && Math.random() < 0.6) {
                 buff += 1
                 message += serifs.rpg.spdUp + "\n"
                 spd = 2;
@@ -646,7 +644,11 @@ export default class extends Module {
 
             // 風魔法発動時
             let spdUp = spd * (skillEffects.spdUp ?? 0)
-            if (Math.random() < spdUp % 1) spdUp = Math.floor(spdUp) + 1;
+            if (Math.random() < spdUp % 1) {
+                spdUp = Math.floor(spdUp) + 1;
+            } else {
+                spdUp = Math.floor(spdUp)
+            }
             if ((isBattle && isPhysical) && spdUp) {
                 buff += 1
                 message += serifs.rpg.skill.wind(spdUp) + "\n"
@@ -1661,13 +1663,13 @@ export default class extends Module {
                 (
                     (h > 0 && h < 8) ||
                     (
-                        Date.now() - recentGame.startedAt < 1000 * 60 * 60 * 12
+                        Date.now() - recentGame.startedAt < 1000 * 60 * 60 * 1
                     )
                 )
             )
         ) return
         */
-        let limitMinutes = 20;
+        let limitMinutes = 30;
 
         const post = await this.ai.post({
             text: serifs.rpg.intro(enemy.dname ?? enemy.name, Math.ceil((Date.now() + 1000 * 60 * limitMinutes) / 1000)),
@@ -1815,12 +1817,8 @@ export default class extends Module {
             color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
         }
 
-        if (colors.find((x) => x.alwaysSuper)?.unlock(data)) {
-            data.superUnlockCount = (data.superUnlockCount ?? 0) + 1
-        }
-
         /** 覚醒状態か？*/
-        const isSuper = Math.random() < (0.02 + Math.max(data.superPoint / 200, 0)) || (data.lv ?? 1) % 100 === 0 || color.alwaysSuper;
+        const isSuper = Math.random() < (0.02 + Math.max(data.superPoint / 200, 0)) || color.alwaysSuper;
 
         /** 投稿数（今日と明日の多い方）*/
         let postCount = await this.getPostCount(data, msg, (isSuper ? 200 : 0))
@@ -1932,21 +1930,13 @@ export default class extends Module {
             def = def * (1 + (sevenFever / 100));
         }
 
-        // spdが低い場合、確率でspdが+1。
-        if (spd === 2 && Math.random() < 0.1) {
-            buff += 1
-            message += serifs.rpg.spdUp + "\n"
-            spd = 3;
-        }
-        if (spd === 1 && Math.random() < 0.5) {
-            buff += 1
-            message += serifs.rpg.spdUp + "\n"
-            spd = 2;
-        }
-
         // 風魔法発動時
         let spdUp = spd * (skillEffects.spdUp ?? 0)
-        if (Math.random() < spdUp % 1) spdUp = Math.floor(spdUp) + 1;
+        if (Math.random() < spdUp % 1) {
+            spdUp = Math.floor(spdUp) + 1;
+        } else {
+            spdUp = Math.floor(spdUp)
+        }
         if ((isBattle && isPhysical) && spdUp) {
             buff += 1
             message += serifs.rpg.skill.wind(spdUp) + "\n"
@@ -1997,6 +1987,8 @@ export default class extends Module {
             def = def * (1 + (skillEffects.escape ?? 0) / 10)
         }
 
+        const _spd = spd;
+
         const plusActionX = 5
 
 
@@ -2019,6 +2011,19 @@ export default class extends Module {
             atk = atk - (itemBonus.atk ?? 0);
             def = def - (itemBonus.def ?? 0);
             itemBonus = { atk: 0, def: 0 };
+            spd = _spd;
+
+            // spdが低い場合、確率でspdが+1。
+            if (spd === 2 && Math.random() < 0.2) {
+                buff += 1
+                message += serifs.rpg.spdUp + "\n"
+                spd = 3;
+            }
+            if (spd === 1 && Math.random() < 0.6) {
+                buff += 1
+                message += serifs.rpg.spdUp + "\n"
+                spd = 2;
+            }
 
             // HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
             if (playerHpPercent <= (1 / 7) * (1 + (skillEffects.haisuiUp ?? 0)) && (enemyHpPercent - playerHpPercent) >= 0.5 / (1 + (skillEffects.haisuiUp ?? 0))) {
@@ -2443,8 +2448,8 @@ export default class extends Module {
             }
             data.raidScore[enemy.name] = totalDmg;
         } else {
-					if (data.raidScore[enemy.name]) message += `\n（これまでのベスト: ${data.raidScore[enemy.name]}）`
-				}
+			if (data.raidScore[enemy.name]) message += `\n（これまでのベスト: ${data.raidScore[enemy.name]}）`
+		}
 
         msg.friend.setPerModulesData(this, data);
 
