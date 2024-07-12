@@ -538,7 +538,7 @@ export default {
 			},
 			super: `覚醒ボーナス 投稿数+200`,
 		},
-		newSkill: (newSkill) => `新しいスキル\n「${newSkill}」\nを手に入れました！`,
+		newSkill: (newSkill) => `新しいスキル\n「${newSkill}」\nを手に入れました！\n「RPG スキル」と話しかけて確認してみてね！`,
 		moveToSkill: (oldSkill, newSkill) => `スキル\n「${oldSkill}」が、\n「${newSkill}」\nに変化しました！`,
 		newColor: (unlockColors) => `\n\n条件を満たしたので、\n新しい色が解放されました！\n\n$[x2 ${unlockColors}]\n\n「RPG 色」と話しかけて確認してみてね！`,
 		color: {
