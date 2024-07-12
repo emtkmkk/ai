@@ -553,7 +553,7 @@ export default {
 			list: "所持スキル一覧",
 		},
 		shop: {
-			welcome: (coin) => `:mk_lowpoly:ショップへようこそ！\n欲しい番号の商品を返信してね（所持コイン数: ${coin}）`,
+			welcome: (coin) => `:mk_lowpoly:ショップへようこそ！\n欲しい番号の商品を返信してね\n（所持コイン数: ${coin}）`,
 			buyItem: (itemName, coin) => `:mk_lowpoly:まいどあり！\n${itemName}を購入しました！\n（残りコイン数: ${coin}）`,
 			useItem: (itemName) => `${itemName}を使用しました！`,
 			notEnoughCoin: `:mk_lowpoly:お金が足りません！`
