@@ -378,16 +378,6 @@ export function aggregateSkillsEffects(data: { items?: ShopItem[], skills: Skill
         if (item.isUsed(data)) {
             dataSkills = dataSkills.concat([{effect: item.effect} as any])
         }
-        if ((item.isMinusDurability ?? item.isUsed)(data)) {
-            data.items.forEach((x) => {
-                if (x.type === "amulet") {
-                    x.durability -= 1;
-                    if (x.durability <= 0) {
-                        data.items = data.items?.filter((x) => x.type !== "amulet")
-                    }
-                }
-            })
-        }
     }
     dataSkills.forEach(_skill => {
         const skill = _skill.name ? skills.find((x) => x.name === _skill.name) ?? _skill : _skill;
@@ -421,6 +411,26 @@ export function aggregateSkillsEffects(data: { items?: ShopItem[], skills: Skill
     }
 
     return aggregatedEffect;
+}
+
+export function amuletMinusDurability(data: { items?: ShopItem[] }): string {
+	if (data.items?.filter((x) => x.type === "amulet").length) {
+        const amulet = data.items?.filter((x) => x.type === "amulet")[0]
+        const item = shopItems.find((x) => x.name === amulet.name) as AmuletItem
+        if ((item.isMinusDurability ?? item.isUsed)(data)) {
+            data.items.forEach((x) => {
+                if (x.type === "amulet") {
+                    x.durability -= 1;
+                    if (x.durability <= 0) {
+                        data.items = data.items?.filter((x) => x.type !== "amulet")
+											return `${x.name}が壊れました！`
+                    } else {
+											return `${x.name} 残耐久${x.durability}`
+										}
+                }
+            })
+        }
+	}
 }
 
 export function calcSevenFever(arr: number[]) {
