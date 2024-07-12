@@ -79,6 +79,7 @@ export const shopReply = async (module: Module, msg: Message) => {
     if (!data) return false;
     if (!data.lv) return false;
     if (!data.items) data.items = [];
+	if (!data.coin) data.coin = 0
 
     let rnd = seedrandom(getDate() + msg.user)
 
@@ -87,7 +88,7 @@ export const shopReply = async (module: Module, msg: Message) => {
     if (data.lastShopVisited !== getDate() || !data.shopItems?.length) {
         const getShopItems = () => {
 					const itemName = filteredShopItems[Math.floor(rnd() * filteredShopItems.length)].name
-					filteredShopItems = filteredShopItems.filter((x) => x.name === itemName);
+					filteredShopItems = filteredShopItems.filter((x) => x.name !== itemName);
 					return itemName;
 				}
 			data.shopItems = [
