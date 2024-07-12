@@ -27,7 +27,7 @@ export type TokenItem = Omit<BaseItem, 'type' | 'effect'> & {
 export type Item = Omit<BaseItem, 'type'> & {
     type: "item";
     effect: (data: any) => void;
-	infinite: boolean;
+	infinite?: boolean;
 }
 
 export type AmuletItem = Omit<BaseItem, 'type' | 'effect'> & {
@@ -41,7 +41,7 @@ export type AmuletItem = Omit<BaseItem, 'type' | 'effect'> & {
 
 export type ShopItem = TokenItem | Item | AmuletItem;
 
-export const fortuneEffect = (data) => {
+export const fortuneEffect = (data: any) => {
 	const rnd = Math.random;
 	if (rnd() < 0.5) {
 		if (rnd() < 0.5) {
