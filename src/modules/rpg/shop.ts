@@ -4,7 +4,7 @@ import serifs from "@/serifs";
 import { colors } from './colors';
 import * as seedrandom from 'seedrandom';
 import getDate from '@/utils/get-date';
-import { skillNameCountMap, totalSkillCount, skills, SkillEffect, skillCalculate, Skill } from './skills';
+import { skillNameCountMap, totalSkillCount, skills, SkillEffect, skillCalculate, Skill, skillPower } from './skills';
 import { getVal } from './utils'
 import 藍 from '@/ai';
 
@@ -74,7 +74,7 @@ export const fortuneEffect = (data: any) => {
 }
 
 export const skillPrice = (_ai: 藍, skillName: Skill["name"]) => {
-    const skillP = skillPower(_ai, x.name);
+    const skillP = skillPower(_ai, skillName);
     return (skillP.skillNameCount / skillP.totalSkillCount / (skills.filter((x) => !x.moveTo).length)) || 20
 }
 
