@@ -1292,7 +1292,7 @@ export default class extends Module {
         }
 
         const nowPlay = /\d{4}\/\d{1,2}\/\d{1,2}(\/\d{2})?/.exec(nowTimeStr)
-        const nextPlay = !nowPlay?.[1] ? 12 + (skillEffects.rpgTime ?? 0) : nowPlay[1] == "12" ? 18 + (skillEffects.rpgTime ?? 0) : nowPlay[1] == "18" ? 24 + (skillEffects.rpgTime ?? 0) : 12 + (skillEffects.rpgTime ?? 0)
+        const nextPlay = !nowPlay?.[1] ? 12 + (skillEffects.rpgTime ?? 0) : nowPlay[1] == "/12" ? 18 + (skillEffects.rpgTime ?? 0) : nowPlay[1] == "/18" ? 24 + (skillEffects.rpgTime ?? 0) : 12 + (skillEffects.rpgTime ?? 0)
 
         message += [
             `\n\n${serifs.rpg.lvUp}`,
