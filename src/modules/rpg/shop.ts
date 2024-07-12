@@ -4,7 +4,7 @@ import serifs from "@/serifs";
 import { colors } from './colors';
 import * as seedrandom from 'seedrandom';
 import getDate from '@/utils/get-date';
-import { skillNameCountMap, totalSkillCount, skills, SkillEffect } from './skills';
+import { skillNameCountMap, totalSkillCount, skills, SkillEffect, skillCalculate } from './skills';
 import { getVal } from './utils'
 
 export type ItemType = "token" | "item" | "amulet";
@@ -69,7 +69,7 @@ export const shopItems: ShopItem[] = [
     { name: `うねうねした壺`, limit: (data) => (data.jar ?? 0) === 4, price: 1600, desc: `なんかうねうねした感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
     { name: `ナノサイズ壺`, limit: (data) => (data.jar ?? 0) === 5, price: 2000, desc: `小さくて見えない感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
     { name: `謎の壺`, limit: (data) => (data.jar ?? 0) >= 6, price: (data) => (data.jar ?? 0) * 400, desc: `なんか謎な感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
-    ...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.effect.firstTurnResist).map((x): AmuletItem => ({ name: `${x.name}のお守り`, price: Math.floor(18 * (skillNameCountMap.get(x.name) / (totalSkillCount / skills.length))), desc: `持っているとスキル「${x.name}」を使用できる 耐久6 使用時耐久減少`, type: "amulet", effect: x.effect, durability: 6, skillName: x.name, isUsed: (data) => true }))
+    ...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.effect.firstTurnResist).map((x): AmuletItem => ({ name: `${x.name}のお守り`, price: Math.floor(18 * (skillCalculate().skillNameCountMap.get(x.name) / (skillCalculate().totalSkillCount / skills.filter((x) => !x.moveTo).length))), desc: `持っているとスキル「${x.name}」を使用できる 耐久6 使用時耐久減少`, type: "amulet", effect: x.effect, durability: 6, skillName: x.name, isUsed: (data) => true }))
 ]
 
 export const shopReply = async (module: Module, msg: Message) => {

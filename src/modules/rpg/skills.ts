@@ -28,6 +28,7 @@ export function skillCalculate(_ai: 藍 = ai) {
             });
         }
     });
+    return { skillNameCountMap, totalSkillCount }
 }
 
 export type SkillEffect = {
@@ -214,6 +215,8 @@ export const getSkill = (data) => {
     const playerSkills = data.skills.map((x) => skills.find((y) => x.name === y.name) ?? x)
     // フィルタリングされたスキルの配列を作成
     const filteredSkills = skills.filter((x) => !x.moveTo && !playerSkills?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique));
+    
+    const skillNameCountMap = skillCalculate().skillNameCountMap
 
     // スキルの合計重みを計算
     const totalWeight = filteredSkills.reduce((total, skill) => {
@@ -243,6 +246,8 @@ export const getRerollSkill = (data, oldSkillName = "") => {
     const playerSkills = data.skills.map((x) => skills.find((y) => x.name === y.name) ?? x)
     // フィルタリングされたスキルの配列を作成
     const filteredSkills = skills.filter((x) => !x.moveTo && !x.cantReroll && x.name != oldSkillName && !playerSkills?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique));
+
+    const skillNameCountMap = skillCalculate().skillNameCountMap
 
     // スキルの合計重みを計算
     const totalWeight = filteredSkills.reduce((total, skill) => {
