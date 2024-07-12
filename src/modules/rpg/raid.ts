@@ -15,6 +15,7 @@ import serifs from '@/serifs';
 import getDate from '@/utils/get-date';
 import { acct } from '@/utils/acct';
 
+/** レイド情報の型 */
 export type Raid = {
     /** 攻撃者の配列 */
     attackers: {

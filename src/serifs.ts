@@ -498,7 +498,7 @@ export default {
 		escape: "もこチキは戦闘から逃げた！",
 		escapeNotBattle: "もこチキは一旦諦めて別の事をするようだ。",
 		next: "次回へ続く……",
-		nextPlay: (date) => `次回は${date.getHours() < 12 ? "12時以降に" : date.getHours() < 18 ? "18時以降に" : "明日以降に"}遊べます。`,
+		nextPlay: (str) => `次回は${str}以降に遊べます。`,
 		getRerollOrb: (num) => `\n\nスキル変更珠を${num > 1 ? `${num}個` : ""}拾いました！\n「RPG スキル」と話しかけて確認してみてね！`,
 		player: {
 			mark: "☆",

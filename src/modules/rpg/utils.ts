@@ -6,6 +6,23 @@ import serifs from '@/serifs';
 import rpg from './index';
 import { colorReply, colors } from './colors';
 
+export function initializeData(module: rpg, msg) {
+    const data = msg.friend.getPerModulesData(module);
+    if (!data.clearEnemy) data.clearEnemy = [data.preEnemy ?? ""].filter(Boolean);
+    if (!data.clearHistory) data.clearHistory = data.clearEnemy;
+    return data;
+}
+
+export function getColor(data) {
+    let color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
+    if (!color.unlock(data)) {
+        data.color === (colors.find((x) => x.default) ?? colors[0]).id;
+        color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
+    }
+    return color;
+}
+
+
 /**
  * ステータスを作成し、返します。
  * @param data RPGモジュールのData
