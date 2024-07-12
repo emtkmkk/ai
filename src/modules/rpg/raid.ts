@@ -1023,7 +1023,7 @@ export async function getTotalDmg(msg, enemy: Enemy) {
         if (data.raidScore[enemy.name]) message += `\n（これまでのベスト: ${data.raidScore[enemy.name]}）`
     }
 
-	const amuletmsg = amuletMinusDurability()
+	const amuletmsg = amuletMinusDurability(data)
 
 	if (amuletmsg) {
 		message += "\n\n" + amuletmsg
