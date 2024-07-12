@@ -371,7 +371,7 @@ export function aggregateSkillsEffects(data: { items?: ShopItem[], skills: Skill
 
     if (!data.skills) return aggregatedEffect;
     let dataSkills = data.skills
-	　data.items?.filter((x) => x.type = (shopItems.find((y) => x.name === y.name).type ?? "token"))
+	　data.items?.filter((x) => x.type = (shopItems.find((y) => x.name === y.name)?.type ?? "token"))
     if (data.items?.filter((x) => x.type === "amulet").length) {
         const amulet = data.items?.filter((x) => x.type === "amulet")[0]
         const item = shopItems.find((x) => x.name === amulet.name) as AmuletItem
