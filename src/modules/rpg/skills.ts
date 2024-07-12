@@ -10,6 +10,7 @@ let ai: 藍;
 
 export function skillCalculate(_ai: 藍 = ai) {
     skillNameCountMap = new Map();
+    totalSkillCount = 0;
     if (_ai) ai = _ai
     const friends = ai.friends.find().filter((x) => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1 && x.perModulesData.rpg.skills?.length)
     friends.forEach(friend => {
