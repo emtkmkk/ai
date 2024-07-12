@@ -27,6 +27,7 @@ export type TokenItem = Omit<BaseItem, 'type' | 'effect'> & {
 export type Item = Omit<BaseItem, 'type'> & {
     type: "item";
     effect: (data: any) => void;
+	infinite: boolean;
 }
 
 export type AmuletItem = Omit<BaseItem, 'type' | 'effect'> & {
@@ -40,7 +41,8 @@ export type AmuletItem = Omit<BaseItem, 'type' | 'effect'> & {
 
 export type ShopItem = TokenItem | Item | AmuletItem;
 
-export const fortuneEffect = (data, rnd) => {
+export const fortuneEffect = (data) => {
+	const rnd = Math.random;
 	if (rnd() < 0.5) {
 		if (rnd() < 0.5) {
 			data.atk += 1
@@ -78,16 +80,16 @@ export const shopItems: ShopItem[] = [
     { name: "乱数透視の札", limit: (data) => !data.items.filter((x) => x.name === "乱数透視の札").length, desc: "所持している間、ダメージの乱数が表示されるようになります", price: 50, type: "token", effect: { showRandom: true } },
     { name: "投稿数ボーナス表示の札", limit: (data) => !data.items.filter((x) => x.name === "投稿数ボーナス表示の札").length, desc: "所持している間、投稿数ボーナスの詳細情報が表示されるようになります", price: 50, type: "token", effect: { showPostBonus: true } },
     { name: "スキル詳細表示の札", limit: (data) => !data.items.filter((x) => x.name === "スキル詳細表示の札").length, desc: "所持している間、スキルの詳細情報が表示されるようになります", price: 50, type: "token", effect: { showSkillBonus: true } },
-    { name: "スキル変更珠", desc: "スキルを変更するのに必要なアイテムです", limit: (data) => data.lv > 60, price: (data) => data.lv > 255 ? 7 : data.lv > 170 ? 25 : data.lv > 100 ? 35 : 50, type: "item", effect: (data) => data.rerollOrb = (data.rerollOrb ?? 0) + 1 },
-    { name: "スキル複製珠", desc: "スキルを変更し、既に覚えているスキルのどれかを1つ覚えます", limit: (data, rnd) => data.lv > 100 && rnd() < 0.2, price: (data) => data.lv > 255 ? 30 : data.lv > 170 ? 100 : 140, type: "item", effect: (data) => data.duplicationOrb = (data.duplicationOrb ?? 0) + 1 },
-    { name: "力の種", desc: "購入時、パワー+1 防御-1", price: (data) => data.lv > 60 ? 1 : data.lv > 30 ? 2 : 3, type: "item", effect: (data) => { data.atk = (data.atk ?? 0) + 1; data.def = (data.def ?? 0) - 1 } },
-    { name: "高級力の種", desc: "購入時、防御2%をパワーに移動", limit: (data) => data.lv > 30, price: 5, type: "item", effect: (data) => { data.atk = (data.atk ?? 0) + (data.def ?? 0) / 50; data.def = (data.def ?? 0) - (data.def ?? 0) / 50 } },
+    { name: "スキル変更珠", desc: "スキルを変更するのに必要なアイテムです", limit: (data) => data.lv > 60, price: (data) => data.lv > 255 ? 7 : data.lv > 170 ? 25 : data.lv > 100 ? 35 : 50, type: "item", effect: (data) => data.rerollOrb = (data.rerollOrb ?? 0) + 1, infinite: true },
+    { name: "スキル複製珠", desc: "スキルを変更し、既に覚えているスキルのどれかを1つ覚えます", limit: (data, rnd) => data.lv > 100 && rnd() < 0.2, price: (data) => data.lv > 255 ? 30 : data.lv > 170 ? 100 : 140, type: "item", effect: (data) => data.duplicationOrb = (data.duplicationOrb ?? 0) + 1, infinite: true },
+    { name: "力の種", desc: "購入時、パワー+1 防御-1", price: (data) => data.lv > 60 ? 1 : data.lv > 30 ? 2 : 3, type: "item", effect: (data) => { data.atk = (data.atk ?? 0) + 1; data.def = (data.def ?? 0) - 1 }, infinite: true },
+    { name: "高級力の種", desc: "購入時、防御2%をパワーに移動", limit: (data) => data.lv > 30, price: 5, type: "item", effect: (data) => { data.atk = (data.atk ?? 0) + (data.def ?? 0) / 50; data.def = (data.def ?? 0) - (data.def ?? 0) / 50 }, infinite: true },
     { name: "きらめく力の種", desc: "購入時、パワー+1", limit: (data, rnd) => rnd() < 0.5, price: (data, rnd) => rnd() < 0.5 ? 10 : rnd() < 0.5 ? 5 : 20, type: "item", effect: (data) => { data.atk = (data.atk ?? 0) + 1 } },
-    { name: "守りの種", desc: "購入時、防御+1 パワー-1", price: (data) => data.lv > 60 ? 1 : data.lv > 30 ? 2 : 3, type: "item", effect: (data) => { data.atk = (data.atk ?? 0) + 1; data.def = (data.def ?? 0) - 1 } },
-    { name: "高級守りの種", desc: "購入時、パワー2%を防御に移動", limit: (data) => data.lv > 30, price: 5, type: "item", effect: (data) => { data.def = (data.def ?? 0) + (data.atk ?? 0) / 50; data.atk = (data.atk ?? 0) - (data.atk ?? 0) / 50 } },
+    { name: "守りの種", desc: "購入時、防御+1 パワー-1", price: (data) => data.lv > 60 ? 1 : data.lv > 30 ? 2 : 3, type: "item", effect: (data) => { data.atk = (data.atk ?? 0) + 1; data.def = (data.def ?? 0) - 1 }, infinite: true },
+    { name: "高級守りの種", desc: "購入時、パワー2%を防御に移動", limit: (data) => data.lv > 30, price: 5, type: "item", effect: (data) => { data.def = (data.def ?? 0) + (data.atk ?? 0) / 50; data.atk = (data.atk ?? 0) - (data.atk ?? 0) / 50 }, infinite: true },
     { name: "きらめく守りの種", desc: "購入時、防御+1", limit: (data, rnd) => rnd() < 0.5, price: (data, rnd) => rnd() < 0.5 ? 10 : rnd() < 0.5 ? 5 : 20, type: "item", effect: (data) => { data.def = (data.def ?? 0) + 1 } },
 	 { name: "しあわせ草", desc: "購入時、？？？", limit: (data, rnd) => rnd() < 0.2, price: (data, rnd) => rnd() < 0.5 ? 20 : rnd() < 0.5 ? 10 : 30, type: "item", effect: fortuneEffect },
-	{ name: "タクシーチケット", desc: "購入時、旅モードのステージがベスト-1になる", limit: (data, rnd) => (data.maxEndress ?? 0) - (data.endress ?? 0) > 2, price: (data, rnd) => ((data.maxEndress ?? 0) - (data.endress ?? 0) - 1) * 8, type: "item", effect: (data) => { data.endress = (data.maxEndress ?? 0) - 1 } },
+	{ name: "タクシーチケット", desc: "購入時、旅モードのステージがベスト-1になる", limit: (data, rnd) => (data.maxEndress ?? 0) - (data.endress ?? 0) > 2, price: (data, rnd) => ((data.maxEndress ?? 0) - (data.endress ?? 0) - 1) * 8, type: "item", effect: (data) => { data.endress = (data.maxEndress ?? 0) - 1 }, infinite: true },
     { name: "不幸の種", limit: (data, rnd) => data.lv > 50 && rnd() < 0.35, desc: "Lv-1 パワー-4 防御-3", price: 30, type: "item", effect: (data) => { data.lv -= 1; data.atk -= 4; data.def -= 3 } },
     { name: `呪いの人形`, limit: (data) => data.revenge, price: 44, desc: `持っていると前回負けた敵に戦う際に20%ステータスアップ 耐久1 リベンジ成功時耐久減少`, type: "amulet", effect: { atkUp: 0.2, defUp: 0.2 }, durability: 1, isUsed: (data) => data.enemy?.name === data.revenge, isMinusDurability: (data) => !data.revenge },
     { name: `交通安全のお守り`, price: 30, desc: `持っているとターン1で30%ダメージカット 耐久6 使用時耐久減少`, type: "amulet", effect: { firstTurnResist: 0.3 }, durability: 6, isUsed: (data) => data.count === 1 },
@@ -195,10 +197,11 @@ export function shopContextHook(module: Module, key: any, msg: Message, data: an
                             `${serifs.rpg.status.def} : ${rpgData.def ?? 0}${defDiff !== 0 ? ` (${defDiff > 0 ? "+" + defDiff : defDiff})` : ""}`,
                         ].filter(Boolean).join("\n")
                     }
+									if (!item.infinite) data.shopItems = data.shopItems.filter((x) => data.showShopItems[i].name !== x.name);
                 } else {
                     rpgData.items.push(data.showShopItems[i])
+									data.shopItems = data.shopItems.filter((x) => data.showShopItems[i].name !== x.name);
 								}
-							data.shopItems = data.shopItems.filter((x) => data.showShopItems[i].name !== x.name);
                 
                 msg.reply((data.showShopItems[i].price ? serifs.rpg.shop.buyItem(data.showShopItems[i].name, rpgData.coin) : "") + message)
                 msg.friend.setPerModulesData(module, rpgData);
