@@ -7,6 +7,7 @@ import autobind from 'autobind-decorator';
 import { colorReply, colors } from './colors';
 import { endressEnemy, enemys, Enemy, raidEnemys } from './enemys';
 import { rpgItems } from './items';
+import { aggregateTokensEffects, shopContextHook } from './shop';
 import { skills, Skill, SkillEffect, getSkill, skillReply, skillCalculate, aggregateSkillsEffects, calcSevenFever } from './skills';
 import { start, Raid, raidInstall, raidContextHook, raidTimeoutCallback } from './raid';
 import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatus, getPostCount, getPostX, getVal, random } from './utils';
@@ -66,6 +67,9 @@ export default class extends Module {
     private async contextHook(key: any, msg: Message, data: any) {
         if (typeof key === "string" && key.startsWith("replayOkawari:")) {
             return this.replayOkawariHook(key, msg, data)
+        }
+        if (typeof key === "string" && key.startsWith("shopBuy:")) {
+            return shopContextHook(this, key, msg, data)
         }
         return raidContextHook(key, msg, data)
     }
@@ -233,7 +237,7 @@ export default class extends Module {
 
         cw += serifs.rpg.trial.cw(data.lv)
         message += `$[x2 ${me}]\n\n${serifs.rpg.start}\n\n`
-
+        
 
         // 敵のステータスを計算
         const edef = data.lv * 3.5 * (1 - (skillEffects.arpen ?? 0));
@@ -317,6 +321,8 @@ export default class extends Module {
         let nowTimeStr = getDate() + (new Date().getHours() < 12 ? "" : new Date().getHours() < 18 ? "/12" : "/18");
 
         let nextTimeStr = new Date().getHours() < 12 ? getDate() + "/12" : new Date().getHours() < 18 ? getDate() + "/18" : getDate(1);
+        
+        let autoReplayFlg = false;
 
         // プレイ済でないかのチェック
         if (data.lastPlayedAt === nowTimeStr || data.lastPlayedAt === nextTimeStr) {
@@ -331,7 +337,7 @@ export default class extends Module {
                                 reaction: 'confused'
                             };
                         }
-                        if (!data.replayOkawari) {
+                        if (!data.replayOkawari && !aggregateTokensEffects(data).autoReplayOkawari) {
                             const reply = await msg.reply(serifs.rpg.oneMore.buyQuestion(needCoin, data.coin));
                             this.log("replayOkawari SubscribeReply: " + reply.id);
                             this.subscribeReply("replayOkawari:" + msg.userId, reply.id);
@@ -339,6 +345,9 @@ export default class extends Module {
                         } else {
                             data.coin -= needCoin;
                             data.replayOkawari = false;
+                            if (aggregateTokensEffects(data).autoReplayOkawari) {
+                                autoReplayFlg = true;
+                            }
                         }
                     } else {
                         msg.reply(serifs.rpg.oneMore.tired(data.lv < rpgData.maxLv));
@@ -408,7 +417,7 @@ export default class extends Module {
         let count = data.count ?? 1
 
         // 旅モード（エンドレスモード）のフラグ
-        if (msg.includes([serifs.rpg.command.journey])) {
+        if (msg.includes([serifs.rpg.command.journey]) && !aggregateTokensEffects(data).autoJournal) {
             // 現在戦っている敵がいない場合で旅モード指定がある場合はON
             if (!data.enemy || count === 1 || data.endressFlg) {
                 data.endressFlg = true;
@@ -422,6 +431,12 @@ export default class extends Module {
             // 現在戦っている敵がいない場合で旅モード指定がない場合はOFF
             if (!data.enemy || count === 1) {
                 data.endressFlg = false;
+            }
+        }
+
+        if (aggregateTokensEffects(data).autoJournal) {
+            if (!data.enemy || count === 1 || data.endressFlg) {
+                data.endressFlg = true;
             }
         }
 
@@ -446,8 +461,11 @@ export default class extends Module {
         /** 投稿数（今日と明日の多い方）*/
         let postCount = await getPostCount(this.ai, this, data, msg, (isSuper ? 200 : 0))
 
+        let continuousBonusNum = 0;
+
         if (continuousBonus > 0) {
-            postCount = postCount + (Math.min(Math.max(10, postCount / 2), 25) * continuousBonus)
+            continuousBonusNum = (Math.min(Math.max(10, postCount / 2), 25) * continuousBonus)
+            postCount = postCount + continuousBonusNum;
         }
 
         // 投稿数に応じてステータス倍率を得る
@@ -470,6 +488,10 @@ export default class extends Module {
         let cw = acct(msg.user) + " ";
         /** 画面に出力するメッセージ:Text */
         let message = ""
+
+        if (autoReplayFlg) {
+            message += serifs.rpg.oneMore.autoBuy(data.coin) + `\n\n`
+        }
 
         /** プレイヤーの見た目 */
         let me = color.name
@@ -547,17 +569,32 @@ export default class extends Module {
             message += serifs.rpg.info + `\n`
         }
 
-        // 連続ボーナスの場合、メッセージを追加
-        // バフはすでに上で付与済み
-        if (continuousBonus >= 1) {
-            buff += 1
-            message += serifs.rpg.bonus.a + `\n`
-        } else if (continuousFlg && continuousBonus > 0) {
-            buff += 1
-            message += serifs.rpg.bonus.b + `\n`
-        } else if (continuousBonus > 0) {
-            buff += 1
-            message += serifs.rpg.bonus.c + `\n`
+        if (aggregateTokensEffects(data).showPostBonus) {
+            buff += 1            
+            if (continuousBonus >= 1) {
+                message += serifs.rpg.postBonusInfo.continuous.a(Math.floor(continuousBonusNum)) + `\n`
+            } else if (continuousFlg && continuousBonus > 0) {
+                message += serifs.rpg.postBonusInfo.continuous.b(Math.floor(continuousBonusNum)) + `\n`
+            } else if (continuousBonus > 0) {
+                message += serifs.rpg.postBonusInfo.continuous.c(Math.floor(continuousBonusNum)) + `\n`
+            }
+            if (isSuper) {
+                message += serifs.rpg.postBonusInfo.super + `\n`
+            }
+            serifs.rpg.postBonusInfo.post(postCount, tp > 1 ? "+" + Math.floor((tp - 1) * 100) : "-" + Math.floor((tp - 1) * 100)) + `\n\n`
+        } else {
+            // 連続ボーナスの場合、メッセージを追加
+            // バフはすでに上で付与済み
+            if (continuousBonus >= 1) {
+                buff += 1
+                message += serifs.rpg.bonus.a + `\n`
+            } else if (continuousFlg && continuousBonus > 0) {
+                buff += 1
+                message += serifs.rpg.bonus.b + `\n`
+            } else if (continuousBonus > 0) {
+                buff += 1
+                message += serifs.rpg.bonus.c + `\n`
+            }
         }
 
         // ここで残りのステータスを計算しなおす
@@ -946,11 +983,12 @@ export default class extends Module {
                 const crit = Math.random() < (playerHpPercent - enemyHpPercent) * (1 - (skillEffects.enemyCritDown ?? 0));
                 // 予測最大ダメージが相手のHPの何割かで先制攻撃の確率が判定される
                 if (Math.random() < predictedDmg / enemyHp || (count === 3 && data.enemy.fire && (data.thirdFire ?? 0) <= 2)) {
-                    const rng = (defMinRnd + random(data, startCharge, skillEffects) * defMaxRnd) * defDmgX;
+                    const rng = (defMinRnd + random(data, startCharge, skillEffects) * defMaxRnd);
+                    if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`
                     const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
                     /** ダメージ */
-                    const dmg = getEnemyDmg(data, def, tp, count, crit ? critDmg : false, enemyAtk, rng)
-                    const noItemDmg = getEnemyDmg(data, def - itemBonus.def, tp, count, crit ? critDmg : false, enemyAtk, rng)
+                    const dmg = getEnemyDmg(data, def, tp, count, crit ? critDmg : false, enemyAtk, rng * defDmgX)
+                    const noItemDmg = getEnemyDmg(data, def - itemBonus.def, tp, count, crit ? critDmg : false, enemyAtk, rng * defDmgX)
                     // ダメージが負けるほど多くなる場合は、先制攻撃しない
                     if (playerHp > dmg || (count === 3 && data.enemy.fire && (data.thirdFire ?? 0) <= 2)) {
                         playerHp -= dmg
@@ -974,13 +1012,15 @@ export default class extends Module {
             // 自身攻撃の処理
             // spdの回数分、以下の処理を繰り返す
             for (let i = 0; i < spd; i++) {
-                const rng = (atkMinRnd + random(data, startCharge, skillEffects) * atkMaxRnd) * (1 + (skillEffects.atkDmgUp ?? 0)) * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1);
+                const rng = (atkMinRnd + random(data, startCharge, skillEffects) * atkMaxRnd);
+                if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`
+                const dmgBonus = (1 + (skillEffects.atkDmgUp ?? 0)) * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1);
                 /** クリティカルかどうか */
                 let crit = Math.random() < ((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0))) + (skillEffects.critUpFixed ?? 0);
                 const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
                 /** ダメージ */
-                let dmg = getAtkDmg(data, atk, tp, count, crit ? critDmg : false, enemyDef, enemyMaxHp, rng) + trueDmg
-                const noItemDmg = getAtkDmg(data, atk - itemBonus.atk, tp, count, crit, enemyDef, enemyMaxHp, rng) + trueDmg
+                let dmg = getAtkDmg(data, atk, tp, count, crit ? critDmg : false, enemyDef, enemyMaxHp, rng * dmgBonus) + trueDmg
+                const noItemDmg = getAtkDmg(data, atk - itemBonus.atk, tp, count, crit, enemyDef, enemyMaxHp, rng * dmgBonus) + trueDmg
                 // 最大ダメージ制限処理
                 if (maxdmg && maxdmg > 0 && dmg > Math.round(maxdmg * (1 / ((abort || spd) - i)))) {
                     // 最大ダメージ制限を超えるダメージの場合は、ダメージが制限される。
@@ -1034,6 +1074,9 @@ export default class extends Module {
                     data.aHeroLv = data.lv;
                     data.aHeroClearDate = Date.now();
                 }
+                if (data.enemy.name === data.revenge) {
+                    data.revenge = null;
+                }
                 // 次の試合に向けてのパラメータセット
                 data.enemy = null;
                 data.count = 1;
@@ -1078,13 +1121,14 @@ export default class extends Module {
                 let maxDmg = 0;
                 if (!enemyTurnFinished) {
                     for (let i = 0; i < (data.enemy.spd ?? 1); i++) {
-                        const rng = (defMinRnd + random(data, startCharge, skillEffects) * defMaxRnd) * defDmgX * enemyAtkX;
+                        const rng = (defMinRnd + random(data, startCharge, skillEffects) * defMaxRnd);
+                        if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`
                         /** クリティカルかどうか */
                         const crit = Math.random() < (playerHpPercent - enemyHpPercent) * (1 - (skillEffects.enemyCritDown ?? 0));
                         const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
                         /** ダメージ */
-                        const dmg = getEnemyDmg(data, def, tp, count, crit ? critDmg : false, enemyAtk, rng);
-                        const noItemDmg = getEnemyDmg(data, def - itemBonus.def, tp, count, crit ? critDmg : false, enemyAtk, rng);
+                        const dmg = getEnemyDmg(data, def, tp, count, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX);
+                        const noItemDmg = getEnemyDmg(data, def - itemBonus.def, tp, count, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX);
                         playerHp -= dmg
                         message += (i === 0 ? "\n" : "") + (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n"
                         if (noItemDmg - dmg > 1) {
@@ -1114,10 +1158,11 @@ export default class extends Module {
                         // エンドレスモードかどうかでメッセージ変更
                         if (data.enemy.name !== endressEnemy(data).name) {
                             message += "\n" + data.enemy.losemsg + "\n\n" + serifs.rpg.lose
+                            data.revenge = data.enemy.name;
                         } else {
                             const minusStage = Math.min(Math.ceil((data.endress ?? 0) / 2), 3 - ((data.endress ?? 0) > (data.maxEndress ?? -1) ? 0 : (data.endress ?? 0) >= ((data.maxEndress ?? -1) / 2) ? 1 : 2))
                             message += "\n" + data.enemy.losemsg + (minusStage ? `\n` + serifs.rpg.journey.lose(minusStage) : "")
-                            if ((data.endress ?? 0) > (data.maxEndress ?? -1)) data.maxEndress = data.endress;
+                            if ((data.endress ?? 0) - 1 > (data.maxEndress ?? -1)) data.maxEndress = data.endress - 1;
                             data.endress = (data.endress ?? 0) - minusStage;
                         }
                         // これが任意に入った旅モードだった場合は、各種フラグをリセットしない

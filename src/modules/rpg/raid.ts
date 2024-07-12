@@ -9,7 +9,9 @@ import { colors } from './colors';
 import { endressEnemy, Enemy, raidEnemys } from './enemys';
 import { rpgItems } from './items';
 import { aggregateSkillsEffects, calcSevenFever } from './skills';
-import { getAtkDmg, getEnemyDmg, showStatusDmg, getPostCount, getPostX, getVal, random } from './utils';
+import { aggregateTokensEffects } from './shop';
+import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatusDmg, getPostCount, getPostX, getVal, random } from './utils';
+import { calculateStats } from './battle'
 import serifs from '@/serifs';
 import getDate from '@/utils/get-date';
 import { acct } from '@/utils/acct';
@@ -366,10 +368,7 @@ export function raidTimeoutCallback(data: any) {
 
 export async function getTotalDmg(msg, enemy: Enemy) {
     // データを読み込み
-    const data = msg.friend.getPerModulesData(module_);
-    // 各種データがない場合は、初期化
-    if (!data.clearEnemy) data.clearEnemy = [data.preEnemy ?? ""].filter(Boolean);
-    if (!data.clearHistory) data.clearHistory = data.clearEnemy;
+    const data = initializeData(module_, msg)
     if (!data.lv) return {
         reaction: 'confused'
     };
@@ -381,12 +380,7 @@ export async function getTotalDmg(msg, enemy: Enemy) {
     let count = 1
 
     /** 使用中の色情報 */
-    let color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
-
-    if (!color.unlock(data)) {
-        data.color === (colors.find((x) => x.default) ?? colors[0]).id;
-        color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
-    }
+    let color = getColor(data);
 
     /** 覚醒状態か？*/
     const isSuper = Math.random() < (0.02 + Math.max(data.superPoint / 200, 0)) || color.alwaysSuper;
@@ -394,7 +388,9 @@ export async function getTotalDmg(msg, enemy: Enemy) {
     /** 投稿数（今日と明日の多い方）*/
     let postCount = await getPostCount(ai, module_, data, msg, (isSuper ? 200 : 0))
 
-    postCount = postCount + (Math.min(Math.max(10, postCount / 2), 25))
+    const continuousBonusNum = (Math.min(Math.max(10, postCount / 2), 25));
+
+    postCount = postCount + continuousBonusNum;
 
     // 投稿数に応じてステータス倍率を得る
     // 連続プレイの場合は倍率アップ
@@ -432,20 +428,17 @@ export async function getTotalDmg(msg, enemy: Enemy) {
     /** バフを得た数。行数のコントロールに使用 */
     let buff = 0;
 
-    // ここで残りのステータスを計算しなおす
-    const stbonus = (((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) + ((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0))) / 2
-    /** プレイヤーの攻撃力 */
-    let atk = Math.max(5 + (data.atk ?? 0) + Math.floor(stbonus * ((100 + (data.atk ?? 0)) / 100)), 5)
-    /** プレイヤーの防御力 */
-    let def = Math.max(5 + (data.def ?? 0) + Math.floor(stbonus * ((100 + (data.def ?? 0)) / 100)), 5)
-    /** プレイヤーの行動回数 */
-    let spd = Math.floor((msg.friend.love ?? 0) / 100) + 1;
-    if (color.reverseStatus) {
-        // カラーによるパラメータ逆転
-        const _atk = atk;
-        atk = def
-        def = _atk
+    if (aggregateTokensEffects(data).showPostBonus) {
+        buff += 1
+        message += serifs.rpg.postBonusInfo.continuous.a(Math.floor(continuousBonusNum)) + `\n`
+        if (isSuper) {
+            message += serifs.rpg.postBonusInfo.super + `\n`
+        }
+        serifs.rpg.postBonusInfo.post(postCount, tp > 1 ? "+" + Math.floor((tp - 1) * 100) : "-" + Math.floor((tp - 1) * 100)) + `\n\n`
     }
+
+    // ここで残りのステータスを計算しなおす
+    let { atk, def, spd } = calculateStats(data, msg, skillEffects, color)
     atk = atk * (1 + (skillEffects.atkUp ?? 0));
     def = def * (1 + (skillEffects.defUp ?? 0));
     /** 敵の最大HP */
@@ -556,6 +549,10 @@ export async function getTotalDmg(msg, enemy: Enemy) {
 
     if (skillEffects.escape) {
         def = def * (1 + (skillEffects.escape ?? 0) / 10)
+    }
+
+    if (skillEffects.enemyCritDmgDown) {
+        def = def * (1 + (skillEffects.enemyCritDmgDown ?? 0) / 30)
     }
 
     const _spd = spd;
@@ -858,11 +855,12 @@ export async function getTotalDmg(msg, enemy: Enemy) {
             const crit = Math.random() < (playerHpPercent - enemyHpPercent) * (1 - (skillEffects.enemyCritDown ?? 0));
             // 予測最大ダメージが相手のHPの何割かで先制攻撃の確率が判定される
             if (Math.random() < predictedDmg / enemyHp || (count === 3 && enemy.fire && (data.thirdFire ?? 0) <= 2)) {
-                const rng = (defMinRnd + random(data, startCharge, skillEffects) * defMaxRnd) * defDmgX;
+                const rng = (defMinRnd + random(data, startCharge, skillEffects) * defMaxRnd);
+                if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`
                 const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
                 /** ダメージ */
-                const dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng, getVal(enemy.atkx, [tp]))
-                const noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng, getVal(enemy.atkx, [tp]))
+                const dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [tp]))
+                const noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [tp]))
                 // ダメージが負けるほど多くなる場合は、先制攻撃しない
                 if (playerHp > dmg || (count === 3 && enemy.fire && (data.thirdFire ?? 0) <= 2)) {
                     playerHp -= dmg
@@ -885,13 +883,15 @@ export async function getTotalDmg(msg, enemy: Enemy) {
         // 自身攻撃の処理
         // spdの回数分、以下の処理を繰り返す
         for (let i = 0; i < spd; i++) {
-            const rng = (atkMinRnd + random(data, startCharge, skillEffects) * atkMaxRnd) * (1 + (skillEffects.atkDmgUp ?? 0)) * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1);
-            /** クリティカルかどうか */
+            const rng = (atkMinRnd + random(data, startCharge, skillEffects) * atkMaxRnd);
+            if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`
+            const dmgBonus = (1 + (skillEffects.atkDmgUp ?? 0)) * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1);
+            //** クリティカルかどうか */
             let crit = Math.random() < ((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0))) + (skillEffects.critUpFixed ?? 0);
             const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
             /** ダメージ */
-            let dmg = getAtkDmg(data, atk, tp, 1, crit ? critDmg : false, enemyDef, enemyMaxHp, rng, getVal(enemy.defx, [tp])) + trueDmg
-            const noItemDmg = getAtkDmg(data, atk - itemBonus.atk, tp, 1, crit, enemyDef, enemyMaxHp, rng, getVal(enemy.defx, [tp])) + trueDmg
+            let dmg = getAtkDmg(data, atk, tp, 1, crit ? critDmg : false, enemyDef, enemyMaxHp, rng * dmgBonus, getVal(enemy.defx, [tp])) + trueDmg
+            const noItemDmg = getAtkDmg(data, atk - itemBonus.atk, tp, 1, crit, enemyDef, enemyMaxHp, rng * dmgBonus, getVal(enemy.defx, [tp])) + trueDmg
             // 最大ダメージ制限処理
             if (maxdmg && maxdmg > 0 && dmg > Math.round(maxdmg * (1 / ((abort || spd) - i)))) {
                 // 最大ダメージ制限を超えるダメージの場合は、ダメージが制限される。
@@ -956,13 +956,14 @@ export async function getTotalDmg(msg, enemy: Enemy) {
             let maxDmg = 0;
             if (!enemyTurnFinished) {
                 for (let i = 0; i < (enemy.spd ?? 1); i++) {
-                    const rng = (defMinRnd + random(data, startCharge, skillEffects) * defMaxRnd) * defDmgX * enemyAtkX;
+                    const rng = (defMinRnd + random(data, startCharge, skillEffects) * defMaxRnd);
+                    if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`
                     /** クリティカルかどうか */
                     const crit = Math.random() < (playerHpPercent - enemyHpPercent) * (1 - (skillEffects.enemyCritDown ?? 0));
                     const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
                     /** ダメージ */
-                    const dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng, getVal(enemy.atkx, [tp]));
-                    const noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng, getVal(enemy.atkx, [tp]));
+                    const dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX, getVal(enemy.atkx, [tp]));
+                    const noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX, getVal(enemy.atkx, [tp]));
                     playerHp -= dmg
                     message += (i === 0 ? "\n" : "") + (crit ? `**${enemy.defmsg(dmg)}**` : enemy.defmsg(dmg)) + "\n"
                     if (noItemDmg - dmg > 1) {

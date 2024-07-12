@@ -10,6 +10,7 @@ export function initializeData(module: rpg, msg) {
     const data = msg.friend.getPerModulesData(module);
     if (!data.clearEnemy) data.clearEnemy = [data.preEnemy ?? ""].filter(Boolean);
     if (!data.clearHistory) data.clearHistory = data.clearEnemy;
+    if (!data.items) data.items = [];
     return data;
 }
 
@@ -261,10 +262,9 @@ export function random(data, startCharge = 0, skillEffects) {
  * @param props 関数だった場合の引数
  * @returns 値
  */
-export function getVal(val, props?) {
+export function getVal<T>(val: T | ((...args: any[]) => T), props?: any[]): T {
     if (typeof val === "function") {
-        return val(...props);
+        return (val as (...args: any[]) => T)(...(props ?? []));
     }
-    return val
+    return val;
 }
-

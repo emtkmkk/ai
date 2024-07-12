@@ -525,9 +525,19 @@ export default {
 			err: "\nおかわりRPGの前に通常のRPGをプレイする必要があります！",
 			buyQuestion: (num, coin) => `\nもこコインを${num}枚使用すると、もう1回おかわりRPGをプレイできます！\n\n消費してプレイしますか？（所持コイン数: ${coin}）\n\n「はい」または「いいえ」で返信してください！`,
 			buyComp: `\nおかわりRPGがプレイ可能になりました！\nもう一度おかわりRPGを試してみてください！`,
+			autoBuy: (coin) => `おかわりRPGのプレイ権利を自動購入しました！\n（残りコイン数: ${coin}）`,
 		},
 		info: "もこチキの状況判断能力がアップ！\n今後、状況が細かく\n分析出来るようになる事があるぞ！",
 		infoPercent: "%",
+		postBonusInfo: {
+			post: (num, bonus) => `投稿数 ${num} ステータス${bonus}%`,
+			continuous: {
+				a: (num) => `連続RPGボーナス 投稿数+${num}`,
+				b: (num) => `連続RPGボーナス（弱） 投稿数+${num}`,
+				c: (num) => `毎日RPGボーナス 投稿数+${num}`,
+			},
+			super: `覚醒ボーナス 投稿数+200`,
+		},
 		newSkill: (newSkill) => `新しいスキル\n「${newSkill}」\nを手に入れました！`,
 		moveToSkill: (oldSkill, newSkill) => `スキル\n「${oldSkill}」が、\n「${newSkill}」\nに変化しました！`,
 		newColor: (unlockColors) => `\n\n条件を満たしたので、\n新しい色が解放されました！\n\n$[x2 ${unlockColors}]\n\n「RPG 色」と話しかけて確認してみてね！`,
@@ -539,7 +549,14 @@ export default {
 		},
 		skills: {
 			info: (num) => `スキルを変更する場合、\`rpg スキル変更 <数字>\`と話しかけてね (変更珠所持数: ${num})`,
+			duplicationInfo: (num) => `スキルを変更&複製する場合、\`rpg スキル変更複製 <消すスキルの数字>\`と話しかけてね 消えたスキルの枠に既に持っているスキルのどれかが入るよ (複製珠所持数: ${num})`,
 			list: "所持スキル一覧",
+		},
+		shop: {
+			welcome: (coin) => `:mk_lowpoly:ショップへようこそ！\n欲しい番号の商品を返信してね（所持コイン数: ${coin}）`,
+			buyItem: (itemName, coin) => `:mk_lowpoly:まいどあり！\n${itemName}を購入しました！\n（残りコイン数: ${coin}）`,
+			useItem: (itemName) => `${itemName}を使用しました！`,
+			notEnoughCoin: `:mk_lowpoly:お金が足りません！`
 		},
 		command: {
 			rpg: "rpg",
@@ -549,6 +566,8 @@ export default {
 			change: "変更",
 			onemore: "おかわり",
 			skill: "スキル",
+			shop: "ショップ",
+			duplication: "複製"
 		}
 	},
 
