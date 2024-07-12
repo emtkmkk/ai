@@ -13,7 +13,7 @@ export type BaseItem = {
     name: string;
     limit?: (data: any, rnd: () => number) => boolean;
     desc: string;
-    price: number | ((data: any, rnd: () => number) => number);
+    price: number | ((data: any, rnd: () => number, ai: 藍) => number);
     type: ItemType;
     effect: (data: any) => void;
     always?: boolean;
@@ -72,6 +72,11 @@ export const fortuneEffect = (data: any) => {
 	}
 }
 
+export const skillPrice(_ai: 藍, skillName: Skill["name"]) {
+    const skillP = skillPower(_ai, x.name);
+    return (skillP.skillNameCount / skillP.totalSkillCount / (skills.filter((x) => !x.moveTo).length)) || 20
+}
+
 export const shopItems: ShopItem[] = [
     { name: "おかわり2RPG自動支払いの札", limit: (data) => !data.items.filter((x) => x.name === "おかわり2RPG自動支払いの札").length, desc: "所持している間、おかわりおかわりRPGをプレイする際に確認をスキップして自動でコインを消費します", price: 5, type: "token", effect: { autoReplayOkawari: true }, always: true },
     { name: "自動旅モードの札", limit: (data) => !data.items.filter((x) => x.name === "自動旅モードの札").length, desc: "所持している間、旅モードに自動で突入します", price: 5, type: "token", effect: { autoJournal: true }, always: true },
@@ -102,10 +107,10 @@ export const shopItems: ShopItem[] = [
     { name: `うねうねした壺`, limit: (data) => (data.jar ?? 0) === 4, price: 1600, desc: `なんかうねうねした感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
     { name: `ナノサイズ壺`, limit: (data) => (data.jar ?? 0) === 5, price: 2000, desc: `小さくて見えない感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
     { name: `謎の壺`, limit: (data) => (data.jar ?? 0) >= 6, price: (data) => (data.jar ?? 0) * 400, desc: `なんか謎な感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
-    ...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.effect.firstTurnResist).map((x): AmuletItem => ({ name: `${x.name}のお守り`, price: Math.floor(20), desc: `持っているとスキル「${x.name}」を使用できる 耐久6 使用時耐久減少`, type: "amulet", effect: x.effect, durability: 6, skillName: x.name, isUsed: (data) => true }))
+    ...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.effect.firstTurnResist).map((x): AmuletItem => ({ name: `${x.name}のお守り`, price: (data, rnd, ai) => skillPrice(ai, x.name), desc: `持っているとスキル「${x.name}」を使用できる 耐久6 使用時耐久減少`, type: "amulet", effect: x.effect, durability: 6, skillName: x.name, isUsed: (data) => true }))
 ]
 
-export const shopReply = async (module: Module, msg: Message) => {
+export const shopReply = async (module: Module, ai: 藍, msg: Message) => {
 
     // データを読み込み
     const data = msg.friend.getPerModulesData(module);
@@ -114,23 +119,23 @@ export const shopReply = async (module: Module, msg: Message) => {
     if (!data.items) data.items = [];
 	if (!data.coin) data.coin = 0
 
-    let rnd = seedrandom(getDate() + msg.userId)
+    let rnd = seedrandom(getDate() + ai.account.id + msg.userId)
 
     let filteredShopItems = shopItems.filter((x) => (!x.limit || x.limit(data, rnd)) && !(x.type === "amulet" && data.items?.some((y) => y.type === "amulet")) && !x.always)
 
     if (data.lastShopVisited !== getDate() || !data.shopItems?.length) {
         const getShopItems = () => {
-					const itemName = filteredShopItems[Math.floor(rnd() * filteredShopItems.length)].name
-					filteredShopItems = filteredShopItems.filter((x) => x.name !== itemName);
-					return itemName;
-				}
-			data.shopItems = [
+            const itemName = filteredShopItems[Math.floor(rnd() * filteredShopItems.length)].name
+            filteredShopItems = filteredShopItems.filter((x) => x.name !== itemName);
+            return itemName;
+        }
+        data.shopItems = [
             getShopItems(),
             getShopItems(),
-				getShopItems(),
-				getShopItems(),
-				getShopItems(),
-			]
+            getShopItems(),
+            getShopItems(),
+            getShopItems(),
+        ]
         data.lastShopVisited = getDate()
     }
 
@@ -141,12 +146,12 @@ export const shopReply = async (module: Module, msg: Message) => {
     const reply = await msg.reply([
         "",
         serifs.rpg.shop.welcome(data.coin),
-        ...showShopItems.map((x, index) => `[${index + 1}] ${x.name} ${getVal(x.price, [data, rnd])}枚\n${x.desc}\n`)
+        ...showShopItems.map((x, index) => `[${index + 1}] ${x.name} ${getVal(x.price, [data, rnd, ai])}枚\n${x.desc}\n`)
     ].join("\n"), { visibility: "specified" });
     
     msg.friend.setPerModulesData(module, data);
 
-    module.subscribeReply("shopBuy:" + msg.userId, reply.id, { showShopItems: showShopItems.map((x) => ({ name: x.name, type: x.type, price: getVal(x.price, [data, rnd]), ...(x.type === "amulet" ? { durability: x.durability ?? undefined, skillName: x.skillName ?? undefined } : {}) })) });
+    module.subscribeReply("shopBuy:" + msg.userId, reply.id, { showShopItems: showShopItems.map((x) => ({ name: x.name, type: x.type, price: getVal(x.price, [data, rnd, ai]), ...(x.type === "amulet" ? { durability: x.durability ?? undefined, skillName: x.skillName ?? undefined } : {}) })) });
 
     return {
         reaction: 'love'

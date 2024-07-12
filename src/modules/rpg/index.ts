@@ -49,11 +49,11 @@ export default class extends Module {
         }
         if (msg.includes([serifs.rpg.command.rpg]) && msg.includes([serifs.rpg.command.skill])) {
             // スキルモード
-            return skillReply(this, msg);
+            return skillReply(this, this.ai, msg);
         }
         if (msg.includes([serifs.rpg.command.rpg]) && msg.includes([serifs.rpg.command.shop])) {
-            // スキルモード
-            return shopReply(this, msg);
+            // ショップモード
+            return shopReply(this, this.ai, msg);
         }
         if (msg.includes([serifs.rpg.command.rpg]) && msg.includes([serifs.rpg.command.trial])) {
             // 木人モード

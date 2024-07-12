@@ -270,11 +270,13 @@ export const getRerollSkill = (data, oldSkillName = "") => {
 }
 
 /** スキルに関しての情報を返す */
-export const skillReply = (module: Module, msg: Message) => {
+export const skillReply = (module: Module, ai: 藍, msg: Message) => {
 
     // データを読み込み
     const data = msg.friend.getPerModulesData(module);
     if (!data) return false;
+    
+    skillCalculate(ai);
 
     if (!data.skills?.length) return { reaction: 'confused' };
 
@@ -295,7 +297,7 @@ export const skillReply = (module: Module, msg: Message) => {
                     msg.reply(`\n` + serifs.rpg.moveToSkill(oldSkillName, data.skills[i].name) + `\n効果: ${data.skills[i].desc}` + (aggregateTokensEffects(data).showSkillBonus && data.skills[i].info ? `\n詳細効果: ${data.skills[i].info}` : ""))
                     data.duplicationOrb -= 1
                     msg.friend.setPerModulesData(module, data);
-                    skillCalculate();
+                    skillCalculate(ai);
                     return {
                         reaction: 'love'
                     };
@@ -321,7 +323,7 @@ export const skillReply = (module: Module, msg: Message) => {
                     msg.reply(`\n` + serifs.rpg.moveToSkill(oldSkillName, data.skills[i].name) + `\n効果: ${data.skills[i].desc}` + (aggregateTokensEffects(data).showSkillBonus && data.skills[i].info ? `\n詳細効果: ${data.skills[i].info}` : ""))
                     data.rerollOrb -= 1
                     msg.friend.setPerModulesData(module, data);
-                    skillCalculate();
+                    skillCalculate(ai);
                     return {
                         reaction: 'love'
                     };
@@ -359,6 +361,11 @@ export const skillReply = (module: Module, msg: Message) => {
 
 }
 
+export const skillPower(ai: 藍, skillName: Skill["name"]) {
+    const { skillNameCountMap, totalSkillCount } = skillCalculate(ai);
+    return { skillNameCountMap, skillNameCount: skillNameCountMap.get(skillName), totalSkillCount };
+}
+
 /**
  * data.skillsに格納されている全スキルのeffectを集計する関数。
  * 重複している効果はその値を足す。
@@ -371,7 +378,7 @@ export function aggregateSkillsEffects(data: { items?: ShopItem[], skills: Skill
 
     if (!data.skills) return aggregatedEffect;
     let dataSkills = data.skills
-	　data.items?.filter((x) => x.type = (shopItems.find((y) => x.name === y.name)?.type ?? "token"))
+	data.items?.filter((x) => x.type = (shopItems.find((y) => x.name === y.name)?.type ?? "token"))
     if (data.items?.filter((x) => x.type === "amulet").length) {
         const amulet = data.items?.filter((x) => x.type === "amulet")[0]
         const item = shopItems.find((x) => x.name === amulet.name) as AmuletItem
