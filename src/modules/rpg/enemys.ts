@@ -119,6 +119,7 @@ export const raidEnemys: Enemy[] = [
     { name: ":mk_chickenda:", msg: ":mk_chickenda:討伐戦！", short: "", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの光魔法！\n:mk_chickenda:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mk_chickenda:の†！\nもこチキに${dmg}ポイントのダメージ！`, winmsg: ":mk_chickenda:は帰っていった！", losemsg: "もこチキはやられてしまった…", atk: 5, def: 5, atkx: 5, defx: 5, power: 50 },
     { name: ":nisemokochiki_mzh:", msg: "巨大:nisemokochiki_mzh:討伐戦！", short: "", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの羽ペチ！\n:nisemokochiki_mzh:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:nisemokochiki_mzh:のうさんくさい攻撃！\nもこチキは${dmg}ポイントのダメージ！`, winmsg: "どっちが本物か分からせてやった！", losemsg: "もこチキはやられてしまった…", atk: 1, def: 2, atkx: 3, defx: 3, power: 9 },
     { name: ":teriyaki_mk_yukkuriface:", msg: "巨大:teriyaki_mk_yukkuriface:討伐戦！", short: "", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの攻撃！\n${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:teriyaki_mk_yukkuriface:のガン飛ばし攻撃！\nもこチキの精神に${dmg}ポイントのダメージ！`, winmsg: "撃退した！", losemsg: "もこチキはビビってしまった…", atk: 2, def: 5, atkx: 3, defx: 4, power: 26 },
+	{ name: ":sinkansen:", msg: ":sinkansen:討伐戦！", short: "", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの攻撃！\n${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:sinkansen:は加速してもこチキから逃げた！\nなんとか追いついた！\n疲れで${dmg}ポイントのダメージ！`, winmsg: "撃退した！", losemsg: ":sinkansen:に逃げられてしまった…", abortmsg:":sinkansen:の移動速度が速すぎて、連続攻撃出来ない！", atk: 3, def: 1, atkx: 3, defx: 1, abort: 1, power: 20 },
 ]
 
 /*
