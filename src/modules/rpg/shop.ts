@@ -40,6 +40,36 @@ export type AmuletItem = Omit<BaseItem, 'type' | 'effect'> & {
 
 export type ShopItem = TokenItem | Item | AmuletItem;
 
+export const fortuneEffect = (data, rnd) => {
+	if (rnd() < 0.5) {
+		if (rnd() < 0.5) {
+			data.atk += 1
+			data.def += 1
+		} else {
+			const a = Math.floor(data.atk * 0.3)
+			const d = Math.floor(data.def * 0.3)
+			data.atk = data.atk - a + Math.floor((a+d)/2)
+			data.def = data.def - d + Math.floor((a+d)/2)
+		}
+	} else {
+		if (rnd() < 0.5) {
+			const a = Math.floor(data.atk * 0.3)
+			const d = Math.floor(data.def * 0.3)
+			if (rnd() < 0.5) {
+				data.atk = data.atk - a
+				data.def = data.def + a
+			} else {
+				data.atk = data.atk + d
+				data.def = data.def - d
+			}
+		} else {
+			const a = data.atk;
+			data.atk = data.def;
+			data.def = a;
+		}
+	}
+}
+
 export const shopItems: ShopItem[] = [
     { name: "おかわり2RPG自動支払いの札", limit: (data) => !data.items.filter((x) => x.name === "おかわり2RPG自動支払いの札").length, desc: "所持している間、おかわりおかわりRPGをプレイする際に確認をスキップして自動でコインを消費します", price: 5, type: "token", effect: { autoReplayOkawari: true }, always: true },
     { name: "自動旅モードの札", limit: (data) => !data.items.filter((x) => x.name === "自動旅モードの札").length, desc: "所持している間、旅モードに自動で突入します", price: 5, type: "token", effect: { autoJournal: true }, always: true },
@@ -72,36 +102,6 @@ export const shopItems: ShopItem[] = [
     { name: `謎の壺`, limit: (data) => (data.jar ?? 0) >= 6, price: (data) => (data.jar ?? 0) * 400, desc: `なんか謎な感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
     ...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.effect.firstTurnResist).map((x): AmuletItem => ({ name: `${x.name}のお守り`, price: Math.floor(20), desc: `持っているとスキル「${x.name}」を使用できる 耐久6 使用時耐久減少`, type: "amulet", effect: x.effect, durability: 6, skillName: x.name, isUsed: (data) => true }))
 ]
-
-export const fortuneEffect = (data, rnd) => {
-	if (rnd() < 0.5) {
-		if (rnd() < 0.5) {
-			data.atk += 1
-			data.def += 1
-		} else {
-			const a = Math.floor(data.atk * 0.3)
-			const d = Math.floor(data.def * 0.3)
-			data.atk = data.atk - a + Math.floor((a+d)/2)
-			data.def = data.def - d + Math.floor((a+d)/2)
-		}
-	} else {
-		if (rnd() < 0.5) {
-			const a = Math.floor(data.atk * 0.3)
-			const d = Math.floor(data.def * 0.3)
-			if (rnd() < 0.5) {
-				data.atk = data.atk - a
-				data.def = data.def + a
-			} else {
-				data.atk = data.atk + d
-				data.def = data.def - d
-			}
-		} else {
-			const a = data.atk;
-			data.atk = data.def;
-			data.def = a;
-		}
-	}
-}
 
 export const shopReply = async (module: Module, msg: Message) => {
 
