@@ -1,5 +1,5 @@
-import autobind from "autobind-decorator";
-import 藍, { InstallerResult } from "@/ai";
+import autobind from 'autobind-decorator';
+import 藍, { InstallerResult } from '@/ai';
 
 export default abstract class Module {
   public abstract readonly name: string;
@@ -25,7 +25,7 @@ export default abstract class Module {
   public abstract install(): InstallerResult;
 
   @autobind
-  protected log(msg: string) {
+  public log(msg: string) {
     this.ai.log(`[${this.name}]: ${msg}`);
   }
 
@@ -36,7 +36,7 @@ export default abstract class Module {
    * @param data コンテキストに保存するオプションのデータ
    */
   @autobind
-  protected subscribeReply(key: string | null, id: string, data?: any) {
+  public subscribeReply(key: string | null, id: string, data?: any) {
     this.ai.subscribeReply(this, key, id, data);
   }
 
@@ -45,7 +45,7 @@ export default abstract class Module {
    * @param key コンテキストを識別するためのキー
    */
   @autobind
-  protected unsubscribeReply(key: string | null) {
+  public unsubscribeReply(key: string | null) {
     this.ai.unsubscribeReply(this, key);
   }
 
