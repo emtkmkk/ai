@@ -414,6 +414,7 @@ export function aggregateSkillsEffects(data: { items?: ShopItem[], skills: Skill
 }
 
 export function amuletMinusDurability(data: { items?: ShopItem[] }): string {
+	let ret = "";
 	if (data.items?.filter((x) => x.type === "amulet").length) {
         const amulet = data.items?.filter((x) => x.type === "amulet")[0]
         const item = shopItems.find((x) => x.name === amulet.name) as AmuletItem
@@ -423,15 +424,15 @@ export function amuletMinusDurability(data: { items?: ShopItem[] }): string {
                     x.durability -= 1;
                     if (x.durability <= 0) {
                         data.items = data.items?.filter((x) => x.type !== "amulet")
-											return `${x.name}が壊れました！`
+											ret = `${x.name}が壊れました！`
                     } else {
-											return `${x.name} 残耐久${x.durability}`
+											ret = `${x.name} 残耐久${x.durability}`
 										}
                 }
-            })
+            });
         }
 	}
-	return "";
+	return ret;
 }
 
 export function calcSevenFever(arr: number[]) {
