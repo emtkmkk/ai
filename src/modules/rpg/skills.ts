@@ -345,7 +345,7 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
         const amulet = data.items?.filter((x) => x.type = "amulet")[0]
         const item = shopItems.find((x) => x.name === amulet.name) as AmuletItem
         const skill = amulet.skillName ? skills.find((x) => amulet.skillName === x.name) : undefined;
-        amuletSkill.push(`[お守り] ${amulet.skillName} 残り耐久${amulet.durability}${skill ? aggregateTokensEffects(data).showSkillBonus && skill.info ? `\n${skill.info}` : skill.desc ? `\n${skill.desc}` : "" : `\n${item.desc}`}`)
+        if (amulet.durability) amuletSkill.push(`[お守り] ${amulet.skillName ?? amulet.name} 残り耐久${amulet.durability}${skill ? aggregateTokensEffects(data).showSkillBonus && skill.info ? `\n${skill.info}` : skill.desc ? `\n${skill.desc}` : "" : `\n${item.desc}`}`)
     }
 
     msg.reply([
