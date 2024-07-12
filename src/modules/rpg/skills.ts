@@ -431,6 +431,7 @@ export function amuletMinusDurability(data: { items?: ShopItem[] }): string {
             })
         }
 	}
+	return "";
 }
 
 export function calcSevenFever(arr: number[]) {
