@@ -2,7 +2,7 @@ import Message from "@/message";
 import Module from "@/module";
 import serifs from "@/serifs";
 import 藍 from '@/ai';
-import { aggregateTokensEffects, amuletItem, ShopItem, shopItems } from './shop'
+import { aggregateTokensEffects, AmuletItem, ShopItem, shopItems } from './shop'
 
 export let skillNameCountMap = new Map();
 export let totalSkillCount = 0;
@@ -339,7 +339,7 @@ export const skillReply = (module: Module, msg: Message) => {
     let amuletSkill: string[] = []
     if (data.items?.filter((x) => x.type = "amulet").length) {
         const amulet = data.items?.filter((x) => x.type = "amulet")[0]
-        const item = shopItems.find((x) => x.name === amulet.name) as amuletItem
+        const item = shopItems.find((x) => x.name === amulet.name) as AmuletItem
         const skill = amulet.skillName ? skills.find((x) => amulet.skillName === x.name) : undefined;
         amuletSkill.push(`[お守り] ${amulet.skillName} 残り耐久${amulet.durability}${skill ? aggregateTokensEffects(data).showSkillBonus && skill.info ? `\n${skill.info}` : skill.desc ? `\n${skill.desc}` : "" : `\n${item.desc}`}`)
     }
@@ -372,7 +372,7 @@ export function aggregateSkillsEffects(data: { items?: ShopItem[], skills: Skill
     let dataSkills = data.skills
     if (data.items?.filter((x) => x.type = "amulet").length) {
         const amulet = data.items?.filter((x) => x.type = "amulet")[0]
-        const item = shopItems.find((x) => x.name === amulet.name) as amuletItem
+        const item = shopItems.find((x) => x.name === amulet.name) as AmuletItem
         if (item.isUsed(data)) {
             dataSkills = dataSkills.concat([{effect: item.effect} as any])
         }
