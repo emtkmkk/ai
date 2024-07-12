@@ -82,16 +82,21 @@ export const shopReply = async (module: Module, msg: Message) => {
 
     let rnd = seedrandom(getDate() + msg.user)
 
-    const filteredShopItems = shopItems.filter((x) => (!x.limit || x.limit(data, rnd)) && !(x.type === "amulet" && data.items?.some((y) => y.type === "amulet")) && !x.always)
+    let filteredShopItems = shopItems.filter((x) => (!x.limit || x.limit(data, rnd)) && !(x.type === "amulet" && data.items?.some((y) => y.type === "amulet")) && !x.always)
 
     if (data.lastShopVisited !== getDate() || !data.shopItems?.length) {
-        data.shopItems = [
-            filteredShopItems[Math.floor(rnd() * filteredShopItems.length)].name,
-            filteredShopItems[Math.floor(rnd() * filteredShopItems.length)].name,
-            filteredShopItems[Math.floor(rnd() * filteredShopItems.length)].name,
-            filteredShopItems[Math.floor(rnd() * filteredShopItems.length)].name,
-            filteredShopItems[Math.floor(rnd() * filteredShopItems.length)].name
-        ]
+        const getShopItems = () => {
+					const itemName = filteredShopItems[Math.floor(rnd() * filteredShopItems.length)].name
+					filteredShopItems = filteredShopItems.filter((x) => x.name === itemName);
+					return itemName;
+				}
+			data.shopItems = [
+            getShopItems(),
+            getShopItems(),
+				getShopItems(),
+				getShopItems(),
+				getShopItems(),
+			]
         data.lastShopVisited = getDate()
     }
 
@@ -160,11 +165,10 @@ export function shopContextHook(module: Module, key: any, msg: Message, data: an
                     }
                 } else {
                     rpgData.items.push(data.showShopItems[i])
-                }
+								}
+							data.shopItems = data.shopItems.filter((x) => data.showShopItems[i].name !== x.name);
                 
-                msg.reply((data.showShopItems[i].price ? serifs.rpg.shop.buyItem(data.showShopItems[i].name, rpgData.coin) : "") + message).then(reply => {
-                    if (data.showShopItems[i].type != "amulet") module.subscribeReply("shopBuy:" + msg.userId, reply.id, data);
-                });
+                msg.reply((data.showShopItems[i].price ? serifs.rpg.shop.buyItem(data.showShopItems[i].name, rpgData.coin) : "") + message)
                 msg.friend.setPerModulesData(module, rpgData);
 
                 return {
@@ -172,9 +176,7 @@ export function shopContextHook(module: Module, key: any, msg: Message, data: an
                 };
             
             } else {
-                msg.reply(serifs.rpg.shop.notEnoughCoin).then(reply => {
-                    module.subscribeReply("shopBuy:" + msg.userId, reply.id, data);
-                });
+                msg.reply(serifs.rpg.shop.notEnoughCoin);
             }
         }
     }
