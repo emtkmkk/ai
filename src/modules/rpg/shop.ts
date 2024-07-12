@@ -56,7 +56,8 @@ export const shopItems: ShopItem[] = [
     { name: "守りの種", desc: "購入時、防御+1 パワー-1", price: (data) => data.lv > 60 ? 1 : data.lv > 30 ? 2 : 3, type: "item", effect: (data) => { data.atk = (data.atk ?? 0) + 1; data.def = (data.def ?? 0) - 1 } },
     { name: "高級守りの種", desc: "購入時、パワー2%を防御に移動", limit: (data) => data.lv > 30, price: 5, type: "item", effect: (data) => { data.def = (data.def ?? 0) + (data.atk ?? 0) / 50; data.atk = (data.atk ?? 0) - (data.atk ?? 0) / 50 } },
     { name: "きらめく守りの種", desc: "購入時、防御+1", limit: (data, rnd) => rnd() < 0.5, price: (data, rnd) => rnd() < 0.5 ? 10 : rnd() < 0.5 ? 5 : 20, type: "item", effect: (data) => { data.def = (data.def ?? 0) + 1 } },
-    { name: "タクシーチケット", desc: "購入時、旅モードのステージがベスト-1になる", limit: (data, rnd) => (data.maxEndress ?? 0) - (data.endress ?? 0) > 2, price: (data, rnd) => ((data.maxEndress ?? 0) - (data.endress ?? 0) - 1) * 8, type: "item", effect: (data) => { data.endress = (data.maxEndress ?? 0) - 1 } },
+	 { name: "しあわせ草", desc: "購入時、？？？", limit: (data, rnd) => rnd() < 0.2, price: (data, rnd) => rnd() < 0.5 ? 20 : rnd() < 0.5 ? 10 : 30, type: "item", effect: fortuneEffect },
+	{ name: "タクシーチケット", desc: "購入時、旅モードのステージがベスト-1になる", limit: (data, rnd) => (data.maxEndress ?? 0) - (data.endress ?? 0) > 2, price: (data, rnd) => ((data.maxEndress ?? 0) - (data.endress ?? 0) - 1) * 8, type: "item", effect: (data) => { data.endress = (data.maxEndress ?? 0) - 1 } },
     { name: "不幸の種", limit: (data, rnd) => data.lv > 50 && rnd() < 0.35, desc: "Lv-1 パワー-4 防御-3", price: 30, type: "item", effect: (data) => { data.lv -= 1; data.atk -= 4; data.def -= 3 } },
     { name: `呪いの人形`, limit: (data) => data.revenge, price: 44, desc: `持っていると前回負けた敵に戦う際に20%ステータスアップ 耐久1 リベンジ成功時耐久減少`, type: "amulet", effect: { atkUp: 0.2, defUp: 0.2 }, durability: 1, isUsed: (data) => data.enemy?.name === data.revenge, isMinusDurability: (data) => !data.revenge },
     { name: `交通安全のお守り`, price: 30, desc: `持っているとターン1で30%ダメージカット 耐久6 使用時耐久減少`, type: "amulet", effect: { firstTurnResist: 0.3 }, durability: 6, isUsed: (data) => data.count === 1 },
@@ -72,6 +73,36 @@ export const shopItems: ShopItem[] = [
     ...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.effect.firstTurnResist).map((x): AmuletItem => ({ name: `${x.name}のお守り`, price: Math.floor(20), desc: `持っているとスキル「${x.name}」を使用できる 耐久6 使用時耐久減少`, type: "amulet", effect: x.effect, durability: 6, skillName: x.name, isUsed: (data) => true }))
 ]
 
+export const fortuneEffect = (data, rnd) => {
+	if (rnd() < 0.5) {
+		if (rnd() < 0.5) {
+			data.atk += 1
+			data.def += 1
+		} else {
+			const a = math.floor(data.atk * 0.3)
+			const d = math.floor(data.def * 0.3)
+			data.atk = data.atk - a + Math.floor((a+d)/2)
+			data.def = data.def - d + Math.floor((a+d)/2)
+		}
+	} else {
+		if (rnd() < 0.5) {
+			const a = math.floor(data.atk * 0.3)
+			const d = math.floor(data.def * 0.3)
+			if (rnd() < 0.5) {
+				data.atk = data.atk - a
+				data.def = data.def + a
+			} else {
+				data.atk = data.atk + d
+				data.def = data.def - d
+			}
+		} else {
+			const a = data.atk;
+			data.atk = data.def;
+			data.def = a;
+		}
+	}
+}
+
 export const shopReply = async (module: Module, msg: Message) => {
 
     // データを読み込み
@@ -81,7 +112,7 @@ export const shopReply = async (module: Module, msg: Message) => {
     if (!data.items) data.items = [];
 	if (!data.coin) data.coin = 0
 
-    let rnd = seedrandom(getDate() + msg.user)
+    let rnd = seedrandom(getDate() + msg.userId)
 
     let filteredShopItems = shopItems.filter((x) => (!x.limit || x.limit(data, rnd)) && !(x.type === "amulet" && data.items?.some((y) => y.type === "amulet")) && !x.always)
 
