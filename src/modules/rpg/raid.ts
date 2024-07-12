@@ -8,7 +8,7 @@ import rpg from './index';
 import { colors } from './colors';
 import { endressEnemy, Enemy, raidEnemys } from './enemys';
 import { rpgItems } from './items';
-import { aggregateSkillsEffects, calcSevenFever } from './skills';
+import { aggregateSkillsEffects, calcSevenFever, amuletMinusDurability } from './skills';
 import { aggregateTokensEffects } from './shop';
 import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatusDmg, getPostCount, getPostX, getVal, random } from './utils';
 import { calculateStats } from './battle'
