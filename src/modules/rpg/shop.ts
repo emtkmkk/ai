@@ -197,10 +197,10 @@ export function shopContextHook(module: Module, key: any, msg: Message, data: an
                             `${serifs.rpg.status.def} : ${rpgData.def ?? 0}${defDiff !== 0 ? ` (${defDiff > 0 ? "+" + defDiff : defDiff})` : ""}`,
                         ].filter(Boolean).join("\n")
                     }
-									if (!item.infinite) data.shopItems = data.shopItems.filter((x) => data.showShopItems[i].name !== x.name);
+									if (!item.infinite) rpgData.shopItems = rpgData.shopItems?.filter((x) => data.showShopItems[i].name !== x.name);
                 } else {
                     rpgData.items.push(data.showShopItems[i])
-									data.shopItems = data.shopItems.filter((x) => data.showShopItems[i].name !== x.name);
+									rpgData.shopItems = rpgData.shopItems?.filter((x) => data.showShopItems[i].name !== x.name);
 								}
                 
                 msg.reply((data.showShopItems[i].price ? serifs.rpg.shop.buyItem(data.showShopItems[i].name, rpgData.coin) : "") + message)
