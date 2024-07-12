@@ -37,6 +37,47 @@ export default class extends Module {
     }
 
     @autobind
+    private async mentionHook(msg: Message) {
+        if (msg.user.username === config.master && msg.includes([serifs.rpg.command.rpg]) && msg.includes(["admin"])) {
+            // 管理者モード
+            return this.handleAdminCommands(msg);
+        }
+        if (msg.includes([serifs.rpg.command.rpg]) && msg.includes([serifs.rpg.command.color])) {
+            // 色モード
+            return colorReply(this, msg);
+        }
+        if (msg.includes([serifs.rpg.command.rpg]) && msg.includes([serifs.rpg.command.skill])) {
+            // スキルモード
+            return skillReply(this, msg);
+        }
+        if (msg.includes([serifs.rpg.command.rpg]) && msg.includes([serifs.rpg.command.trial])) {
+            // 木人モード
+            return this.handleTrialCommands(msg);
+        }
+        if (msg.includes([serifs.rpg.command.rpg])) {
+            // 通常モード
+            return this.handleNormalCommands(msg);
+        } else {
+            return false;
+        }
+    }
+
+    @autobind
+    private async contextHook(key: any, msg: Message, data: any) {
+        if (typeof key === "string" && key.startsWith("replayOkawari:")) {
+            return this.replayOkawariHook(key, msg, data)
+        }
+        return raidContextHook(key, msg, data)
+    }
+
+    @autobind
+    private timeoutCallback(data) {
+
+        return raidTimeoutCallback(data)
+
+    }
+
+    @autobind
     private calculateMaxLv() {
         const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
         const maxLv = this.getMaxLevel();
@@ -96,73 +137,167 @@ export default class extends Module {
         }
     }
 
-    
-
     @autobind
-    private async contextHook(key: any, msg: Message, data: any) {
-        this.log("RPG contextHook")
-        if (typeof key === "string" && key.startsWith("replayOkawari:")) {
-            this.log("replayOkawari")
-            if (key.replace("replayOkawari:", "") !== msg.userId) {
-                this.log(msg.userId + " : " + key.replace("replayOkawari:", ""))
-                return {
-                    reaction: 'hmm'
-                };
-            }
-            if (msg.text.includes('はい')) {
-                this.log("replayOkawari: Yes")
-                this.unsubscribeReply(key);
-                if (msg.friend.doc?.perModulesData?.rpg) msg.friend.doc.perModulesData.rpg.replayOkawari = true;
-                msg.friend.save()
-                msg.reply(serifs.rpg.oneMore.buyComp);
-                return { reaction: ':mk_muscleok:' };
-            } else if (msg.text.includes('いいえ')) {
-                this.log("replayOkawari: No")
-                this.unsubscribeReply(key);
-                return { reaction: ':mk_muscleok:' }
-            } else {
-                this.log("replayOkawari: ?")
-                msg.reply(serifs.core.yesOrNo).then(reply => {
-                    this.subscribeReply("replayOkawari:" + msg.userId, reply.id);
-                });
-                return { reaction: 'hmm' }
+    private handleAdminCommands(msg: Message) {
+        if (msg.includes(["revert"])) {
+            const id = /\w{10}/.exec(msg.extractedText)?.[0];
+            if (id) {
+                const friend = this.ai.lookupFriend(id)
+                if (friend == null) return { reaction: ":mk_hotchicken:" };
+                friend.doc.perModulesData.rpg.lastPlayedAt = "";
+                friend.doc.perModulesData.rpg.lv = friend.doc.perModulesData.rpg.lv - 1;
+                friend.doc.perModulesData.rpg.atk = friend.doc.perModulesData.rpg.atk - 4;
+                friend.doc.perModulesData.rpg.def = friend.doc.perModulesData.rpg.def - 3;
+                friend.save();
+                return { reaction: "love" };
             }
         }
-
-        return raidContextHook(key, msg, data)
-    }
-    
-    @autobind
-    private timeoutCallback(data) {
- 
-        return raidTimeoutCallback(data)
-        
+        if (msg.includes(["skilledit"])) {
+            const id = /\w{10}/.exec(msg.extractedText)?.[0];
+            const skill = /"(\S+)"/.exec(msg.extractedText)?.[1];
+            const num = /\s(\d)\s/.exec(msg.extractedText)?.[1];
+            if (id && skill && num) {
+                const friend = this.ai.lookupFriend(id)
+                if (friend == null) return { reaction: ":mk_hotchicken:" };
+                friend.doc.perModulesData.rpg.skills[num] = skills.find((x) => x.name.startsWith(skill));
+                friend.save()
+                return { reaction: "love" };
+            }
+        }
+        if (msg.includes(["startRaid"])) {
+            start();
+            return { reaction: "love" };
+        }
+        if (msg.includes(["dataFix"])) {
+            //return { reaction: "love" };
+        }
+        return { reaction: "hmm" }
     }
 
     @autobind
-    private async mentionHook(msg: Message) {
-        if (msg.user.username === config.master && msg.includes([serifs.rpg.command.rpg]) && msg.includes(["admin"])) {
-            // 管理者モード
-            return this.handleAdminCommands(msg);
+    private async handleTrialCommands(msg: Message) {
+
+        // データを読み込み
+        const data = initializeData(this, msg)
+        if (!data.lv) return { reaction: 'confused' };
+        const colorData = colors.map((x) => x.unlock(data));
+        // プレイ済でないかのチェック
+        if (data.lastPlayedLv >= data.lv) {
+            msg.reply(serifs.rpg.trial.tired);
+            return {
+                reaction: 'confused'
+            };
         }
-        if (msg.includes([serifs.rpg.command.rpg]) && msg.includes([serifs.rpg.command.color])) {
-            // 色モード
-            return colorReply(this, msg);
+
+        data.lastPlayedLv = data.lv;
+
+        // 所持しているスキル効果を読み込み
+        const skillEffects = aggregateSkillsEffects(data);
+
+        let color = getColor(data)
+
+        // 覚醒状態か？
+        const isSuper = color.alwaysSuper;
+
+        // 投稿数（今日と明日の多い方）
+        let postCount = await getPostCount(this.ai, this, data, msg, (isSuper ? 200 : 0))
+
+        // 投稿数に応じてステータス倍率を得る
+        // 連続プレイの場合は倍率アップ
+        let tp = getPostX(postCount) * (1 + (skillEffects.postXUp ?? 0));
+
+        // 自分のカラー
+        let me = color.name;
+
+        // 画面に出力するメッセージ
+        let cw = acct(msg.user) + " ";
+        let message = ""
+
+        // ここで残りのステータスを計算しなおす
+        let { atk, def, spd } = calculateStats(data, msg, skillEffects, color)
+        atk = atk * (1 + ((skillEffects.critUpFixed ?? 0) * (1 + (skillEffects.critDmgUp ?? 0))));
+        atk = atk * (1 + (skillEffects.dart ?? 0) * 0.5);
+        atk = atk * (1 + (skillEffects.abortDown ?? 0) * (1 / 3));
+        def = def * (1 + (skillEffects.defUp ?? 0));
+
+        if (isSuper) {
+            spd += 2;
         }
-        if (msg.includes([serifs.rpg.command.rpg]) && msg.includes([serifs.rpg.command.skill])) {
-            // スキルモード
-            return skillReply(this, msg);
+
+        message += [
+            `${serifs.rpg.nowStatus}`,
+            `${serifs.rpg.status.atk} : ${Math.round(atk)}`,
+            `${serifs.rpg.status.post} : ${Math.round(postCount - (isSuper ? 200 : 0))}`,
+            "★".repeat(Math.floor(tp)) + "☆".repeat(Math.max(5 - Math.floor(tp), 0)) + "\n\n"
+        ].filter(Boolean).join("\n")
+
+        cw += serifs.rpg.trial.cw(data.lv)
+        message += `$[x2 ${me}]\n\n${serifs.rpg.start}\n\n`
+
+
+        // 敵のステータスを計算
+        const edef = data.lv * 3.5 * (1 - (skillEffects.arpen ?? 0));
+
+        let trueDmg = 0;
+
+        // 炎属性剣攻撃
+        if (skillEffects.fire) {
+            trueDmg = Math.ceil(data.lv * skillEffects.fire)
         }
-        if (msg.includes([serifs.rpg.command.rpg]) && msg.includes([serifs.rpg.command.trial])) {
-            // 木人モード
-            return this.handleTrialCommands(msg);
+
+        // ７フィーバー
+        let sevenFever = skillEffects.sevenFever ? calcSevenFever([data.lv, data.atk, data.def]) * skillEffects.sevenFever : 0;
+        if (sevenFever) {
+            atk = atk * (1 + (sevenFever / 100));
+            def = def * (1 + (sevenFever / 100));
         }
-        if (msg.includes([serifs.rpg.command.rpg])) {
-            // 通常モード
-            return this.handleNormalCommands(msg);
-        } else {
-            return false;
+
+        let minTotalDmg = 0;
+        let totalDmg = 0;
+        let maxTotalDmg = 0;
+
+        const minRnd = Math.max(0.2 + (isSuper ? 0.3 : 0) + (skillEffects.atkRndMin ?? 0), 0)
+        const maxRnd = Math.max(1.6 + (skillEffects.atkRndMax ?? 0), 0)
+
+        for (let i = 0; i < spd; i++) {
+            const buff = (1 + (skillEffects.atkDmgUp ?? 0)) * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1);
+            const rng = (minRnd + (maxRnd / 2))
+            let minDmg = getAtkDmg(data, atk, tp, 1, false, edef, 0, minRnd * buff, 3) + trueDmg;
+            minTotalDmg += minDmg
+            let dmg = getAtkDmg(data, atk, tp, 1, false, edef, 0, rng * buff, 3) + trueDmg;
+            totalDmg += dmg
+            let maxDmg = getAtkDmg(data, atk, tp, 1, false, edef, 0, (minRnd + maxRnd) * buff, 3) + trueDmg;
+            maxTotalDmg += maxDmg
+            // メッセージの出力
+            message += serifs.rpg.trial.atk(dmg) + "\n"
         }
+
+        message += `\n${serifs.rpg.end}\n\n${serifs.rpg.trial.result(totalDmg)}\n${serifs.rpg.trial.random(minTotalDmg, maxTotalDmg)}\n${data.bestScore ? serifs.rpg.trial.best(data.bestScore) : ""}`
+
+        data.bestScore = Math.max(data.bestScore ?? 0, totalDmg)
+
+        msg.friend.setPerModulesData(this, data);
+
+        // 色解禁確認
+        const newColorData = colors.map((x) => x.unlock(data));
+        let unlockColors = "";
+        for (let i = 0; i < newColorData.length; i++) {
+            if (!colorData[i] && newColorData[i]) {
+                unlockColors += colors[i].name
+            }
+        }
+        if (unlockColors) {
+            message += serifs.rpg.newColor(unlockColors)
+        }
+
+        msg.reply(`<center>${message}</center>`, {
+            cw,
+            visibility: 'public'
+        });
+
+        return {
+            reaction: me
+        };
     }
 
     @autobind
@@ -426,7 +561,7 @@ export default class extends Module {
         }
 
         // ここで残りのステータスを計算しなおす
-        let {atk, def, spd} = calculateStats(data, msg, skillEffects, color)
+        let { atk, def, spd } = calculateStats(data, msg, skillEffects, color)
         /** 敵の最大HP */
         let enemyMaxHp = (typeof data.enemy.maxhp === "function") ? data.enemy.maxhp((100 + lv * 3)) : Math.min((100 + lv * 3) + ((data.winCount ?? 0) * 5), (data.enemy.maxhp ?? 300));
         /** 敵のHP */
@@ -1108,7 +1243,7 @@ export default class extends Module {
         }
 
         const nowPlay = /\d{4}\/\d{1,2}\/\d{1,2}(\/\d{2})?/.exec(nowTimeStr)
-        const nextPlay = !nowPlay?.[1] ? 12 + (skillEffects.rpgTime ?? 0) : nowPlay[1] == "12" ? 18 + (skillEffects.rpgTime ?? 0) : nowPlay[1] == "18" ? 24 + (skillEffects.rpgTime ?? 0) : 12 + (skillEffects.rpgTime ?? 0) 
+        const nextPlay = !nowPlay?.[1] ? 12 + (skillEffects.rpgTime ?? 0) : nowPlay[1] == "12" ? 18 + (skillEffects.rpgTime ?? 0) : nowPlay[1] == "18" ? 24 + (skillEffects.rpgTime ?? 0) : 12 + (skillEffects.rpgTime ?? 0)
 
         message += [
             `\n\n${serifs.rpg.lvUp}`,
@@ -1154,165 +1289,31 @@ export default class extends Module {
     }
 
     @autobind
-    private async handleTrialCommands(msg: Message) {
-        
-            // データを読み込み
-            const data = initializeData(this, msg)
-            if (!data.lv) return { reaction: 'confused' };
-            const colorData = colors.map((x) => x.unlock(data));
-            // プレイ済でないかのチェック
-            if (data.lastPlayedLv >= data.lv) {
-                msg.reply(serifs.rpg.trial.tired);
-                return {
-                    reaction: 'confused'
-                };
-            }
-
-            data.lastPlayedLv = data.lv;
-
-            // 所持しているスキル効果を読み込み
-            const skillEffects = aggregateSkillsEffects(data);
-
-            let color = getColor(data)
-
-            // 覚醒状態か？
-            const isSuper = color.alwaysSuper;
-
-            // 投稿数（今日と明日の多い方）
-            let postCount = await getPostCount(this.ai, this, data, msg, (isSuper ? 200 : 0))
-
-            // 投稿数に応じてステータス倍率を得る
-            // 連続プレイの場合は倍率アップ
-            let tp = getPostX(postCount) * (1 + (skillEffects.postXUp ?? 0));
-
-            // 自分のカラー
-            let me = color.name;
-
-            // 画面に出力するメッセージ
-            let cw = acct(msg.user) + " ";
-            let message = ""
-
-            // ここで残りのステータスを計算しなおす
-            let {atk, def, spd} = calculateStats(data, msg, skillEffects, color)
-            atk = atk * (1 + ((skillEffects.critUpFixed ?? 0) * (1 + (skillEffects.critDmgUp ?? 0))));
-            atk = atk * (1 + (skillEffects.dart ?? 0) * 0.5);
-            atk = atk * (1 + (skillEffects.abortDown ?? 0) * (1 / 3));
-            def = def * (1 + (skillEffects.defUp ?? 0));
-
-            if (isSuper) {
-                spd += 2;
-            }
-
-            message += [
-                `${serifs.rpg.nowStatus}`,
-                `${serifs.rpg.status.atk} : ${Math.round(atk)}`,
-                `${serifs.rpg.status.post} : ${Math.round(postCount - (isSuper ? 200 : 0))}`,
-                "★".repeat(Math.floor(tp)) + "☆".repeat(Math.max(5 - Math.floor(tp), 0)) + "\n\n"
-            ].filter(Boolean).join("\n")
-
-            cw += serifs.rpg.trial.cw(data.lv)
-            message += `$[x2 ${me}]\n\n${serifs.rpg.start}\n\n`
-
-
-            // 敵のステータスを計算
-            const edef = data.lv * 3.5 * (1 - (skillEffects.arpen ?? 0));
-
-            let trueDmg = 0;
-
-            // 炎属性剣攻撃
-            if (skillEffects.fire) {
-                trueDmg = Math.ceil(data.lv * skillEffects.fire)
-            }
-
-            // ７フィーバー
-            let sevenFever = skillEffects.sevenFever ? calcSevenFever([data.lv, data.atk, data.def]) * skillEffects.sevenFever : 0;
-            if (sevenFever) {
-                atk = atk * (1 + (sevenFever / 100));
-                def = def * (1 + (sevenFever / 100));
-            }
-
-            let minTotalDmg = 0;
-            let totalDmg = 0;
-            let maxTotalDmg = 0;
-
-            const minRnd = Math.max(0.2 + (isSuper ? 0.3 : 0) + (skillEffects.atkRndMin ?? 0), 0)
-            const maxRnd = Math.max(1.6 + (skillEffects.atkRndMax ?? 0), 0)
-
-            for (let i = 0; i < spd; i++) {
-                const buff = (1 + (skillEffects.atkDmgUp ?? 0)) * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1);
-                const rng = (minRnd + (maxRnd / 2))
-                let minDmg = getAtkDmg(data, atk, tp, 1, false, edef, 0, minRnd * buff, 3) + trueDmg;
-                minTotalDmg += minDmg
-                let dmg = getAtkDmg(data, atk, tp, 1, false, edef, 0, rng * buff, 3) + trueDmg;
-                totalDmg += dmg
-                let maxDmg = getAtkDmg(data, atk, tp, 1, false, edef, 0, (minRnd + maxRnd) * buff, 3) + trueDmg;
-                maxTotalDmg += maxDmg
-                // メッセージの出力
-                message += serifs.rpg.trial.atk(dmg) + "\n"
-            }
-
-            message += `\n${serifs.rpg.end}\n\n${serifs.rpg.trial.result(totalDmg)}\n${serifs.rpg.trial.random(minTotalDmg, maxTotalDmg)}\n${data.bestScore ? serifs.rpg.trial.best(data.bestScore) : ""}`
-
-            data.bestScore = Math.max(data.bestScore ?? 0, totalDmg)
-
-            msg.friend.setPerModulesData(this, data);
-
-            // 色解禁確認
-            const newColorData = colors.map((x) => x.unlock(data));
-            let unlockColors = "";
-            for (let i = 0; i < newColorData.length; i++) {
-                if (!colorData[i] && newColorData[i]) {
-                    unlockColors += colors[i].name
-                }
-            }
-            if (unlockColors) {
-                message += serifs.rpg.newColor(unlockColors)
-            }
-
-            msg.reply(`<center>${message}</center>`, {
-                cw,
-                visibility: 'public'
-            });
-
+    private replayOkawariHook(key: any, msg: Message, data: any) {
+        this.log("replayOkawari")
+        if (key.replace("replayOkawari:", "") !== msg.userId) {
+            this.log(msg.userId + " : " + key.replace("replayOkawari:", ""))
             return {
-                reaction: me
+                reaction: 'hmm'
             };
-    }
-
-    @autobind
-    private handleAdminCommands(msg: Message) {
-        if (msg.includes(["revert"])) {
-            const id = /\w{10}/.exec(msg.extractedText)?.[0];
-            if (id) {
-                const friend = this.ai.lookupFriend(id)
-                if (friend == null) return { reaction: ":mk_hotchicken:" };
-                friend.doc.perModulesData.rpg.lastPlayedAt = "";
-                friend.doc.perModulesData.rpg.lv = friend.doc.perModulesData.rpg.lv - 1;
-                friend.doc.perModulesData.rpg.atk = friend.doc.perModulesData.rpg.atk - 4;
-                friend.doc.perModulesData.rpg.def = friend.doc.perModulesData.rpg.def - 3;
-                friend.save();
-                return { reaction: "love" };
-            }
         }
-        if (msg.includes(["skilledit"])) {
-            const id = /\w{10}/.exec(msg.extractedText)?.[0];
-            const skill = /"(\S+)"/.exec(msg.extractedText)?.[1];
-            const num = /\s(\d)\s/.exec(msg.extractedText)?.[1];
-            if (id && skill && num) {
-                const friend = this.ai.lookupFriend(id)
-                if (friend == null) return { reaction: ":mk_hotchicken:" };
-                friend.doc.perModulesData.rpg.skills[num] = skills.find((x) => x.name.startsWith(skill));
-                friend.save()
-                return { reaction: "love" };
-            }
+        if (msg.text.includes('はい')) {
+            this.log("replayOkawari: Yes")
+            this.unsubscribeReply(key);
+            if (msg.friend.doc?.perModulesData?.rpg) msg.friend.doc.perModulesData.rpg.replayOkawari = true;
+            msg.friend.save()
+            msg.reply(serifs.rpg.oneMore.buyComp);
+            return { reaction: ':mk_muscleok:' };
+        } else if (msg.text.includes('いいえ')) {
+            this.log("replayOkawari: No")
+            this.unsubscribeReply(key);
+            return { reaction: ':mk_muscleok:' }
+        } else {
+            this.log("replayOkawari: ?")
+            msg.reply(serifs.core.yesOrNo).then(reply => {
+                this.subscribeReply("replayOkawari:" + msg.userId, reply.id);
+            });
+            return { reaction: 'hmm' }
         }
-        if (msg.includes(["startRaid"])) {
-            start();
-            return { reaction: "love" };
-        }
-        if (msg.includes(["dataFix"])) {
-            //return { reaction: "love" };
-        }
-        return { reaction: "hmm" }
     }
 }
