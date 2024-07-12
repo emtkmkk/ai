@@ -275,7 +275,7 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
     // データを読み込み
     const data = msg.friend.getPerModulesData(module);
     if (!data) return false;
-    
+
     skillCalculate(ai);
 
     if (!data.skills?.length) return { reaction: 'confused' };
@@ -361,7 +361,7 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
 
 }
 
-export const skillPower(ai: 藍, skillName: Skill["name"]) {
+export const skillPower = (ai: 藍, skillName: Skill["name"]) => {
     const { skillNameCountMap, totalSkillCount } = skillCalculate(ai);
     return { skillNameCountMap, skillNameCount: skillNameCountMap.get(skillName), totalSkillCount };
 }
