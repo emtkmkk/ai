@@ -1023,6 +1023,13 @@ export async function getTotalDmg(msg, enemy: Enemy) {
         if (data.raidScore[enemy.name]) message += `\n（これまでのベスト: ${data.raidScore[enemy.name]}）`
     }
 
+	const amuletmsg = amuletMinusDurability()
+
+	if (amuletmsg) {
+		message += "\n\n" + amuletmsg
+	}
+ 
+
     msg.friend.setPerModulesData(module_, data);
 
     // 色解禁確認
