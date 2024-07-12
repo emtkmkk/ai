@@ -7,7 +7,7 @@ import autobind from 'autobind-decorator';
 import { colorReply, colors } from './colors';
 import { endressEnemy, enemys, Enemy, raidEnemys } from './enemys';
 import { rpgItems } from './items';
-import { aggregateTokensEffects, shopContextHook } from './shop';
+import { aggregateTokensEffects, shopContextHook, shopReply } from './shop';
 import { skills, Skill, SkillEffect, getSkill, skillReply, skillCalculate, aggregateSkillsEffects, calcSevenFever } from './skills';
 import { start, Raid, raidInstall, raidContextHook, raidTimeoutCallback } from './raid';
 import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatus, getPostCount, getPostX, getVal, random } from './utils';
@@ -50,6 +50,10 @@ export default class extends Module {
         if (msg.includes([serifs.rpg.command.rpg]) && msg.includes([serifs.rpg.command.skill])) {
             // スキルモード
             return skillReply(this, msg);
+        }
+        if (msg.includes([serifs.rpg.command.rpg]) && msg.includes([serifs.rpg.command.shop])) {
+            // スキルモード
+            return shopReply(this, msg);
         }
         if (msg.includes([serifs.rpg.command.rpg]) && msg.includes([serifs.rpg.command.trial])) {
             // 木人モード
