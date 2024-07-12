@@ -43,8 +43,8 @@ export type ShopItem = TokenItem | Item | AmuletItem;
 export const shopItems: ShopItem[] = [
     { name: "おかわり2RPG自動支払いの札", limit: (data) => !data.items.filter((x) => x.name === "おかわり2RPG自動支払いの札").length, desc: "所持している間、おかわりおかわりRPGをプレイする際に確認をスキップして自動でコインを消費します", price: 5, type: "token", effect: { autoReplayOkawari: true }, always: true },
     { name: "自動旅モードの札", limit: (data) => !data.items.filter((x) => x.name === "自動旅モードの札").length, desc: "所持している間、旅モードに自動で突入します", price: 5, type: "token", effect: { autoJournal: true }, always: true },
-    { name: "おかわり2RPG自動支払いの札を捨てる", limit: (data) => data.items.filter((x) => x.name === "おかわり2RPG自動支払いの札").length, desc: "おかわりおかわりRPGをプレイする際に毎回確認を表示します", price: 0, type: "item", effect: (data) => data.items = data.items.fliter((x) => x.name !== "おかわり2RPG自動支払いの札"), always: true },
-    { name: "自動旅モードの札を捨てる", limit: (data) => data.items.filter((x) => x.name === "自動旅モードの札").length, desc: "旅モードに自動で突入しなくなります", price: 0, type: "item", effect: (data) => data.items = data.items.fliter((x) => x.name !== "自動旅モードの札"), always: true },
+    { name: "おかわり2RPG自動支払いの札を捨てる", limit: (data) => data.items.filter((x) => x.name === "おかわり2RPG自動支払いの札").length, desc: "おかわりおかわりRPGをプレイする際に毎回確認を表示します", price: 0, type: "item", effect: (data) => data.items = data.items.filter((x) => x.name !== "おかわり2RPG自動支払いの札"), always: true },
+    { name: "自動旅モードの札を捨てる", limit: (data) => data.items.filter((x) => x.name === "自動旅モードの札").length, desc: "旅モードに自動で突入しなくなります", price: 0, type: "item", effect: (data) => data.items = data.items.filter((x) => x.name !== "自動旅モードの札"), always: true },
     { name: "乱数透視の札", limit: (data) => !data.items.filter((x) => x.name === "乱数透視の札").length, desc: "所持している間、ダメージの乱数が表示されるようになります", price: 50, type: "token", effect: { showRandom: true } },
     { name: "投稿数ボーナス表示の札", limit: (data) => !data.items.filter((x) => x.name === "投稿数ボーナス表示の札").length, desc: "所持している間、投稿数ボーナスの詳細情報が表示されるようになります", price: 50, type: "token", effect: { showPostBonus: true } },
     { name: "スキル詳細表示の札", limit: (data) => !data.items.filter((x) => x.name === "スキル詳細表示の札").length, desc: "所持している間、スキルの詳細情報が表示されるようになります", price: 50, type: "token", effect: { showSkillBonus: true } },
@@ -102,7 +102,7 @@ export const shopReply = async (module: Module, msg: Message) => {
     const reply = await msg.reply([
         "",
         serifs.rpg.shop.welcome(data.coin),
-        ...showShopItems.map((x, index) => `[${index + 1}] ${x.name} ${getVal(x.price, [data, rnd])}枚\n${x.desc}`)
+        ...showShopItems.map((x, index) => `[${index + 1}] ${x.name} ${getVal(x.price, [data, rnd])}枚\n${x.desc}\n`)
     ].join("\n"), { visibility: "specified" });
     
     msg.friend.setPerModulesData(module, data);
@@ -163,7 +163,7 @@ export function shopContextHook(module: Module, key: any, msg: Message, data: an
                 }
                 
                 msg.reply((data.showShopItems[i].price ? serifs.rpg.shop.buyItem(data.showShopItems[i].name, rpgData.coin) : "") + message).then(reply => {
-                    if (data.showShopItems[i].type != "amulet") module.subscribeReply("shopBuy:" + msg.userId, reply.id);
+                    if (data.showShopItems[i].type != "amulet") module.subscribeReply("shopBuy:" + msg.userId, reply.id, data);
                 });
                 msg.friend.setPerModulesData(module, rpgData);
 
@@ -173,7 +173,7 @@ export function shopContextHook(module: Module, key: any, msg: Message, data: an
             
             } else {
                 msg.reply(serifs.rpg.shop.notEnoughCoin).then(reply => {
-                    module.subscribeReply("shopBuy:" + msg.userId, reply.id);
+                    module.subscribeReply("shopBuy:" + msg.userId, reply.id, data);
                 });
             }
         }
