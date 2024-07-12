@@ -152,7 +152,7 @@ export type Skill = {
 };
 
 export const skills: Skill[] = [
-    { name: `${serifs.rpg.status.atk}+10%`, desc: `常に${serifs.rpg.status.atk}が10%上がります` , effect: { atkUp: 0.1 } },
+    { name: `${serifs.rpg.status.atk}+10%`, desc: `常に${serifs.rpg.status.atk}が10%上がります`, effect: { atkUp: 0.1 } },
     { name: `${serifs.rpg.status.def}+10%`, desc: `常に${serifs.rpg.status.def}が10%上がります`, effect: { defUp: 0.1 } },
     { name: `炎属性剣攻撃`, desc: `戦闘時、最低ダメージが上昇します`, effect: { fire: 0.1 } },
     { name: `氷属性剣攻撃`, desc: `戦闘時、たまに敵を凍らせます`, effect: { ice: 0.1 } },
@@ -192,11 +192,11 @@ export const skills: Skill[] = [
     { name: `なんでも口に入れない`, desc: `良くないものを食べなくなることがあります`, effect: { poisonAvoid: 0.5 } },
     { name: `道具の選択が上手い`, desc: `道具の効果量がすこし上がり、悪いアイテムを選びにくくなります`, effect: { itemBoost: 0.15, mindMinusAvoid: 0.15 } },
     { name: `お腹が空いてから食べる`, desc: `体力が減ったら食べ物を食べやすくなり、食べ物の効果量が少し上がります`, effect: { lowHpFood: 1, foodBoost: 0.2, poisonResist: 0.2 }, unique: "lowHpFood" },
-    { name: `たまにたくさん成長`, desc: `たまにステータスが多く増加します ★変更不可`, effect: { statusBonus: 1 }, unique: "status", cantReroll: true},
+    { name: `たまにたくさん成長`, desc: `たまにステータスが多く増加します ★変更不可`, effect: { statusBonus: 1 }, unique: "status", cantReroll: true },
     { name: `連続攻撃完遂率上昇`, desc: `連続攻撃を相手に止められにくくなります`, effect: { abortDown: 0.3 } },
-    { name: `クリティカル性能上昇`, desc: `クリティカル率とクリティカルダメージが上昇します`, effect: { critUp: 0.2, critUpFixed: 0.03, critDmgUp: 0.2 }},
-    { name: `敵のクリティカル性能減少`, desc: `相手のクリティカル率とクリティカルダメージが減少します`, effect: { enemyCritDown: 0.3, enemyCritDmgDown: 0.3 }},
-    { name: `クリティカル上昇`, effect: { critUp: 0.3 }, moveTo: "クリティカル性能上昇"},
+    { name: `クリティカル性能上昇`, desc: `クリティカル率とクリティカルダメージが上昇します`, effect: { critUp: 0.2, critUpFixed: 0.03, critDmgUp: 0.2 } },
+    { name: `敵のクリティカル性能減少`, desc: `相手のクリティカル率とクリティカルダメージが減少します`, effect: { enemyCritDown: 0.3, enemyCritDmgDown: 0.3 } },
+    { name: `クリティカル上昇`, effect: { critUp: 0.3 }, moveTo: "クリティカル性能上昇" },
     { name: `クリティカルダメージ上昇`, effect: { critDmgUp: 0.3 }, moveTo: "クリティカル性能上昇" },
     { name: `敵のクリティカル率減少`, effect: { enemyCritDown: 0.3 }, moveTo: "敵のクリティカル性能減少" },
     { name: `敵のクリティカルダメージ減少`, effect: { enemyCritDmgDown: 0.3 }, moveTo: "敵のクリティカル性能減少" },
@@ -206,10 +206,10 @@ export const skills: Skill[] = [
 ]
 
 export const getSkill = (data) => {
-	const playerSkills = data.skills.map((x) => skills.find((y) => x.name === y.name) ?? x)
+    const playerSkills = data.skills.map((x) => skills.find((y) => x.name === y.name) ?? x)
     // フィルタリングされたスキルの配列を作成
     const filteredSkills = skills.filter((x) => !x.moveTo && !playerSkills?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique));
-    
+
     // スキルの合計重みを計算
     const totalWeight = filteredSkills.reduce((total, skill) => {
         const skillCount = skillNameCountMap.get(skill.name) || 0; // デフォルトを0に設定
@@ -218,16 +218,16 @@ export const getSkill = (data) => {
 
     // 0からtotalWeightまでのランダム値を生成
     let randomValue = Math.random() * totalWeight;
-    
+
     // ランダム値に基づいてスキルを選択
     for (let skill of filteredSkills) {
         const skillCount = skillNameCountMap.get(skill.name) || 0; // デフォルトを0に設定
         const weight = 1 / (1 + skillCount); // 出現回数に応じて重みを計算
-        
+
         if (randomValue < weight) {
             return skill; // ランダム値が現在のスキルの重み未満であればそのスキルを選択
         }
-        
+
         randomValue -= weight; // ランダム値を減少させる
     }
 
@@ -235,10 +235,10 @@ export const getSkill = (data) => {
 }
 
 export const getRerollSkill = (data, oldSkillName = "") => {
-	const playerSkills = data.skills.map((x) => skills.find((y) => x.name === y.name) ?? x)
+    const playerSkills = data.skills.map((x) => skills.find((y) => x.name === y.name) ?? x)
     // フィルタリングされたスキルの配列を作成
     const filteredSkills = skills.filter((x) => !x.moveTo && !x.cantReroll && x.name != oldSkillName && !playerSkills?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique));
-    
+
     // スキルの合計重みを計算
     const totalWeight = filteredSkills.reduce((total, skill) => {
         const skillCount = skillNameCountMap.get(skill.name) || 0; // デフォルトを0に設定
@@ -247,20 +247,20 @@ export const getRerollSkill = (data, oldSkillName = "") => {
 
     // 0からtotalWeightまでのランダム値を生成
     let randomValue = Math.random() * totalWeight;
-    
+
     // ランダム値に基づいてスキルを選択
     for (let skill of filteredSkills) {
         const skillCount = skillNameCountMap.get(skill.name) || 0; // デフォルトを0に設定
         const weight = 1 / (1 + (skillCount / 2)); // 出現回数に応じて重みを計算
-        
+
         if (randomValue < weight) {
             return skill; // ランダム値が現在のスキルの重み未満であればそのスキルを選択
         }
-        
+
         randomValue -= weight; // ランダム値を減少させる
     }
-    
-	return filteredSkills[0]; // ここに来るのはおかしいよ
+
+    return filteredSkills[0]; // ここに来るのはおかしいよ
 }
 
 /** スキルに関しての情報を返す */
@@ -271,7 +271,7 @@ export const skillReply = (module: Module, msg: Message) => {
     if (!data) return false;
 
     if (!data.skills?.length) return { reaction: 'confused' };
-    
+
     const playerSkills = data.skills.map((x) => skills.find((y) => x.name === y.name) ?? x)
 
     if (msg.includes([serifs.rpg.command.change])) {
@@ -310,4 +310,73 @@ export const skillReply = (module: Module, msg: Message) => {
         reaction: 'love'
     };
 
+}
+
+/**
+ * data.skillsに格納されている全スキルのeffectを集計する関数。
+ * 重複している効果はその値を足す。
+ *
+ * @param data - skills配列を含むデータオブジェクト。
+ * @returns 集計されたSkillEffect。
+ */
+export function aggregateSkillsEffects(data: { skills: Skill[] }): SkillEffect {
+    const aggregatedEffect: SkillEffect = {};
+
+    if (!data.skills) return aggregatedEffect;
+    data.skills.forEach(_skill => {
+        const skill = skills.find((x) => x.name === _skill.name) ?? _skill;
+        Object.entries(skill.effect).forEach(([key, value]) => {
+            if (aggregatedEffect[key] !== undefined) {
+                aggregatedEffect[key] += value;
+            } else {
+                aggregatedEffect[key] = value;
+            }
+        });
+    });
+
+    if (aggregatedEffect.itemEquip && aggregatedEffect.itemEquip > 1.5) {
+        aggregatedEffect.itemBoost = (aggregatedEffect.itemBoost ?? 0) + (aggregatedEffect.itemEquip - 1.5)
+        aggregatedEffect.itemEquip = 1.5;
+    }
+
+    if (aggregatedEffect.poisonAvoid && aggregatedEffect.poisonAvoid > 1) {
+        aggregatedEffect.mindMinusAvoid = (aggregatedEffect.mindMinusAvoid ?? 0) + (aggregatedEffect.poisonAvoid - 1) * 0.6
+        aggregatedEffect.poisonAvoid = 1;
+    }
+
+    if (aggregatedEffect.abortDown && aggregatedEffect.abortDown > 1) {
+        aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) + (aggregatedEffect.abortDown - 1) * (1 / 3)
+        aggregatedEffect.abortDown = 1;
+    }
+
+    if (aggregatedEffect.enemyCritDown && aggregatedEffect.enemyCritDown > 1) {
+        aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) + (aggregatedEffect.enemyCritDown - 1) * (1 / 3)
+        aggregatedEffect.enemyCritDown = 1;
+    }
+
+    return aggregatedEffect;
+}
+
+export function calcSevenFever(arr: number[]) {
+    let totalSevens = 0;
+
+    arr.forEach(number => {
+        // 数字を文字列に変換
+        let str = number.toString();
+
+        // 正規表現で「7」の連続を見つける
+        let matches = str.match(/7+/g);
+        if (matches) {
+            matches.forEach(match => {
+                let length = match.length;
+
+                // 連続する「7」の数によって特別なカウント
+                if (length >= 1) {
+                    totalSevens += parseInt('7'.repeat(length));
+                }
+            });
+        }
+    });
+
+    return totalSevens;
 }
