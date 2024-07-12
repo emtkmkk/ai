@@ -1,7 +1,6 @@
 import 藍 from '@/ai';
 import { InstallerResult } from '@/ai';
 import { Collection } from 'lokijs';
-import Module from "@/module";
 import Message from '@/message';
 import * as loki from 'lokijs';
 import { User } from '@/misskey/user';
@@ -56,7 +55,7 @@ export type Raid = {
 };
 
 let ai: 藍;
-let module: rpg;
+let module_: rpg;
 let raids: Collection<Raid>;
 
 /**
@@ -67,7 +66,7 @@ let raids: Collection<Raid>;
  */
 export function raidInstall(_ai: 藍, _module: rpg, _raids: Collection<Raid>) {
     ai = _ai;
-    module = _module;
+    module_ = _module;
     raids = _raids;
     crawleGameEnd();
     setInterval(crawleGameEnd, 1000);
@@ -152,14 +151,14 @@ export async function start(triggerUserId?: string, flg?: any) {
         replyKey: [],
     });
 
-    module.subscribeReply(post.id, post.id);
+    module_.subscribeReply(post.id, post.id);
 
     // タイマーセット
-    module.setTimeoutWithPersistence(1000 * 60 * limitMinutes / 2, {
+    module_.setTimeoutWithPersistence(1000 * 60 * limitMinutes / 2, {
         id: post.id,
     });
 
-    module.log('New raid started');
+    module_.log('New raid started');
 }
 
 /**
@@ -170,7 +169,7 @@ function finish(raid: Raid) {
     raid.isEnded = true;
     raids.update(raid);
 
-    module.log('raid finished');
+    module_.log('raid finished');
 
     // 攻撃者がいない場合
     if (!raid.attackers?.filter((x) => x.dmg > 1).length) {
@@ -249,9 +248,9 @@ function finish(raid: Raid) {
     sortAttackers.forEach((x) => {
         const friend = ai.lookupFriend(x.user.id);
         if (!friend) return;
-        const data = friend.getPerModulesData(module);
+        const data = friend.getPerModulesData(module_);
         data.coin = (data.coin ?? 0) + (score ?? 1);
-        friend.setPerModulesData(module, data);
+        friend.setPerModulesData(module_, data);
     });
 
     ai.post({
@@ -260,8 +259,8 @@ function finish(raid: Raid) {
         renoteId: raid.postId
     });
 
-    module.unsubscribeReply(raid.postId);
-    raid.replyKey.forEach((x) => module.unsubscribeReply(x));
+    module_.unsubscribeReply(raid.postId);
+    raid.replyKey.forEach((x) => module_.unsubscribeReply(x));
 }
 
 /**
@@ -276,7 +275,7 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
         reaction: 'hmm'
     };
 
-    const _data = msg.friend.getPerModulesData(module);
+    const _data = msg.friend.getPerModulesData(module_);
     if (!_data.lv) {
         msg.reply("RPGモードを先に1回プレイしてください！");
         return {
@@ -295,7 +294,7 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
     if (raid.attackers.some(x => x.user.id == msg.userId)) {
         msg.reply('すでに参加済みの様です！').then(reply => {
             raid.replyKey.push(raid.postId + ":" + reply.id);
-            module.subscribeReply(raid.postId + ":" + reply.id, reply.id);
+            module_.subscribeReply(raid.postId + ":" + reply.id, reply.id);
             raids.update(raid);
         });
         return {
@@ -314,7 +313,7 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
     if (raid.attackers.some(x => x.user.id == msg.userId)) {
         msg.reply('すでに参加済みの様です！').then(reply => {
             raid.replyKey.push(raid.postId + ":" + reply.id);
-            module.subscribeReply(raid.postId + ":" + reply.id, reply.id);
+            module_.subscribeReply(raid.postId + ":" + reply.id, reply.id);
             raids.update(raid);
         });
         return {
@@ -322,7 +321,7 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
         };
     }
 
-    module.log(`damage ${result.totalDmg} by ${msg.user.id}`);
+    module_.log(`damage ${result.totalDmg} by ${msg.user.id}`);
 
     raid.attackers.push({
         user: {
@@ -367,7 +366,7 @@ export function raidTimeoutCallback(data: any) {
 
 export async function getTotalDmg(msg, enemy: Enemy) {
     // データを読み込み
-    const data = msg.friend.getPerModulesData(module);
+    const data = msg.friend.getPerModulesData(module_);
     // 各種データがない場合は、初期化
     if (!data.clearEnemy) data.clearEnemy = [data.preEnemy ?? ""].filter(Boolean);
     if (!data.clearHistory) data.clearHistory = data.clearEnemy;
@@ -393,7 +392,7 @@ export async function getTotalDmg(msg, enemy: Enemy) {
     const isSuper = Math.random() < (0.02 + Math.max(data.superPoint / 200, 0)) || color.alwaysSuper;
 
     /** 投稿数（今日と明日の多い方）*/
-    let postCount = await getPostCount(ai, module, data, msg, (isSuper ? 200 : 0))
+    let postCount = await getPostCount(ai, module_, data, msg, (isSuper ? 200 : 0))
 
     postCount = postCount + (Math.min(Math.max(10, postCount / 2), 25))
 
@@ -1023,7 +1022,7 @@ export async function getTotalDmg(msg, enemy: Enemy) {
         if (data.raidScore[enemy.name]) message += `\n（これまでのベスト: ${data.raidScore[enemy.name]}）`
     }
 
-    msg.friend.setPerModulesData(module, data);
+    msg.friend.setPerModulesData(module_, data);
 
     // 色解禁確認
     const newColorData = colors.map((x) => x.unlock(data));
