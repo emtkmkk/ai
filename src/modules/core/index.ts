@@ -333,6 +333,7 @@ export default class extends Module {
 		  if (result[key] != undefined) {
 			if (Array.isArray(result[key]) && Array.isArray(obj2[key])) {
 			  // 配列の場合は結合する
+				if (key === "linkedAccounts") continue;
 			  result[key] = result[key].concat(obj2[key]);
 			} else if (typeof result[key] === 'number' && typeof obj2[key] === 'number') {
 			  // 数値の場合は足し合わせる
