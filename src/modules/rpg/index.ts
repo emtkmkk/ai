@@ -223,9 +223,6 @@ export default class extends Module {
 
         // ここで残りのステータスを計算しなおす
         let { atk, def, spd } = calculateStats(data, msg, skillEffects, color)
-        atk = atk * (1 + ((skillEffects.critUpFixed ?? 0) * (1 + (skillEffects.critDmgUp ?? 0))));
-        atk = atk * (1 + (skillEffects.dart ?? 0) * 0.5);
-        atk = atk * (1 + (skillEffects.abortDown ?? 0) * (1 / 3));
         def = def * (1 + (skillEffects.defUp ?? 0));
 
         if (isSuper) {
@@ -244,7 +241,12 @@ export default class extends Module {
         
 
         // 敵のステータスを計算
-        const edef = data.lv * 3.5 * (1 - (skillEffects.arpen ?? 0));
+        const edef = data.lv * 3.5 - (atk * (skillEffects.arpen ?? 0));
+
+			　atk = atk * (1 + ((skillEffects.critUpFixed ?? 0) * (1 + (skillEffects.critDmgUp ?? 0))));
+        atk = atk * (1 + (skillEffects.dart ?? 0) * 0.5);
+        atk = atk * (1 + (skillEffects.abortDown ?? 0) * (1 / 3));
+
 
         let trueDmg = 0;
 
@@ -894,6 +896,8 @@ export default class extends Module {
                 message += serifs.rpg.skill.enemyStatusBonus + "\n"
             }
         }
+
+			enemyDef -= (atk * (skillEffects.arpen ?? 0))
 
         if (skillEffects.firstTurnResist && count === 1 && isBattle && isPhysical) {
             buff += 1
