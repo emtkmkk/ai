@@ -5,7 +5,7 @@ import { colors } from './colors';
 import * as seedrandom from 'seedrandom';
 import getDate from '@/utils/get-date';
 import { skillNameCountMap, totalSkillCount, skills, SkillEffect, skillCalculate, Skill, skillPower } from './skills';
-import { getVal } from './utils'
+import { getVal, initializeData } from './utils'
 import 藍 from '@/ai';
 
 export type ItemType = "token" | "item" | "amulet";
@@ -136,6 +136,7 @@ export const shopReply = async (module: Module, ai: 藍, msg: Message) => {
             getShopItems(),
         ]
         data.lastShopVisited = getDate()
+        module.unsubscribeReply("shopBuy:" + msg.userId)
     }
 
     const _shopItems = (data.shopItems as string[]).map((x) => shopItems.find((y) => x === y.name) ?? undefined).filter((x) => x != null) as ShopItem[];

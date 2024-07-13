@@ -14,7 +14,7 @@ export function initializeData(module: rpg, msg) {
 	if (!data.coin) data.coin = 0
     if (data.items.filter((x) => x.type === "amulet").length > 1) {
         data.items.filter((x) => x.type === "amulet").forEach((x) => {
-            rpgData.coin += y.price
+            rpgData.coin += x.price
             data.shopItems.push(x.name)
         })
         data.items = data.items.filter((x) => x.type !== "amulet");
