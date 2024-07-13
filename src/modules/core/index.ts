@@ -342,6 +342,7 @@ export default class extends Module {
 			  result[key] = result[key] > obj2[key] ? result[key] : obj2[key];
 			} else if (typeof result[key] === 'object' && typeof obj2[key] === 'object' && !Array.isArray(result[key])) {
 			  // オブジェクトの場合は再帰的にマージする
+				if (key === "rpg") continue;
 			  result[key] = this.mergeAndSum(result[key], obj2[key]);
 			} else {
 			  // 他の型の場合は後の方を採用する（ここでは単純に上書きするようにしています）
