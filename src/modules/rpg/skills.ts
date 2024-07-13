@@ -396,7 +396,7 @@ export function aggregateSkillsEffects(data: { items?: ShopItem[], skills: Skill
         const amulet = data.items?.filter((x) => x.type === "amulet")[0]
         const item = shopItems.find((x) => x.name === amulet.name) as AmuletItem
         if (item.isUsed(data)) {
-            const boost = dataSkills.filter((x) => x.effect.amuletBoost).reduce((acc, cur) => acc + cur.effect.amuletBoost, 0) ?? 0;
+            const boost = dataSkills.filter((x) => x.effect?.amuletBoost).reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0;
             function adjustEffect(effect: any, boost: number): any {
                 const multiplier = 1 + (boost ?? 0);
                 const adjustedEffect: any = {};
@@ -454,7 +454,7 @@ export function amuletMinusDurability(data: { items?: ShopItem[] }): string {
         const amulet = data.items?.filter((x) => x.type === "amulet")[0]
         const item = shopItems.find((x) => x.name === amulet.name) as AmuletItem
         if ((item.isMinusDurability ?? item.isUsed)(data)) {
-            const boost = dataSkills.filter((x) => x.effect.amuletBoost).reduce((acc, cur) => acc + cur.effect.amuletBoost, 0) ?? 0;
+            const boost = data.skills?.filter((x) => x.effect?.amuletBoost).reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0;
             data.items.forEach((x) => {
                 if (x.type === "amulet") {
                     if (boost <= 0 || 1 / Math.random() < (1 / Math.pow(1.5, boost * 2))) {
