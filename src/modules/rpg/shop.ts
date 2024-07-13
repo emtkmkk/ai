@@ -214,12 +214,12 @@ export function shopContextHook(module: Module, key: any, msg: Message, data: an
                         ].filter(Boolean).join("\n")
                     }
                     if (!item.infinite) {
-                        rpgData.shopItems = rpgData.shopItems?.filter((x) => data.showShopItems[i].name !== x.name);
+                        rpgData.shopItems = rpgData.shopItems?.filter((x) => data.showShopItems[i].name !== x);
                         module.unsubscribeReply(key)
                     }
                 } else {
                     rpgData.items.push(data.showShopItems[i])
-				    rpgData.shopItems = rpgData.shopItems?.filter((x) => data.showShopItems[i].name !== x.name);
+				    rpgData.shopItems = rpgData.shopItems?.filter((x) => data.showShopItems[i].name !== x);
                     module.unsubscribeReply(key)
 				}
                 
