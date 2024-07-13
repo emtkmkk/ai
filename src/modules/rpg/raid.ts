@@ -555,6 +555,8 @@ export async function getTotalDmg(msg, enemy: Enemy) {
         def = def * (1 + (skillEffects.enemyCritDmgDown ?? 0) / 30)
     }
 
+    const _atk = atk;
+    const _def = def;
     const _spd = spd;
 
     const plusActionX = 5
@@ -576,10 +578,10 @@ export async function getTotalDmg(msg, enemy: Enemy) {
         }
 
         item = undefined;
-        atk = atk - (itemBonus.atk ?? 0);
-        def = def - (itemBonus.def ?? 0);
-        itemBonus = { atk: 0, def: 0 };
+        atk = _atk;
+        def = _def;
         spd = _spd;
+        itemBonus = { atk: 0, def: 0 };
 
         // spdが低い場合、確率でspdが+1。
         if (spd === 2 && Math.random() < 0.2) {
