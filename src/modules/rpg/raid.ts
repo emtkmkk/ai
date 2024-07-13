@@ -551,6 +551,8 @@ export async function getTotalDmg(msg, enemy: Enemy) {
         message += serifs.rpg.skill.firstTurnResist + "\n"
     }
 
+	enemyDef -= (atk * (skillEffects.arpen ?? 0))
+
     // バフが1つでも付与された場合、改行を追加する
     if (buff > 0) message += "\n"
 
