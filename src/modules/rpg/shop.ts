@@ -7,6 +7,7 @@ import getDate from '@/utils/get-date';
 import { skillNameCountMap, totalSkillCount, skills, SkillEffect, skillCalculate, Skill, skillPower } from './skills';
 import { getVal, initializeData } from './utils'
 import 藍 from '@/ai';
+import rpg from './index';
 
 export type ItemType = "token" | "item" | "amulet";
 
@@ -111,7 +112,7 @@ export const shopItems: ShopItem[] = [
     ...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.effect.firstTurnResist).map((x): AmuletItem => ({ name: `${x.name}のお守り`, price: (data, rnd, ai) => skillPrice(ai, x.name), desc: `持っているとスキル「${x.name}」を使用できる 耐久6 使用時耐久減少`, type: "amulet", effect: x.effect, durability: 6, skillName: x.name, isUsed: (data) => true }))
 ]
 
-export const shopReply = async (module: Module, ai: 藍, msg: Message) => {
+export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 
     // データを読み込み
     const data = initializeData(module, msg);
