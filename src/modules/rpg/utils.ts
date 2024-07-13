@@ -11,6 +11,15 @@ export function initializeData(module: rpg, msg) {
     if (!data.clearEnemy) data.clearEnemy = [data.preEnemy ?? ""].filter(Boolean);
     if (!data.clearHistory) data.clearHistory = data.clearEnemy;
     if (!data.items) data.items = [];
+	if (!data.coin) data.coin = 0
+    if (data.items.filter((x) => x.type === "amulet").length > 1) {
+        data.items.filter((x) => x.type === "amulet").forEach((x) => {
+            rpgData.coin += y.price
+            data.shopItems.push(x.name)
+        })
+        data.items = data.items.filter((x) => x.type !== "amulet");
+        
+    }
     return data;
 }
 
