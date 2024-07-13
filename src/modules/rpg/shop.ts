@@ -148,17 +148,21 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 
     const _shopItems = (data.shopItems as string[]).map((x) => shopItems.find((y) => x === y.name) ?? undefined).filter((x) => x != null) as ShopItem[];
 
-    const showShopItems = _shopItems.filter((x) => (!x.limit || x.limit(data, () => 0)) && !(x.type === "amulet" && data.items?.some((y) => y.type === "amulet"))).concat(shopItems.filter((x) => (!x.limit || x.limit(data, () => 0)) && !(x.type === "amulet" && data.items?.some((y) => y.type === "amulet")) && x.always)).slice(0, 9);
+    const showShopItems = _shopItems.filter((x) => (!x.limit || x.limit(data, () => 0)) && !(x.type === "amulet" && data.items?.some((y) => y.type === "amulet"))).concat(shopItems.filter((x) => (!x.limit || x.limit(data, () => 0)) && !(x.type === "amulet" && data.items?.some((y) => y.type === "amulet")) && x.always)).slice(0, 9)
+    .map((x) => {
+        x.price = getVal(x.price, [data, rnd, ai]);
+        return x;
+    });
 
     const reply = await msg.reply([
         "",
         serifs.rpg.shop.welcome(data.coin),
-        ...showShopItems.map((x, index) => `[${index + 1}] ${x.name} ${getVal(x.price, [data, rnd, ai])}枚\n${x.desc}\n`)
+        ...showShopItems.map((x, index) => `[${index + 1}] ${x.name} ${x.price}枚\n${x.desc}\n`)
     ].join("\n"), { visibility: "specified" });
     
     msg.friend.setPerModulesData(module, data);
 
-    module.subscribeReply("shopBuy:" + msg.userId, reply.id, { showShopItems: showShopItems.map((x) => ({ name: x.name, type: x.type, price: getVal(x.price, [data, rnd, ai]), ...(x.type === "amulet" ? { durability: x.durability ?? undefined, skillName: x.skillName ?? undefined } : {}) })) });
+    module.subscribeReply("shopBuy:" + msg.userId, reply.id, { showShopItems: showShopItems.map((x) => ({ name: x.name, type: x.type, price: x.price, ...(x.type === "amulet" ? { durability: x.durability ?? undefined, skillName: x.skillName ?? undefined } : {}) })) });
 
     return {
         reaction: 'love'
