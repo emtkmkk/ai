@@ -435,7 +435,7 @@ export default {
 		remind: (me, hours) => `<center>$[x2 ${me}]\n\n${hours}時です！\nRPGモードの時間ですよ～\n\n毎日3回プレイして、\n私を強くしてください！\n\n「RPG」と話しかけてね\n（ここに返信でも大丈夫ですよ！）</center>`,
 		intro: (enemyName, time) => `<center>$[x3 ${enemyName}]\n\nすごく大きい敵がやってきました！\n\nこのままではもこきーが\n荒らされてしまいます…\nTLのみなさんで倒しましょう！\n\nこの投稿に「参加」と返信して、\nあなたのもこチキと戦いましょう！\n(RPGモードのプレイが1回以上必要です)\n\n$[unixtime.countdown ${time}]</center>`,
 		onagare: (enemyName) => `${enemyName}は暴れまわったのち、帰っていきました……`,
-		finishCw: (enemyName) => `${enemyName}討滅戦の結果発表です！`,
+		finishCw: (enemyName) => `${enemyName}討伐戦の結果発表です！`,
 		finish: (enemyName, score) => `みなさんのお陰で${enemyName}を撃退できました！\nありがとうございます！\nお礼にみなさんにもこコインを${score}枚プレゼントします！\n「RPG ショップ」で買い物してくださいね！\nまたお願いします！`,
 		finalAttack: (dmg) => `もこチキの全力の一撃！\n${dmg}ポイントのダメージを与えた！`,
 		timeUp: (enemyName, maxHp) => `${enemyName}の最後の一撃！\nもこチキは${"9".repeat(String(maxHp).length)}ポイントのダメージ！`,
