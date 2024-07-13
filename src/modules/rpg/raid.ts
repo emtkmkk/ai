@@ -583,7 +583,7 @@ export async function getTotalDmg(msg, enemy: Enemy) {
         /** プレイヤーのHP割合 */
         let playerHpPercent = playerHp / (100 + lv * 3);
         /** 敵のHP割合 */
-        let enemyHpPercent = enemyHp / enemyMaxHp;
+        let enemyHpPercent = 0.5 + 0.5 * ((6 - (count - 1)) / 6);
 
         if (skillEffects.tenacious && playerHpPercent < 0.5 && isBattle && isPhysical) {
             buff += 1
