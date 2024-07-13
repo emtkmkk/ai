@@ -185,7 +185,7 @@ export default class extends Module {
         }
         helpMessage.push(serifs.rpg.help.help)
 
-        msg.reply("\n" + helpMessage.join("\n"));
+        msg.reply("\n" + helpMessage.join("\n\n"));
         return { reaction: "love" };
     }
 
