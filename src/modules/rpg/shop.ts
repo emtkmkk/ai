@@ -75,7 +75,7 @@ export const fortuneEffect = (data: any) => {
 
 export const skillPrice = (_ai: 藍, skillName: Skill["name"]) => {
     const skillP = skillPower(_ai, skillName);
-    return Math.max(Math.floor(12 * (Math.max((skillP.skillNameCount ?? 0),0.5) / (skillP.totalSkillCount / (skills.filter((x) => !x.moveTo).length)))), 6)
+    return Math.max(Math.floor(12 * (Math.max((isNaN(skillP.skillNameCount) ? skillP.skillNameCount : 0),0.5) / (skillP.totalSkillCount / (skills.filter((x) => !x.moveTo).length)))), 6)
 }
 
 export const shopItems: ShopItem[] = [
