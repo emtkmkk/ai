@@ -180,7 +180,6 @@ export function shopContextHook(module: Module, key: any, msg: Message, data: an
     for (let i = 0; i < data.showShopItems.length; i++) {
         if (msg.includes([String(i + 1)])) {
             if (data.showShopItems[i].price <= rpgData.coin) {
-                module.unsubscribeReply(key)
                 rpgData.coin -= data.showShopItems[i].price
 
                 let message = "";
@@ -202,10 +201,14 @@ export function shopContextHook(module: Module, key: any, msg: Message, data: an
                             `${serifs.rpg.status.def} : ${rpgData.def ?? 0}${defDiff !== 0 ? ` (${defDiff > 0 ? "+" + defDiff : defDiff})` : ""}`,
                         ].filter(Boolean).join("\n")
                     }
-				if (!item.infinite) rpgData.shopItems = rpgData.shopItems?.filter((x) => data.showShopItems[i].name !== x.name);
+                    if (!item.infinite) {
+                        rpgData.shopItems = rpgData.shopItems?.filter((x) => data.showShopItems[i].name !== x.name);
+                        module.unsubscribeReply(key)
+                    }
                 } else {
                     rpgData.items.push(data.showShopItems[i])
 				    rpgData.shopItems = rpgData.shopItems?.filter((x) => data.showShopItems[i].name !== x.name);
+                    module.unsubscribeReply(key)
 				}
                 
                 msg.reply((data.showShopItems[i].price ? serifs.rpg.shop.buyItem(data.showShopItems[i].name, rpgData.coin) : "") + message)
