@@ -267,6 +267,11 @@ export default class extends Module {
         const minRnd = Math.max(0.2 + (isSuper ? 0.3 : 0) + (skillEffects.atkRndMin ?? 0), 0)
         const maxRnd = Math.max(1.6 + (skillEffects.atkRndMax ?? 0), 0)
 
+        if (skillEffects.allForOne) {
+            atk = atk * spd * 1.1
+            spd = 1
+        }
+
         for (let i = 0; i < spd; i++) {
             const buff = (1 + (skillEffects.atkDmgUp ?? 0)) * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1);
             const rng = (minRnd + (maxRnd / 2))
@@ -872,6 +877,13 @@ export default class extends Module {
         /** 敵の防御力 */
         let enemyDef = (typeof data.enemy.def === "function") ? data.enemy.def(atk, def, spd) : lv * 3.5 * data.enemy.def;
 
+        if (skillEffects.enemyBuff && data.enemy.name !== endressEnemy(data).name) {
+            enemyAtk = (typeof data.enemy.atk === "function") ? data.enemy.atk(atk, def, spd) * 1.25 : lv * 3.5 * (data.enemy.atk + 1);
+            enemyDef = (typeof data.enemy.def === "function") ? data.enemy.def(atk, def, spd) * 1.25 : lv * 3.5 * (data.enemy.def + 1);
+            if (typeof data.enemy.atkx === "number") data.enemy.atkx += 1
+            if (typeof data.enemy.defx === "number") data.enemy.defx += 1
+        }
+
         if (skillEffects.enemyStatusBonus) {
             const enemyStrongs = (enemyAtk / (lv * 3.5)) * (getVal(data.enemy.atkx, [tp]) ?? 3) + (enemyDef / (lv * 3.5)) * (getVal(data.enemy.defx, [tp]) ?? 3);
             const bonus = Math.floor((enemyStrongs / 4) * skillEffects.enemyStatusBonus);
@@ -1011,6 +1023,11 @@ export default class extends Module {
                         if (dmg > (data.superMuscle ?? 0)) data.superMuscle = dmg;
                     }
                 }
+            }
+
+            if (skillEffects.allForOne) {
+                atk = atk * spd * 1.1
+                spd = 1
             }
 
             // 自身攻撃の処理

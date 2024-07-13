@@ -880,6 +880,11 @@ export async function getTotalDmg(msg, enemy: Enemy) {
             }
         }
 
+        if (skillEffects.allForOne) {
+            atk = atk * spd * 1.1
+            spd = 1
+        }
+
         // 自身攻撃の処理
         // spdの回数分、以下の処理を繰り返す
         for (let i = 0; i < spd; i++) {

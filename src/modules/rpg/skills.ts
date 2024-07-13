@@ -139,6 +139,10 @@ export type SkillEffect = {
     sevenFever?: number;
     /** チャージ */
     charge?: number;
+    /** 敵を全体的に強化（通常モードのみ） */
+    enemyBuff?: number;
+    /** 攻撃回数を攻撃に変換 */
+    allForOne?: number;
 };
 
 export type Skill = {
