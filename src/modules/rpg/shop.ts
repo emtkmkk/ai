@@ -115,7 +115,7 @@ export const shopItems: ShopItem[] = [
     { name: `謎の壺`, limit: (data) => (data.jar ?? 0) >= 6, price: (data) => (data.jar ?? 0) * 400, desc: `なんか謎な感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
     { name: `苦労のお守り`, limit: (data) => data.lv >= 90 && data.allClear && data.streak > 0, price: (data) => Math.max(50 - data.winCount, 1), desc: `持っていると通常モードの敵が強くなります 耐久1 敗北時耐久減少`, type: "amulet", effect: { enemyBuff: 1 }, durability: 1, isUsed: (data) => data.enemy && data.clearHistory.includes(data.enemy), isMinusDurability: (data) => data.streak < 1 },
     { name: `全身全霊のお守り`, price: 20, desc: `持っていると行動回数が1回になるが、すごく重い一撃を放てる 耐久10 使用時耐久減少`, type: "amulet", effect: { allForOne: 1 }, durability: 10, isUsed: (data) => true },
-    ...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.effect.firstTurnResist).map((x): AmuletItem => ({ name: `${x.name}のお守り`, price: (data, rnd, ai) => skillPrice(ai, x.name, rnd), desc: `持っているとスキル「${x.name}」を使用できる 耐久6 使用時耐久減少`, type: "amulet", effect: x.effect, durability: 6, skillName: x.name, isUsed: (data) => true }))
+    ...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !skillOnly).map((x): AmuletItem => ({ name: `${x.name}のお守り`, price: (data, rnd, ai) => skillPrice(ai, x.name, rnd), desc: `持っているとスキル「${x.name}」を使用できる 耐久6 使用時耐久減少`, type: "amulet", effect: x.effect, durability: 6, skillName: x.name, isUsed: (data) => true }))
 ]
 
 export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
@@ -124,6 +124,9 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
     const data = initializeData(module, msg);
     if (!data) return false;
     if (!data.lv) return false;
+
+    // 所持しているスキル効果を読み込み
+    const skillEffects = aggregateSkillsEffects(data);
 
     let rnd = seedrandom(getDate() + ai.account.id + msg.userId)
 
@@ -150,7 +153,7 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 
     const showShopItems = _shopItems.filter((x) => (!x.limit || x.limit(data, () => 0)) && !(x.type === "amulet" && data.items?.some((y) => y.type === "amulet"))).concat(shopItems.filter((x) => (!x.limit || x.limit(data, () => 0)) && !(x.type === "amulet" && data.items?.some((y) => y.type === "amulet")) && x.always)).slice(0, 9)
     .map((x) => {
-        x.price = getVal(x.price, [data, rnd, ai]);
+        x.price = Math.ceil(getVal(x.price, [data, rnd, ai]) * (1 - (skillEffects.priceOff ?? 0)));
         return x;
     });
 

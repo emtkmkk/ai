@@ -1366,7 +1366,7 @@ export default class extends Module {
             `  ${serifs.rpg.status.atk} : ${data.atk ?? 0} (+${atkUp + bonus})`,
             `  ${serifs.rpg.status.def} : ${data.def ?? 0} (+${totalUp - atkUp + bonus})`,
             addMessage,
-					amuletMinusDurability(data),
+			"\n" + amuletMinusDurability(data),
             `\n${serifs.rpg.nextPlay(nextPlay == 24 ? "明日" : nextPlay + "時")}`,
         ].filter(Boolean).join("\n")
 

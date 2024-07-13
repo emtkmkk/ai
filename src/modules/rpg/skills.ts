@@ -143,6 +143,10 @@ export type SkillEffect = {
     enemyBuff?: number;
     /** 攻撃回数を攻撃に変換 */
     allForOne?: number;
+    /** お守りの効果・耐久n%上昇 */
+    amuletBoost?: number;
+    /** ショップの商品、全品n%オフ */
+    priceOff?: number;
 };
 
 export type Skill = {
@@ -160,6 +164,8 @@ export type Skill = {
     moveTo?: string;
     /** スキル変更が出来ない場合 */
     cantReroll?: boolean;
+    /** お守りとして出ない場合 */
+    skillOnly?: boolean;
 };
 
 export const skills: Skill[] = [
@@ -175,7 +181,7 @@ export const skills: Skill[] = [
     { name: `毒属性剣攻撃`, desc: `戦闘時、ターン経過ごとに相手が弱体化します`, info: `ターン経過ごとに敵のステータス-5%`, effect: { weak: 0.05 } },
     { name: `テキパキこなす`, desc: `戦闘以外の事の効率が上がります`, info: `非戦闘時、${serifs.rpg.status.atk}+20%`, effect: { notBattleBonusAtk: 0.2 } },
     { name: `疲れにくい`, desc: `疲れでダメージを受ける際にそのダメージを軽減します`, info: `ダメージメッセージに疲が入っている場合、${serifs.rpg.status.def}+18%`, effect: { notBattleBonusDef: 0.18 } },
-    { name: `油断しない`, desc: `ターン1に受けるダメージを大きく軽減します`, info: `ターン1にてダメージカット30%を得る 100%以上になる場合、残りはターン2に持ち越す`, effect: { firstTurnResist: 0.3 } },
+    { name: `油断しない`, desc: `ターン1に受けるダメージを大きく軽減します`, info: `ターン1にてダメージカット30%を得る 100%以上になる場合、残りはターン2に持ち越す`, effect: { firstTurnResist: 0.3 }, skillOnly: true},
     { name: `粘り強い`, desc: `体力が減るほど受けるダメージを軽減します`, info: `ダメージカット20%×(減少HP割合)を得る 最大90%`, effect: { tenacious: 0.2 } },
     { name: `高速RPG`, desc: `1回のRPGでお互いに2回行動します`, info: `1回のコマンドで2ターン進行する レイド時は、${serifs.rpg.status.atk}+10%`, effect: { plusActionX: 1 } },
     { name: `1時間先取りRPG`, desc: `1時間早くRPGをプレイする事が出来ます`, info: `1時間早くRPGプレイ可能 ステータス+5%`, effect: { atkUp: 0.05, defUp: 0.05, rpgTime: -1 } },
@@ -214,6 +220,8 @@ export const skills: Skill[] = [
     { name: `負けた時、しっかり反省`, desc: `敗北時のボーナスが上昇します ★変更不可`, info: `敗北毎にステータス+2 ★変更不可（変更してもステータスは残るため）`, effect: { loseBonus: 1 }, unique: "loseBonus", cantReroll: true },
     { name: `７フィーバー！`, desc: `Lv・パワー・防御の値に「7」が含まれている程ステータスアップ`, info: `Lv・パワー・防御の値に「7」が含まれている場合ステータス+7% 「77」が含まれている場合ステータス+77% ...`, effect: { sevenFever: 1 } },
     { name: `不運チャージ`, desc: `不運だった場合、次回幸運になりやすくなります`, info: `ステータス+5% 低乱数を引いた時、次回以降に高乱数を引きやすくなる`, effect: { atkUp: 0.05, defUp: 0.05, charge: 1 } },
+    { name: `お守り整備`, desc: `お守りの効果が上がり、お守りが壊れにくくなります`, info: `お守り効果+50% お守り耐久+50%`, effect: { amuletBoost: 0.5 }, skillOnly: true},
+    { name: `値切り術`, desc: `ショップのアイテムが少し安くなります`, info: `ショップアイテム全品10%OFF`, effect: { priceOff: 0.1 }, skillOnly: true},
 ]
 
 export const getSkill = (data) => {
@@ -349,7 +357,7 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
         const amulet = data.items?.filter((x) => x.type = "amulet")[0]
         const item = shopItems.find((x) => x.name === amulet.name) as AmuletItem
         const skill = amulet.skillName ? skills.find((x) => amulet.skillName === x.name) : undefined;
-        if (amulet.durability) amuletSkill.push(`[お守り] ${amulet.skillName ?? amulet.name} 残り耐久${amulet.durability}${skill ? aggregateTokensEffects(data).showSkillBonus && skill.info ? `\n${skill.info}` : skill.desc ? `\n${skill.desc}` : "" : `\n${item.desc}`}`)
+        if (amulet.durability) amuletSkill.push(`[お守り] ${amulet.skillName ?? amulet.name} 残耐久${amulet.durability}${skill ? aggregateTokensEffects(data).showSkillBonus && skill.info ? `\n${skill.info}` : skill.desc ? `\n${skill.desc}` : "" : `\n${item.desc}`}`)
     }
 
     msg.reply([
@@ -388,7 +396,8 @@ export function aggregateSkillsEffects(data: { items?: ShopItem[], skills: Skill
         const amulet = data.items?.filter((x) => x.type === "amulet")[0]
         const item = shopItems.find((x) => x.name === amulet.name) as AmuletItem
         if (item.isUsed(data)) {
-            dataSkills = dataSkills.concat([{effect: item.effect} as any])
+            const boost = dataSkills.filter((x) => x.effect.amuletBoost).reduce((acc, cur) => acc + cur.effect.amuletBoost, 0) ?? 0;
+            dataSkills = dataSkills.concat([{effect: item.effect * (1 + (boost ?? 0))} as any])
         }
     }
     dataSkills.forEach(_skill => {
@@ -431,15 +440,20 @@ export function amuletMinusDurability(data: { items?: ShopItem[] }): string {
         const amulet = data.items?.filter((x) => x.type === "amulet")[0]
         const item = shopItems.find((x) => x.name === amulet.name) as AmuletItem
         if ((item.isMinusDurability ?? item.isUsed)(data)) {
+            const boost = dataSkills.filter((x) => x.effect.amuletBoost).reduce((acc, cur) => acc + cur.effect.amuletBoost, 0) ?? 0;
             data.items.forEach((x) => {
                 if (x.type === "amulet") {
-                    x.durability -= 1;
-                    if (x.durability <= 0) {
-                        data.items = data.items?.filter((x) => x.type !== "amulet")
-											ret = `${x.name}が壊れました！`
+                    if (boost <= 0 || 1 / Math.random() < (1 / Math.pow(1.5, this.multiplier * 2))) {
+                        x.durability -= 1;
+                        if (x.durability <= 0) {
+                            data.items = data.items?.filter((x) => x.type !== "amulet")
+                            ret = `${x.name}が壊れました！`
+                        } else {
+                            ret = `${x.name} 残耐久${x.durability}`
+                        }
                     } else {
-											ret = `${x.name} 残耐久${x.durability}`
-										}
+                        ret = serifs.rpg.skill.amuletBoost;
+                    }
                 }
             });
         }
