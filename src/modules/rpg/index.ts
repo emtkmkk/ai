@@ -183,6 +183,7 @@ export default class extends Module {
         if (data.coin > 0) {
             helpMessage.push(serifs.rpg.help.shop(data.coin))
         }
+        helpMessage.push(serifs.rpg.help.status)
         helpMessage.push(serifs.rpg.help.help)
 
         msg.reply("\n" + helpMessage.join("\n\n"));
