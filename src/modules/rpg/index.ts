@@ -151,6 +151,8 @@ export default class extends Module {
 
     @autobind
     private handleHelpCommands(msg: Message) {
+        // データを読み込み
+        const data = initializeData(this, msg)
         const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
         let helpMessage = [serifs.rpg.help.title];
         if ((data.lv ?? 0) < 7) {
