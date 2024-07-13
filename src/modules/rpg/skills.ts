@@ -397,7 +397,21 @@ export function aggregateSkillsEffects(data: { items?: ShopItem[], skills: Skill
         const item = shopItems.find((x) => x.name === amulet.name) as AmuletItem
         if (item.isUsed(data)) {
             const boost = dataSkills.filter((x) => x.effect.amuletBoost).reduce((acc, cur) => acc + cur.effect.amuletBoost, 0) ?? 0;
-            dataSkills = dataSkills.concat([{effect: item.effect * (1 + (boost ?? 0))} as any])
+            function adjustEffect(effect: any, boost: number): any {
+                const multiplier = 1 + (boost ?? 0);
+                const adjustedEffect: any = {};
+            
+                for (const key in effect) {
+                    if (typeof effect[key] === 'number') {
+                        adjustedEffect[key] = effect[key] * multiplier;
+                    } else {
+                        adjustedEffect[key] = effect[key];
+                    }
+                }
+            
+                return adjustedEffect;
+            }
+            dataSkills = dataSkills.concat([adjustEffect(item.effect, boost)] as any)
         }
     }
     dataSkills.forEach(_skill => {
@@ -443,7 +457,7 @@ export function amuletMinusDurability(data: { items?: ShopItem[] }): string {
             const boost = dataSkills.filter((x) => x.effect.amuletBoost).reduce((acc, cur) => acc + cur.effect.amuletBoost, 0) ?? 0;
             data.items.forEach((x) => {
                 if (x.type === "amulet") {
-                    if (boost <= 0 || 1 / Math.random() < (1 / Math.pow(1.5, this.multiplier * 2))) {
+                    if (boost <= 0 || 1 / Math.random() < (1 / Math.pow(1.5, boost * 2))) {
                         x.durability -= 1;
                         if (x.durability <= 0) {
                             data.items = data.items?.filter((x) => x.type !== "amulet")
