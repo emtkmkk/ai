@@ -43,15 +43,19 @@ export default class extends Module {
             // 管理者モード
             return this.handleAdminCommands(msg);
         }
+        if (msg.user.username === config.master && msg.includes(Array.isArray(serifs.rpg.command.help) ? serifs.rpg.command.help : [serifs.rpg.command.help])) {
+            // ヘルプモード
+            return this.handleHelpCommands(msg);
+        }
         if (msg.includes([serifs.rpg.command.rpg]) && msg.includes([serifs.rpg.command.color])) {
             // 色モード
             return colorReply(this, msg);
         }
-        if (msg.includes([serifs.rpg.command.rpg]) && msg.includes([serifs.rpg.command.skill])) {
+        if (msg.includes([serifs.rpg.command.skill])) {
             // スキルモード
             return skillReply(this, this.ai, msg);
         }
-        if (msg.includes([serifs.rpg.command.rpg]) && msg.includes([serifs.rpg.command.shop])) {
+        if (msg.includes([serifs.rpg.command.shop])) {
             // ショップモード
             return shopReply(this, this.ai, msg);
         }
@@ -143,6 +147,44 @@ export default class extends Module {
                 friend.save();
             }
         }
+    }
+
+    @autobind
+    private handleHelpCommands(msg: Message) {
+        const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
+        let helpMessage = [serifs.rpg.help.title];
+        if ((data.lv ?? 0) < 7) {
+            helpMessage.push(serifs.rpg.help.normal1)
+        } else {
+            helpMessage.push(serifs.rpg.help.normal2)
+            if (data.lv < rpgData.maxLv) {
+                if (data.coin > 0) {
+                    helpMessage.push(serifs.rpg.help.okawari2(rpgData.maxLv - data.lv))
+                } else {
+                    helpMessage.push(serifs.rpg.help.okawari1(rpgData.maxLv - data.lv))
+                }
+            }
+            helpMessage.push(serifs.rpg.help.trial(data.bestScore))
+            if (data.winCount >= 5) {
+                helpMessage.push(serifs.rpg.help.journey)
+            }
+            helpMessage.push(serifs.rpg.help.color)
+            if (data.lv >= 20) {
+                if (data.lv >= 60) {
+                    helpMessage.push(serifs.rpg.help.skills2)
+                } else {
+                    helpMessage.push(serifs.rpg.help.skills1)
+                }
+                
+            }
+        }
+        if (data.coin > 0) {
+            helpMessage.push(serifs.rpg.help.shop)
+        }
+        helpMessage.push(serifs.rpg.help.help)
+
+        msg.reply("\n" + helpMessage.join("\n"));
+        return { reaction: "love" };
     }
 
     @autobind
@@ -243,7 +285,7 @@ export default class extends Module {
         // 敵のステータスを計算
         const edef = data.lv * 3.5 - (atk * (skillEffects.arpen ?? 0));
 
-			　atk = atk * (1 + ((skillEffects.critUpFixed ?? 0) * (1 + (skillEffects.critDmgUp ?? 0))));
+		atk = atk * (1 + ((skillEffects.critUpFixed ?? 0) * (1 + (skillEffects.critDmgUp ?? 0))));
         atk = atk * (1 + (skillEffects.dart ?? 0) * 0.5);
         atk = atk * (1 + (skillEffects.abortDown ?? 0) * (1 / 3));
 
@@ -387,7 +429,7 @@ export default class extends Module {
 
                     nowTimeStr = new Date().getHours() < 12 ? getDate() + "/12" : new Date().getHours() < 18 ? getDate() + "/18" : getDate(1);
                 } else {
-                    msg.reply(serifs.rpg.tired(new Date(), data.lv < rpgData.maxLv && data.lastOnemorePlayedAt !== getDate()));
+                    msg.reply(serifs.rpg.tired(new Date(), data.lv < rpgData.maxLv && data.lastOnemorePlayedAt !== getDate(), data.lv >= 7));
                     return {
                         reaction: 'confused'
                     };
