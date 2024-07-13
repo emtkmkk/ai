@@ -567,6 +567,10 @@ export async function getTotalDmg(msg, enemy: Enemy) {
     if (skillEffects.enemyCritDmgDown) {
         def = def * (1 + (skillEffects.enemyCritDmgDown ?? 0) / 30)
     }
+	if (skillEffects.enemyBuff) {
+		atk = atk * 1.05;
+		def = def * 1.05;
+	}
 
     const _atk = atk;
     const _def = def;
