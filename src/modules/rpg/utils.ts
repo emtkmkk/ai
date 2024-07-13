@@ -129,6 +129,10 @@ export async function getPostCount(ai: 藍, module: rpg, data, msg, bonus = 0): 
         }
         if (msg.friend.doc.linkedAccounts?.length) {
             for (const userId of msg.friend.doc.linkedAccounts) {
+							if (msg.userId === userId) {
+								msg.friend.doc.linkedAccounts = msg.friend.doc.linkedAccounts.filter((x) => x !== userId);
+								msg.friend.doc.save()
+							}
                 const friend = ai.lookupFriend(userId);
                 if (!friend || !friend.doc?.linkedAccounts?.includes(msg.friend.userId)) continue;
 
@@ -154,6 +158,10 @@ export async function getPostCount(ai: 藍, module: rpg, data, msg, bonus = 0): 
 
         if (msg.friend.doc.linkedAccounts?.length) {
             for (const userId of msg.friend.doc.linkedAccounts) {
+							if (msg.userId === userId) {
+								msg.friend.doc.linkedAccounts = msg.friend.doc.linkedAccounts.filter((x) => x !== userId);
+								msg.friend.doc.save()
+							}
                 const friend = ai.lookupFriend(userId);
                 if (!friend || !friend.doc?.linkedAccounts?.includes(msg.friend.userId)) continue;
 
