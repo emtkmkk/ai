@@ -5,6 +5,7 @@ import Module from '@/module';
 import serifs from '@/serifs';
 import rpg from './index';
 import { colorReply, colors } from './colors';
+import { shopItems } from './shop';
 
 export function initializeData(module: rpg, msg) {
     const data = msg.friend.getPerModulesData(module);
