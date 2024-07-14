@@ -498,7 +498,7 @@ export default {
 		lose: ":oyoo:",
 		escape: "もこチキは戦闘から逃げた！",
 		escapeNotBattle: "もこチキは一旦諦めて別の事をするようだ。",
-		getCoin: (num) => `${num}枚のもこコインを拾った！\n「RPG ショップ」で買い物してくださいね！`
+		getCoin: (num) => `${num}枚のもこコインを拾った！\n「RPG ショップ」で買い物してくださいね！`,
 		next: "次回へ続く……",
 		nextPlay: (str) => `次回は${str}以降に遊べます。`,
 		getRerollOrb: (num) => `\n\nスキル変更珠を${num > 1 ? `${num}個` : ""}拾いました！\n「RPG スキル」と話しかけて確認してみてね！`,
