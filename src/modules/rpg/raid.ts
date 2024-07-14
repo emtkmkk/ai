@@ -781,6 +781,12 @@ export async function getTotalDmg(msg, enemy: Enemy) {
                 default:
                     break;
             }
+					if (aggregateTokensEffects(data).showItemBonus)　{
+						const itemMessage = [`${itemBonus.atk ? `${serifs.rpg.status.atk}+${itemBonus.atk}` : ""}`,`${itemBonus.def ? `${serifs.rpg.status.def}+${itemBonus.def}` : ""}`].filter(Boolean).join(" / ")
+						if (itemMessage) {
+							message += `(${itemMessage})\n`;
+						}
+					}
         }
 
         // 敵に最大ダメージ制限がある場合、ここで計算
