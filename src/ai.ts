@@ -295,8 +295,8 @@ export default class 藍 {
     }
 
     if (reaction === 'love') reaction = ':neofox_heart:';
-    if (reaction === 'like') reaction = ':neofox_laugh:';
-    if (reaction === 'hmm') reaction = ':neofox_think_googly:';
+    if (reaction === 'like') reaction = ':neofox_approve:';
+    if (reaction === 'hmm') reaction = ':neofox_think:';
     if (reaction === 'confused') reaction = ':neofox_confused:';
 
     const friend = new Friend(this, { user: msg.user });

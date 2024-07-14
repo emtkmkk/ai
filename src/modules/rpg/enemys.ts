@@ -4,6 +4,7 @@ import Message from '@/message';
 import { colors, unlockCount } from './colors';
 import rpg from './index';
 import serifs from '@/serifs';
+import { aggregateTokensEffects } from './shop';
 
 export type Enemy = {
   /** 内部ID ユニークでなければならない */
@@ -207,24 +208,25 @@ export const enemys: Enemy[] = [
     maxdmg: 0.6,
   },
   {
-    name: ':kochisan:',
-    dname: ':kochisan:',
+    name: ':kochi_san:',
+    dname: ':kochi_san:',
     limit: (data) =>
       (data.winCount ?? 0) >= 5 &&
       (data.streak ?? 0) >= 5 &&
       data.clearEnemy.includes(':kochi_shiromaru_drop:'),
-    msg: ':kochisan:がただそこに存在している…',
-    short: ':kochisan:と遭遇中',
+    msg: ':kochi_san:がただそこに存在している…',
+    short: ':kochi_san:と遭遇中',
     hpmsg: '認識',
     mark: '☆',
     mark2: '★',
     lToR: true,
-    atkmsg: (dmg) => `阨ちゃんの念力！\n:kochisan:に${dmg}ポイントのダメージ！`,
+    atkmsg: (dmg) =>
+      `阨ちゃんの念力！\n:kochi_san:に${dmg}ポイントのダメージ！`,
     defmsg: (dmg) =>
-      `:kochisan:はただそこに存在している！\n${dmg}ポイントのダメージ！`,
-    winmsg: ':kochisan:はいつの間にか消えていた',
+      `:kochi_san:はただそこに存在している！\n${dmg}ポイントのダメージ！`,
+    winmsg: ':kochi_san:はいつの間にか消えていた',
     losemsg: '阨ちゃんはやられてしまった…',
-    endingmsg: '消えてしまったが、阨ちゃんは:kochisan:を認識することができた',
+    endingmsg: '消えてしまったが、阨ちゃんは:kochi_san:を認識することができた',
     atk: 0.9,
     def: 4,
     spd: 3,
@@ -855,6 +857,25 @@ export const enemys: Enemy[] = [
     defx: 3,
   },
   {
+    name: ':blobdog_dropear:',
+    msg: ':blobdog_dropear:が一緒にお散歩してほしいようだ',
+    short: ':blobdog_dropear:とお散歩中',
+    mark: '☆',
+    mark2: '★',
+    lToR: true,
+    atkmsg: (dmg) => `阨ちゃんはお散歩した！\n${dmg}ポイントの満足した！`,
+    defmsg: (dmg) =>
+      `:blobdog_dropear:はものすごい速さで走った！阨ちゃんは疲れて${dmg}ポイントのダメージ！`,
+    winmsg: ':blobdog_dropear:をお散歩させることに成功した！',
+    losemsg: '阨ちゃんは倒れてしまった…',
+    endingmsg: ':blobdog_dropear:は嬉しそうに尻尾をフリフリしている！',
+    atk: 1,
+    def: 1.2,
+    spd: 4,
+    atkx: 3,
+    defx: 3,
+  },
+  {
     name: ':panjandrum2:',
     limit: (data) => (data.winCount ?? 0) >= 3 && (data.streak ?? 0) >= 3,
     msg: '暴走:panjandrum2:が現れた！鎮めなくては！',
@@ -1001,7 +1022,8 @@ export const enemys: Enemy[] = [
     name: ':aine_youshou:',
     limit: (data, friend) =>
       (data.winCount ?? 0) >= 15 &&
-      (friend.love ?? 0) >= 500 &&
+      ((friend.love ?? 0) >= 500 ||
+        aggregateTokensEffects(data).appearStrongBoss) &&
       !data.clearHistory.includes(':aine_youshou:') &&
       data.clearHistory.includes(':aine_oko:'),
     msg: '村長に話しかけたつもりが様子がおかしい…。いつにもまして怖い:aine_youshou:が酷いことを言ってきた！',
@@ -1057,7 +1079,6 @@ export const raidEnemys: Enemy[] = [
     defx: 4,
     power: 32,
   },
-
   {
     name: ':ddquino:',
     msg: '巨大:ddquino:打ち上げ大会！',
@@ -1152,6 +1173,43 @@ export const raidEnemys: Enemy[] = [
     defx: 4,
     power: 26,
   },
+  {
+    name: ':yosomono_seinen:',
+    msg: '巨大:yosomono_seinen:討伐戦！',
+    short: '',
+    mark: '☆',
+    mark2: '★',
+    lToR: false,
+    atkmsg: (dmg) =>
+      `阨ちゃんの攻撃！\n:yosomono_seinen:に${dmg}ポイントのダメージ！`,
+    defmsg: (dmg) =>
+      `:yosomono_seinen:の忘却の呪い！\n阨ちゃんは${dmg}ポイントのダメージ！`,
+    winmsg: ':yosomono_seinen:は霧の中に消えていった…',
+    losemsg: '阨ちゃんは気を失ってしまった…',
+    atk: 2.2,
+    def: 2.2,
+    atkx: 2.2,
+    defx: 2.2,
+    power: 22,
+  },
+  {
+    name: ':dog_chair:',
+    msg: ':dog_chair:討伐戦！',
+    short: '',
+    mark: '☆',
+    mark2: '★',
+    lToR: false,
+    atkmsg: (dmg) => `阨ちゃんの攻撃！\n${dmg}ポイントのダメージ！`,
+    defmsg: (dmg) =>
+      `:dog_chair:はめちゃくちゃ頑丈だ…\n疲れで${dmg}ポイントのダメージ！`,
+    winmsg: ':dog_chair:をどうにか撃退した！',
+    losemsg: '阨ちゃんは疲れで倒れてしまった…',
+    atk: 0.5,
+    def: 8,
+    atkx: 3,
+    defx: 8,
+    power: 30,
+  },
 ];
 
 /*
@@ -1241,7 +1299,7 @@ export const ending = (msg: Message): any => {
     }`,
     `平均能力上昇量 : ${((data.atk + data.def) / (data.lv - 1)).toFixed(2)}`,
     `これまでの勝利数 : ${data.winCount}`,
-    `最高旅ステージ数 : ${(data.maxEndress ?? 0) + 1}`,
+    `最高修行ステージ数 : ${(data.maxEndress ?? 0) + 1}`,
     `最大耐ダメージ数 : ${data.superMuscle ?? 0}`,
     `最大能力上昇値 : ${data.maxStatusUp ?? 0} (1 / ${Math.pow(
       3,

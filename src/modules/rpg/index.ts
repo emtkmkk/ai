@@ -17,6 +17,7 @@ import {
   skillCalculate,
   aggregateSkillsEffects,
   calcSevenFever,
+  amuletMinusDurability,
 } from './skills';
 import {
   start,
@@ -73,25 +74,29 @@ export default class extends Module {
       return this.handleAdminCommands(msg);
     }
     if (
+      msg.includes(
+        Array.isArray(serifs.rpg.command.help)
+          ? serifs.rpg.command.help
+          : [serifs.rpg.command.help],
+      )
+    ) {
+      // ヘルプモード
+      return this.handleHelpCommands(msg);
+    }
+    if (
       msg.includes([serifs.rpg.command.rpg]) &&
       msg.includes([serifs.rpg.command.color])
     ) {
       // 色モード
       return colorReply(this, msg);
     }
-    if (
-      msg.includes([serifs.rpg.command.rpg]) &&
-      msg.includes([serifs.rpg.command.skill])
-    ) {
+    if (msg.includes([serifs.rpg.command.skill])) {
       // スキルモード
-      return skillReply(this, msg);
+      return skillReply(this, this.ai, msg);
     }
-    if (
-      msg.includes([serifs.rpg.command.rpg]) &&
-      msg.includes([serifs.rpg.command.shop])
-    ) {
-      // スキルモード
-      return shopReply(this, msg);
+    if (msg.includes([serifs.rpg.command.shop])) {
+      // ショップモード
+      return shopReply(this, this.ai, msg);
     }
     if (
       msg.includes([serifs.rpg.command.rpg]) &&
@@ -214,12 +219,52 @@ export default class extends Module {
   }
 
   @autobind
+  private handleHelpCommands(msg: Message) {
+    // データを読み込み
+    const data = initializeData(this, msg);
+    const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
+    let helpMessage = [serifs.rpg.help.title];
+    if ((data.lv ?? 0) < 7) {
+      helpMessage.push(serifs.rpg.help.normal1);
+    } else {
+      helpMessage.push(serifs.rpg.help.normal2);
+      if (data.lv < rpgData.maxLv) {
+        if (data.coin > 0) {
+          helpMessage.push(serifs.rpg.help.okawari2(rpgData.maxLv - data.lv));
+        } else {
+          helpMessage.push(serifs.rpg.help.okawari1(rpgData.maxLv - data.lv));
+        }
+      }
+      helpMessage.push(serifs.rpg.help.trial(data.bestScore));
+      if (data.winCount >= 5) {
+        helpMessage.push(serifs.rpg.help.journey);
+      }
+      helpMessage.push(serifs.rpg.help.color);
+      if (data.lv >= 20) {
+        if (data.lv >= 60) {
+          helpMessage.push(serifs.rpg.help.skills2);
+        } else {
+          helpMessage.push(serifs.rpg.help.skills1);
+        }
+      }
+    }
+    if (data.coin > 0) {
+      helpMessage.push(serifs.rpg.help.shop(data.coin));
+    }
+    helpMessage.push(serifs.rpg.help.status);
+    helpMessage.push(serifs.rpg.help.help);
+
+    msg.reply('\n' + helpMessage.join('\n\n'));
+    return { reaction: ':neofox_heart:' };
+  }
+
+  @autobind
   private handleAdminCommands(msg: Message) {
     if (msg.includes(['revert'])) {
       const id = /\w{10}/.exec(msg.extractedText)?.[0];
       if (id) {
         const friend = this.ai.lookupFriend(id);
-        if (friend == null) return { reaction: ':mk_hotchicken:' };
+        if (friend == null) return { reaction: ':neofox_approve:' };
         friend.doc.perModulesData.rpg.lastPlayedAt = '';
         friend.doc.perModulesData.rpg.lv = friend.doc.perModulesData.rpg.lv - 1;
         friend.doc.perModulesData.rpg.atk =
@@ -227,7 +272,7 @@ export default class extends Module {
         friend.doc.perModulesData.rpg.def =
           friend.doc.perModulesData.rpg.def - 3;
         friend.save();
-        return { reaction: 'love' };
+        return { reaction: ':neofox_heart:' };
       }
     }
     if (msg.includes(['skilledit'])) {
@@ -236,35 +281,35 @@ export default class extends Module {
       const num = /\s(\d)\s/.exec(msg.extractedText)?.[1];
       if (id && skill && num) {
         const friend = this.ai.lookupFriend(id);
-        if (friend == null) return { reaction: ':mk_hotchicken:' };
+        if (friend == null) return { reaction: ':neofox_approve:' };
         friend.doc.perModulesData.rpg.skills[num] = skills.find((x) =>
           x.name.startsWith(skill),
         );
         friend.save();
-        return { reaction: 'love' };
+        return { reaction: ':neofox_heart:' };
       }
     }
     if (msg.includes(['startRaid'])) {
       start();
-      return { reaction: 'love' };
+      return { reaction: ':neofox_heart:' };
     }
     if (msg.includes(['dataFix'])) {
-      //return { reaction: "love" };
+      //return { reaction: ":neofox_heart:" };
     }
-    return { reaction: ':neofox_think' };
+    return { reaction: ':neofox_think:' };
   }
 
   @autobind
   private async handleTrialCommands(msg: Message) {
     // データを読み込み
     const data = initializeData(this, msg);
-    if (!data.lv) return { reaction: 'confused' };
+    if (!data.lv) return { reaction: ':neofox_confused:' };
     const colorData = colors.map((x) => x.unlock(data));
     // プレイ済でないかのチェック
     if (data.lastPlayedLv >= data.lv) {
       msg.reply(serifs.rpg.trial.tired);
       return {
-        reaction: 'confused',
+        reaction: ':neofox_confused:',
       };
     }
 
@@ -300,12 +345,6 @@ export default class extends Module {
 
     // ここで残りのステータスを計算しなおす
     let { atk, def, spd } = calculateStats(data, msg, skillEffects, color);
-    atk =
-      atk *
-      (1 +
-        (skillEffects.critUpFixed ?? 0) * (1 + (skillEffects.critDmgUp ?? 0)));
-    atk = atk * (1 + (skillEffects.dart ?? 0) * 0.5);
-    atk = atk * (1 + (skillEffects.abortDown ?? 0) * (1 / 3));
     def = def * (1 + (skillEffects.defUp ?? 0));
 
     if (isSuper) {
@@ -327,7 +366,14 @@ export default class extends Module {
     message += `$[x2 ${me}]\n\n${serifs.rpg.start}\n\n`;
 
     // 敵のステータスを計算
-    const edef = data.lv * 3.5 * (1 - (skillEffects.arpen ?? 0));
+    const edef = data.lv * 3.5 - atk * (skillEffects.arpen ?? 0);
+
+    atk =
+      atk *
+      (1 +
+        (skillEffects.critUpFixed ?? 0) * (1 + (skillEffects.critDmgUp ?? 0)));
+    atk = atk * (1 + (skillEffects.dart ?? 0) * 0.5);
+    atk = atk * (1 + (skillEffects.abortDown ?? 0) * (1 / 3));
 
     let trueDmg = 0;
 
@@ -354,6 +400,11 @@ export default class extends Module {
       0,
     );
     const maxRnd = Math.max(1.6 + (skillEffects.atkRndMax ?? 0), 0);
+
+    if (skillEffects.allForOne) {
+      atk = atk * spd * 1.1;
+      spd = 1;
+    }
 
     for (let i = 0; i < spd; i++) {
       const buff =
@@ -471,7 +522,7 @@ export default class extends Module {
             if (data.lv >= rpgData.maxLv) {
               msg.reply(serifs.rpg.oneMore.maxLv);
               return {
-                reaction: 'confused',
+                reaction: ':neofox_confused:',
               };
             }
             if (
@@ -483,7 +534,7 @@ export default class extends Module {
               );
               this.log('replayOkawari SubscribeReply: ' + reply.id);
               this.subscribeReply('replayOkawari:' + msg.userId, reply.id);
-              return { reaction: 'love' };
+              return { reaction: ':neofox_heart:' };
             } else {
               data.coin -= needCoin;
               data.replayOkawari = false;
@@ -494,21 +545,21 @@ export default class extends Module {
           } else {
             msg.reply(serifs.rpg.oneMore.tired(data.lv < rpgData.maxLv));
             return {
-              reaction: 'confused',
+              reaction: ':neofox_confused:',
             };
           }
         }
         if (data.lv >= rpgData.maxLv) {
           msg.reply(serifs.rpg.oneMore.maxLv);
           return {
-            reaction: 'confused',
+            reaction: ':neofox_confused:',
           };
         }
         data.lastOnemorePlayedAt = getDate();
       } else {
         if (
           ((skillEffects.rpgTime ?? 0) < 0 &&
-            new Date().getHours() >= 24 - (skillEffects.rpgTime ?? 0) &&
+            new Date().getHours() >= 24 + (skillEffects.rpgTime ?? 0) &&
             data.lastPlayedAt !== getDate(1)) ||
           data.lastPlayedAt !==
             getDate() +
@@ -533,10 +584,11 @@ export default class extends Module {
             serifs.rpg.tired(
               new Date(),
               data.lv < rpgData.maxLv && data.lastOnemorePlayedAt !== getDate(),
+              data.lv >= 7,
             ),
           );
           return {
-            reaction: 'confused',
+            reaction: ':neofox_confused:',
           };
         }
       }
@@ -546,12 +598,12 @@ export default class extends Module {
           const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
           msg.reply(serifs.rpg.oneMore.tired(data.lv < rpgData.maxLv));
           return {
-            reaction: 'confused',
+            reaction: ':neofox_confused:',
           };
         }
         msg.reply(serifs.rpg.oneMore.err);
         return {
-          reaction: 'confused',
+          reaction: ':neofox_confused:',
         };
       }
     }
@@ -589,7 +641,7 @@ export default class extends Module {
       } else {
         msg.reply(serifs.rpg.journey.err);
         return {
-          reaction: 'confused',
+          reaction: ':neofox_confused:',
         };
       }
     } else {
@@ -1153,6 +1205,19 @@ export default class extends Module {
         ? data.enemy.def(atk, def, spd)
         : lv * 3.5 * data.enemy.def;
 
+    if (skillEffects.enemyBuff && data.enemy.name !== endressEnemy(data).name) {
+      enemyAtk =
+        typeof data.enemy.atk === 'function'
+          ? data.enemy.atk(atk, def, spd) * 1.25
+          : lv * 3.5 * (data.enemy.atk + 1);
+      enemyDef =
+        typeof data.enemy.def === 'function'
+          ? data.enemy.def(atk, def, spd) * 1.25
+          : lv * 3.5 * (data.enemy.def + 1);
+      if (typeof data.enemy.atkx === 'number') data.enemy.atkx += 1;
+      if (typeof data.enemy.defx === 'number') data.enemy.defx += 1;
+    }
+
     if (skillEffects.enemyStatusBonus) {
       const enemyStrongs =
         (enemyAtk / (lv * 3.5)) * (getVal(data.enemy.atkx, [tp]) ?? 3) +
@@ -1167,6 +1232,8 @@ export default class extends Module {
         message += serifs.rpg.skill.enemyStatusBonus + '\n';
       }
     }
+
+    enemyDef -= atk * (skillEffects.arpen ?? 0);
 
     if (skillEffects.firstTurnResist && count === 1 && isBattle && isPhysical) {
       buff += 1;
@@ -1372,6 +1439,11 @@ export default class extends Module {
             if (dmg > (data.superMuscle ?? 0)) data.superMuscle = dmg;
           }
         }
+      }
+
+      if (skillEffects.allForOne) {
+        atk = atk * spd * 1.1;
+        spd = 1;
       }
 
       // 自身攻撃の処理
@@ -1792,14 +1864,22 @@ export default class extends Module {
       }
     }
 
+    if (!msg.includes([serifs.rpg.command.onemore])) data.coinGetCount += 1;
+    if (data.coinGetCount >= 5) {
+      data.coin += 5;
+      data.coinGetCount -= 5;
+      addMessage += `\n${serifs.rpg.getCoin(5)}`;
+    }
+
     const nowPlay = /\d{4}\/\d{1,2}\/\d{1,2}(\/\d{2})?/.exec(nowTimeStr);
     const nextPlay = !nowPlay?.[1]
       ? 12 + (skillEffects.rpgTime ?? 0)
-      : nowPlay[1] == '12'
+      : nowPlay[1] == '/12'
         ? 18 + (skillEffects.rpgTime ?? 0)
-        : nowPlay[1] == '18'
+        : nowPlay[1] == '/18'
           ? 24 + (skillEffects.rpgTime ?? 0)
           : 12 + (skillEffects.rpgTime ?? 0);
+    const minusDurability = amuletMinusDurability(data);
 
     message += [
       `\n\n${serifs.rpg.lvUp}`,
@@ -1807,6 +1887,7 @@ export default class extends Module {
       `  ${serifs.rpg.status.atk} : ${data.atk ?? 0} (+${atkUp + bonus})`,
       `  ${serifs.rpg.status.def} : ${data.def ?? 0} (+${totalUp - atkUp + bonus})`,
       addMessage,
+      minusDurability ? '\n' + minusDurability : '',
       `\n${serifs.rpg.nextPlay(nextPlay == 24 ? '明日' : nextPlay + '時')}`,
     ]
       .filter(Boolean)
@@ -1861,7 +1942,7 @@ export default class extends Module {
     if (key.replace('replayOkawari:', '') !== msg.userId) {
       this.log(msg.userId + ' : ' + key.replace('replayOkawari:', ''));
       return {
-        reaction: ':neofox_think',
+        reaction: ':neofox_think:',
       };
     }
     if (msg.text.includes('はい')) {
@@ -1871,17 +1952,17 @@ export default class extends Module {
         msg.friend.doc.perModulesData.rpg.replayOkawari = true;
       msg.friend.save();
       msg.reply(serifs.rpg.oneMore.buyComp);
-      return { reaction: ':neofox_thumbsup' };
+      return { reaction: ':neofox_thumbsup:' };
     } else if (msg.text.includes('いいえ')) {
       this.log('replayOkawari: No');
       this.unsubscribeReply(key);
-      return { reaction: ':neofox_thumbsup' };
+      return { reaction: ':neofox_thumbsup:' };
     } else {
       this.log('replayOkawari: ?');
       msg.reply(serifs.core.yesOrNo).then((reply) => {
         this.subscribeReply('replayOkawari:' + msg.userId, reply.id);
       });
-      return { reaction: ':neofox_think' };
+      return { reaction: ':neofox_think:' };
     }
   }
 }

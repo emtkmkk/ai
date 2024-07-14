@@ -15,6 +15,7 @@ let ai: 藍;
 
 export function skillCalculate(_ai: 藍 = ai) {
   skillNameCountMap = new Map();
+  totalSkillCount = 0;
   if (_ai) ai = _ai;
   const friends = ai.friends
     .find()
@@ -153,6 +154,14 @@ export type SkillEffect = {
   sevenFever?: number;
   /** チャージ */
   charge?: number;
+  /** 敵を全体的に強化（通常モードのみ） */
+  enemyBuff?: number;
+  /** 攻撃回数を攻撃に変換 */
+  allForOne?: number;
+  /** お守りの効果・耐久n%上昇 */
+  amuletBoost?: number;
+  /** ショップの商品、全品n%オフ */
+  priceOff?: number;
 };
 
 export type Skill = {
@@ -170,6 +179,8 @@ export type Skill = {
   moveTo?: string;
   /** スキル変更が出来ない場合 */
   cantReroll?: boolean;
+  /** お守りとして出ない場合 */
+  skillOnly?: boolean;
 };
 
 export const skills: Skill[] = [
@@ -250,6 +261,7 @@ export const skills: Skill[] = [
     desc: `ターン1に受けるダメージを大きく軽減します`,
     info: `ターン1にてダメージカット30%を得る 100%以上になる場合、残りはターン2に持ち越す`,
     effect: { firstTurnResist: 0.3 },
+    skillOnly: true,
   },
   {
     name: `粘り強い`,
@@ -490,6 +502,20 @@ export const skills: Skill[] = [
     info: `ステータス+5% 低乱数を引いた時、次回以降に高乱数を引きやすくなる`,
     effect: { atkUp: 0.05, defUp: 0.05, charge: 1 },
   },
+  {
+    name: `お守り整備`,
+    desc: `お守りの効果が上がり、お守りが壊れにくくなります`,
+    info: `お守り効果+50% お守り耐久+50%`,
+    effect: { amuletBoost: 0.5 },
+    skillOnly: true,
+  },
+  {
+    name: `値切り術`,
+    desc: `ショップのアイテムが少し安くなります`,
+    info: `ショップアイテム全品10%OFF`,
+    effect: { priceOff: 0.1 },
+    skillOnly: true,
+  },
 ];
 
 export const getSkill = (data) => {
@@ -571,10 +597,12 @@ export const getRerollSkill = (data, oldSkillName = '') => {
 };
 
 /** スキルに関しての情報を返す */
-export const skillReply = (module: Module, msg: Message) => {
+export const skillReply = (module: Module, ai: 藍, msg: Message) => {
   // データを読み込み
   const data = msg.friend.getPerModulesData(module);
   if (!data) return false;
+
+  skillCalculate(ai);
 
   if (!data.skills?.length) return { reaction: ':neofox_confused:' };
 
@@ -611,9 +639,9 @@ export const skillReply = (module: Module, msg: Message) => {
           );
           data.duplicationOrb -= 1;
           msg.friend.setPerModulesData(module, data);
-          skillCalculate();
+          skillCalculate(ai);
           return {
-            reaction: ':neofox_heart:',
+            reaction: 'love',
           };
         } else {
           return {
@@ -646,9 +674,9 @@ export const skillReply = (module: Module, msg: Message) => {
           );
           data.rerollOrb -= 1;
           msg.friend.setPerModulesData(module, data);
-          skillCalculate();
+          skillCalculate(ai);
           return {
-            reaction: ':neofox_heart:',
+            reaction: 'love',
           };
         } else {
           return {
@@ -669,9 +697,10 @@ export const skillReply = (module: Module, msg: Message) => {
     const skill = amulet.skillName
       ? skills.find((x) => amulet.skillName === x.name)
       : undefined;
-    amuletSkill.push(
-      `[お守り] ${amulet.skillName} 残り耐久${amulet.durability}${skill ? (aggregateTokensEffects(data).showSkillBonus && skill.info ? `\n${skill.info}` : skill.desc ? `\n${skill.desc}` : '') : `\n${item.desc}`}`,
-    );
+    if (amulet.durability)
+      amuletSkill.push(
+        `[お守り] ${amulet.skillName ?? amulet.name} 残耐久${amulet.durability}${skill ? (aggregateTokensEffects(data).showSkillBonus && skill.info ? `\n${skill.info}` : skill.desc ? `\n${skill.desc}` : '') : `\n${item.desc}`}`,
+      );
   }
 
   msg.reply(
@@ -694,7 +723,16 @@ export const skillReply = (module: Module, msg: Message) => {
   );
 
   return {
-    reaction: ':neofox_heart:',
+    reaction: 'love',
+  };
+};
+
+export const skillPower = (ai: 藍, skillName: Skill['name']) => {
+  const { skillNameCountMap, totalSkillCount } = skillCalculate(ai);
+  return {
+    skillNameCountMap,
+    skillNameCount: skillNameCountMap.get(skillName),
+    totalSkillCount,
   };
 };
 
@@ -713,34 +751,57 @@ export function aggregateSkillsEffects(data: {
 
   if (!data.skills) return aggregatedEffect;
   let dataSkills = data.skills;
-  if (data.items?.filter((x) => (x.type = 'amulet')).length) {
-    const amulet = data.items?.filter((x) => (x.type = 'amulet'))[0];
+  data.items?.filter(
+    (x) => (x.type = shopItems.find((y) => x.name === y.name)?.type ?? 'token'),
+  );
+  if (data.items?.filter((x) => x.type === 'amulet').length) {
+    const amulet = data.items?.filter((x) => x.type === 'amulet')[0];
+    console.log('amulet: ' + amulet.name);
     const item = shopItems.find((x) => x.name === amulet.name) as AmuletItem;
     if (item.isUsed(data)) {
-      dataSkills = dataSkills.concat([{ effect: item.effect } as any]);
-    }
-    if ((item.isMinusDurability ?? item.isUsed)(data)) {
-      data.items.forEach((x) => {
-        if (x.type === 'amulet') {
-          x.durability -= 1;
-          if (x.durability <= 0) {
-            data.items = data.items?.filter((x) => x.type !== 'amulet');
+      const boost =
+        dataSkills
+          .filter((x) => x.effect?.amuletBoost)
+          .reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0;
+      const adjustEffect = (effect: any, boost: number): any => {
+        const multiplier = 1 + (boost ?? 0);
+        const adjustedEffect: any = {};
+
+        for (const key in effect) {
+          if (typeof effect[key] === 'number') {
+            if (Number.isInteger(effect[key])) {
+              adjustedEffect[key] = Math.floor(effect[key] * multiplier);
+            } else {
+              adjustedEffect[key] = effect[key] * multiplier;
+            }
+          } else {
+            adjustedEffect[key] = effect[key];
           }
         }
-      });
+
+        return { effect: adjustedEffect };
+      };
+      console.log(
+        'effect: ' + JSON.stringify(adjustEffect(item.effect, boost)),
+      );
+      dataSkills = dataSkills.concat([adjustEffect(item.effect, boost)] as any);
     }
   }
   dataSkills.forEach((_skill) => {
     const skill = _skill.name
       ? skills.find((x) => x.name === _skill.name) ?? _skill
       : _skill;
-    Object.entries(skill.effect).forEach(([key, value]) => {
-      if (aggregatedEffect[key] !== undefined) {
-        aggregatedEffect[key] += value;
-      } else {
-        aggregatedEffect[key] = value;
-      }
-    });
+    if (skill.effect) {
+      Object.entries(skill.effect).forEach(([key, value]) => {
+        if (aggregatedEffect[key] !== undefined) {
+          aggregatedEffect[key] += value;
+        } else {
+          aggregatedEffect[key] = value;
+        }
+      });
+    } else {
+      console.log(JSON.stringify(_skill));
+    }
   });
 
   if (aggregatedEffect.itemEquip && aggregatedEffect.itemEquip > 1.5) {
@@ -771,6 +832,40 @@ export function aggregateSkillsEffects(data: {
   }
 
   return aggregatedEffect;
+}
+
+export function amuletMinusDurability(data: {
+  items?: ShopItem[];
+  skills: Skill[];
+}): string {
+  let ret = '';
+  if (data.items?.filter((x) => x.type === 'amulet').length) {
+    const amulet = data.items?.filter((x) => x.type === 'amulet')[0];
+    const item = shopItems.find((x) => x.name === amulet.name) as AmuletItem;
+    if ((item.isMinusDurability ?? item.isUsed)(data)) {
+      const boost = data.skills
+        ? data.skills
+            ?.filter((x) => x.effect?.amuletBoost)
+            .reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0
+        : 0;
+      data.items.forEach((x) => {
+        if (x.type === 'amulet') {
+          if (boost <= 0 || 1 / Math.random() < 1 / Math.pow(1.5, boost * 2)) {
+            x.durability -= 1;
+            if (x.durability <= 0) {
+              data.items = data.items?.filter((x) => x.type !== 'amulet');
+              ret = `${x.name}が壊れました！`;
+            } else {
+              ret = `${x.name} 残耐久${x.durability}`;
+            }
+          } else {
+            ret = serifs.rpg.skill.amuletBoost;
+          }
+        }
+      });
+    }
+  }
+  return ret;
 }
 
 export function calcSevenFever(arr: number[]) {
