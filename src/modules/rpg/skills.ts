@@ -394,12 +394,13 @@ export function aggregateSkillsEffects(data: { items?: ShopItem[], skills: Skill
 	data.items?.filter((x) => x.type = (shopItems.find((y) => x.name === y.name)?.type ?? "token"))
     if (data.items?.filter((x) => x.type === "amulet").length) {
         const amulet = data.items?.filter((x) => x.type === "amulet")[0]
+			console.log("amulet: " + amulet.name);
         const item = shopItems.find((x) => x.name === amulet.name) as AmuletItem
         if (item.isUsed(data)) {
             const boost = dataSkills.filter((x) => x.effect?.amuletBoost).reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0;
             function adjustEffect(effect: any, boost: number): any {
                 const multiplier = 1 + (boost ?? 0);
-                const adjustedEffect: any = {};
+                const adjustedEffect: any = {effect: {}};
             
                 for (const key in effect) {
                     if (typeof effect[key] === 'number') {
@@ -411,18 +412,23 @@ export function aggregateSkillsEffects(data: { items?: ShopItem[], skills: Skill
             
                 return adjustedEffect;
             }
+					console.log("effect: " + adjustEffect(item.effect, boost));
             dataSkills = dataSkills.concat([adjustEffect(item.effect, boost)] as any)
         }
     }
     dataSkills.forEach(_skill => {
         const skill = _skill.name ? skills.find((x) => x.name === _skill.name) ?? _skill : _skill;
-        Object.entries(skill.effect).forEach(([key, value]) => {
+        if (skill.effect) {
+			Object.entries(skill.effect).forEach(([key, value]) => {
             if (aggregatedEffect[key] !== undefined) {
                 aggregatedEffect[key] += value;
             } else {
                 aggregatedEffect[key] = value;
             }
         });
+				} else {
+					console.log(JSON.stringify(_skill));
+				}
     });
 
     if (aggregatedEffect.itemEquip && aggregatedEffect.itemEquip > 1.5) {
