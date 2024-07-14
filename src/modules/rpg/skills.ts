@@ -398,13 +398,17 @@ export function aggregateSkillsEffects(data: { items?: ShopItem[], skills: Skill
         const item = shopItems.find((x) => x.name === amulet.name) as AmuletItem
         if (item.isUsed(data)) {
             const boost = dataSkills.filter((x) => x.effect?.amuletBoost).reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0;
-            function adjustEffect(effect: any, boost: number): any {
+            const adjustEffect = (effect: any, boost: number): any => {
                 const multiplier = 1 + (boost ?? 0);
                 const adjustedEffect: any = {effect: {}};
             
                 for (const key in effect) {
                     if (typeof effect[key] === 'number') {
-                        adjustedEffect[key] = effect[key] * multiplier;
+											if (Number.isInteger(effect[key])) {
+												adjustedEffect[key] = Math.floor(effect[key] * multiplier);
+											} else {
+												adjustedEffect[key] = effect[key] * multiplier;
+											}
                     } else {
                         adjustedEffect[key] = effect[key];
                     }
@@ -412,7 +416,7 @@ export function aggregateSkillsEffects(data: { items?: ShopItem[], skills: Skill
             
                 return adjustedEffect;
             }
-					console.log("effect: " + adjustEffect(item.effect, boost));
+					console.log("effect: " + JSON.stringify(adjustEffect(item.effect, boost)));
             dataSkills = dataSkills.concat([adjustEffect(item.effect, boost)] as any)
         }
     }
