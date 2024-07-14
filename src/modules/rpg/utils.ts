@@ -12,6 +12,7 @@ export function initializeData(module: rpg, msg) {
     if (!data.clearHistory) data.clearHistory = data.clearEnemy;
     if (!data.items) data.items = [];
 	if (!data.coin) data.coin = 0
+	data.items?.filter((x) => x.type = (shopItems.find((y) => x.name === y.name)?.type ?? "token"))
     if (data.items.filter((x) => x.type === "amulet").length > 1) {
         data.items.filter((x) => x.type === "amulet").forEach((x) => {
             data.coin += x.price

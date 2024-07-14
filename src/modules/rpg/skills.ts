@@ -353,7 +353,7 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
     }
 
     let amuletSkill: string[] = []
-    if (data.items?.filter((x) => x.type = "amulet").length) {
+    if (data.items?.filter((x) => x.type === "amulet").length) {
         const amulet = data.items?.filter((x) => x.type === "amulet")[0]
         const item = shopItems.find((x) => x.name === amulet.name) as AmuletItem
         const skill = amulet.skillName ? skills.find((x) => amulet.skillName === x.name) : undefined;
