@@ -127,19 +127,11 @@ export async function start(triggerUserId?: string, flg?: any) {
     /** すべてのレイドゲームのリスト */
     const games = raids.find({});
 
-    /** 最も最近のレイドゲーム */
-    const recentGame = games.length == 0 ? null : games[games.length - 1];
-
-    /** 直前のレイドゲーム */
-    const penultimateGame = recentGame && games.length > 1 ? games[games.length - 2] : null;
+    const recentRaidList = games.slice(Math.min((raidEnemys.length-1) * -1, -5)).map(obj => obj.enemy.name ?? "");
 
     /** 過去のレイドボスを除外したリスト */
     const filteredRaidEnemys =
-        raidEnemys.length > 2 && penultimateGame
-            ? raidEnemys.filter((x) => ![recentGame?.enemy.name, penultimateGame.enemy.name].includes(x.name))
-            : raidEnemys.length > 1 && recentGame
-                ? raidEnemys.filter((x) => ![recentGame?.enemy.name].includes(x.name))
-                : raidEnemys;
+        raidEnemys.filter((x) => !recentRaidList.includes(x.name));
 
     /** ランダムに選ばれたレイドボス */
     const enemy = filteredRaidEnemys[Math.floor(Math.random() * filteredRaidEnemys.length)];
