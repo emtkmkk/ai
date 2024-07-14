@@ -400,7 +400,7 @@ export function aggregateSkillsEffects(data: { items?: ShopItem[], skills: Skill
             const boost = dataSkills.filter((x) => x.effect?.amuletBoost).reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0;
             const adjustEffect = (effect: any, boost: number): any => {
                 const multiplier = 1 + (boost ?? 0);
-                const adjustedEffect: any = {effect: {}};
+                const adjustedEffect: any = {};
             
                 for (const key in effect) {
                     if (typeof effect[key] === 'number') {
@@ -414,7 +414,7 @@ export function aggregateSkillsEffects(data: { items?: ShopItem[], skills: Skill
                     }
                 }
             
-                return adjustedEffect;
+                return { effect: adjustedEffect };
             }
 					console.log("effect: " + JSON.stringify(adjustEffect(item.effect, boost)));
             dataSkills = dataSkills.concat([adjustEffect(item.effect, boost)] as any)
