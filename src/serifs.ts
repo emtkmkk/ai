@@ -491,6 +491,7 @@ export default {
 			lowHpFood: `スキル「お腹が空いてから食べる」発動！\n`,
 			amuletBoost: `スキル「お守り整備」発動！\nお守りの耐久は減らなかった！`,
 		},
+		nurse: "$[x3 :mkck_nurse:]\n\n通りすがりのナースが現れた！\nナースは受けた傷を治療してくれた！",
 		haisui: "もこチキは決死の覚悟をした！\nパワーが上がり、防御が下がった！",
 		endure: "もこチキは気合で耐えた！",
 		fireAtk: (enemyName) => `もこチキの追い打ち炎攻撃！\n${enemyName}が次に受けるダメージが上昇した！`,
