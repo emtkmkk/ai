@@ -1359,6 +1359,7 @@ export default class extends Module {
 
         const nowPlay = /\d{4}\/\d{1,2}\/\d{1,2}(\/\d{2})?/.exec(nowTimeStr)
         const nextPlay = !nowPlay?.[1] ? 12 + (skillEffects.rpgTime ?? 0) : nowPlay[1] == "/12" ? 18 + (skillEffects.rpgTime ?? 0) : nowPlay[1] == "/18" ? 24 + (skillEffects.rpgTime ?? 0) : 12 + (skillEffects.rpgTime ?? 0)
+			const minusDurability = amuletMinusDurability(data);
 
         message += [
             `\n\n${serifs.rpg.lvUp}`,
@@ -1366,7 +1367,7 @@ export default class extends Module {
             `  ${serifs.rpg.status.atk} : ${data.atk ?? 0} (+${atkUp + bonus})`,
             `  ${serifs.rpg.status.def} : ${data.def ?? 0} (+${totalUp - atkUp + bonus})`,
             addMessage,
-			"\n" + amuletMinusDurability(data),
+					minusDurability ? "\n" + minusDurability : "",
             `\n${serifs.rpg.nextPlay(nextPlay == 24 ? "明日" : nextPlay + "時")}`,
         ].filter(Boolean).join("\n")
 
