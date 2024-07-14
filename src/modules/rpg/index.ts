@@ -916,6 +916,12 @@ export default class extends Module {
                 default:
                     break;
             }
+					if (aggregateTokensEffects(data).showItemBonus)　{
+						const itemMessage = [`${itemBonus.atk ? `${serifs.rpg.status.atk}+${itemBonus.atk}` : ""}`,`${itemBonus.def ? `${serifs.rpg.status.def}+${itemBonus.def}` : ""}`].filter(Boolean).join(" / ")
+						if (itemMessage) {
+							message += `(${itemMessage})\n`;
+						}
+					}
         }
 
         // 敵のステータスを計算
