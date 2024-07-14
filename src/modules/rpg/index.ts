@@ -1214,6 +1214,10 @@ export default class extends Module {
                         playerHp = 1;
                         data.endure = Math.max(data.endure - 1, 0);
                     }
+									if (playerHp <= (30 + lv) && serifs.rpg.nurse && Math.random() < 0.01) {
+										message += "\n" + serifs.rpg.nurse + "\n" + (100 + lv * 3) - playerHp + "ポイント回復した！\n"
+										playerHp = (100 + lv * 3);
+									}
                     if (maxDmg > (data.superMuscle ?? 0) && playerHp > 0) data.superMuscle = maxDmg;
                 }
                 // 敗北処理
