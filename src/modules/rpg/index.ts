@@ -652,7 +652,7 @@ export default class extends Module {
             if (isSuper) {
                 message += serifs.rpg.postBonusInfo.super + `\n`
             }
-            serifs.rpg.postBonusInfo.post(postCount, tp > 1 ? "+" + Math.floor((tp - 1) * 100) : "-" + Math.floor((tp - 1) * 100)) + `\n\n`
+            message += serifs.rpg.postBonusInfo.post(postCount, tp > 1 ? "+" + Math.floor((tp - 1) * 100) : "-" + Math.floor((tp - 1) * 100)) + `\n\n`
         } else {
             // 連続ボーナスの場合、メッセージを追加
             // バフはすでに上で付与済み
