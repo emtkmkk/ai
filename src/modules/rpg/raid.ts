@@ -15,6 +15,7 @@ import { calculateStats } from './battle'
 import serifs from '@/serifs';
 import getDate from '@/utils/get-date';
 import { acct } from '@/utils/acct';
+import * as seedrandom from 'seedrandom';
 
 /** レイド情報の型 */
 export type Raid = {
@@ -105,10 +106,16 @@ function scheduleRaidStart() {
         start();
     }
 	const day = new Date().getDay()
+	const randomHours = [7,9,10,11,13,14,15,16,17,19,20,22];
+	const randomMinutes = [0,15,30,45];
+	let rnd = seedrandom(getDate() + ai.account.id)
+	if (day >= 1 && day <= 4 && hours === randomHours[Math.floor(rnd() * randomHours.length)] &&　minutes === randomMinutes[Math.floor(rnd() * randomMinutes.length)]) {
+		start();
+	}
 	if ((day === 6 || day === 0) && hours === 19 && minutes === 45) {
 		start();
 	}
-	if (day > 5 && hours === 22 && minutes === 45) {
+	if (day >= 5 && hours === 22 && minutes === 45) {
 		start();
 	}
 	if ((day === 6 || day === 0) && [10,15].includes(hours) && minutes === 15) {
