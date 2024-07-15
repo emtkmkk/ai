@@ -229,7 +229,10 @@ export default class extends Module {
                 const friend = ai.lookupFriend(x.user.id);
                 if (!friend) return;
                 const data = friend.getPerModulesData(module_);
-                data.coin = Math.max(games.reduce((acc, cur) => cur + (acc.attackers.some((y) => y.user.id === x.user.id) ?? 5 : 0), 0) - data.items.reduce((acc, cur) => cur + acc.price, 0), data.coin);
+                data.coin = Math.max(
+                    games.reduce((acc, cur) => cur + (acc.attackers.some((y) => y.user.id === x.user.id) ? 5 : 0), 0) -
+                    data.items.reduce((acc, cur) => cur + acc.price, 0), data.coin
+                );
                 console.log(x.user.id + " : " + data.coin);
                 friend.setPerModulesData(module_, data);
             });
