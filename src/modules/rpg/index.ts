@@ -223,18 +223,18 @@ export default class extends Module {
         }
         if (msg.includes(["dataFix"])) {
             
-            const games = raids.find({});
+            const games = this.raids.find({});
             const recentGame = games.length == 0 ? null : games[games.length - 1];
             recentGame.attackers.forEach(x => {
-                const friend = ai.lookupFriend(x.user.id);
+                const friend = this.ai.lookupFriend(x.user.id);
                 if (!friend) return;
-                const data = friend.getPerModulesData(module_);
+                const data = friend.getPerModulesData(this);
                 data.coin = Math.max(
                     games.reduce((acc, cur) => cur + (acc.attackers.some((y) => y.user.id === x.user.id) ? 5 : 0), 0) -
                     data.items.reduce((acc, cur) => cur + acc.price, 0), data.coin
                 );
                 console.log(x.user.id + " : " + data.coin);
-                friend.setPerModulesData(module_, data);
+                friend.setPerModulesData(this, data);
             });
             return { reaction: "love" };
         }

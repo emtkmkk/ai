@@ -1068,13 +1068,15 @@ export async function getTotalDmg(msg, enemy: Enemy) {
         message += serifs.rpg.newColor(unlockColors)
     }
 
+    let reply;
+
     if (Number.isNaN(totalDmg) || totalDmg < 0) {
             msg.reply(`エラーが発生しました。もう一度試してみてください。`, {
             visibility: "specified"
         });
         totalDmg = 0;
     } else {
-        const reply = await msg.reply(`<center>${message}</center>`, {
+        reply = await msg.reply(`<center>${message}</center>`, {
             cw,
             visibility: "specified"
         });
