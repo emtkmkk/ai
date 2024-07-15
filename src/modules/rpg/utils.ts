@@ -236,6 +236,9 @@ export function getAtkDmg(data, atk: number, tp: number, count: number, crit: nu
         dmg += Math.round((data.fireAtk) * enemyMaxHp * 0.01)
         data.fireAtk = (data.fireAtk ?? 0) - 1;
     }
+    if (Number.isNaN(dmg)) {
+        throw new Error()
+    }
     return Math.max(dmg, 1);
 }
 
@@ -254,6 +257,9 @@ export function getEnemyDmg(data, def: number, tp: number, count: number, crit: 
     let dmg = Math.round((enemyAtk * (atkx ?? getVal(data.enemy.atkx, [tp]) ?? 3) * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * rng * (crit ? typeof crit === "number" ? (2 * crit) : 2 : 1)) * (1 / (((def * tp) + 100) / 100)))
     if (data.enemy?.fire) {
         dmg += Math.round(((data.count ?? count) - 1) * (100 + data.lv * 3) * data.enemy.fire)
+    }
+    if (Number.isNaN(dmg)) {
+        throw new Error()
     }
     return Math.max(dmg, 1);
 }
