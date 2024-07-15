@@ -493,6 +493,18 @@ export async function getTotalDmg(msg, enemy: Enemy) {
         spd += 2;
     }
 
+	if (skillEffects.heavenOrHell) {
+		if (Math.random() < 0.6) {
+			message += serifs.rpg.skill.heaven + "\n";
+			atk = atk * (1 + skillEffects.heavenOrHell);
+			def = def * (1 + skillEffects.heavenOrHell);
+		} else {
+			message += serifs.rpg.skill.hell + "\n";
+			atk = atk / (1 + skillEffects.heavenOrHell);
+			def = def / (1 + skillEffects.heavenOrHell);
+		}
+	}
+
     let mark = ":blank:";
 
     // ７フィーバー
@@ -907,6 +919,7 @@ export async function getTotalDmg(msg, enemy: Enemy) {
 
         if (skillEffects.allForOne) {
             atk = atk * spd * 1.1
+					if (itemBonus?.atk) itemBonus.atk = itemBonus.atk * spd * 1.1;
             spd = 1
         }
 
