@@ -225,6 +225,7 @@ export default class extends Module {
             
             const games = this.raids.find({});
             const recentGame = games.length == 0 ? null : games[games.length - 1];
+            if (!recentGame) return { reaction: "hmm" }
             recentGame.attackers.forEach(x => {
                 const friend = this.ai.lookupFriend(x.user.id);
                 if (!friend) return;
