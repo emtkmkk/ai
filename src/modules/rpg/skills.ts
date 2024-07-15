@@ -231,10 +231,10 @@ export const getSkill = (data) => {
     const playerSkills = data.skills.map((x) => skills.find((y) => x.name === y.name) ?? x)
     // フィルタリングされたスキルの配列を作成
     const filteredSkills = skills.filter((x) => !x.moveTo && !playerSkills?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique));
-
+	
     // スキルの合計重みを計算
     const totalWeight = filteredSkills.reduce((total, skill) => {
-        const skillCount = skillNameCountMap.get(skill.name) || 0; // デフォルトを0に設定
+        const skillCount = !x.cantReroll ? (skillNameCountMap.get(skill.name) || 0) : (totalSkillCount / (skills.filter((x) => !x.moveTo).length));
         return total + 1 / (1 + skillCount); // 出現回数に応じて重みを計算
     }, 0);
 
@@ -243,7 +243,7 @@ export const getSkill = (data) => {
 
     // ランダム値に基づいてスキルを選択
     for (let skill of filteredSkills) {
-        const skillCount = skillNameCountMap.get(skill.name) || 0; // デフォルトを0に設定
+        const skillCount = !x.cantReroll ? (skillNameCountMap.get(skill.name) || 0) : (totalSkillCount / (skills.filter((x) => !x.moveTo).length));
         const weight = 1 / (1 + skillCount); // 出現回数に応じて重みを計算
 
         if (randomValue < weight) {
