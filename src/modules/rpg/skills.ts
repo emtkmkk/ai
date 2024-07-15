@@ -230,7 +230,7 @@ export const skills: Skill[] = [
 export const getSkill = (data) => {
     const playerSkills = data.skills.map((x) => skills.find((y) => x.name === y.name) ?? x)
     // フィルタリングされたスキルの配列を作成
-    const filteredSkills = skills.filter((x) => !x.moveTo && !playerSkills?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique));
+    const filteredSkills = skills.filter((x) => !x.moveTo && (!x.cantReroll || !playerSkills?.some((y) => y.cantReroll)) && !playerSkills?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique));
 	
     // スキルの合計重みを計算
     const totalWeight = filteredSkills.reduce((total, skill) => {
