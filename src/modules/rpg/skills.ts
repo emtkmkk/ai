@@ -147,6 +147,8 @@ export type SkillEffect = {
     amuletBoost?: number;
     /** ショップの商品、全品n%オフ */
     priceOff?: number;
+	/** 60%でステータスn%アップ そうでない場合ダウン */
+	heavenOrHell?: number;
 };
 
 export type Skill = {
