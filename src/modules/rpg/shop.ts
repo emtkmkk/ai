@@ -215,6 +215,15 @@ export const shopItems: ShopItem[] = [
     effect: { showSkillBonus: true },
   },
   {
+    name: '装備詳細表示の札',
+    limit: (data) =>
+      !data.items.filter((x) => x.name === '装備詳細表示の札').length,
+    desc: '所持している間、武器・防具の詳細な効果が表示されます',
+    price: 50,
+    type: 'token',
+    effect: { showItemBonus: true },
+  },
+  {
     name: 'スキル変更珠',
     desc: 'スキルを変更するのに必要なアイテムです',
     limit: (data) => data.lv > 60,
@@ -529,7 +538,7 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
       '',
       serifs.rpg.shop.welcome(data.coin),
       ...showShopItems.map(
-        (x, index) => `[${index + 1}] ${x.name} ${x.price}枚\n${x.desc}\n`,
+        (x, index) => `[${index + 1}] ${x.name} ${x.price}個\n${x.desc}\n`,
       ),
     ].join('\n'),
     { visibility: 'specified' },
@@ -603,7 +612,7 @@ export function shopContextHook(
           if (data.showShopItems[i].price === 0) {
             message += data.showShopItems[i].name.replace(
               '捨てる',
-              '捨てました！',
+              '捨てたのじゃ',
             );
           }
           if (lvDiff || atkDiff || defDiff) {

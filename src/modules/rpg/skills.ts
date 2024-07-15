@@ -199,43 +199,43 @@ export const skills: Skill[] = [
   {
     name: `炎属性妖術`,
     desc: `戦闘時、最低ダメージが上昇します`,
-    info: `戦闘時、Lvの10%がダメージに固定加算 非戦闘時、${serifs.rpg.status.atk}+Lvの35%`,
+    info: `戦闘時、Lvの10%がダメージに固定加算\n非戦闘時、${serifs.rpg.status.atk}+Lvの35%`,
     effect: { fire: 0.1 },
   },
   {
     name: `氷属性妖術`,
     desc: `戦闘時、たまに敵を凍らせます`,
-    info: `戦闘時、10%で相手のターンをスキップ 非戦闘時、${serifs.rpg.status.def}+10%`,
+    info: `戦闘時、10%で相手のターンをスキップ\n非戦闘時、${serifs.rpg.status.def}+10%`,
     effect: { ice: 0.1 },
   },
   {
     name: `雷属性妖術`,
     desc: `戦闘時、連続攻撃をすればダメージが上がります`,
-    info: `ダメージ+(現在攻撃数/最大攻撃数)×20%`,
+    info: `(現在攻撃数/最大攻撃数)×20%のダメージ上昇を得る`,
     effect: { thunder: 0.2 },
   },
   {
     name: `風属性妖術`,
     desc: `戦闘時、たまに行動回数が上がります`,
-    info: `戦闘時、10%で行動回数が2倍 非戦闘時、${serifs.rpg.status.atk}+10%`,
+    info: `戦闘時、10%で行動回数が2倍\n非戦闘時、${serifs.rpg.status.atk}+10%`,
     effect: { spdUp: 0.1 },
   },
   {
     name: `土属性妖術`,
     desc: `戦闘時、最大ダメージが上昇します`,
-    info: `戦闘時かつ最大ダメージ制限がある場合、その制限を20%増加 非戦闘時、${serifs.rpg.status.atk}+10%`,
+    info: `戦闘時かつ最大ダメージ制限がある場合、その制限を20%増加\n非戦闘時、${serifs.rpg.status.atk}+10%`,
     effect: { dart: 0.2 },
   },
   {
     name: `光属性妖術`,
     desc: `戦闘時、たまに敵の攻撃力を下げます`,
-    info: `戦闘時、10%で敵の現在HPの半分のダメージを与える 行動回数が2回以上の敵に20%で行動回数を1にする それ以外の場合、${serifs.rpg.status.def}+7%`,
+    info: `戦闘時、20%でダメージカット50%\nそれ以外の場合、${serifs.rpg.status.def}+10%`,
     effect: { light: 0.2 },
   },
   {
     name: `闇属性妖術`,
     desc: `戦闘時、たまに敵の周辺に高重力領域が発生させます`,
-    info: `戦闘時、20%でダメージカット50% それ以外の場合、${serifs.rpg.status.def}+10%`,
+    info: `戦闘時、10%で敵の現在HPの半分のダメージを与える\n行動回数が2回以上の敵に20%で行動回数を1にする\nそれ以外の場合、${serifs.rpg.status.def}+7%`,
     effect: { dark: 0.1 },
   },
   {
@@ -259,7 +259,7 @@ export const skills: Skill[] = [
   {
     name: `油断しない`,
     desc: `ターン1に受けるダメージを大きく軽減します`,
-    info: `ターン1にてダメージカット30%を得る 100%以上になる場合、残りはターン2に持ち越す`,
+    info: `ターン1にてダメージカット30%を得る\n100%以上になる場合、残りはターン2に持ち越す`,
     effect: { firstTurnResist: 0.3 },
     skillOnly: true,
   },
@@ -309,7 +309,7 @@ export const skills: Skill[] = [
   {
     name: `負けそうなら逃げる`,
     desc: `逃げると負けた事になりません 連続で発動しにくい`,
-    info: `スキルの数まで100%逃走 以降失敗まで発動度に確率半減し続ける レイド時は、${serifs.rpg.status.def}+10%`,
+    info: `スキルの数まで100%逃走 以降失敗まで発動度に確率半減し続ける\nレイド時は、${serifs.rpg.status.def}+10%`,
     effect: { escape: 1 },
   },
   {
@@ -493,7 +493,7 @@ export const skills: Skill[] = [
   {
     name: `７フィーバー！`,
     desc: `Lv・パワー・防御の値に「7」が含まれている程ステータスアップ`,
-    info: `Lv・パワー・防御の値に「7」が含まれている場合ステータス+7% 「77」が含まれている場合ステータス+77% ...`,
+    info: `Lv・パワー・防御の値に「7」が含まれている場合ステータス+7%\n「77」が含まれている場合ステータス+77% 「777」が含まれている場合...`,
     effect: { sevenFever: 1 },
   },
   {
@@ -692,7 +692,7 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
 
   let amuletSkill: string[] = [];
   if (data.items?.filter((x) => (x.type = 'amulet')).length) {
-    const amulet = data.items?.filter((x) => (x.type = 'amulet'))[0];
+    const amulet = data.items?.filter((x) => x.type === 'amulet')[0];
     const item = shopItems.find((x) => x.name === amulet.name) as AmuletItem;
     const skill = amulet.skillName
       ? skills.find((x) => amulet.skillName === x.name)

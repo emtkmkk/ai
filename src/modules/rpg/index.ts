@@ -294,7 +294,26 @@ export default class extends Module {
       return { reaction: ':neofox_heart:' };
     }
     if (msg.includes(['dataFix'])) {
-      //return { reaction: ":neofox_heart:" };
+      const games = this.raids.find({});
+      const recentGame = games.length == 0 ? null : games[games.length - 1];
+      if (!recentGame) return { reaction: 'hmm' };
+      recentGame.attackers.forEach((x) => {
+        const friend = this.ai.lookupFriend(x.user.id);
+        if (!friend) return;
+        const data = friend.getPerModulesData(this);
+        data.coin = Math.min(
+          games.reduce(
+            (acc, cur) =>
+              acc +
+              (cur.attackers.some((y) => y.user.id === x.user.id) ? 4 : 0),
+            0,
+          ) - data.items.reduce((acc, cur) => acc + cur.price, 0),
+          80,
+        );
+        console.log(x.user.id + ' : ' + data.coin);
+        friend.setPerModulesData(this, data);
+      });
+      return { reaction: 'love' };
     }
     return { reaction: ':neofox_think:' };
   }
@@ -1191,6 +1210,17 @@ export default class extends Module {
         default:
           break;
       }
+      if (aggregateTokensEffects(data).showItemBonus) {
+        const itemMessage = [
+          `${itemBonus.atk ? `${serifs.rpg.status.atk}+${itemBonus.atk}` : ''}`,
+          `${itemBonus.def ? `${serifs.rpg.status.def}+${itemBonus.def}` : ''}`,
+        ]
+          .filter(Boolean)
+          .join(' / ');
+        if (itemMessage) {
+          message += `(${itemMessage})\n`;
+        }
+      }
     }
 
     // 敵のステータスを計算
@@ -1681,6 +1711,14 @@ export default class extends Module {
             message += serifs.rpg.endure + '\n';
             playerHp = 1;
             data.endure = Math.max(data.endure - 1, 0);
+          }
+          if (playerHp <= 30 + lv && serifs.rpg.nurse && Math.random() < 0.01) {
+            message +=
+              '\n' +
+              serifs.rpg.nurse +
+              '\n' +
+              (100 + lv * 3 - playerHp) +
+              'ポイント回復した！\n';
           }
           if (maxDmg > (data.superMuscle ?? 0) && playerHp > 0)
             data.superMuscle = maxDmg;

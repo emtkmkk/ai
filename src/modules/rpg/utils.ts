@@ -4,6 +4,7 @@ import Module from '@/module';
 import serifs from '@/serifs';
 import rpg from './index';
 import { colorReply, colors } from './colors';
+import { shopItems } from './shop';
 
 export function initializeData(module: rpg, msg) {
   const data = msg.friend.getPerModulesData(module);
@@ -363,6 +364,9 @@ export function getAtkDmg(
     dmg += Math.round(data.fireAtk * enemyMaxHp * 0.01);
     data.fireAtk = (data.fireAtk ?? 0) - 1;
   }
+  if (Number.isNaN(dmg)) {
+    throw new Error();
+  }
   return Math.max(dmg, 1);
 }
 
@@ -399,6 +403,9 @@ export function getEnemyDmg(
     dmg += Math.round(
       ((data.count ?? count) - 1) * (100 + data.lv * 3) * data.enemy.fire,
     );
+  }
+  if (Number.isNaN(dmg)) {
+    throw new Error();
   }
   return Math.max(dmg, 1);
 }

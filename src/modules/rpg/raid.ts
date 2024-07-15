@@ -225,6 +225,7 @@ function finish(raid: Raid) {
   /** 攻撃者のリストをフィルタリングしてダメージ順にソート */
   let sortAttackers = raid.attackers
     .filter((attacker) => {
+      if (attacker.dmg <= 0) return false;
       if (seenIds.has(attacker.user.id)) {
         return false;
       } else {
@@ -309,7 +310,7 @@ function finish(raid: Raid) {
     const friend = ai.lookupFriend(x.user.id);
     if (!friend) return;
     const data = friend.getPerModulesData(module_);
-    data.coin = (data.coin ?? 0) + (score ?? 1);
+    data.coin = Math.max((data.coin ?? 0) + (score ?? 1), data.coin);
     friend.setPerModulesData(module_, data);
   });
 
@@ -905,6 +906,17 @@ export async function getTotalDmg(msg, enemy: Enemy) {
         default:
           break;
       }
+      if (aggregateTokensEffects(data).showItemBonus) {
+        const itemMessage = [
+          `${itemBonus.atk ? `${serifs.rpg.status.atk}+${itemBonus.atk}` : ''}`,
+          `${itemBonus.def ? `${serifs.rpg.status.def}+${itemBonus.def}` : ''}`,
+        ]
+          .filter(Boolean)
+          .join(' / ');
+        if (itemMessage) {
+          message += `(${itemMessage})\n`;
+        }
+      }
     }
 
     // 敵に最大ダメージ制限がある場合、ここで計算
@@ -1338,10 +1350,22 @@ export async function getTotalDmg(msg, enemy: Enemy) {
     message += serifs.rpg.newColor(unlockColors);
   }
 
-  const reply = await msg.reply(`<center>${message}</center>`, {
-    cw,
-    visibility: 'specified',
-  });
+  let reply;
+
+  if (Number.isNaN(totalDmg) || totalDmg < 0) {
+    reply = await msg.reply(
+      `エラーが発生しました。もう一度試してみてください。`,
+      {
+        visibility: 'specified',
+      },
+    );
+    totalDmg = 0;
+  } else {
+    reply = await msg.reply(`<center>${message}</center>`, {
+      cw,
+      visibility: 'specified',
+    });
+  }
 
   return {
     totalDmg,
