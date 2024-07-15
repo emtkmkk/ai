@@ -222,6 +222,7 @@ export const skills: Skill[] = [
     { name: `不運チャージ`, desc: `不運だった場合、次回幸運になりやすくなります`, info: `ステータス+5% 低乱数を引いた時、次回以降に高乱数を引きやすくなる`, effect: { atkUp: 0.05, defUp: 0.05, charge: 1 } },
     { name: `お守り整備`, desc: `お守りの効果が上がり、お守りが壊れにくくなります`, info: `お守り効果+50% お守り耐久+50%`, effect: { amuletBoost: 0.5 }, skillOnly: true},
     { name: `値切り術`, desc: `ショップのアイテムが少し安くなります`, info: `ショップアイテム全品10%OFF`, effect: { priceOff: 0.1 }, skillOnly: true},
+	{ name: `天国か地獄か`, desc: `戦闘開始時に強くなるか弱くなるかどちらかが起こります`, info: `60%でステータス+20% 40%でステータス-20%`, effect: { heavenOrHell: 0.2 }},
 ]
 
 export const getSkill = (data) => {
