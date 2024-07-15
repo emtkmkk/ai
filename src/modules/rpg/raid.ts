@@ -1071,7 +1071,7 @@ export async function getTotalDmg(msg, enemy: Enemy) {
     let reply;
 
     if (Number.isNaN(totalDmg) || totalDmg < 0) {
-            msg.reply(`エラーが発生しました。もう一度試してみてください。`, {
+        reply = await msg.reply(`エラーが発生しました。もう一度試してみてください。`, {
             visibility: "specified"
         });
         totalDmg = 0;

@@ -230,8 +230,8 @@ export default class extends Module {
                 if (!friend) return;
                 const data = friend.getPerModulesData(this);
                 data.coin = Math.max(
-                    games.reduce((acc, cur) => cur + (acc.attackers.some((y) => y.user.id === x.user.id) ? 5 : 0), 0) -
-                    data.items.reduce((acc, cur) => cur + acc.price, 0), data.coin
+                    games.reduce((acc, cur) => acc + (cur.attackers.some((y) => y.user.id === x.user.id) ? 5 : 0), 0) -
+                    data.items.reduce((acc, cur) =>  acc + cur.price, 0), data.coin
                 );
                 console.log(x.user.id + " : " + data.coin);
                 friend.setPerModulesData(this, data);
