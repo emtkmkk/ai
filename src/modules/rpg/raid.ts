@@ -438,7 +438,7 @@ export async function getTotalDmg(msg, enemy: Enemy) {
         if (isSuper) {
             message += serifs.rpg.postBonusInfo.super + `\n`
         }
-        serifs.rpg.postBonusInfo.post(postCount, tp > 1 ? "+" + Math.floor((tp - 1) * 100) : "-" + Math.floor((tp - 1) * 100)) + `\n\n`
+        message += serifs.rpg.postBonusInfo.post(postCount, tp > 1 ? "+" + Math.floor((tp - 1) * 100) : "-" + Math.floor((tp - 1) * 100)) + `\n\n`
     }
 
     // ここで残りのステータスを計算しなおす
