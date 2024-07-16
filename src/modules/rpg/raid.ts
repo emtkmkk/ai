@@ -1014,6 +1014,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
             /** 受けた最大ダメージ */
             let maxDmg = 0;
             if (!enemyTurnFinished) {
+							message += "\n";
                 for (let i = 0; i < (enemy.spd ?? 1); i++) {
                     const rng = (defMinRnd + random(data, startCharge, skillEffects) * defMaxRnd);
                     if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`
@@ -1024,7 +1025,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
                     const dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX, getVal(enemy.atkx, [tp]));
                     const noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX, getVal(enemy.atkx, [tp]));
                     playerHp -= dmg
-                    message += (i === 0 ? "\n" : "") + (crit ? `**${enemy.defmsg(dmg)}**` : enemy.defmsg(dmg)) + "\n"
+                    message +=　(crit ? `**${enemy.defmsg(dmg)}**` : enemy.defmsg(dmg)) + "\n"
                     if (noItemDmg - dmg > 1) {
                         message += `(道具効果: -${noItemDmg - dmg})\n`
                     }
