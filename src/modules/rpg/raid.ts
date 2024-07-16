@@ -6,7 +6,7 @@ import * as loki from 'lokijs';
 import { User } from '@/misskey/user';
 import rpg from './index';
 import { colors } from './colors';
-import { endressEnemy, Enemy, raidEnemys } from './enemys';
+import { endressEnemy, Enemy, RaidEnemy, raidEnemys } from './enemys';
 import { rpgItems } from './items';
 import { aggregateSkillsEffects, calcSevenFever, amuletMinusDurability } from './skills';
 import { aggregateTokensEffects } from './shop';
@@ -42,7 +42,7 @@ export type Raid = {
         mark: string;
     }[];
     /** レイドの敵 */
-    enemy: Enemy;
+    enemy: RaidEnemy;
     /** レイドが終了しているかどうかのフラグ */
     isEnded: boolean;
     /** レイドの開始時間（タイムスタンプ） */
@@ -377,7 +377,7 @@ export function raidTimeoutCallback(data: any) {
     }
 }
 
-export async function getTotalDmg(msg, enemy: Enemy) {
+export async function getTotalDmg(msg, enemy: RaidEnemy) {
     // データを読み込み
     const data = initializeData(module_, msg)
     if (!data.lv) return {
@@ -397,11 +397,17 @@ export async function getTotalDmg(msg, enemy: Enemy) {
     const isSuper = Math.random() < (0.02 + Math.max(data.superPoint / 200, 0)) || color.alwaysSuper;
 
     /** 投稿数（今日と明日の多い方）*/
-    let postCount = await getPostCount(ai, module_, data, msg, (isSuper ? 200 : 0))
+    let postCount = 0;
+    let continuousBonusNum = 0;
+    if (enemy.forcePostCount) {
+        postCount = enemy.forcePostCount
+    } else {
+        postCount = await getPostCount(ai, module_, data, msg, (isSuper ? 200 : 0));
 
-    const continuousBonusNum = (Math.min(Math.max(10, postCount / 2), 25));
+        (Math.min(Math.max(10, postCount / 2), 25));
 
-    postCount = postCount + continuousBonusNum;
+        postCount = postCount + continuousBonusNum;
+    }
 
     // 投稿数に応じてステータス倍率を得る
     // 連続プレイの場合は倍率アップ
@@ -439,14 +445,24 @@ export async function getTotalDmg(msg, enemy: Enemy) {
     /** バフを得た数。行数のコントロールに使用 */
     let buff = 0;
 
-    if (aggregateTokensEffects(data).showPostBonus) {
+    if (enemy.forcePostCount) {
         buff += 1
-        message += serifs.rpg.postBonusInfo.continuous.a(Math.floor(continuousBonusNum)) + `\n`
-        if (isSuper) {
-            message += serifs.rpg.postBonusInfo.super + `\n`
+        message += serifs.rpg.forcePostCount + `\n`
+        if (aggregateTokensEffects(data).showPostBonus) {
+            buff += 1
+            message += serifs.rpg.postBonusInfo.post(postCount, tp > 1 ? "+" + Math.floor((tp - 1) * 100) : "-" + Math.floor((tp - 1) * 100)) + `\n\n`
         }
-        message += serifs.rpg.postBonusInfo.post(postCount, tp > 1 ? "+" + Math.floor((tp - 1) * 100) : "-" + Math.floor((tp - 1) * 100)) + `\n\n`
+    } else {
+        if (aggregateTokensEffects(data).showPostBonus) {
+            buff += 1
+            message += serifs.rpg.postBonusInfo.continuous.a(Math.floor(continuousBonusNum)) + `\n`
+            if (isSuper) {
+                message += serifs.rpg.postBonusInfo.super + `\n`
+            }
+            message += serifs.rpg.postBonusInfo.post(postCount, tp > 1 ? "+" + Math.floor((tp - 1) * 100) : "-" + Math.floor((tp - 1) * 100)) + `\n\n`
+        }
     }
+
 
     // ここで残りのステータスを計算しなおす
     let { atk, def, spd } = calculateStats(data, msg, skillEffects, color)

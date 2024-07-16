@@ -91,7 +91,7 @@ export default {
 			normal: name => name ? `いってらっしゃい、${name}！` : 'いってらっしゃい！',
 		},
 
-		tooLong: (length, max) => `長すぎるかも... (${max}文字まで ${(max-length)*-1}文字オーバー)`,
+		tooLong: (length, max) => `長すぎるかも... (${max}文字まで ${(max - length) * -1}文字オーバー)`,
 
 		invalidName: '発音が難しいかも (特殊文字は覚えられません)',
 
@@ -185,7 +185,7 @@ export default {
 	},
 
 	dice: {
-		done: (res,total) => `${res}${total ? `\n合計 \\(${total}\\)` : ""} です！`
+		done: (res, total) => `${res}${total ? `\n合計 \\(${total}\\)` : ""} です！`
 	},
 
 	birthday: {
@@ -326,7 +326,7 @@ export default {
 		/**
 		 * 正解したとき
 		 */
-		fail: (ans, maxtry,  history) => `不正解です、${maxtry}回以内に当てられませんでした…… 秘密の数は「${ans}」でした。 (履歴: ${history})`,
+		fail: (ans, maxtry, history) => `不正解です、${maxtry}回以内に当てられませんでした…… 秘密の数は「${ans}」でした。 (履歴: ${history})`,
 	},
 
 	/**
@@ -493,7 +493,7 @@ export default {
 			heaven: `スキル「天国か地獄か」発動！\nもこチキのステータスがアップ！`,
 			hell: `スキル「天国か地獄か」発動！\nもこチキのステータスがダウン…`,
 		},
-		nurse: "$[x3 :mkck_nurse:]\n\n通りすがりのナースが現れた！\nナースは受けた傷を治療してくれた！",
+		nurse: "$[x3 :mkck_nurse:]\n\n通りすがりのナースが現れた！\nナースは受けた傷を治療してくれた！", //この文を空白にすればナースは来なくなります
 		haisui: "もこチキは決死の覚悟をした！\nパワーが上がり、防御が下がった！",
 		endure: "もこチキは気合で耐えた！",
 		fireAtk: (enemyName) => `もこチキの追い打ち炎攻撃！\n${enemyName}が次に受けるダメージが上昇した！`,
@@ -501,10 +501,11 @@ export default {
 		lose: ":oyoo:",
 		escape: "もこチキは戦闘から逃げた！",
 		escapeNotBattle: "もこチキは一旦諦めて別の事をするようだ。",
-		getCoin: (num) => `${num}枚のもこコインを拾った！\n「RPG ショップ」で買い物してくださいね！`,
+		getCoin: (num) => `${num}枚のもこコインを拾った！\n「RPG ショップ」でお買い物してくださいね！`,
 		next: "次回へ続く……",
 		nextPlay: (str) => `次回は${str}以降に遊べます。`,
 		getRerollOrb: (num) => `\n\nスキル変更珠を${num > 1 ? `${num}個` : ""}拾いました！\n「RPG スキル」と話しかけて確認してみてね！`,
+		forcePostCount: "周囲に不思議な力が働いている…\n投稿数ボーナスが無効になった！",
 		player: {
 			mark: "☆",
 			mark2: "★",
