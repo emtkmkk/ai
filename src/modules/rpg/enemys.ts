@@ -82,7 +82,7 @@ export type Enemy = {
     /** エンディング時のメッセージ */
     endingmsg?: string;
     /** 独自イベントを指定 */
-    event?: ((module: rpg, msg: Message) => any);
+    event?: ((module: rpg, msg: Message, _data: any) => any);
 };
 
 export type RaidEnemy = Enemy & {
@@ -113,7 +113,7 @@ export const enemys: Enemy[] = [
     { name: ":mk_hero_8p:", limit: (data) => ((data.winCount ?? 0) >= 24 || ((data.lv ?? 1) <= 99 && (data.lv ?? 1) % 11 === 0) || new Date().getMonth() - new Date().getDate() === -1) && (data.color ?? 1) !== 8 && !data.clearEnemy.includes(":mk_hero:"), msg: "異空間から:mk_hero_8p:が現れ、勝負を仕掛けてきた！", short: ":mk_hero_8p:と戦い中", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの剣攻撃！\n:mk_hero_8p:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mk_hero_8p:の剣攻撃！\nもこチキに${dmg}ポイントのダメージ！`, winmsg: ":mk_hero_8p:に打ち勝った！", losemsg: "もこチキはやられてしまった…", endingmsg: ":mk_hero_8p:の力に飲まれずに対抗出来た！", maxhp: (hp) => hp, atk: (atk, def, spd) => def, def: (atk, def, spd) => atk * spd, atkx: (tp) => tp, defx: (tp) => tp },
     { name: ":mk_chickenda:", limit: (data) => (data.winCount ?? 0) >= 5 && (data.streak ?? 0) >= 5 && !data.clearEnemy.includes(":mk_chickenda_gtgt:"), msg: ":mk_chickenda:が勝負を仕掛けてきた！", short: ":mk_chickenda:と戦い中", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの光魔法！\n:mk_chickenda:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mk_chickenda:の†！\nもこチキに${dmg}ポイントのダメージ！`, winmsg: ":mk_chickenda:は帰っていった！", losemsg: "もこチキはやられてしまった…", endingmsg: ":mk_chickenda:の恐ろしい攻撃力に負けずに追い返す事が出来た！", maxhp: 130, atk: 5, def: 5, maxdmg: 0.7, atkx: 5, defx: 5 },
     { name: ":mk_chickenda_gtgt:", limit: (data, friend) => (data.winCount ?? 0) >= 15 && ((friend.love ?? 0) >= 500 || aggregateTokensEffects(data).appearStrongBoss) && !data.clearHistory.includes(":mk_chickenda_gtgt:") && data.clearHistory.includes(":mk_chickenda:"), msg: ":mk_chickenda_gtgt:が本気の勝負を仕掛けてきた！", short: ":mk_chickenda_gtgt:と本気の戦い中", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの光魔法！\n:mk_chickenda_gtgt:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mk_chickenda_gtgt:の†！\nもこチキに${dmg}ポイントのダメージ！`, abortmsg: ":mk_chickenda_gtgt:は:muscle_mkchicken:を召還した！もこチキの連続攻撃を止めた！", winmsg: ":mk_chickenda_gtgt:は帰っていった！", losemsg: "もこチキはやられてしまった…", endingmsg: ":mk_chickenda_gtgt:の本気にも負けずに追い返す事が出来た！", atk: 15, def: 15, maxdmg: 0.6, atkx: 7, defx: 7, abort: 0.04 },
-    { name: "ending", limit: (data, friend) => (data.superUnlockCount ?? 0) >= 5 && !data.clearHistory.includes("ending"), msg: `🎉もこチキはあなたにいままでの冒険で行ってきた事を話したいようだ。`, short: "冒険のまとめ中", event: (module, msg) => ending(module, msg), atkmsg: () => "", defmsg: () => "" },
+    { name: "ending", limit: (data, friend) => (data.superUnlockCount ?? 0) >= 5 && !data.clearHistory.includes("ending"), msg: `🎉もこチキはあなたにいままでの冒険で行ってきた事を話したいようだ。`, short: "冒険のまとめ中", event: (module, msg, _data) => ending(module,msg, _data), atkmsg: () => "", defmsg: () => "" },
 ];
 
 export const raidEnemys: RaidEnemy[] = [
@@ -178,8 +178,8 @@ export const endressEnemy = (data): Enemy => ({
     abort: 0.01,
 })
 
-export const ending = (module: rpg, msg: Message): any => {
-    const data = msg.friend.getPerModulesData(module);
+export const ending = (module: rpg, msg: Message, _data: any): any => {
+    const data = _data;
     /** 使用中の色情報 */
     const color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
     /** プレイヤーの見た目 */
