@@ -12,15 +12,15 @@ export function initializeData(module: rpg, msg) {
     if (!data.clearEnemy) data.clearEnemy = [data.preEnemy ?? ""].filter(Boolean);
     if (!data.clearHistory) data.clearHistory = data.clearEnemy;
     if (!data.items) data.items = [];
-	if (!data.coin) data.coin = 0
-	data.items?.filter((x) => x.type = (shopItems.find((y) => x.name === y.name)?.type ?? "token"))
+    if (!data.coin) data.coin = 0
+    data.items?.filter((x) => x.type = (shopItems.find((y) => x.name === y.name)?.type ?? "token"))
     if (data.items.filter((x) => x.type === "amulet").length > 1) {
         data.items.filter((x) => x.type === "amulet").forEach((x) => {
             data.coin += x.price
             data.shopItems.push(x.name)
         })
         data.items = data.items.filter((x) => x.type !== "amulet");
-        
+
     }
     return data;
 }
@@ -131,10 +131,10 @@ export async function getPostCount(ai: 藍, module: rpg, data, msg, bonus = 0): 
         }
         if (msg.friend.doc.linkedAccounts?.length) {
             for (const userId of msg.friend.doc.linkedAccounts) {
-							if (msg.userId === userId) {
-								msg.friend.doc.linkedAccounts = msg.friend.doc.linkedAccounts.filter((x) => x !== userId);
-								msg.friend.doc.save()
-							}
+                if (msg.userId === userId) {
+                    msg.friend.doc.linkedAccounts = msg.friend.doc.linkedAccounts.filter((x) => x !== userId);
+                    msg.friend.doc.save()
+                }
                 const friend = ai.lookupFriend(userId);
                 if (!friend || !friend.doc?.linkedAccounts?.includes(msg.friend.userId)) continue;
 
@@ -160,10 +160,10 @@ export async function getPostCount(ai: 藍, module: rpg, data, msg, bonus = 0): 
 
         if (msg.friend.doc.linkedAccounts?.length) {
             for (const userId of msg.friend.doc.linkedAccounts) {
-							if (msg.userId === userId) {
-								msg.friend.doc.linkedAccounts = msg.friend.doc.linkedAccounts.filter((x) => x !== userId);
-								msg.friend.doc.save()
-							}
+                if (msg.userId === userId) {
+                    msg.friend.doc.linkedAccounts = msg.friend.doc.linkedAccounts.filter((x) => x !== userId);
+                    msg.friend.doc.save()
+                }
                 const friend = ai.lookupFriend(userId);
                 if (!friend || !friend.doc?.linkedAccounts?.includes(msg.friend.userId)) continue;
 

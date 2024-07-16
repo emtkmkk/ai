@@ -99,28 +99,28 @@ function crawleGameEnd() {
 function scheduleRaidStart() {
     /** 現在の時間（時） */
     const hours = new Date().getHours();
-	const minutes = new Date().getMinutes()
-    
+    const minutes = new Date().getMinutes()
+
     // 特定の時間（8, 12, 18, 21時）の15分にレイドを開始する
     if ([8, 12, 18, 21].includes(hours) && minutes === 15) {
         start();
     }
-	const day = new Date().getDay()
-	const randomHours = [7,9,10,11,13,14,15,16,17,19,20,22];
-	const randomMinutes = [0,15,30,45];
-	let rnd = seedrandom(getDate() + ai.account.id)
-	if (day >= 1 && day <= 4 && hours === randomHours[Math.floor(rnd() * randomHours.length)] &&　minutes === randomMinutes[Math.floor(rnd() * randomMinutes.length)]) {
-		start();
-	}
-	if ((day === 6 || day === 0) && hours === 19 && minutes === 45) {
-		start();
-	}
-	if (day >= 5 && hours === 22 && minutes === 45) {
-		start();
-	}
-	if ((day === 6 || day === 0) && [10,15].includes(hours) && minutes === 15) {
-		start();
-	}
+    const day = new Date().getDay()
+    const randomHours = [7, 9, 10, 11, 13, 14, 15, 16, 17, 19, 20, 22];
+    const randomMinutes = [0, 15, 30, 45];
+    let rnd = seedrandom(getDate() + ai.account.id)
+    if (day >= 1 && day <= 4 && hours === randomHours[Math.floor(rnd() * randomHours.length)] && minutes === randomMinutes[Math.floor(rnd() * randomMinutes.length)]) {
+        start();
+    }
+    if ((day === 6 || day === 0) && hours === 19 && minutes === 45) {
+        start();
+    }
+    if (day >= 5 && hours === 22 && minutes === 45) {
+        start();
+    }
+    if ((day === 6 || day === 0) && [10, 15].includes(hours) && minutes === 15) {
+        start();
+    }
 }
 
 /**
@@ -134,7 +134,7 @@ export async function start(triggerUserId?: string, flg?: any) {
     /** すべてのレイドゲームのリスト */
     const games = raids.find({});
 
-    const recentRaidList = games.slice(Math.min((raidEnemys.length-1) * -1, -5)).map(obj => obj.enemy.name ?? "");
+    const recentRaidList = games.slice(Math.min((raidEnemys.length - 1) * -1, -5)).map(obj => obj.enemy.name ?? "");
 
     /** 過去のレイドボスを除外したリスト */
     const filteredRaidEnemys =
@@ -493,17 +493,17 @@ export async function getTotalDmg(msg, enemy: Enemy) {
         spd += 2;
     }
 
-	if (skillEffects.heavenOrHell) {
-		if (Math.random() < 0.6) {
-			message += serifs.rpg.skill.heaven + "\n";
-			atk = atk * (1 + skillEffects.heavenOrHell);
-			def = def * (1 + skillEffects.heavenOrHell);
-		} else {
-			message += serifs.rpg.skill.hell + "\n";
-			atk = atk / (1 + skillEffects.heavenOrHell);
-			def = def / (1 + skillEffects.heavenOrHell);
-		}
-	}
+    if (skillEffects.heavenOrHell) {
+        if (Math.random() < 0.6) {
+            message += serifs.rpg.skill.heaven + "\n";
+            atk = atk * (1 + skillEffects.heavenOrHell);
+            def = def * (1 + skillEffects.heavenOrHell);
+        } else {
+            message += serifs.rpg.skill.hell + "\n";
+            atk = atk / (1 + skillEffects.heavenOrHell);
+            def = def / (1 + skillEffects.heavenOrHell);
+        }
+    }
 
     let mark = ":blank:";
 
@@ -563,7 +563,7 @@ export async function getTotalDmg(msg, enemy: Enemy) {
         message += serifs.rpg.skill.firstTurnResist + "\n"
     }
 
-	enemyDef -= (atk * (skillEffects.arpen ?? 0))
+    enemyDef -= (atk * (skillEffects.arpen ?? 0))
 
     // バフが1つでも付与された場合、改行を追加する
     if (buff > 0) message += "\n"
@@ -579,10 +579,10 @@ export async function getTotalDmg(msg, enemy: Enemy) {
     if (skillEffects.enemyCritDmgDown) {
         def = def * (1 + (skillEffects.enemyCritDmgDown ?? 0) / 30)
     }
-	if (skillEffects.enemyBuff) {
-		atk = atk * 1.05;
-		def = def * 1.05;
-	}
+    if (skillEffects.enemyBuff) {
+        atk = atk * 1.05;
+        def = def * 1.05;
+    }
 
     const _atk = atk;
     const _def = def;
@@ -801,12 +801,12 @@ export async function getTotalDmg(msg, enemy: Enemy) {
                 default:
                     break;
             }
-					if (aggregateTokensEffects(data).showItemBonus) {
-						const itemMessage = [`${itemBonus.atk ? `${serifs.rpg.status.atk}+${itemBonus.atk}` : ""}`,`${itemBonus.def ? `${serifs.rpg.status.def}+${itemBonus.def}` : ""}`].filter(Boolean).join(" / ")
-						if (itemMessage) {
-							message += `(${itemMessage})\n`;
-						}
-					}
+            if (aggregateTokensEffects(data).showItemBonus) {
+                const itemMessage = [`${itemBonus.atk ? `${serifs.rpg.status.atk}+${itemBonus.atk}` : ""}`, `${itemBonus.def ? `${serifs.rpg.status.def}+${itemBonus.def}` : ""}`].filter(Boolean).join(" / ")
+                if (itemMessage) {
+                    message += `(${itemMessage})\n`;
+                }
+            }
         }
 
         // 敵に最大ダメージ制限がある場合、ここで計算
@@ -919,7 +919,7 @@ export async function getTotalDmg(msg, enemy: Enemy) {
 
         if (skillEffects.allForOne) {
             atk = atk * spd * 1.1
-					if (itemBonus?.atk) itemBonus.atk = itemBonus.atk * spd * 1.1;
+            if (itemBonus?.atk) itemBonus.atk = itemBonus.atk * spd * 1.1;
             spd = 1
         }
 
@@ -1066,12 +1066,12 @@ export async function getTotalDmg(msg, enemy: Enemy) {
         if (data.raidScore[enemy.name]) message += `\n（これまでのベスト: ${data.raidScore[enemy.name]}）`
     }
 
-	const amuletmsg = amuletMinusDurability(data)
+    const amuletmsg = amuletMinusDurability(data)
 
-	if (amuletmsg) {
-		message += "\n\n" + amuletmsg
-	}
- 
+    if (amuletmsg) {
+        message += "\n\n" + amuletmsg
+    }
+
 
     msg.friend.setPerModulesData(module_, data);
 

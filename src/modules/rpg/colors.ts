@@ -52,7 +52,7 @@ export const colors: Color[] = [
         name: ":mk_hero_4p:",
         keyword: "4",
         unlock: (data) => data.allClear,
-        message: (data) => data.allClear ? `${serifs.rpg.color.unlock} (クリアLv: **${(data.allClear ?? "?")}**)` :`連勝で全ての敵を倒すと解放されます。${data.clearEnemy?.length ? `(現在 **${data.clearEnemy.length}** 連勝中)` : ""}`,
+        message: (data) => data.allClear ? `${serifs.rpg.color.unlock} (クリアLv: **${(data.allClear ?? "?")}**)` : `連勝で全ての敵を倒すと解放されます。${data.clearEnemy?.length ? `(現在 **${data.clearEnemy.length}** 連勝中)` : ""}`,
     },
     {
         id: 5,
@@ -108,39 +108,39 @@ export const unlockCount = (data, excludeIds: number[] = [], excludeDefault = fa
 /** 色に関しての情報を返す */
 export const colorReply = (module: Module, msg: Message) => {
 
-            // データを読み込み
-            const data = msg.friend.getPerModulesData(module);
-            if (!data) return false;
+    // データを読み込み
+    const data = msg.friend.getPerModulesData(module);
+    if (!data) return false;
 
-            if (msg.includes([serifs.rpg.command.change])) {
-                // 文字数が多い物を先に判定
-                const sortedColors = colors.sort((a,b) => b.keyword.length - a.keyword.length)
-                for (let i = 0; i < sortedColors.length; i++) {
-                    if (msg.includes([sortedColors[i].keyword])) {
-                        if (sortedColors[i].unlock(data)) {
-                            data.color = sortedColors[i].id
-                            msg.friend.setPerModulesData(module, data);
-                            return {
-                                reaction: ':mk_muscleok:'
-                            };
-                        } else {
-                            return {
-                                reaction: 'confused'
-                            };
-                        }
-                    }
+    if (msg.includes([serifs.rpg.command.change])) {
+        // 文字数が多い物を先に判定
+        const sortedColors = colors.sort((a, b) => b.keyword.length - a.keyword.length)
+        for (let i = 0; i < sortedColors.length; i++) {
+            if (msg.includes([sortedColors[i].keyword])) {
+                if (sortedColors[i].unlock(data)) {
+                    data.color = sortedColors[i].id
+                    msg.friend.setPerModulesData(module, data);
+                    return {
+                        reaction: ':mk_muscleok:'
+                    };
+                } else {
+                    return {
+                        reaction: 'confused'
+                    };
                 }
             }
+        }
+    }
 
-            msg.reply([
-                serifs.rpg.color.info,
-                "",
-                serifs.rpg.color.list,
-                ...colors.filter((x) => !x.hidden || x.unlock(data)).map((x) => `${x.keyword}: ${x.name} ${x.message(data)}`)
-            ].join("\n"));
+    msg.reply([
+        serifs.rpg.color.info,
+        "",
+        serifs.rpg.color.list,
+        ...colors.filter((x) => !x.hidden || x.unlock(data)).map((x) => `${x.keyword}: ${x.name} ${x.message(data)}`)
+    ].join("\n"));
 
-            return {
-                reaction: 'love'
-            };
+    return {
+        reaction: 'love'
+    };
 
 }

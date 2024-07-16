@@ -177,7 +177,7 @@ export default class extends Module {
                 } else {
                     helpMessage.push(serifs.rpg.help.skills1)
                 }
-                
+
             }
         }
         if (data.coin > 0) {
@@ -222,7 +222,7 @@ export default class extends Module {
             return { reaction: "love" };
         }
         if (msg.includes(["dataFix"])) {
-            
+
             const games = this.raids.find({});
             const recentGame = games.length == 0 ? null : games[games.length - 1];
             if (!recentGame) return { reaction: "hmm" }
@@ -232,7 +232,7 @@ export default class extends Module {
                 const data = friend.getPerModulesData(this);
                 data.coin = Math.min(
                     games.reduce((acc, cur) => acc + (cur.attackers.some((y) => y.user.id === x.user.id) ? 4 : 0), 0) -
-                    data.items.reduce((acc, cur) =>  acc + cur.price, 0), 80
+                    data.items.reduce((acc, cur) => acc + cur.price, 0), 80
                 );
                 console.log(x.user.id + " : " + data.coin);
                 friend.setPerModulesData(this, data);
@@ -298,12 +298,12 @@ export default class extends Module {
 
         cw += serifs.rpg.trial.cw(data.lv)
         message += `$[x2 ${me}]\n\n${serifs.rpg.start}\n\n`
-        
+
 
         // 敵のステータスを計算
         const edef = data.lv * 3.5 - (atk * (skillEffects.arpen ?? 0));
 
-		atk = atk * (1 + ((skillEffects.critUpFixed ?? 0) * (1 + (skillEffects.critDmgUp ?? 0))));
+        atk = atk * (1 + ((skillEffects.critUpFixed ?? 0) * (1 + (skillEffects.critDmgUp ?? 0))));
         atk = atk * (1 + (skillEffects.dart ?? 0) * 0.5);
         atk = atk * (1 + (skillEffects.abortDown ?? 0) * (1 / 3));
 
@@ -392,7 +392,7 @@ export default class extends Module {
         let nowTimeStr = getDate() + (new Date().getHours() < 12 ? "" : new Date().getHours() < 18 ? "/12" : "/18");
 
         let nextTimeStr = new Date().getHours() < 12 ? getDate() + "/12" : new Date().getHours() < 18 ? getDate() + "/18" : getDate(1);
-        
+
         let autoReplayFlg = false;
 
         // プレイ済でないかのチェック
@@ -641,7 +641,7 @@ export default class extends Module {
         }
 
         if (aggregateTokensEffects(data).showPostBonus) {
-            buff += 1            
+            buff += 1
             if (continuousBonus >= 1) {
                 message += serifs.rpg.postBonusInfo.continuous.a(Math.floor(continuousBonusNum)) + `\n`
             } else if (continuousFlg && continuousBonus > 0) {
@@ -709,17 +709,17 @@ export default class extends Module {
             spd += 2;
         }
 
-	if (skillEffects.heavenOrHell) {
-		if (Math.random() < 0.6) {
-			message += serifs.rpg.skill.heaven + "\n";
-			atk = atk * (1 + skillEffects.heavenOrHell);
-			def = def * (1 + skillEffects.heavenOrHell);
-		} else {
-			message += serifs.rpg.skill.hell + "\n";
-			atk = atk / (1 + skillEffects.heavenOrHell);
-			def = def / (1 + skillEffects.heavenOrHell);
-		}
-	}
+        if (skillEffects.heavenOrHell) {
+            if (Math.random() < 0.6) {
+                message += serifs.rpg.skill.heaven + "\n";
+                atk = atk * (1 + skillEffects.heavenOrHell);
+                def = def * (1 + skillEffects.heavenOrHell);
+            } else {
+                message += serifs.rpg.skill.hell + "\n";
+                atk = atk / (1 + skillEffects.heavenOrHell);
+                def = def / (1 + skillEffects.heavenOrHell);
+            }
+        }
 
 
         // ７フィーバー
@@ -944,12 +944,12 @@ export default class extends Module {
                 default:
                     break;
             }
-					if (aggregateTokensEffects(data).showItemBonus)　{
-						const itemMessage = [`${itemBonus.atk ? `${serifs.rpg.status.atk}+${itemBonus.atk}` : ""}`,`${itemBonus.def ? `${serifs.rpg.status.def}+${itemBonus.def}` : ""}`].filter(Boolean).join(" / ")
-						if (itemMessage) {
-							message += `(${itemMessage})\n`;
-						}
-					}
+            if (aggregateTokensEffects(data).showItemBonus) {
+                const itemMessage = [`${itemBonus.atk ? `${serifs.rpg.status.atk}+${itemBonus.atk}` : ""}`, `${itemBonus.def ? `${serifs.rpg.status.def}+${itemBonus.def}` : ""}`].filter(Boolean).join(" / ")
+                if (itemMessage) {
+                    message += `(${itemMessage})\n`;
+                }
+            }
         }
 
         // 敵のステータスを計算
@@ -976,7 +976,7 @@ export default class extends Module {
             }
         }
 
-			enemyDef -= (atk * (skillEffects.arpen ?? 0))
+        enemyDef -= (atk * (skillEffects.arpen ?? 0))
 
         if (skillEffects.firstTurnResist && count === 1 && isBattle && isPhysical) {
             buff += 1
@@ -1110,7 +1110,7 @@ export default class extends Module {
 
             if (skillEffects.allForOne) {
                 atk = atk * spd * 1.1
-								if (itemBonus?.atk) itemBonus.atk = itemBonus.atk * spd * 1.1;
+                if (itemBonus?.atk) itemBonus.atk = itemBonus.atk * spd * 1.1;
                 spd = 1
             }
 
@@ -1249,10 +1249,10 @@ export default class extends Module {
                         playerHp = 1;
                         data.endure = Math.max(data.endure - 1, 0);
                     }
-									if (playerHp <= (30 + lv) && serifs.rpg.nurse && Math.random() < 0.01) {
-										message += "\n" + serifs.rpg.nurse + "\n" + ((100 + lv * 3) - playerHp) + "ポイント回復した！\n"
-										playerHp = (100 + lv * 3);
-									}
+                    if (playerHp <= (30 + lv) && serifs.rpg.nurse && Math.random() < 0.01) {
+                        message += "\n" + serifs.rpg.nurse + "\n" + ((100 + lv * 3) - playerHp) + "ポイント回復した！\n"
+                        playerHp = (100 + lv * 3);
+                    }
                     if (maxDmg > (data.superMuscle ?? 0) && playerHp > 0) data.superMuscle = maxDmg;
                 }
                 // 敗北処理
@@ -1396,16 +1396,16 @@ export default class extends Module {
             }
         }
 
-			if (!msg.includes([serifs.rpg.command.onemore])) data.coinGetCount += 1
-			if (data.coinGetCount >= 5) {
-				data.coin += 5
-				data.coinGetCount -= 5
-				addMessage += `\n${serifs.rpg.getCoin(5)}`
-			}
+        if (!msg.includes([serifs.rpg.command.onemore])) data.coinGetCount += 1
+        if (data.coinGetCount >= 5) {
+            data.coin += 5
+            data.coinGetCount -= 5
+            addMessage += `\n${serifs.rpg.getCoin(5)}`
+        }
 
         const nowPlay = /\d{4}\/\d{1,2}\/\d{1,2}(\/\d{2})?/.exec(nowTimeStr)
         const nextPlay = !nowPlay?.[1] ? 12 + (skillEffects.rpgTime ?? 0) : nowPlay[1] == "/12" ? 18 + (skillEffects.rpgTime ?? 0) : nowPlay[1] == "/18" ? 24 + (skillEffects.rpgTime ?? 0) : 12 + (skillEffects.rpgTime ?? 0)
-			const minusDurability = amuletMinusDurability(data);
+        const minusDurability = amuletMinusDurability(data);
 
         message += [
             `\n\n${serifs.rpg.lvUp}`,
@@ -1413,7 +1413,7 @@ export default class extends Module {
             `  ${serifs.rpg.status.atk} : ${data.atk ?? 0} (+${atkUp + bonus})`,
             `  ${serifs.rpg.status.def} : ${data.def ?? 0} (+${totalUp - atkUp + bonus})`,
             addMessage,
-					minusDurability ? "\n" + minusDurability : "",
+            minusDurability ? "\n" + minusDurability : "",
             `\n${serifs.rpg.nextPlay(nextPlay == 24 ? "明日" : nextPlay + "時")}`,
         ].filter(Boolean).join("\n")
 
