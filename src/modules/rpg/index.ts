@@ -1225,6 +1225,7 @@ export default class extends Module {
                 /** 受けた最大ダメージ */
                 let maxDmg = 0;
                 if (!enemyTurnFinished) {
+									message += "\n";
                     for (let i = 0; i < (data.enemy.spd ?? 1); i++) {
                         const rng = (defMinRnd + random(data, startCharge, skillEffects) * defMaxRnd);
                         if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`
@@ -1235,7 +1236,7 @@ export default class extends Module {
                         const dmg = getEnemyDmg(data, def, tp, count, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX);
                         const noItemDmg = getEnemyDmg(data, def - itemBonus.def, tp, count, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX);
                         playerHp -= dmg
-                        message += (i === 0 ? "\n" : "") + (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n"
+                        message += (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n"
                         if (noItemDmg - dmg > 1) {
                             message += `(道具効果: -${noItemDmg - dmg})\n`
                         }
