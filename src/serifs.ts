@@ -18,6 +18,8 @@ export default {
 
 		getAdana: (adanas) => `\n\`\`\`\n${adanas.join("\n")}\n\`\`\`\nいくつか考えてみました！好きな物を選んでくださいね！`,
 
+		followBackErr: "先に私をフォローしてください！",
+
 		followBack: name => name ? `${name}をフォローしました！${name}、これからよろしくお願いします！` : `あなたをフォローしました！これからよろしくお願いします！`,
 
 		alreadyFollowBack: name => name ? `私は${name}を既にフォローしているみたいです！` : `私はあなたを既にフォローしているみたいです！`,

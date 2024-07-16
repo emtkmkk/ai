@@ -8,6 +8,9 @@ export default class extends Module {
 
 	@autobind
 	public install() {
+		const tl = this.ai.connection.useSharedConnection('localTimeline');
+
+		tl.on('note', this.onNote);
 		return {
 			mentionHook: this.mentionHook
 		};
@@ -18,6 +21,12 @@ export default class extends Module {
 		if (msg.text && msg.includes(['フォロー', 'フォロバ', 'follow me'])) {
 			if (msg.user.isRenoteMuted) return {
 				reaction: msg.friend.love >= 0 ? ':mk_hotchicken:' : null
+			}
+			if (msg.user.host && !msg.user.isFollowed && msg.friend.love >= 0) {
+				msg.reply(serifs.core.followBackErr)
+				return {
+					reaction: ':mk_hotchicken:'
+				}
 			}
 			if (!msg.user.isFollowing) {
 				this.ai.api('following/create', {
@@ -35,6 +44,16 @@ export default class extends Module {
 			}
 		} else {
 			return false;
+		}
+	}
+
+	@autobind
+	private onNote(note: any) {
+		if (!note.user?.isBot && note.user.host && note.user.isFollowing && !note.user.isFollowed) {
+			this.log("following/delete: " + note.userId);
+			this.ai.api('following/delete', {
+				userId: note.userId,
+			});
 		}
 	}
 }
