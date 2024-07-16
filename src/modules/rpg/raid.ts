@@ -1114,7 +1114,6 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     } else {
         reply = await msg.reply(`<center>${message}</center>`, {
             cw,
-            visibility: "specified"
         });
     }
 
