@@ -8,7 +8,7 @@ export default class extends Module {
 
 	@autobind
 	public install() {
-		const tl = this.ai.connection.useSharedConnection('localTimeline');
+		const tl = this.ai.connection.useSharedConnection('homeTimeline');
 
 		tl.on('note', this.onNote);
 		return {
