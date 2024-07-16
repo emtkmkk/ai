@@ -627,8 +627,8 @@ export default class extends Module {
         }
 
         if (data.enemy.event) {
-            msg.friend.setPerModulesData(this, msg);
-            return data.enemy.event(msg);
+            msg.friend.setPerModulesData(this, data);
+            return data.enemy.event(this, msg);
         }
 
         /** バフを得た数。行数のコントロールに使用 */
