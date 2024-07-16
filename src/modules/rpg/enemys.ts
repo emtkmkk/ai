@@ -185,6 +185,7 @@ export const ending = (module: rpg, msg: Message, _data: any): any => {
     /** プレイヤーの見た目 */
     let me = color.name
 
+    let cw = `${data.enemy.msg}`;
     let message = `$[x2 ${me}]\n\n${serifs.rpg.start}\n\n`;
 
     for (const name of data.clearHistory) {
@@ -253,7 +254,7 @@ export const ending = (module: rpg, msg: Message, _data: any): any => {
     msg.friend.setPerModulesData(new rpg, data);
 
     msg.reply(`<center>${message}</center>`, {
-        cw: `${data.enemy.msg}`,
+        cw,
         visibility: 'public'
     });
 
