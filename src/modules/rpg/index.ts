@@ -628,7 +628,7 @@ export default class extends Module {
 
         if (data.enemy.event) {
             msg.friend.setPerModulesData(this, data);
-            return data.enemy.event(this, msg);
+            return data.enemy.event(this, msg, data);
         }
 
         /** バフを得た数。行数のコントロールに使用 */
@@ -652,7 +652,7 @@ export default class extends Module {
             if (isSuper) {
                 message += serifs.rpg.postBonusInfo.super + `\n`
             }
-            message += serifs.rpg.postBonusInfo.post(postCount, tp > 1 ? "+" + Math.floor((tp - 1) * 100) : "-" + Math.floor((tp - 1) * 100)) + `\n\n`
+            message += serifs.rpg.postBonusInfo.post(postCount, tp > 1 ? "+" + Math.floor((tp - 1) * 100) : "-" + Math.floor((tp - 1) * 100)) + `\n`
         } else {
             // 連続ボーナスの場合、メッセージを追加
             // バフはすでに上で付与済み
