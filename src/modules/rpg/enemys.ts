@@ -178,8 +178,8 @@ export const endressEnemy = (data): Enemy => ({
     abort: 0.01,
 })
 
-export const ending = (msg: Message): any => {
-    const data = msg.friend.getPerModulesData(new rpg);
+export const ending = (module: rpg, msg: Message): any => {
+    const data = msg.friend.getPerModulesData(module);
     /** 使用中の色情報 */
     const color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
     /** プレイヤーの見た目 */
