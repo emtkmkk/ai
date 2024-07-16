@@ -162,6 +162,8 @@ export type SkillEffect = {
   amuletBoost?: number;
   /** ショップの商品、全品n%オフ */
   priceOff?: number;
+  /** 60%でステータスn%アップ そうでない場合ダウン */
+  heavenOrHell?: number;
 };
 
 export type Skill = {
@@ -257,7 +259,7 @@ export const skills: Skill[] = [
     effect: { notBattleBonusDef: 0.18 },
   },
   {
-    name: `油断しない`,
+    name: `油断せず行こう`,
     desc: `ターン1に受けるダメージを大きく軽減します`,
     info: `ターン1にてダメージカット30%を得る\n100%以上になる場合、残りはターン2に持ち越す`,
     effect: { firstTurnResist: 0.3 },
@@ -516,6 +518,12 @@ export const skills: Skill[] = [
     effect: { priceOff: 0.1 },
     skillOnly: true,
   },
+  {
+    name: `天国か地獄か`,
+    desc: `戦闘開始時に強くなるか弱くなるかどちらかが起こります`,
+    info: `60%でステータス+20% 40%でステータス-20%`,
+    effect: { heavenOrHell: 0.2 },
+  },
 ];
 
 export const getSkill = (data) => {
@@ -526,6 +534,7 @@ export const getSkill = (data) => {
   const filteredSkills = skills.filter(
     (x) =>
       !x.moveTo &&
+      (!x.cantReroll || !playerSkills?.some((y) => y.cantReroll)) &&
       !playerSkills
         ?.filter((y) => y.unique)
         .map((y) => y.unique)
@@ -534,7 +543,9 @@ export const getSkill = (data) => {
 
   // スキルの合計重みを計算
   const totalWeight = filteredSkills.reduce((total, skill) => {
-    const skillCount = skillNameCountMap.get(skill.name) || 0; // デフォルトを0に設定
+    const skillCount = !skill.cantReroll
+      ? skillNameCountMap.get(skill.name) || 0
+      : totalSkillCount / skills.filter((x) => !x.moveTo).length;
     return total + 1 / (1 + skillCount); // 出現回数に応じて重みを計算
   }, 0);
 
@@ -543,7 +554,9 @@ export const getSkill = (data) => {
 
   // ランダム値に基づいてスキルを選択
   for (let skill of filteredSkills) {
-    const skillCount = skillNameCountMap.get(skill.name) || 0; // デフォルトを0に設定
+    const skillCount = !skill.cantReroll
+      ? skillNameCountMap.get(skill.name) || 0
+      : totalSkillCount / skills.filter((x) => !x.moveTo).length;
     const weight = 1 / (1 + skillCount); // 出現回数に応じて重みを計算
 
     if (randomValue < weight) {

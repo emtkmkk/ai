@@ -6,7 +6,7 @@ import * as loki from 'lokijs';
 import { User } from '@/misskey/user';
 import rpg from './index';
 import { colors } from './colors';
-import { endressEnemy, Enemy, raidEnemys } from './enemys';
+import { endressEnemy, Enemy, RaidEnemy, raidEnemys } from './enemys';
 import { rpgItems } from './items';
 import {
   aggregateSkillsEffects,
@@ -29,6 +29,7 @@ import { calculateStats } from './battle';
 import serifs from '@/serifs';
 import getDate from '@/utils/get-date';
 import { acct } from '@/utils/acct';
+import seedrandom from 'seedrandom';
 
 /** レイド情報の型 */
 export type Raid = {
@@ -55,7 +56,7 @@ export type Raid = {
     mark: string;
   }[];
   /** レイドの敵 */
-  enemy: Enemy;
+  enemy: RaidEnemy;
   /** レイドが終了しているかどうかのフラグ */
   isEnded: boolean;
   /** レイドの開始時間（タイムスタンプ） */
@@ -121,6 +122,19 @@ function scheduleRaidStart() {
   ) {
     start();
   }
+
+  // ランダムな時間にレイドを開始する（平均して1日1回程度）
+  const randomHours = [7, 9, 10, 11, 13, 14, 15, 16, 17, 19, 20, 22];
+  const randomMinutes = [0, 15, 30, 45];
+  let rnd = seedrandom(getDate() + ai.account.id);
+
+  if (
+    randomHours.includes(hours) &&
+    randomMinutes.includes(minutes) &&
+    rnd() < 0.0208 // 約2.08%の確率（平均して1日1回程度）
+  ) {
+    start();
+  }
 }
 
 /**
@@ -134,25 +148,14 @@ export async function start(triggerUserId?: string, flg?: any) {
   /** すべてのレイドゲームのリスト */
   const games = raids.find({});
 
-  /** 最も最近のレイドゲーム */
-  const recentGame = games.length == 0 ? null : games[games.length - 1];
-
-  /** 直前のレイドゲーム */
-  const penultimateGame =
-    recentGame && games.length > 1 ? games[games.length - 2] : null;
+  const recentRaidList = games
+    .slice(Math.min((raidEnemys.length - 1) * -1, -5))
+    .map((obj) => obj.enemy.name ?? '');
 
   /** 過去のレイドボスを除外したリスト */
-  const filteredRaidEnemys =
-    raidEnemys.length > 2 && penultimateGame
-      ? raidEnemys.filter(
-          (x) =>
-            ![recentGame?.enemy.name, penultimateGame.enemy.name].includes(
-              x.name,
-            ),
-        )
-      : raidEnemys.length > 1 && recentGame
-        ? raidEnemys.filter((x) => ![recentGame?.enemy.name].includes(x.name))
-        : raidEnemys;
+  const filteredRaidEnemys = raidEnemys.filter(
+    (x) => !recentRaidList.includes(x.name),
+  );
 
   /** ランダムに選ばれたレイドボス */
   const enemy =
@@ -334,14 +337,14 @@ function finish(raid: Raid) {
 export async function raidContextHook(key: any, msg: Message, data: any) {
   if (!msg.extractedText.trim())
     return {
-      reaction: ':neofox_think:',
+      reaction: 'hmm',
     };
 
   const _data = msg.friend.getPerModulesData(module_);
   if (!_data.lv) {
     msg.reply('RPGモードを先に1回プレイしてください！');
     return {
-      reaction: ':neofox_think:',
+      reaction: 'hmm',
     };
   }
 
@@ -354,13 +357,13 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
   if (raid == null) return;
 
   if (raid.attackers.some((x) => x.user.id == msg.userId)) {
-    msg.reply('すでに参加済みの様じゃぞ！').then((reply) => {
+    msg.reply('すでに参加済みの様です！').then((reply) => {
       raid.replyKey.push(raid.postId + ':' + reply.id);
       module_.subscribeReply(raid.postId + ':' + reply.id, reply.id);
       raids.update(raid);
     });
     return {
-      reaction: ':neofox_confused:',
+      reaction: 'confused',
     };
   }
 
@@ -373,13 +376,13 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
   const result = await getTotalDmg(msg, enemy);
 
   if (raid.attackers.some((x) => x.user.id == msg.userId)) {
-    msg.reply('すでに参加済みのようじゃ！').then((reply) => {
+    msg.reply('すでに参加済みの様です！').then((reply) => {
       raid.replyKey.push(raid.postId + ':' + reply.id);
       module_.subscribeReply(raid.postId + ':' + reply.id, reply.id);
       raids.update(raid);
     });
     return {
-      reaction: ':neofox_confused:',
+      reaction: 'confused',
     };
   }
 
@@ -426,12 +429,12 @@ export function raidTimeoutCallback(data: any) {
   }
 }
 
-export async function getTotalDmg(msg, enemy: Enemy) {
+export async function getTotalDmg(msg, enemy: RaidEnemy) {
   // データを読み込み
   const data = initializeData(module_, msg);
   if (!data.lv)
     return {
-      reaction: ':neofox_confused:',
+      reaction: 'confused',
     };
   const colorData = colors.map((x) => x.unlock(data));
   // 所持しているスキル効果を読み込み
@@ -449,11 +452,17 @@ export async function getTotalDmg(msg, enemy: Enemy) {
     color.alwaysSuper;
 
   /** 投稿数（今日と明日の多い方）*/
-  let postCount = await getPostCount(ai, module_, data, msg, isSuper ? 200 : 0);
+  let postCount = 0;
+  let continuousBonusNum = 0;
+  if (enemy.forcePostCount) {
+    postCount = enemy.forcePostCount;
+  } else {
+    postCount = await getPostCount(ai, module_, data, msg, isSuper ? 200 : 0);
 
-  const continuousBonusNum = Math.min(Math.max(10, postCount / 2), 25);
+    Math.min(Math.max(10, postCount / 2), 25);
 
-  postCount = postCount + continuousBonusNum;
+    postCount = postCount + continuousBonusNum;
+  }
 
   // 投稿数に応じてステータス倍率を得る
   // 連続プレイの場合は倍率アップ
@@ -490,20 +499,36 @@ export async function getTotalDmg(msg, enemy: Enemy) {
   /** バフを得た数。行数のコントロールに使用 */
   let buff = 0;
 
-  if (aggregateTokensEffects(data).showPostBonus) {
+  if (enemy.forcePostCount) {
     buff += 1;
-    message +=
-      serifs.rpg.postBonusInfo.continuous.a(Math.floor(continuousBonusNum)) +
-      `\n`;
-    if (isSuper) {
-      message += serifs.rpg.postBonusInfo.super + `\n`;
+    message += serifs.rpg.forcePostCount + `\n`;
+    if (aggregateTokensEffects(data).showPostBonus) {
+      buff += 1;
+      message +=
+        serifs.rpg.postBonusInfo.post(
+          postCount,
+          tp > 1
+            ? '+' + Math.floor((tp - 1) * 100)
+            : '-' + Math.floor((tp - 1) * 100),
+        ) + `\n`;
     }
-    serifs.rpg.postBonusInfo.post(
-      postCount,
-      tp > 1
-        ? '+' + Math.floor((tp - 1) * 100)
-        : '-' + Math.floor((tp - 1) * 100),
-    ) + `\n\n`;
+  } else {
+    if (aggregateTokensEffects(data).showPostBonus) {
+      buff += 1;
+      message +=
+        serifs.rpg.postBonusInfo.continuous.a(Math.floor(continuousBonusNum)) +
+        `\n`;
+      if (isSuper) {
+        message += serifs.rpg.postBonusInfo.super + `\n`;
+      }
+      message +=
+        serifs.rpg.postBonusInfo.post(
+          postCount,
+          tp > 1
+            ? '+' + Math.floor((tp - 1) * 100)
+            : '-' + Math.floor((tp - 1) * 100),
+        ) + `\n`;
+    }
   }
 
   // ここで残りのステータスを計算しなおす
@@ -552,6 +577,18 @@ export async function getTotalDmg(msg, enemy: Enemy) {
       data.superCount = (data.superCount ?? 0) + 1;
     }
     spd += 2;
+  }
+
+  if (skillEffects.heavenOrHell) {
+    if (Math.random() < 0.6) {
+      message += serifs.rpg.skill.heaven + '\n';
+      atk = atk * (1 + skillEffects.heavenOrHell);
+      def = def * (1 + skillEffects.heavenOrHell);
+    } else {
+      message += serifs.rpg.skill.hell + '\n';
+      atk = atk / (1 + skillEffects.heavenOrHell);
+      def = def / (1 + skillEffects.heavenOrHell);
+    }
   }
 
   let mark = ':blank:';
@@ -624,6 +661,8 @@ export async function getTotalDmg(msg, enemy: Enemy) {
     message += serifs.rpg.skill.firstTurnResist + '\n';
   }
 
+  enemyDef -= atk * (skillEffects.arpen ?? 0);
+
   // バフが1つでも付与された場合、改行を追加する
   if (buff > 0) message += '\n';
 
@@ -637,6 +676,10 @@ export async function getTotalDmg(msg, enemy: Enemy) {
 
   if (skillEffects.enemyCritDmgDown) {
     def = def * (1 + (skillEffects.enemyCritDmgDown ?? 0) / 30);
+  }
+  if (skillEffects.enemyBuff) {
+    atk = atk * 1.05;
+    def = def * 1.05;
   }
 
   const _atk = atk;
@@ -923,7 +966,7 @@ export async function getTotalDmg(msg, enemy: Enemy) {
     /** 1ターンに与えられる最大ダメージ量 */
     let maxdmg = enemy.maxdmg ? enemyMaxHp * enemy.maxdmg : undefined;
 
-    // 土属性妖術
+    // 土属性剣攻撃
     if (skillEffects.dart && isBattle && isPhysical && maxdmg) {
       buff += 1;
       message += serifs.rpg.skill.dart + '\n';
@@ -935,7 +978,7 @@ export async function getTotalDmg(msg, enemy: Enemy) {
 
     let trueDmg = 0;
 
-    // 炎属性妖術
+    // 炎属性剣攻撃
     if (skillEffects.fire && isBattle && isPhysical) {
       buff += 1;
       message += serifs.rpg.skill.fire + '\n';
@@ -945,7 +988,7 @@ export async function getTotalDmg(msg, enemy: Enemy) {
       atk = atk + lv * 3.75 * skillEffects.fire;
     }
 
-    // 毒属性妖術
+    // 毒属性剣攻撃
     if (skillEffects.weak && count > 1) {
       if (isBattle && isPhysical) {
         buff += 1;
@@ -954,8 +997,6 @@ export async function getTotalDmg(msg, enemy: Enemy) {
       enemyAtk = Math.max(enemyAtk * (1 - skillEffects.weak * (count - 1)), 0);
       enemyDef = Math.max(enemyDef * (1 - skillEffects.weak * (count - 1)), 0);
     }
-
-    enemyDef -= atk * (skillEffects.arpen ?? 0);
 
     // バフが1つでも付与された場合、改行を追加する
     if (buff > 0) message += '\n';
@@ -1090,6 +1131,7 @@ export async function getTotalDmg(msg, enemy: Enemy) {
 
     if (skillEffects.allForOne) {
       atk = atk * spd * 1.1;
+      if (itemBonus?.atk) itemBonus.atk = itemBonus.atk * spd * 1.1;
       spd = 1;
     }
 
@@ -1173,7 +1215,7 @@ export async function getTotalDmg(msg, enemy: Enemy) {
     } else {
       let enemyAtkX = 1;
       // 攻撃後発動スキル効果
-      // 氷属性妖術
+      // 氷属性剣攻撃
       if (
         isBattle &&
         isPhysical &&
@@ -1186,7 +1228,7 @@ export async function getTotalDmg(msg, enemy: Enemy) {
         // 非戦闘時は氷の効果はないが、防御に還元される
         def = def * (1 + (skillEffects.ice ?? 0));
       }
-      // 光属性妖術
+      // 光属性剣攻撃
       if (
         isBattle &&
         isPhysical &&
@@ -1199,7 +1241,7 @@ export async function getTotalDmg(msg, enemy: Enemy) {
         // 非戦闘時は光の効果はないが、防御に還元される
         def = def * (1 + (skillEffects.light ?? 0) * 0.5);
       }
-      // 闇属性妖術
+      // 闇属性剣攻撃
       if (
         enemy.spd &&
         enemy.spd >= 2 &&
@@ -1363,7 +1405,6 @@ export async function getTotalDmg(msg, enemy: Enemy) {
   } else {
     reply = await msg.reply(`<center>${message}</center>`, {
       cw,
-      visibility: 'specified',
     });
   }
 

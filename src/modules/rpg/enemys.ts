@@ -1,10 +1,11 @@
-//RPGで使用する敵の情報
+// RPGで使用する敵の情報
 
 import Message from '@/message';
 import { colors, unlockCount } from './colors';
 import rpg from './index';
 import serifs from '@/serifs';
 import { aggregateTokensEffects } from './shop';
+import { acct } from '@/utils/acct';
 
 export type Enemy = {
   /** 内部ID ユニークでなければならない */
@@ -79,12 +80,17 @@ export type Enemy = {
   fire?: number;
   /** 連続攻撃を中断する割合 0 ~ 1 連続攻撃毎に判定 */
   abort?: number;
-  /** 強さを表す数値 レイドボスの評価に使用 攻撃力 * 攻撃倍率 + 防御力 * 防御倍率 */
-  power?: number;
   /** エンディング時のメッセージ */
   endingmsg?: string;
   /** 独自イベントを指定 */
-  event?: (msg: Message) => any;
+  event?: (module: rpg, msg: Message, _data: any) => any;
+};
+
+export type RaidEnemy = Enemy & {
+  /** 強さを表す数値 レイドボスの評価に使用 攻撃力 * 攻撃倍率 + 防御力 * 防御倍率 */
+  power?: number;
+  /** 投稿数を固定する */
+  forcePostCount?: number;
 };
 
 /** 敵一覧 */
@@ -1053,15 +1059,15 @@ export const enemys: Enemy[] = [
     limit: (data, friend) =>
       (data.superUnlockCount ?? 0) >= 5 &&
       !data.clearHistory.includes('ending'),
-    msg: `🎉阨ちゃんはあなたにいままでの冒険で行ってきた事を話したいようだ。`,
+    msg: `🎉もこチキはあなたにいままでの冒険で行ってきた事を話したいようだ。`,
     short: '冒険のまとめ中',
-    event: (msg) => ending(msg),
+    event: (module, msg, _data) => ending(module, msg, _data),
     atkmsg: () => '',
     defmsg: () => '',
   },
 ];
 
-export const raidEnemys: Enemy[] = [
+export const raidEnemys: RaidEnemy[] = [
   {
     name: ':kochi_dot:',
     msg: '巨大:kochi_dot:討伐戦！',
@@ -1174,6 +1180,24 @@ export const raidEnemys: Enemy[] = [
     power: 26,
   },
   {
+    name: ':mongolian_death_worm_dot:',
+    msg: ':mongolian_death_worm_dot:討伐戦！',
+    short: '',
+    mark: '☆',
+    mark2: '★',
+    atkmsg: (dmg) => `阨ちゃんの攻撃！\n${dmg}ポイントのダメージ！`,
+    defmsg: (dmg) =>
+      `:mongolian_death_worm_dot:は毒液を吹きかけた！\n阨ちゃんに${dmg}ポイントのダメージ！`,
+    winmsg: ':mongolian_death_worm_dot:は東京に帰って行った！',
+    losemsg: '阨ちゃんはやられてしまった…',
+    maxhp: 100000,
+    atk: 4,
+    def: 2,
+    atkx: 5,
+    defx: 5,
+    power: 30,
+  },
+  {
     name: ':yosomono_seinen:',
     msg: '巨大:yosomono_seinen:討伐戦！',
     short: '',
@@ -1191,7 +1215,9 @@ export const raidEnemys: Enemy[] = [
     atkx: 2.2,
     defx: 2.2,
     power: 22,
+    forcePostCount: 3,
   },
+
   {
     name: ':dog_chair:',
     msg: ':dog_chair:討伐戦！',
@@ -1266,8 +1292,8 @@ export const endressEnemy = (data): Enemy => ({
   abort: 0.01,
 });
 
-export const ending = (msg: Message): any => {
-  const data = msg.friend.getPerModulesData(new rpg());
+export const ending = (module: rpg, msg: Message, _data: any): any => {
+  const data = _data;
   /** 使用中の色情報 */
   const color =
     colors.find((x) => x.id === (data.color ?? 1)) ??
@@ -1275,7 +1301,7 @@ export const ending = (msg: Message): any => {
     colors[0];
   /** プレイヤーの見た目 */
   let me = color.name;
-
+  let cw = acct(msg.user) + ' ' + `${data.enemy.msg}`;
   let message = `$[x2 ${me}]\n\n${serifs.rpg.start}\n\n`;
 
   for (const name of data.clearHistory) {
@@ -1285,9 +1311,7 @@ export const ending = (msg: Message): any => {
     msg.friend.incLove(0.1);
   }
 
-  message += `\n\n${
-    msg.friend.name ?? 'そなた'
-  }が\nそばに付いてくれていたおかげで、\nこれだけ色々な事が出来たのじゃ！阨ひとりじゃここまで来るのは無理だったのじゃ…\n本当にありがとうなのじゃ！\nこれからもわらわといっぱい仲良くしてほしいぞ！\n\n`;
+  message += `${msg.friend.name ?? 'そなた'}が\nそばに付いてくれていたおかげで、\nこれだけ色々な事が出来たのじゃ！\nありがとうなのじゃ！\nそしてこれからもよろしくなのじゃ！\n\n`;
 
   message += [
     `${serifs.rpg.status.lv} : ${data.lv ?? 1}`,
@@ -1355,7 +1379,7 @@ export const ending = (msg: Message): any => {
   msg.friend.setPerModulesData(new rpg(), data);
 
   msg.reply(`<center>${message}</center>`, {
-    cw: `${data.enemy.msg}`,
+    cw,
     visibility: 'public',
   });
 
