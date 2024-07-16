@@ -404,7 +404,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     } else {
         postCount = await getPostCount(ai, module_, data, msg, (isSuper ? 200 : 0));
 
-        (Math.min(Math.max(10, postCount / 2), 25));
+        continuousBonusNum = (Math.min(Math.max(10, postCount / 2), 25));
 
         postCount = postCount + continuousBonusNum;
     }
