@@ -43,7 +43,7 @@ export default class extends Module {
             // 管理者モード
             return this.handleAdminCommands(msg);
         }
-        if (msg.includes(Array.isArray(serifs.rpg.command.help) ? serifs.rpg.command.help : [serifs.rpg.command.help])) {
+        if (msg.includes([serifs.rpg.command.rpg]) && msg.includes(Array.isArray(serifs.rpg.command.help) ? serifs.rpg.command.help : [serifs.rpg.command.help])) {
             // ヘルプモード
             return this.handleHelpCommands(msg);
         }
