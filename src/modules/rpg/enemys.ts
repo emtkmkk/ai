@@ -5,6 +5,7 @@ import { colors, unlockCount } from "./colors";
 import rpg from "./index"
 import serifs from "@/serifs";
 import { aggregateTokensEffects } from './shop';
+import { acct } from "@/utils/acct";
 
 export type Enemy = {
     /** 内部ID ユニークでなければならない */
@@ -185,7 +186,7 @@ export const ending = (module: rpg, msg: Message, _data: any): any => {
     /** プレイヤーの見た目 */
     let me = color.name
 
-    let cw = `${data.enemy.msg}`;
+    let cw = acct(msg.user) + " " + `${data.enemy.msg}`;
     let message = `$[x2 ${me}]\n\n${serifs.rpg.start}\n\n`;
 
     for (const name of data.clearHistory) {
@@ -195,7 +196,7 @@ export const ending = (module: rpg, msg: Message, _data: any): any => {
         msg.friend.incLove(0.1);
     }
 
-    message += `\n\n${msg.friend.name ?? "あなた"}が\nそばに付いてくれていたおかげで、\nこれだけ色々な事が出来ました！\nありがとうございます！\nそしてこれからもよろしくお願いします！\n\n`
+    message += `${msg.friend.name ?? "あなた"}が\nそばに付いてくれていたおかげで、\nこれだけ色々な事が出来ました！\nありがとうございます！\nそしてこれからもよろしくお願いします！\n\n`
 
     message += [
         `${serifs.rpg.status.lv} : ${data.lv ?? 1}`,

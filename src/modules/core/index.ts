@@ -598,7 +598,7 @@ export default class extends Module {
 		const bonus = msg.friend.doc.perModulesData?.rpg ? (((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) + ((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0))) / 2 : 0;
 		const rpg = msg.friend.doc.perModulesData?.rpg 
 			? [
-				serifs.rpg.rpgMode + ((msg.friend.doc.perModulesData.rpg.clearHistory ?? []).includes("ending") ? " ⭐" : ""),
+				serifs.rpg.rpgMode + ((msg.friend.doc.perModulesData.rpg.clearHistory ?? []).includes("ending") ? "⭐" : ""),
 				`  ${serifs.rpg.status.enemy} : ${msg.friend.doc.perModulesData.rpg.enemy ? (msg.friend.doc.perModulesData.rpg.enemy?.short ?? "") : "探索中"}`,
 				`  ${serifs.rpg.status.lv} : ${msg.friend.doc.perModulesData.rpg.lv ?? 1}`,
 				`  ${serifs.rpg.status.atk} : ${msg.friend.doc.perModulesData.rpg.atk ?? 0}${bonus >= 1 ? ` (+${Math.floor(bonus * ((100 + (msg.friend.doc.perModulesData.rpg.atk ?? 0)) / 100))})` : ""}`,
