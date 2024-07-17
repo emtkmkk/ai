@@ -470,7 +470,7 @@ export function amuletMinusDurability(data: { items?: ShopItem[], skills: Skill[
             const boost = data.skills ? data.skills?.filter((x) => x.effect?.amuletBoost).reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0 : 0;
             data.items.forEach((x) => {
                 if (x.type === "amulet") {
-                    if (boost <= 0 || 1 / Math.random() < (1 / Math.pow(1.5, boost * 2))) {
+                    if (boost <= 0 || Math.random() < (1 / Math.pow(1.5, boost * 2))) {
                         x.durability -= 1;
                         if (x.durability <= 0) {
                             data.items = data.items?.filter((x) => x.type !== "amulet")
