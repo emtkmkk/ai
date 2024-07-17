@@ -878,7 +878,7 @@ export const enemys: Enemy[] = [
     atk: 1,
     def: 1.2,
     spd: 4,
-    atkx: 3,
+    atkx: 2,
     defx: 3,
   },
   {
@@ -1059,7 +1059,7 @@ export const enemys: Enemy[] = [
     limit: (data, friend) =>
       (data.superUnlockCount ?? 0) >= 5 &&
       !data.clearHistory.includes('ending'),
-    msg: `🎉もこチキはあなたにいままでの冒険で行ってきた事を話したいようだ。`,
+    msg: `🎉阨ちゃんはあなたにいままでの冒険で行ってきた事を話したいようだ。`,
     short: '冒険のまとめ中',
     event: (module, msg, _data) => ending(module, msg, _data),
     atkmsg: () => '',
@@ -1179,6 +1179,7 @@ export const raidEnemys: RaidEnemy[] = [
     defx: 4,
     power: 26,
   },
+
   {
     name: ':mongolian_death_worm_dot:',
     msg: ':mongolian_death_worm_dot:討伐戦！',
@@ -1198,6 +1199,27 @@ export const raidEnemys: RaidEnemy[] = [
     power: 30,
   },
   {
+    name: ':katsuo:',
+    msg: ':katsuo:討伐戦！',
+    short: '',
+    mark: '☆',
+    mark2: '★',
+    lToR: false,
+    atkmsg: (dmg) => `阨ちゃんの攻撃！\n${dmg}ポイントのダメージ！`,
+    defmsg: (dmg) =>
+      `:katsuo:は高速で泳いで阨ちゃんから逃げた！\nなんとか追いついた！\n疲れで${dmg}ポイントのダメージ！`,
+    winmsg: '撃退した！',
+    losemsg:
+      ':katsuo:はさらに加速して阨ちゃんから逃げた！\n:katsuo:に逃げられてしまった…',
+    abortmsg: ':katsuo:の泳ぐ速度が速すぎて、連続攻撃出来ない！',
+    atk: 3,
+    def: 1,
+    atkx: 3,
+    defx: 1,
+    abort: 1,
+    power: 20,
+  },
+  {
     name: ':yosomono_seinen:',
     msg: '巨大:yosomono_seinen:討伐戦！',
     short: '',
@@ -1210,14 +1232,13 @@ export const raidEnemys: RaidEnemy[] = [
       `:yosomono_seinen:の忘却の呪い！\n阨ちゃんは${dmg}ポイントのダメージ！`,
     winmsg: ':yosomono_seinen:は霧の中に消えていった…',
     losemsg: '阨ちゃんは気を失ってしまった…',
-    atk: 2.2,
-    def: 2.2,
-    atkx: 2.2,
-    defx: 2.2,
-    power: 22,
+    atk: 2,
+    def: 2,
+    atkx: 2,
+    defx: 2,
+    power: 33,
     forcePostCount: 3,
   },
-
   {
     name: ':dog_chair:',
     msg: ':dog_chair:討伐戦！',

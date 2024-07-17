@@ -123,15 +123,14 @@ function scheduleRaidStart() {
     start();
   }
 
-  // ランダムな時間にレイドを開始する（平均して1日1回程度）
+  // ランダムな時間にレイドを開始する
+  const day = new Date().getDay();
   const randomHours = [7, 9, 10, 11, 13, 14, 15, 16, 17, 19, 20, 22];
   const randomMinutes = [0, 15, 30, 45];
   let rnd = seedrandom(getDate() + ai.account.id);
-
   if (
-    randomHours.includes(hours) &&
-    randomMinutes.includes(minutes) &&
-    rnd() < 0.0208 // 約2.08%の確率（平均して1日1回程度）
+    hours === randomHours[Math.floor(rnd() * randomHours.length)] &&
+    minutes === randomMinutes[Math.floor(rnd() * randomMinutes.length)]
   ) {
     start();
   }
@@ -459,7 +458,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
   } else {
     postCount = await getPostCount(ai, module_, data, msg, isSuper ? 200 : 0);
 
-    Math.min(Math.max(10, postCount / 2), 25);
+    continuousBonusNum = Math.min(Math.max(10, postCount / 2), 25);
 
     postCount = postCount + continuousBonusNum;
   }
@@ -1080,7 +1079,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         (count === 3 && enemy.fire && (data.thirdFire ?? 0) <= 2)
       ) {
         const rng =
-          defMinRnd + random(data, startCharge, skillEffects) * defMaxRnd;
+          defMinRnd + random(data, startCharge, skillEffects, true) * defMaxRnd;
         if (aggregateTokensEffects(data).showRandom)
           message += `⚂ ${Math.floor(rng * 100)}%\n`;
         const critDmg = 1 + (skillEffects.enemyCritDmgDown ?? 0) * -1;
@@ -1139,7 +1138,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     // spdの回数分、以下の処理を繰り返す
     for (let i = 0; i < spd; i++) {
       const rng =
-        atkMinRnd + random(data, startCharge, skillEffects) * atkMaxRnd;
+        atkMinRnd + random(data, startCharge, skillEffects, false) * atkMaxRnd;
       if (aggregateTokensEffects(data).showRandom)
         message += `⚂ ${Math.floor(rng * 100)}%\n`;
       const dmgBonus =
@@ -1266,9 +1265,11 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
       /** 受けた最大ダメージ */
       let maxDmg = 0;
       if (!enemyTurnFinished) {
+        message += '\n';
         for (let i = 0; i < (enemy.spd ?? 1); i++) {
           const rng =
-            defMinRnd + random(data, startCharge, skillEffects) * defMaxRnd;
+            defMinRnd +
+            random(data, startCharge, skillEffects, true) * defMaxRnd;
           if (aggregateTokensEffects(data).showRandom)
             message += `⚂ ${Math.floor(rng * 100)}%\n`;
           /** クリティカルかどうか */
@@ -1300,9 +1301,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
           );
           playerHp -= dmg;
           message +=
-            (i === 0 ? '\n' : '') +
-            (crit ? `**${enemy.defmsg(dmg)}**` : enemy.defmsg(dmg)) +
-            '\n';
+            (crit ? `**${enemy.defmsg(dmg)}**` : enemy.defmsg(dmg)) + '\n';
           if (noItemDmg - dmg > 1) {
             message += `(道具効果: -${noItemDmg - dmg})\n`;
           }

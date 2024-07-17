@@ -413,18 +413,27 @@ export function getEnemyDmg(
   return Math.max(dmg, 1);
 }
 
-export function random(data, startCharge = 0, skillEffects) {
+export function random(data, startCharge = 0, skillEffects, reverse = false) {
   let rnd = Math.random();
   if (skillEffects.charge) {
     const charge = Math.min(startCharge, data.charge);
     if (charge > 0) {
       rnd = charge / 2 + rnd * (1 - charge / 2);
     }
-    if (rnd < 0.5) {
-      data.charge += 0.5 - rnd;
-    }
-    if (rnd > 0.5) {
-      data.charge -= rnd - 0.5;
+    if (reverse) {
+      if (rnd < 0.5) {
+        data.charge -= 0.5 - rnd;
+      }
+      if (rnd > 0.5) {
+        data.charge += rnd - 0.5;
+      }
+    } else {
+      if (rnd < 0.5) {
+        data.charge += 0.5 - rnd;
+      }
+      if (rnd > 0.5) {
+        data.charge -= rnd - 0.5;
+      }
     }
   }
   return rnd;

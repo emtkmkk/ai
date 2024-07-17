@@ -74,6 +74,7 @@ export default class extends Module {
       return this.handleAdminCommands(msg);
     }
     if (
+      msg.includes([serifs.rpg.command.rpg]) &&
       msg.includes(
         Array.isArray(serifs.rpg.command.help)
           ? serifs.rpg.command.help
@@ -1434,7 +1435,8 @@ export default class extends Module {
           (count === 3 && data.enemy.fire && (data.thirdFire ?? 0) <= 2)
         ) {
           const rng =
-            defMinRnd + random(data, startCharge, skillEffects) * defMaxRnd;
+            defMinRnd +
+            random(data, startCharge, skillEffects, true) * defMaxRnd;
           if (aggregateTokensEffects(data).showRandom)
             message += `⚂ ${Math.floor(rng * 100)}%\n`;
           const critDmg = 1 + (skillEffects.enemyCritDmgDown ?? 0) * -1;
@@ -1494,9 +1496,9 @@ export default class extends Module {
       // spdの回数分、以下の処理を繰り返す
       for (let i = 0; i < spd; i++) {
         const rng =
-          atkMinRnd + random(data, startCharge, skillEffects) * atkMaxRnd;
-        if (aggregateTokensEffects(data).showRandom)
-          message += `⚂ ${Math.floor(rng * 100)}%\n`;
+          atkMinRnd +
+          random(data, startCharge, skillEffects, false) * atkMaxRnd;
+        message += `⚂ ${Math.floor(rng * 100)}%\n`;
         const dmgBonus =
           (1 + (skillEffects.atkDmgUp ?? 0)) *
           (skillEffects.thunder
@@ -1671,9 +1673,11 @@ export default class extends Module {
         /** 受けた最大ダメージ */
         let maxDmg = 0;
         if (!enemyTurnFinished) {
+          message += '\n';
           for (let i = 0; i < (data.enemy.spd ?? 1); i++) {
             const rng =
-              defMinRnd + random(data, startCharge, skillEffects) * defMaxRnd;
+              defMinRnd +
+              random(data, startCharge, skillEffects, true) * defMaxRnd;
             if (aggregateTokensEffects(data).showRandom)
               message += `⚂ ${Math.floor(rng * 100)}%\n`;
             /** クリティカルかどうか */
@@ -1703,11 +1707,9 @@ export default class extends Module {
             );
             playerHp -= dmg;
             message +=
-              (i === 0 ? '\n' : '') +
               (crit
                 ? `**${data.enemy.defmsg(dmg)}**`
-                : data.enemy.defmsg(dmg)) +
-              '\n';
+                : data.enemy.defmsg(dmg)) + '\n';
             if (noItemDmg - dmg > 1) {
               message += `(道具効果: -${noItemDmg - dmg})\n`;
             }
