@@ -156,7 +156,7 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
         .map((x) => {
             let _x = x;
             const price = Math.ceil(getVal(x.price, [data, rnd, ai]) * (1 - (skillEffects.priceOff ?? 0)));
-            return {price, ..._x};
+            return {..._x, price};
         });
 
     const reply = await msg.reply([
