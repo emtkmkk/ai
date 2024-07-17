@@ -1082,7 +1082,7 @@ export default class extends Module {
                 const crit = Math.random() < (playerHpPercent - enemyHpPercent) * (1 - (skillEffects.enemyCritDown ?? 0));
                 // 予測最大ダメージが相手のHPの何割かで先制攻撃の確率が判定される
                 if (Math.random() < predictedDmg / enemyHp || (count === 3 && data.enemy.fire && (data.thirdFire ?? 0) <= 2)) {
-                    const rng = (defMinRnd + random(data, startCharge, skillEffects) * defMaxRnd);
+                    const rng = (defMinRnd + random(data, startCharge, skillEffects, true) * defMaxRnd);
                     if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`
                     const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
                     /** ダメージ */
@@ -1117,7 +1117,7 @@ export default class extends Module {
             // 自身攻撃の処理
             // spdの回数分、以下の処理を繰り返す
             for (let i = 0; i < spd; i++) {
-                const rng = (atkMinRnd + random(data, startCharge, skillEffects) * atkMaxRnd);
+                const rng = (atkMinRnd + random(data, startCharge, skillEffects, false) * atkMaxRnd);
                 if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`
                 const dmgBonus = (1 + (skillEffects.atkDmgUp ?? 0)) * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1);
                 /** クリティカルかどうか */
@@ -1227,7 +1227,7 @@ export default class extends Module {
                 if (!enemyTurnFinished) {
 									message += "\n";
                     for (let i = 0; i < (data.enemy.spd ?? 1); i++) {
-                        const rng = (defMinRnd + random(data, startCharge, skillEffects) * defMaxRnd);
+                        const rng = (defMinRnd + random(data, startCharge, skillEffects, true) * defMaxRnd);
                         if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`
                         /** クリティカルかどうか */
                         const crit = Math.random() < (playerHpPercent - enemyHpPercent) * (1 - (skillEffects.enemyCritDown ?? 0));
