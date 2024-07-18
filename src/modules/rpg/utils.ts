@@ -218,6 +218,38 @@ export function getPostX(postCount) {
 }
 
 /**
+ * 投稿数からステータス倍率を計算します（レイド用）
+ * 3 で 1倍
+ * 10 で 2倍
+ * 25 で 3倍
+ * 75 で 4倍
+ * 以降 175(+100) x5 375(+200) x6 775(+400) x7 ...
+ * @param postCount 投稿数
+ * @returns ステータス倍率
+ */
+export function getRaidPostX(postCount) {
+    if (postCount >= 25) {
+        let baseValue = 3;
+        let threshold = 25;
+        let incrementValue = 50;
+
+        while (postCount >= threshold + incrementValue) {
+            baseValue++;
+            threshold += incrementValue;
+            incrementValue *= 2;
+        }
+
+        return baseValue + (postCount - threshold) / incrementValue;
+    } else if (postCount >= 10) {
+        return (postCount - 10) / 15 + 2;
+    } else if (postCount >= 3) {
+        return (postCount - 3) / 7 + 1;
+    } else {
+        return Math.max(postCount / 3, 1 / 3);
+    }
+}
+
+/**
  * プレイヤーが与えるダメージを計算します
  * @param data RPGモジュールのData
  * @param atk 攻撃力

@@ -1,8 +1,6 @@
 import 藍 from '@/ai';
-import { InstallerResult } from '@/ai';
 import { Collection } from 'lokijs';
 import Message from '@/message';
-import * as loki from 'lokijs';
 import { User } from '@/misskey/user';
 import rpg from './index';
 import { colors } from './colors';
@@ -10,7 +8,7 @@ import { endressEnemy, Enemy, RaidEnemy, raidEnemys } from './enemys';
 import { rpgItems } from './items';
 import { aggregateSkillsEffects, calcSevenFever, amuletMinusDurability } from './skills';
 import { aggregateTokensEffects } from './shop';
-import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatusDmg, getPostCount, getPostX, getVal, random } from './utils';
+import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatusDmg, getPostCount, getPostX, getVal, random, getRaidPostX } from './utils';
 import { calculateStats } from './battle'
 import serifs from '@/serifs';
 import getDate from '@/utils/get-date';
@@ -410,9 +408,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     }
 
     // 投稿数に応じてステータス倍率を得る
-    // 連続プレイの場合は倍率アップ
     /** ステータス倍率（投稿数） */
-    let tp = getPostX(postCount) * (1 + (skillEffects.postXUp ?? 0));
+    let tp = getRaidPostX(postCount) * (1 + (skillEffects.postXUp ?? 0));
 
     if (!isSuper) {
         data.superPoint = Math.max(data.superPoint ?? 0 - (tp - 2), -3)
@@ -455,7 +452,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     } else {
         if (aggregateTokensEffects(data).showPostBonus) {
             buff += 1
-            message += serifs.rpg.postBonusInfo.continuous.a(Math.floor(continuousBonusNum)) + `\n`
+            if (continuousBonusNum) message += serifs.rpg.postBonusInfo.continuous.a(Math.floor(continuousBonusNum)) + `\n`
             if (isSuper) {
                 message += serifs.rpg.postBonusInfo.super + `\n`
             }
@@ -534,7 +531,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     }
 
     // 風魔法発動時
-    let spdUp = spd * (skillEffects.spdUp ?? 0)
+    let spdUp = getSpd(getSpdX(spd) * (1 + (skillEffects.spdUp ?? 0))) - getSpd(getSpdX(spd))
     if (Math.random() < spdUp % 1) {
         spdUp = Math.floor(spdUp) + 1;
     } else {
@@ -934,7 +931,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         }
 
         if (skillEffects.allForOne) {
-            const spdx = spd <= 2 ? spd : spd <= 3 ? 2.5 : 2.5 + (spd - 3) * 0.25
+            const spdx = getSpdX(spd);
             atk = atk * spdx * 1.1
             if (itemBonus?.atk) itemBonus.atk = itemBonus.atk * spd * 1.1;
             spd = 1
@@ -1129,3 +1126,13 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         reply,
     };
 }
+function getSpdX(spd: number) {
+    return spd <= 2 ? spd : spd <= 3 ? 2 + (spd - 2) * 0.5 : 2.5 + (spd - 3) * 0.25
+}
+
+function getSpd(spdX: number) {
+    if (spdX <= 2) return spdX;
+    if (spdX <= 2.5) return 2 + (spdX - 2) * 2;
+    return 3 + (spdX - 2.5) * 4
+}
+
