@@ -36,7 +36,7 @@ export type AmuletItem = Omit<BaseItem, 'type' | 'effect'> & {
     type: "amulet";
     effect: SkillEffect;
     durability: number;
-    skillName?: string;
+    skillName?: string | string[];
     isUsed: (data: any) => boolean;
     isMinusDurability?: (data: any) => boolean;
 }
@@ -76,9 +76,24 @@ export const fortuneEffect = (data: any) => {
 
 export const skillPrice = (_ai: 藍, skillName: Skill["name"], rnd: () => number) => {
     const skillP = skillPower(_ai, skillName);
-    const price = Math.max(Math.floor(12 * (Math.max((isNaN(skillP.skillNameCount) ? 0 : skillP.skillNameCount), 0.5) / (skillP.totalSkillCount / (skills.filter((x) => !x.moveTo).length)))), 6)
+    const filteredSkills = skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly);
+
+    // totalSkillCountにfilteredSkillsのnameに含まれるskillP.skillNameCountMapに含まれる値の合計を代入
+    const totalSkillCount = filteredSkills.reduce((acc, skill) => acc + (skillP.skillNameCountMap.get(skill.name) || 0), 0);
+
+    const price = Math.max(
+        Math.floor(
+            12 * (Math.max(isNaN(skillP.skillNameCount) ? 0 : skillP.skillNameCount, 0.5) / (totalSkillCount / filteredSkills.length))
+        ), 6
+    );
+
     const rand = rnd();
-    return rand < 0.1 ? Math.floor(price * 0.5) : rand < 0.2 ? Math.floor(price * 0.75) : rand < 0.7 ? Math.floor(price * 1) : rand < 0.8 ? Math.floor(price * 1.25) : rand < 0.9 ? Math.floor(price * 1.5) : 12;
+    return rand < 0.1 ? Math.floor(price * 0.5)
+        : rand < 0.2 ? Math.floor(price * 0.75)
+        : rand < 0.7 ? Math.floor(price * 1)
+        : rand < 0.8 ? Math.floor(price * 1.25)
+        : rand < 0.9 ? Math.floor(price * 1.5)
+        : 12;
 }
 
 export const shopItems: ShopItem[] = [
@@ -124,6 +139,77 @@ export const shopItems: ShopItem[] = [
     { name: `お守りを捨てる`, limit: (data) => data.items.filter((x) => x.type === "amulet").length, price: 0, desc: `今所持しているお守りを捨てます`, type:"item", effect: (data) => data.items = data.items?.filter((x) => x.type !== "amulet"), always: true },
 ]
 
+function getRandomSkills(ai, num) {
+    let filteredSkills = skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly);
+    const { skillNameCountMap, totalSkillCount } = skillCalculate(ai);
+
+    let selectedSkills: Skill[] = [];
+    
+    // スキルの合計重みを計算
+    let totalWeight = filteredSkills.reduce((total, skill) => {
+        const skillCount = !skill.cantReroll ? (skillNameCountMap.get(skill.name) || 0) : (totalSkillCount / (skills.filter((x) => !x.moveTo).length));
+        return total + 1 / (1 + skillCount); // 出現回数に応じて重みを計算
+    }, 0);
+
+    for (let i = 0; i < num; i++) {
+        // 0からtotalWeightまでのランダム値を生成
+        let randomValue = Math.random() * totalWeight;
+
+        // ランダム値に基づいてスキルを選択
+        for (let skill of filteredSkills) {
+            const skillCount = !skill.cantReroll ? (skillNameCountMap.get(skill.name) || 0) : (totalSkillCount / (skills.filter((x) => !x.moveTo).length));
+            const weight = 1 / (1 + skillCount); // 出現回数に応じて重みを計算
+
+            if (randomValue < weight) {
+                selectedSkills.push(skill); // ランダム値が現在のスキルの重み未満であればそのスキルを選択
+                totalWeight -= weight
+                filteredSkills = filteredSkills.filter((x) => x.name !== skill.name);
+                break;
+            }
+
+            randomValue -= weight; // ランダム値を減少させる
+        }
+    }
+
+    return selectedSkills;
+}
+function mergeSkillAmulet(ai, rnd, skills: Skill[]) {
+    // スキル名のセットを作成し、同じ名前のスキルを弾く
+    const uniqueSkillsMap = new Map<string, Skill>();
+    skills.forEach(skill => {
+        if (!uniqueSkillsMap.has(skill.name)) {
+            uniqueSkillsMap.set(skill.name, skill);
+        }
+    });
+    const uniqueSkills = Array.from(uniqueSkillsMap.values());
+
+    const name = uniqueSkills.map((x) => x.name).join("&");
+
+    const durability = uniqueSkills.length * 6;
+
+    const prices = uniqueSkills.map((x) => skillPrice(ai, x.name, rnd));
+
+    const priceSum = prices.reduce((pre, cur) => pre + cur, 0);
+
+    const price = Math.floor(priceSum * (Math.pow(1.5, uniqueSkills.length-1) * Math.max(prices.reduce((pre, cur) => pre * (0.5 + cur / 24), 1), 1)));
+
+    // スキルの効果をマージ
+    const effect = uniqueSkills.reduce((acc, skill) => {
+        return { ...acc, ...skill.effect };
+    }, {} as SkillEffect);
+
+    return ({
+        name: `${name}のお守り`,
+        price,
+        desc: `持っているとスキル${uniqueSkills.map((x) => `「${x.name}」`).join("と")}を使用できる 耐久${durability} 使用時耐久減少`,
+        type: "amulet",
+        effect,
+        durability,
+        skillName: uniqueSkills.map((x) => x.name),
+        isUsed: (data) => true
+    });
+}
+
 export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 
     // データを読み込み
@@ -149,13 +235,13 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
             getShopItems(),
             getShopItems(),
             getShopItems(),
-            getShopItems(),
+            !data.items?.some((y) => y.type === "amulet") && data.lv > 50 && data.coin >= 36 && Math.random() < 0.2 ? getRandomSkills(ai, data.lv < 100 || data.coin < 81 || Math.random() > 0.2 ? 2 : data.lv < 170 || data.coin < 162 || Math.random() > 0.2 ? 3 : data.lv < 255 || data.coin < 303 || Math.random() > 0.2 ? 4 : 5).map((x) => x.name) : getShopItems(),
         ]
         data.lastShopVisited = getDate()
         module.unsubscribeReply("shopBuy:" + msg.userId)
     }
 
-    const _shopItems = (data.shopItems as string[]).map((x) => shopItems.find((y) => x === y.name) ?? undefined).filter((x) => x != null) as ShopItem[];
+    const _shopItems = (data.shopItems as (string | string[])[]).map((x) => Array.isArray(x) ? mergeSkillAmulet(ai, rnd, x.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null)) : shopItems.find((y) => x === y.name) ?? undefined).filter((x) => x != null) as ShopItem[];
 
     const showShopItems = _shopItems.filter((x) => (!x.limit || x.limit(data, () => 0)) && !(x.type === "amulet" && data.items?.some((y) => y.type === "amulet"))).concat(shopItems.filter((x) => (!x.limit || x.limit(data, () => 0)) && !(x.type === "amulet" && data.items?.some((y) => y.type === "amulet")) && x.always)).slice(0, 9)
         .map((x) => {

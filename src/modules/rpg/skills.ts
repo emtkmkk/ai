@@ -291,6 +291,15 @@ export const getRerollSkill = (data, oldSkillName = "") => {
     return filteredSkills[0]; // ここに来るのはおかしいよ
 }
 
+const skillInfo = (skills: Skill[] | undefined, desc: string, infoFlg = false) => {
+    if (!skills) return `\n${desc}`;
+    let ret = "";
+    for (const skill of skills) {
+        ret += `${infoFlg && skill.info ? `\n${skill.info}` : skill.desc ? `\n${skill.desc}` : ""}`;
+    }
+    return ret;
+}
+
 /** スキルに関しての情報を返す */
 export const skillReply = (module: Module, ai: 藍, msg: Message) => {
 
@@ -365,8 +374,8 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
     if (data.items?.filter((x) => x.type === "amulet").length) {
         const amulet = data.items?.filter((x) => x.type === "amulet")[0]
         const item = shopItems.find((x) => x.name === amulet.name) as AmuletItem
-        const skill = amulet.skillName ? skills.find((x) => amulet.skillName === x.name) : undefined;
-        if (amulet.durability) amuletSkill.push(`[お守り] ${amulet.skillName ?? amulet.name} 残耐久${amulet.durability}${skill ? aggregateTokensEffects(data).showSkillBonus && skill.info ? `\n${skill.info}` : skill.desc ? `\n${skill.desc}` : "" : `\n${item.desc}`}`)
+        const skill = amulet.skillName && !Array.isArray(amulet.skillName) ? [skills.find((x) => amulet.skillName === x.name)] : amulet.skillName && Array.isArray(amulet.skillName) ? amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) : undefined;
+        if (amulet.durability) amuletSkill.push(`[お守り] ${amulet.skillName && !Array.isArray(amulet.skillName) ? amulet.skillName : amulet.name} 残耐久${amulet.durability}${skillInfo(skill, item.desc, aggregateTokensEffects(data).showSkillBonus)}`)
     }
 
     msg.reply([
