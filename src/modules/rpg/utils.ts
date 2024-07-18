@@ -297,7 +297,7 @@ export function getEnemyDmg(data, def: number, tp: number, count: number, crit: 
 }
 
 export function random(data, startCharge = 0, skillEffects, reverse = false) {
-    let rnd = Math.random();
+    let rnd = skillEffects.notRandom && !reverse ? 0.5 : Math.random();
     if (skillEffects.charge) {
         const charge = Math.min(startCharge, data.charge)
         if (charge > 0) {

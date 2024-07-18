@@ -283,7 +283,6 @@ export default class extends Module {
 
         // ここで残りのステータスを計算しなおす
         let { atk, def, spd } = calculateStats(data, msg, skillEffects, color)
-        def = def * (1 + (skillEffects.defUp ?? 0));
 
         if (isSuper) {
             spd += 2;

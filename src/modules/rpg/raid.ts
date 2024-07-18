@@ -9,7 +9,7 @@ import { rpgItems } from './items';
 import { aggregateSkillsEffects, calcSevenFever, amuletMinusDurability } from './skills';
 import { aggregateTokensEffects } from './shop';
 import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatusDmg, getPostCount, getPostX, getVal, random, getRaidPostX } from './utils';
-import { calculateStats } from './battle'
+import { calculateStats, fortune } from './battle'
 import serifs from '@/serifs';
 import getDate from '@/utils/get-date';
 import { acct } from '@/utils/acct';
@@ -381,6 +381,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     if (!data.lv) return {
         reaction: 'confused'
     };
+    data.raid = true;
     const colorData = colors.map((x) => x.unlock(data));
     // 所持しているスキル効果を読み込み
     const skillEffects = aggregateSkillsEffects(data);
@@ -463,8 +464,13 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
     // ここで残りのステータスを計算しなおす
     let { atk, def, spd } = calculateStats(data, msg, skillEffects, color)
-    atk = atk * (1 + (skillEffects.atkUp ?? 0));
-    def = def * (1 + (skillEffects.defUp ?? 0));
+    if (skillEffects.fortuneEffect) {
+        const result = fortune(atk, def, skillEffects.fortuneEffect)
+        atk = result.atk;
+        def = result.def;
+        message += serifs.rpg.skill.fortune + `\n`;
+        message += result.message + `\n`;
+    }
     /** 敵の最大HP */
     let enemyMaxHp = 100000;
     /** 敵のHP */
@@ -1057,7 +1063,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     }
 
     if (playerHp > 0) {
-        const dmg = Math.round(playerHp / (100 + lv * 3) * 1000)
+        const dmg = Math.round(playerHp / (100 + lv * 3) * 1000 * (1 + (skillEffects.finalAttackUp ?? 0)))
         message += "\n\n" + serifs.rpg.finalAttack(dmg) + `\n\n` + serifs.rpg.timeUp(enemy.name, (100 + lv * 3)) + "\n\n" + enemy.losemsg
         totalDmg += dmg
     }
@@ -1087,7 +1093,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         message += "\n\n" + amuletmsg
     }
 
-
+    data.raid = false;
     msg.friend.setPerModulesData(module_, data);
 
     // 色解禁確認

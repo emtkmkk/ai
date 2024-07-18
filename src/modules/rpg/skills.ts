@@ -149,6 +149,12 @@ export type SkillEffect = {
     priceOff?: number;
     /** 60%でステータスn%アップ そうでない場合ダウン */
     heavenOrHell?: number;
+    /** 乱数が常に平均値で固定 */
+    notRandom?: number;
+    /** ランダムステータス変化 */
+    fortuneEffect?: number;
+    /** 全力の一撃のダメージをn%増加 */
+    finalAttackUp?: number;
 };
 
 export type Skill = {
@@ -202,7 +208,7 @@ export const skills: Skill[] = [
     { name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndP}`, desc: `乱数幅が20~180 -> 5~230になります クリティカル率も上がります`, info: `乱数幅 20~180 -> 5~230 (%) 期待値 115% クリティカル率+2% 乱数系と重複しない`, effect: { atkRndMin: -0.15, atkRndMax: 0.5, critUpFixed: 0.02 }, unique: "rnd" },
     { name: `${serifs.rpg.dmg.take}${serifs.rpg.status.rndM}`, desc: `敵から受ける最大ダメージを減少させます`, info: `敵の乱数幅 20~180 -> 20~160 (%) 乱数系と重複しない`, effect: { defRndMin: 0, defRndMax: -0.2 }, unique: "rnd" },
     { name: `${serifs.rpg.dmg.take}${serifs.rpg.status.rndP}`, desc: `敵から受ける最小ダメージを減少させます`, info: `敵の乱数幅 20~180 -> 0~180 (%) 乱数系と重複しない`, effect: { defRndMin: -0.2, defRndMax: 0 }, unique: "rnd" },
-    { name: `準備を怠らない`, desc: `ターン1にて、必ず良い効果がある武器か防具を装備します。`, info: `ターン1装備率+100% ターン1悪アイテム率-100% アイテム装備率-15% 重複しない`, effect: { firstTurnItem: 1, firstTurnMindMinusAvoid: 1, itemEquip: -0.15 }, unique: "firstTurnItem" },
+    { name: `準備を怠らない`, desc: `ターン1にて、必ず良い効果がある武器か防具を装備します`, info: `ターン1装備率+100% ターン1悪アイテム率-100% アイテム装備率-15% 重複しない`, effect: { firstTurnItem: 1, firstTurnMindMinusAvoid: 1, itemEquip: -0.15 }, unique: "firstTurnItem" },
     { name: `道具大好き`, desc: `道具の使用率が上がります`, info: `アイテム装備率+40%`, effect: { itemEquip: 0.4 } },
     { name: `道具の扱いが上手い`, desc: `道具の効果量が上がります`, info: `アイテム効果量+40% アイテム悪効果軽減+40%`, effect: { itemBoost: 0.4 } },
     { name: `武器が大好き`, desc: `武器を装備しやすくなり、武器の効果量が上がります`, info: `武器装備率2倍 武器効果量+60% 種類大好き系と重複しない`, effect: { weaponSelect: 1, weaponBoost: 0.6 }, unique: "itemSelect" },

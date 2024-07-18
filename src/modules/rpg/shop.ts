@@ -88,10 +88,10 @@ export const shopItems: ShopItem[] = [
     { name: "おかわり2RPG自動支払いの札を捨てる", limit: (data) => data.items.filter((x) => x.name === "おかわり2RPG自動支払いの札").length, desc: "おかわりおかわりRPGをプレイする際に毎回確認を表示します", price: 0, type: "item", effect: (data) => data.items = data.items.filter((x) => x.name !== "おかわり2RPG自動支払いの札"), always: true },
     { name: "自動旅モードの札を捨てる", limit: (data) => data.items.filter((x) => x.name === "自動旅モードの札").length, desc: "旅モードに自動で突入しなくなります", price: 0, type: "item", effect: (data) => data.items = data.items.filter((x) => x.name !== "自動旅モードの札"), always: true },
     { name: "†の札を捨てる", limit: (data) => data.items.filter((x) => x.name === "†の札").length && !data.clearHistory.includes(":mk_chickenda_gtgt:"), desc: "本気の†が出現しなくなります", price: 0, type: "item", effect: (data) => data.items = data.items.filter((x) => x.name !== "†の札"), always: true },
-    { name: "乱数透視の札", limit: (data) => !data.items.filter((x) => x.name === "乱数透視の札").length, desc: "所持している間、ダメージの乱数が表示されるようになります", price: 50, type: "token", effect: { showRandom: true } },
-    { name: "投稿数ボーナス表示の札", limit: (data) => !data.items.filter((x) => x.name === "投稿数ボーナス表示の札").length, desc: "所持している間、投稿数ボーナスの詳細情報が表示されるようになります", price: 50, type: "token", effect: { showPostBonus: true } },
-    { name: "スキル詳細表示の札", limit: (data) => !data.items.filter((x) => x.name === "スキル詳細表示の札").length, desc: "所持している間、スキルの詳細情報が表示されるようになります", price: 50, type: "token", effect: { showSkillBonus: true } },
-    { name: "装備詳細表示の札", limit: (data) => !data.items.filter((x) => x.name === "装備詳細表示の札").length, desc: "所持している間、武器・防具の詳細な効果が表示されます", price: 50, type: "token", effect: { showItemBonus: true } },
+    { name: "乱数透視の札", limit: (data) => data.lv >= 7 && !data.items.filter((x) => x.name === "乱数透視の札").length, desc: "所持している間、ダメージの乱数が表示されるようになります", price: 50, type: "token", effect: { showRandom: true } },
+    { name: "投稿数ボーナス表示の札", limit: (data) => data.lv >= 20 && !data.items.filter((x) => x.name === "投稿数ボーナス表示の札").length, desc: "所持している間、投稿数ボーナスの詳細情報が表示されるようになります", price: 50, type: "token", effect: { showPostBonus: true } },
+    { name: "スキル詳細表示の札", limit: (data) => data.lv >= 20 && !data.items.filter((x) => x.name === "スキル詳細表示の札").length, desc: "所持している間、スキルの詳細情報が表示されるようになります", price: 50, type: "token", effect: { showSkillBonus: true } },
+    { name: "装備詳細表示の札", limit: (data) => data.lv >= 7 && !data.items.filter((x) => x.name === "装備詳細表示の札").length, desc: "所持している間、武器・防具の詳細な効果が表示されます", price: 50, type: "token", effect: { showItemBonus: true } },
     { name: "スキル変更珠", desc: "スキルを変更するのに必要なアイテムです", limit: (data) => data.lv > 60, price: (data) => data.lv > 255 ? 7 : data.lv > 170 ? 25 : data.lv > 100 ? 35 : 50, type: "item", effect: (data) => data.rerollOrb = (data.rerollOrb ?? 0) + 1, infinite: true },
     { name: "スキル複製珠", desc: "スキルを変更し、既に覚えているスキルのどれかを1つ覚えます", limit: (data, rnd) => data.lv > 100 && rnd() < 0.2, price: (data) => data.lv > 255 ? 30 : data.lv > 170 ? 100 : 140, type: "item", effect: (data) => data.duplicationOrb = (data.duplicationOrb ?? 0) + 1, infinite: true },
     { name: "力の種", desc: "購入時、パワー+1 防御-1", price: (data) => data.lv > 60 ? 1 : data.lv > 30 ? 2 : 3, type: "item", effect: (data) => { data.atk = (data.atk ?? 0) + 1; data.def = (data.def ?? 0) - 1 }, infinite: true },
@@ -105,10 +105,10 @@ export const shopItems: ShopItem[] = [
     { name: "タクシーチケット", desc: "購入時、旅モードのステージがベスト-1になる", limit: (data, rnd) => (data.maxEndress ?? 0) - (data.endress ?? 0) > 2, price: (data, rnd) => ((data.maxEndress ?? 0) - (data.endress ?? 0) - 1) * 8, type: "item", effect: (data) => { data.endress = (data.maxEndress ?? 0) - 1 }, infinite: true },
     { name: "不幸の種", limit: (data, rnd) => data.lv > 50 && rnd() < 0.35, desc: "Lv-1 パワー-4 防御-3", price: 30, type: "item", effect: (data) => { data.lv -= 1; data.atk -= 4; data.def -= 3 } },
     { name: `呪いの人形`, limit: (data) => data.revenge, price: 44, desc: `持っていると前回負けた敵に戦う際に20%ステータスアップ 耐久1 リベンジ成功時耐久減少`, type: "amulet", effect: { atkUp: 0.2, defUp: 0.2 }, durability: 1, isUsed: (data) => data.enemy?.name === data.revenge, isMinusDurability: (data) => !data.revenge },
-    { name: `交通安全のお守り`, price: 30, desc: `持っているとターン1で30%ダメージカット 耐久6 使用時耐久減少`, type: "amulet", effect: { firstTurnResist: 0.3 }, durability: 6, isUsed: (data) => data.count === 1 },
-    { name: `高級交通安全のお守り`, price: 70, desc: `持っているとターン1で60%ダメージカット 耐久6 使用時耐久減少`, type: "amulet", effect: { firstTurnResist: 0.6 }, durability: 6, isUsed: (data) => data.count === 1 },
-    { name: `気合のハチマキ`, price: 55, desc: `購入時、気合アップ`, type: "item", effect: (data) => data.endure = (data.endure ?? 0) + 2 },
-    { name: `壺`, price: 200, desc: `なんかいい感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
+    { name: `交通安全のお守り`, price: 30, desc: `持っているとターン1で30%ダメージカット 耐久10 使用時耐久減少`, type: "amulet", effect: { firstTurnResist: 0.3 }, durability: 10, isUsed: (data) => data.count === 1 } as AmuletItem,
+    { name: `高級交通安全のお守り`, price: 99, desc: `持っているとターン1で70%ダメージカット 耐久10 使用時耐久減少`, type: "amulet", effect: { firstTurnResist: 0.7 }, durability: 10, isUsed: (data) => data.count === 1 } as AmuletItem,
+    { name: `気合のハチマキ`, price: 55, desc: `購入時、気合アップ`, type: "item", effect: (data) => data.endure = (data.endure ?? 0) + 4 },
+    { name: `壺`, limit: (data) => data.lv >= 20, price: 200, desc: `なんかいい感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
     { name: `きれいな壺`, limit: (data) => (data.jar ?? 0) === 1, price: 400, desc: `なんかきれいな感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
     { name: `すごい壺`, limit: (data) => (data.jar ?? 0) === 2, price: 800, desc: `なんかすごい感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
     { name: `巨大な壺`, limit: (data) => (data.jar ?? 0) === 3, price: 1200, desc: `なんかめっちゃでかい感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
@@ -116,8 +116,12 @@ export const shopItems: ShopItem[] = [
     { name: `ナノサイズ壺`, limit: (data) => (data.jar ?? 0) === 5, price: 2000, desc: `小さくて見えない感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
     { name: `謎の壺`, limit: (data) => (data.jar ?? 0) >= 6, price: (data) => (data.jar ?? 0) * 400, desc: `なんか謎な感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
     { name: `苦労のお守り`, limit: (data) => data.lv >= 90 && data.allClear && data.streak > 0, price: (data) => Math.max(50 - data.winCount, 1), desc: `持っていると通常モードの敵が強くなります 耐久1 敗北時耐久減少`, type: "amulet", effect: { enemyBuff: 1 }, durability: 1, isUsed: (data) => data.enemy && data.clearHistory.includes(data.enemy), isMinusDurability: (data) => data.streak < 1 },
-    { name: `全身全霊のお守り`, price: 20, desc: `持っていると行動回数が1回になるが、すごく重い一撃を放てる 耐久10 使用時耐久減少`, type: "amulet", effect: { allForOne: 1 }, durability: 10, isUsed: (data) => true },
-    ...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly).map((x): AmuletItem => ({ name: `${x.name}のお守り`, price: (data, rnd, ai) => skillPrice(ai, x.name, rnd), desc: `持っているとスキル「${x.name}」を使用できる 耐久6 使用時耐久減少`, type: "amulet", effect: x.effect, durability: 6, skillName: x.name, isUsed: (data) => true }))
+    { name: `全身全霊のお守り`, price: 20, desc: `持っていると行動回数が1回になるが、すごく重い一撃を放てる 耐久10 使用時耐久減少`, type: "amulet", effect: { allForOne: 1 }, durability: 10, isUsed: (data) => true } as AmuletItem,
+    { name: `運命不変のお守り`, price: 40, desc: `持っていると与ダメージがランダム変化しなくなる 耐久20 使用時耐久減少`, type: "amulet", effect: { notRandom: 1 }, durability: 20, isUsed: (data) => true } as AmuletItem,
+    { name: `しあわせのお守り`, price: 20, desc: `レイド時、ステータスの割合がランダムに一時的に変化する 耐久10 レイドでの使用時耐久減少`, type: "amulet", effect: { fortuneEffect: 1 }, durability: 10, isUsed: (data) => data.raid } as AmuletItem,
+    { name: `全力の一撃のお守り`, price: 20, desc: `レイド時、ターン7で発生する全力の一撃を強化します 耐久10 レイドでの使用時耐久減少`, type: "amulet", effect: { finalAttackUp: 0.3 }, durability: 10, isUsed: (data) => data.raid } as AmuletItem,
+    ...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly).map((x): AmuletItem => ({ name: `${x.name}のお守り`, price: (data, rnd, ai) => skillPrice(ai, x.name, rnd), desc: `持っているとスキル「${x.name}」を使用できる 耐久6 使用時耐久減少`, type: "amulet", effect: x.effect, durability: 6, skillName: x.name, isUsed: (data) => true })),
+    { name: `お守りを捨てる`, limit: (data) => data.items.filter((x) => x.name === "amulet").length, price: 0, desc: `今所持しているお守りを捨てます`, type:"item", effect: (data) => data.items = data.items?.filter((x) => x.type !== "amulet"), always: true },
 ]
 
 export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
@@ -213,7 +217,7 @@ export function shopContextHook(module: Module, key: any, msg: Message, data: an
                     }
                     if (lvDiff || atkDiff || defDiff) {
                         message += [
-                            `\n${serifs.rpg.shop.useItem(item.name)}`,
+                            `\n\n${serifs.rpg.shop.useItem(item.name)}`,
                             `${serifs.rpg.status.lv} : ${rpgData.lv ?? 1}${lvDiff !== 0 ? ` (${lvDiff > 0 ? "+" + lvDiff : lvDiff})` : ""}`,
                             `${serifs.rpg.status.atk} : ${rpgData.atk ?? 0}${atkDiff !== 0 ? ` (${atkDiff > 0 ? "+" + atkDiff : atkDiff})` : ""}`,
                             `${serifs.rpg.status.def} : ${rpgData.def ?? 0}${defDiff !== 0 ? ` (${defDiff > 0 ? "+" + defDiff : defDiff})` : ""}`,
