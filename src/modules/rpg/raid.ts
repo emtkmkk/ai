@@ -934,7 +934,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         }
 
         if (skillEffects.allForOne) {
-            atk = atk * spd * 1.1
+            const spdx = spd <= 2 ? spd : spd <= 3 ? 2.5 : 2.5 + (spd - 3) * 0.25
+            atk = atk * spdx * 1.1
             if (itemBonus?.atk) itemBonus.atk = itemBonus.atk * spd * 1.1;
             spd = 1
         }
@@ -944,7 +945,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         for (let i = 0; i < spd; i++) {
             const rng = (atkMinRnd + random(data, startCharge, skillEffects, false) * atkMaxRnd);
             if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`
-            const dmgBonus = (1 + (skillEffects.atkDmgUp ?? 0)) * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1);
+            const dmgBonus = ((1 + (skillEffects.atkDmgUp ?? 0)) * (i < 2 ? 1 : i < 3 ? 0.5 : 0.25)) + (skillEffects.thunder ? (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 0);
             //** クリティカルかどうか */
             let crit = Math.random() < ((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0))) + (skillEffects.critUpFixed ?? 0);
             const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
@@ -1014,7 +1015,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
             /** 受けた最大ダメージ */
             let maxDmg = 0;
             if (!enemyTurnFinished) {
-							message += "\n";
+                message += "\n";
                 for (let i = 0; i < (enemy.spd ?? 1); i++) {
                     const rng = (defMinRnd + random(data, startCharge, skillEffects, true) * defMaxRnd);
                     if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`
@@ -1025,7 +1026,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
                     const dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX, getVal(enemy.atkx, [tp]));
                     const noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX, getVal(enemy.atkx, [tp]));
                     playerHp -= dmg
-                    message +=　(crit ? `**${enemy.defmsg(dmg)}**` : enemy.defmsg(dmg)) + "\n"
+                    message += (crit ? `**${enemy.defmsg(dmg)}**` : enemy.defmsg(dmg)) + "\n"
                     if (noItemDmg - dmg > 1) {
                         message += `(道具効果: -${noItemDmg - dmg})\n`
                     }
