@@ -121,7 +121,7 @@ export const shopItems: ShopItem[] = [
     { name: `しあわせのお守り`, price: 20, desc: `レイド時、ステータスの割合がランダムに一時的に変化する 耐久10 レイドでの使用時耐久減少`, type: "amulet", effect: { fortuneEffect: 1 }, durability: 10, isUsed: (data) => data.raid } as AmuletItem,
     { name: `全力の一撃のお守り`, price: 20, desc: `レイド時、ターン7で発生する全力の一撃を強化します 耐久10 レイドでの使用時耐久減少`, type: "amulet", effect: { finalAttackUp: 0.3 }, durability: 10, isUsed: (data) => data.raid } as AmuletItem,
     ...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly).map((x): AmuletItem => ({ name: `${x.name}のお守り`, price: (data, rnd, ai) => skillPrice(ai, x.name, rnd), desc: `持っているとスキル「${x.name}」を使用できる 耐久6 使用時耐久減少`, type: "amulet", effect: x.effect, durability: 6, skillName: x.name, isUsed: (data) => true })),
-    { name: `お守りを捨てる`, limit: (data) => data.items.filter((x) => x.name === "amulet").length, price: 0, desc: `今所持しているお守りを捨てます`, type:"item", effect: (data) => data.items = data.items?.filter((x) => x.type !== "amulet"), always: true },
+    { name: `お守りを捨てる`, limit: (data) => data.items.filter((x) => x.type === "amulet").length, price: 0, desc: `今所持しているお守りを捨てます`, type:"item", effect: (data) => data.items = data.items?.filter((x) => x.type !== "amulet"), always: true },
 ]
 
 export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
