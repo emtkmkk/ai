@@ -958,6 +958,8 @@ export default class extends Module {
         let enemyDef = (typeof data.enemy.def === "function") ? data.enemy.def(atk, def, spd) : lv * 3.5 * data.enemy.def;
 
         if (skillEffects.enemyBuff && data.enemy.name !== endressEnemy(data).name) {
+					if (!data.enemy.spd && enemyAtk + enemyDef <= (lv * 10.5)) data.enemy.spd = 3;
+					if (!data.enemy.spd && enemyAtk + enemyDef <= (lv * 15.75)) data.enemy.spd = 2;
             enemyAtk = (typeof data.enemy.atk === "function") ? data.enemy.atk(atk, def, spd) * 1.25 : lv * 3.5 * (data.enemy.atk + 1);
             enemyDef = (typeof data.enemy.def === "function") ? data.enemy.def(atk, def, spd) * 1.25 : lv * 3.5 * (data.enemy.def + 1);
             if (typeof data.enemy.atkx === "number") data.enemy.atkx += 1
