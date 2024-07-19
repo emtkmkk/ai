@@ -1511,7 +1511,7 @@ export default class extends Module {
         if (this.rpgPlayerList) {
             console.log("rpgPlayers List: " + this.rpgPlayerList.id)
             const friends = this.ai.friends.find() ?? [];
-            const rpgPlayers = friends.filter((x) => x.perModulesData.rpg.lv >= 20);
+            const rpgPlayers = friends.filter((x) => x.perModulesData?.rpg?.lv && x.perModulesData?.rpg?.lv >= 20);
             const listUserIds = new Set(this.rpgPlayerList.userIds);
             let newRpgPlayersUserIds = new Set();
 
