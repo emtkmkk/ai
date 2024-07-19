@@ -133,12 +133,15 @@ function scheduleRaidStart() {
  * @param flg 特殊なフラグ
  */
 export async function start(triggerUserId?: string, flg?: any) {
-    ai.decActiveFactor();
 
     /** すべてのレイドゲームのリスト */
     const games = raids.find({});
 
-    const recentRaidList = games.slice(Math.min((raidEnemys.length - 1) * -1, -5)).map(obj => obj.enemy.name ?? "");
+    if (Date.now() - games[games.length - 1].startedAt < 45 * 60 * 1000) return;
+
+    ai.decActiveFactor();
+
+    const recentRaidList = games.slice(Math.min((raidEnemys.length - 1) * -1, -6)).map(obj => obj.enemy.name ?? "");
 
     /** 過去のレイドボスを除外したリスト */
     const filteredRaidEnemys =
