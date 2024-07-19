@@ -337,7 +337,7 @@ export default {
 	kazutori: {
 		alreadyStarted: '今ちょうどやってますよ～',
 
-		matakondo: (ct, time) => `また今度やりましょう！(あと${ct}分後にもう一度送ってください)\n\n$[unixtime.countdown ${time}]`,
+		matakondo: (ct, time) => `\nまた今度やりましょう！\nあと${ct}分後にもう一度送ってください！\n※この時間はあなたへの懐き度が高いと短くなります。\n\n$[unixtime.countdown ${time}]`,
 
 		intro: (max, minutes, winRank, time) => `みなさん、数取りゲームしましょう！\n0~${max}の中で${winRank === 1 ? "最も大きい" : winRank > 1 ? "***" + winRank + "番目に***大きい" : "***中央値となる***"}数字を取った人が勝ちです。他の人と被ったらだめですよ～\n制限時間は${minutes < 5 ? `***${minutes}***` : minutes < 10 ? `**${minutes}**` : minutes}分です。数字はこの投稿にリプライで送ってくださいね！\n\n$[unixtime.countdown ${time}]`,
 

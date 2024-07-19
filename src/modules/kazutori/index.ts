@@ -184,10 +184,14 @@ export default class extends Module {
 				}
 			}
 
-			// トリガー者が管理人でない かつ 直近のゲームから1時間経ってない場合
-			if (msg.user.username !== config.master && Date.now() - recentGame.startedAt < 1000 * 60 * 60) {
-				const ct = Math.ceil(60 - ((Date.now() - recentGame.startedAt) / (1000 * 60)));
-				msg.reply(serifs.kazutori.matakondo(ct, Math.ceil((recentGame.startedAt + 1000 * 60 * 60) / 1000)));
+			// 懐き度が高いほどトリガーのクールタイムを短く
+			// トリガーの公開範囲がフォロワー以下ならクールタイム２倍
+			const cth = Math.max((msg.friend.love >= 200 ? 0.5 : msg.friend.love >= 100 ? 1 : msg.friend.love >= 20 ? 2 : msg.friend.love >= 5 ? 3 : 4) * (["public", "home"].includes(msg.visibility) ? 1 : 2), 1);
+
+			// トリガー者が管理人でない かつ クールタイムが開けていない場合
+			if (msg.user.username !== config.master && Date.now() - recentGame.startedAt < 1000 * 60 * 60 * cth) {
+				const ct = Math.ceil((60 * cth) - ((Date.now() - recentGame.startedAt) / (1000 * 60)));
+				msg.reply(serifs.kazutori.matakondo(ct, Math.ceil((recentGame.startedAt + 1000 * 60 * 60 * cth) / 1000)));
 				return {
 					reaction: 'hmm'
 				};
