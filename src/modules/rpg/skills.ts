@@ -478,7 +478,7 @@ export function getSkillsShortName(data: { items?: ShopItem[], skills: Skill[] }
     const dataSkills = data.skills?.length ? "[" + data.skills.map((x) => (skills.find((y) => x.name === y.name) ?? x).short).join("") + "]" : undefined
     const amulet = data.items?.filter((x) => x.type === "amulet").length ? data.items?.filter((x) => x.type === "amulet")[0] as AmuletItem : undefined;
     const amuletItem = amulet ? [...shopItems, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem : undefined;
-    const amuletShort = amuletItem ? "[" + amuletItem.short + "]" : undefined;
+    const amuletShort = amuletItem?.short ? "[" + amuletItem.short + "]" : undefined;
 
     return {skills: dataSkills, amulet: amuletShort};
 }
