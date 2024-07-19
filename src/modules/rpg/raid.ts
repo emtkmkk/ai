@@ -6,7 +6,7 @@ import rpg from './index';
 import { colors } from './colors';
 import { endressEnemy, Enemy, RaidEnemy, raidEnemys } from './enemys';
 import { rpgItems } from './items';
-import { aggregateSkillsEffects, calcSevenFever, amuletMinusDurability } from './skills';
+import { aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, getSkillsShortName } from './skills';
 import { aggregateTokensEffects } from './shop';
 import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatusDmg, getPostCount, getPostX, getVal, random, getRaidPostX } from './utils';
 import { calculateStats, fortune } from './battle'
@@ -36,8 +36,14 @@ export type Raid = {
         lv: number;
         /** 攻撃者の攻撃回数 */
         count: number;
+        /** 所持しているスキル情報 */
+        skillsStr?: {
+            skills?: string | undefined;
+            amulets?: string | undefined;
+        }
         /** 攻撃者のマーク */
         mark: string;
+        replyId?: string;
     }[];
     /** レイドの敵 */
     enemy: RaidEnemy;
@@ -223,11 +229,19 @@ function finish(raid: Raid) {
         if (sortAttackers?.[0].mark === ":blank:") {
             sortAttackers[0].mark = "👑";
         }
+        const friend = ai.lookupFriend(sortAttackers?.[0].user.id);
+        if (!friend) return;
+        const data = friend.getPerModulesData(module_);
+        data.coin = Math.max((data.coin ?? 0) + 1, data.coin);
+        friend.setPerModulesData(module_, data);
     }
 
+    let references: string[] = [];
+
     for (let attacker of sortAttackers) {
-        if (attacker.dmg > 0) {
-            results.push(`${attacker.me} ${acct(attacker.user)}:\n${attacker.mark === ":blank:" && attacker.dmg === 100 ? "💯" : attacker.mark} Lv${String(attacker.lv).padStart(levelSpace, ' ')} ${attacker.count}ターン ${attacker.dmg.toLocaleString()}ダメージ`);
+        results.push(`${attacker.me} ${acct(attacker.user)}:\n${attacker.mark === ":blank:" && attacker.dmg === 100 ? "💯" : attacker.mark} Lv${String(attacker.lv).padStart(levelSpace, ' ')} ${attacker.count}ターン ${attacker.dmg.toLocaleString()}ダメージ`);
+        if (references.length < 100) {
+            if (attacker.replyId) references.push(attacker.replyId);
         }
     }
 
@@ -267,7 +281,8 @@ function finish(raid: Raid) {
     ai.post({
         text: text,
         cw: serifs.rpg.finishCw(raid.enemy.name),
-        renoteId: raid.postId
+        renoteId: raid.postId,
+        referenceIds: references,
     });
 
     module_.unsubscribeReply(raid.postId);
@@ -344,7 +359,9 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
         me: result.me ?? "",
         lv: result.lv ?? 1,
         count: result.count ?? 1,
+        skillsStr: result.skillsStr ?? {skills: undefined, amulets: undefined},
         mark: result.mark ?? ":blank:",
+        replyId: result.reply.id ?? undefined,
     });
 
     raids.update(raid);
@@ -385,6 +402,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     const colorData = colors.map((x) => x.unlock(data));
     // 所持しているスキル効果を読み込み
     const skillEffects = aggregateSkillsEffects(data);
+
+    const skillsStr = getSkillsShortName(data)
 
     /** 現在の敵と戦ってるターン数。 敵がいない場合は1 */
     let count = 1
@@ -437,8 +456,14 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     // 敵が消された？？
     if (!enemy) enemy = endressEnemy(data);
     // 敵の開始メッセージなどを設定
-    cw += `${enemy.msg}`
-    message += `$[x2 ${me}]\n\n${serifs.rpg.start}\n\n`;
+    cw += [
+        me,
+        `Lv${data.lv}`,
+        `${data.atk > data.def ? serifs.rpg.status.atk.slice(0,1) : serifs.rpg.status.def.slice(0,1)}${(Math.max(data.atk, data.def) / (data.atk + data.def) * 100).toFixed(0)}%`,
+        skillsStr.skills,
+        skillsStr.amulet ? `お守り ${skillsStr.amulet}` : undefined
+    ]
+    message += `$[x2 ${me}:vs:]\n\n${serifs.rpg.start}\n\n`;
 
     /** バフを得た数。行数のコントロールに使用 */
     let buff = 0;
@@ -1129,6 +1154,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         lv,
         count,
         mark,
+        skillsStr,
         reply,
     };
 }

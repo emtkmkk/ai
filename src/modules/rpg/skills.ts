@@ -2,7 +2,7 @@ import Message from "@/message";
 import Module from "@/module";
 import serifs from "@/serifs";
 import 藍 from '@/ai';
-import { aggregateTokensEffects, AmuletItem, ShopItem, shopItems } from './shop'
+import { aggregateTokensEffects, AmuletItem, ShopItem, shopItems, mergeSkillAmulet } from './shop'
 
 export let skillNameCountMap = new Map();
 export let totalSkillCount = 0;
@@ -160,6 +160,8 @@ export type SkillEffect = {
 export type Skill = {
     /** スキル名 */
     name: string;
+    /** 短縮名 */
+    short: string
     /** 説明 */
     desc?: string;
     /** 詳細説明 */
@@ -177,60 +179,56 @@ export type Skill = {
 };
 
 export const skills: Skill[] = [
-    { name: `${serifs.rpg.status.atk}+10%`, desc: `常に${serifs.rpg.status.atk}が10%上がります`, info: `条件無しで${serifs.rpg.status.atk}+10%`, effect: { atkUp: 0.1 } },
-    { name: `${serifs.rpg.status.def}+10%`, desc: `常に${serifs.rpg.status.def}が10%上がります`, info: `条件無しで${serifs.rpg.status.def}+10%`, effect: { defUp: 0.1 } },
-    { name: `炎属性剣攻撃`, desc: `戦闘時、最低ダメージが上昇します`, info: `戦闘時、Lvの10%がダメージに固定加算\n非戦闘時、${serifs.rpg.status.atk}+Lvの35%`, effect: { fire: 0.1 } },
-    { name: `氷属性剣攻撃`, desc: `戦闘時、たまに敵を凍らせます`, info: `戦闘時、10%で相手のターンをスキップ\n非戦闘時、${serifs.rpg.status.def}+10%`, effect: { ice: 0.1 } },
-    { name: `雷属性剣攻撃`, desc: `戦闘時、連続攻撃をすればダメージが上がります`, info: `(現在攻撃数/最大攻撃数)×20%のダメージ上昇を得る`, effect: { thunder: 0.2 } },
-    { name: `風属性剣攻撃`, desc: `戦闘時、たまに行動回数が上がります`, info: `戦闘時、10%で行動回数が2倍\n非戦闘時、${serifs.rpg.status.atk}+10%`, effect: { spdUp: 0.1 } },
-    { name: `土属性剣攻撃`, desc: `戦闘時、最大ダメージが上昇します`, info: `戦闘時かつ最大ダメージ制限がある場合、その制限を20%増加\n非戦闘時、${serifs.rpg.status.atk}+10%`, effect: { dart: 0.2 } },
-    { name: `光属性剣攻撃`, desc: `戦闘時、たまに敵の攻撃力を下げます`, info: `戦闘時、20%でダメージカット50%\nそれ以外の場合、${serifs.rpg.status.def}+10%`, effect: { light: 0.2 } },
-    { name: `闇属性剣攻撃`, desc: `戦闘時、たまに敵の周辺に高重力領域が発生させます`, info: `戦闘時、10%で敵の現在HPの半分のダメージを与える\n行動回数が2回以上の敵に20%で行動回数を1にする\nそれ以外の場合、${serifs.rpg.status.def}+7%`, effect: { dark: 0.1 } },
-    { name: `毒属性剣攻撃`, desc: `戦闘時、ターン経過ごとに相手が弱体化します`, info: `ターン経過ごとに敵のステータス-5%`, effect: { weak: 0.05 } },
-    { name: `テキパキこなす`, desc: `戦闘以外の事の効率が上がります`, info: `非戦闘時、${serifs.rpg.status.atk}+20%`, effect: { notBattleBonusAtk: 0.2 } },
-    { name: `疲れにくい`, desc: `疲れでダメージを受ける際にそのダメージを軽減します`, info: `ダメージメッセージに疲が入っている場合、${serifs.rpg.status.def}+18%`, effect: { notBattleBonusDef: 0.18 } },
-    { name: `油断しない`, desc: `ターン1に受けるダメージを大きく軽減します`, info: `ターン1にてダメージカット30%を得る\n100%以上になる場合、残りはターン2に持ち越す`, effect: { firstTurnResist: 0.3 }, skillOnly: true },
-    { name: `粘り強い`, desc: `体力が減るほど受けるダメージを軽減します`, info: `ダメージカット20%×(減少HP割合)を得る 最大90%`, effect: { tenacious: 0.2 } },
-    { name: `高速RPG`, desc: `1回のRPGでお互いに2回行動します`, info: `1回のコマンドで2ターン進行する レイド時は、${serifs.rpg.status.atk}+10%`, effect: { plusActionX: 1 } },
-    { name: `1時間先取りRPG`, desc: `1時間早くRPGをプレイする事が出来ます`, info: `1時間早くRPGプレイ可能 ステータス+5%`, effect: { atkUp: 0.05, defUp: 0.05, rpgTime: -1 } },
-    { name: `伝説`, desc: `パワー・防御が7%上がります`, info: `ステータス+7% 重複しない`, effect: { atkUp: 0.07, defUp: 0.07 }, unique: "legend" },
-    { name: `脳筋`, desc: `与えるダメージが上がりますが、受けるダメージも上がります`, info: `${serifs.rpg.dmg.give}+18% ${serifs.rpg.dmg.take}+8%`, effect: { atkDmgUp: 0.18, defDmgUp: 0.08 } },
-    { name: `慎重`, desc: `与えるダメージが下がりますが、受けるダメージも下がります`, info: `${serifs.rpg.dmg.give}-8% ${serifs.rpg.dmg.take}-18%`, effect: { atkDmgUp: -0.08, defDmgUp: -0.18 } },
-    { name: `連続・毎日ボーナス強化`, desc: `連続・毎日ボーナスの上昇量が上がります`, info: `毎日ボーナスの増加量+50% (5 ~ 12.5投稿↑)`, effect: { continuousBonusUp: 0.5 } },
-    { name: `負けそうなら逃げる`, desc: `逃げると負けた事になりません 連続で発動しにくい`, info: `スキルの数まで100%逃走 以降失敗まで発動度に確率半減し続ける\nレイド時は、${serifs.rpg.status.def}+10%`, effect: { escape: 1 } },
-    { name: `気合で頑張る`, desc: `パワー・防御が少し上がり、気合耐えの確率が上がります`, info: `ステータス+3% 気合耐え確率+50%`, effect: { atkUp: 0.03, defUp: 0.03, endureUp: 0.5 } },
-    { name: `すぐ決死の覚悟をする`, desc: `決死の覚悟の発動条件が緩くなり、効果量が上がります`, info: `${serifs.rpg.status.atk}+8% 覚悟発動条件効果量+50%`, effect: { atkUp: 0.08, haisuiUp: 0.5 } },
-    { name: `投稿数ボーナス量アップ`, desc: `投稿数によるステータスボーナスが上昇します`, info: `投稿数ボーナス+5%`, effect: { postXUp: 0.05 } },
-    { name: `強敵と戦うのが好き`, desc: `敵が強ければステータスが上昇します`, info: `ステータス+(敵の攻撃 × 敵の防御 / 4)%`, effect: { enemyStatusBonus: 1 } },
-    { name: `${serifs.rpg.status.pen}+10%`, desc: `敵の防御の影響を減少させます`, info: `敵の防御-10%`, effect: { arpen: 0.1 } },
-    { name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndM}4`, desc: `乱数幅が20~180 -> 60~160になります`, info: `乱数幅 20~180 -> 60~160 (%) 期待値 110% 乱数系と重複しない`, effect: { atkRndMin: 0.4, atkRndMax: -0.2 }, unique: "rnd" },
-    { name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndM}5`, desc: `乱数幅が20~180 -> 90~130になります`, info: `乱数幅 20~180 -> 90~130 (%) 期待値 110% 乱数系と重複しない`, effect: { atkRndMin: 0.7, atkRndMax: -0.5 }, unique: "rnd" },
-    { name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndP}`, desc: `乱数幅が20~180 -> 5~230になります クリティカル率も上がります`, info: `乱数幅 20~180 -> 5~230 (%) 期待値 115% クリティカル率+2% 乱数系と重複しない`, effect: { atkRndMin: -0.15, atkRndMax: 0.5, critUpFixed: 0.02 }, unique: "rnd" },
-    { name: `${serifs.rpg.dmg.take}${serifs.rpg.status.rndM}`, desc: `敵から受ける最大ダメージを減少させます`, info: `敵の乱数幅 20~180 -> 20~160 (%) 乱数系と重複しない`, effect: { defRndMin: 0, defRndMax: -0.2 }, unique: "rnd" },
-    { name: `${serifs.rpg.dmg.take}${serifs.rpg.status.rndP}`, desc: `敵から受ける最小ダメージを減少させます`, info: `敵の乱数幅 20~180 -> 0~180 (%) 乱数系と重複しない`, effect: { defRndMin: -0.2, defRndMax: 0 }, unique: "rnd" },
-    { name: `準備を怠らない`, desc: `ターン1にて、必ず良い効果がある武器か防具を装備します`, info: `ターン1装備率+100% ターン1悪アイテム率-100% アイテム装備率-15% 重複しない`, effect: { firstTurnItem: 1, firstTurnMindMinusAvoid: 1, itemEquip: -0.15 }, unique: "firstTurnItem" },
-    { name: `道具大好き`, desc: `道具の使用率が上がります`, info: `アイテム装備率+40%`, effect: { itemEquip: 0.4 } },
-    { name: `道具の扱いが上手い`, desc: `道具の効果量が上がります`, info: `アイテム効果量+40% アイテム悪効果軽減+40%`, effect: { itemBoost: 0.4 } },
-    { name: `武器が大好き`, desc: `武器を装備しやすくなり、武器の効果量が上がります`, info: `武器装備率2倍 武器効果量+60% 種類大好き系と重複しない`, effect: { weaponSelect: 1, weaponBoost: 0.6 }, unique: "itemSelect" },
-    { name: `防具が大好き`, desc: `防具を装備しやすくなり、防具の効果量が上がります`, info: `防具装備率2倍 防具効果量+60% 種類大好き系と重複しない`, effect: { armorSelect: 1, armorBoost: 0.6 }, unique: "itemSelect" },
-    { name: `食いしんぼう`, desc: `食べ物を食べやすくなり、食べ物の効果量が上がります`, info: `食べ物使用率2倍 食べ物効果量+60% 毒食べ物ダメージ-60% 種類大好き系と重複しない`, effect: { foodSelect: 1, foodBoost: 0.6, poisonResist: 0.6 }, unique: "itemSelect" },
-    { name: `なんでも口に入れない`, desc: `良くないものを食べなくなることがあります`, info: `毒食べ物を50%で捨てる 100%以上になると悪アイテム率減少に変換`, effect: { poisonAvoid: 0.5 } },
-    { name: `道具の選択が上手い`, desc: `道具の効果量がすこし上がり、悪いアイテムを選びにくくなります`, info: `道具効果量+15% 悪アイテム率-15%`, effect: { itemBoost: 0.15, mindMinusAvoid: 0.15 } },
-    { name: `お腹が空いてから食べる`, desc: `体力が減ったら食べ物を食べやすくなり、食べ物の効果量が少し上がります`, info: `残HP%で食べ物を食べるようになる 食べ物効果量+20% 毒食べ物ダメージ-20%`, effect: { lowHpFood: 1, foodBoost: 0.2, poisonResist: 0.2 }, unique: "lowHpFood" },
-    { name: `たまにたくさん成長`, desc: `たまにステータスが多く増加します ★変更不可`, info: `2Lv毎になにかのステータス+1 ★変更不可（変更してもステータスは残るため）`, effect: { statusBonus: 1 }, unique: "status", cantReroll: true },
-    { name: `連続攻撃完遂率上昇`, desc: `連続攻撃を相手に止められにくくなります`, info: `連続攻撃中断率-30% 効果がない場合、${serifs.rpg.status.atk}+10%`, effect: { abortDown: 0.3 } },
-    { name: `クリティカル性能上昇`, desc: `クリティカル率とクリティカルダメージが上昇します`, info: `クリティカル率1.2倍&+3% クリティカルダメージ+20%`, effect: { critUp: 0.2, critUpFixed: 0.03, critDmgUp: 0.2 } },
-    { name: `敵のクリティカル性能減少`, desc: `相手のクリティカル率とクリティカルダメージが減少します`, info: `敵のクリティカル率-30% 敵のクリティカルダメージ-30% レイド時は、${serifs.rpg.status.def}+10%`, effect: { enemyCritDown: 0.3, enemyCritDmgDown: 0.3 } },
-    { name: `クリティカル上昇`, effect: { critUp: 0.3 }, moveTo: "クリティカル性能上昇" },
-    { name: `クリティカルダメージ上昇`, effect: { critDmgUp: 0.3 }, moveTo: "クリティカル性能上昇" },
-    { name: `敵のクリティカル率減少`, effect: { enemyCritDown: 0.3 }, moveTo: "敵のクリティカル性能減少" },
-    { name: `敵のクリティカルダメージ減少`, effect: { enemyCritDmgDown: 0.3 }, moveTo: "敵のクリティカル性能減少" },
-    { name: `負けた時、しっかり反省`, desc: `敗北時のボーナスが上昇します ★変更不可`, info: `敗北毎にステータス+2 ★変更不可（変更してもステータスは残るため）`, effect: { loseBonus: 1 }, unique: "loseBonus", cantReroll: true },
-    { name: `７フィーバー！`, desc: `Lv・パワー・防御の値に「7」が含まれている程ステータスアップ`, info: `Lv・パワー・防御の値に「7」が含まれている場合ステータス+7%\n「77」が含まれている場合ステータス+77% 「777」が含まれている場合...`, effect: { sevenFever: 1 } },
-    { name: `不運チャージ`, desc: `不運だった場合、次回幸運になりやすくなります`, info: `ステータス+5% 低乱数を引いた時、次回以降に高乱数を引きやすくなる`, effect: { atkUp: 0.05, defUp: 0.05, charge: 1 } },
-    { name: `お守り整備`, desc: `お守りの効果が上がり、お守りが壊れにくくなります`, info: `お守り効果+50% お守り耐久+50%`, effect: { amuletBoost: 0.5 }, skillOnly: true },
-    { name: `値切り術`, desc: `ショップのアイテムが少し安くなります`, info: `ショップアイテム全品10%OFF`, effect: { priceOff: 0.1 }, skillOnly: true },
-    { name: `天国か地獄か`, desc: `戦闘開始時に強くなるか弱くなるかどちらかが起こります`, info: `60%でステータス+20% 40%でステータス-20%`, effect: { heavenOrHell: 0.2 } },
+    { name: `${serifs.rpg.status.atk}+10%`, short: `${serifs.rpg.status.atk.slice(0,1)}`, desc: `常に${serifs.rpg.status.atk}が10%上がります`, info: `条件無しで${serifs.rpg.status.atk}+10%`, effect: { atkUp: 0.1 } },
+    { name: `${serifs.rpg.status.def}+10%`, short: `${serifs.rpg.status.def.slice(0,1)}`, desc: `常に${serifs.rpg.status.def}が10%上がります`, info: `条件無しで${serifs.rpg.status.def}+10%`, effect: { defUp: 0.1 } },
+    { name: `炎属性剣攻撃`, short: "炎", desc: `戦闘時、最低ダメージが上昇します`, info: `戦闘時、Lvの10%がダメージに固定加算\n非戦闘時、${serifs.rpg.status.atk}+Lvの35%`, effect: { fire: 0.1 } },
+    { name: `氷属性剣攻撃`, short: "氷", desc: `戦闘時、たまに敵を凍らせます`, info: `戦闘時、10%で相手のターンをスキップ\n非戦闘時、${serifs.rpg.status.def}+10%`, effect: { ice: 0.1 } },
+    { name: `雷属性剣攻撃`, short: "雷", desc: `戦闘時、連続攻撃をすればダメージが上がります`, info: `(現在攻撃数/最大攻撃数)×20%のダメージ上昇を得る`, effect: { thunder: 0.2 } },
+    { name: `風属性剣攻撃`, short: "風", desc: `戦闘時、たまに行動回数が上がります`, info: `戦闘時、10%で行動回数が2倍\n非戦闘時、${serifs.rpg.status.atk}+10%`, effect: { spdUp: 0.1 } },
+    { name: `土属性剣攻撃`, short: "土", desc: `戦闘時、最大ダメージが上昇します`, info: `戦闘時かつ最大ダメージ制限がある場合、その制限を20%増加\n非戦闘時、${serifs.rpg.status.atk}+10%`, effect: { dart: 0.2 } },
+    { name: `光属性剣攻撃`, short: "光", desc: `戦闘時、たまに敵の攻撃力を下げます`, info: `戦闘時、20%でダメージカット50%\nそれ以外の場合、${serifs.rpg.status.def}+10%`, effect: { light: 0.2 } },
+    { name: `闇属性剣攻撃`, short: "闇", desc: `戦闘時、たまに敵の周辺に高重力領域が発生させます`, info: `戦闘時、10%で敵の現在HPの半分のダメージを与える\n行動回数が2回以上の敵に20%で行動回数を1にする\nそれ以外の場合、${serifs.rpg.status.def}+7%`, effect: { dark: 0.1 } },
+    { name: `毒属性剣攻撃`, short: "毒", desc: `戦闘時、ターン経過ごとに相手が弱体化します`, info: `ターン経過ごとに敵のステータス-5%`, effect: { weak: 0.05 } },
+    { name: `テキパキこなす`, short: "効", desc: `戦闘以外の事の効率が上がります`, info: `非戦闘時、${serifs.rpg.status.atk}+20%`, effect: { notBattleBonusAtk: 0.2 } },
+    { name: `疲れにくい`, short: "疲", desc: `疲れでダメージを受ける際にそのダメージを軽減します`, info: `ダメージメッセージに疲が入っている場合、${serifs.rpg.status.def}+18%`, effect: { notBattleBonusDef: 0.18 } },
+    { name: `油断しない`, short: "断", desc: `ターン1に受けるダメージを大きく軽減します`, info: `ターン1にてダメージカット30%を得る\n100%以上になる場合、残りはターン2に持ち越す`, effect: { firstTurnResist: 0.3 }, skillOnly: true },
+    { name: `粘り強い`, short: "粘", desc: `体力が減るほど受けるダメージを軽減します`, info: `ダメージカット20%×(減少HP割合)を得る 最大90%`, effect: { tenacious: 0.2 } },
+    { name: `高速RPG`, short: "速", desc: `1回のRPGでお互いに2回行動します`, info: `1回のコマンドで2ターン進行する レイド時は、${serifs.rpg.status.atk}+10%`, effect: { plusActionX: 1 } },
+    { name: `1時間先取りRPG`, short: "先", desc: `1時間早くRPGをプレイする事が出来ます`, info: `1時間早くRPGプレイ可能 ステータス+5%`, effect: { atkUp: 0.05, defUp: 0.05, rpgTime: -1 } },
+    { name: `伝説`, short: "★", desc: `パワー・防御が7%上がります`, info: `ステータス+7% 重複しない`, effect: { atkUp: 0.07, defUp: 0.07 }, unique: "legend" },
+    { name: `脳筋`, short: "筋", desc: `与えるダメージが上がりますが、受けるダメージも上がります`, info: `${serifs.rpg.dmg.give}+18% ${serifs.rpg.dmg.take}+8%`, effect: { atkDmgUp: 0.18, defDmgUp: 0.08 } },
+    { name: `慎重`, short: "慎", desc: `与えるダメージが下がりますが、受けるダメージも下がります`, info: `${serifs.rpg.dmg.give}-8% ${serifs.rpg.dmg.take}-18%`, effect: { atkDmgUp: -0.08, defDmgUp: -0.18 } },
+    { name: `連続・毎日ボーナス強化`, short: "連", desc: `連続・毎日ボーナスの上昇量が上がります`, info: `毎日ボーナスの増加量+50% (5 ~ 12.5投稿↑)`, effect: { continuousBonusUp: 0.5 } },
+    { name: `負けそうなら逃げる`, short: "逃", desc: `逃げると負けた事になりません 連続で発動しにくい`, info: `スキルの数まで100%逃走 以降失敗まで発動度に確率半減し続ける\nレイド時は、${serifs.rpg.status.def}+10%`, effect: { escape: 1 } },
+    { name: `気合で頑張る`, short: "気", desc: `パワー・防御が少し上がり、気合耐えの確率が上がります`, info: `ステータス+3% 気合耐え確率+50%`, effect: { atkUp: 0.03, defUp: 0.03, endureUp: 0.5 } },
+    { name: `すぐ決死の覚悟をする`, short: "決", desc: `決死の覚悟の発動条件が緩くなり、効果量が上がります`, info: `${serifs.rpg.status.atk}+8% 覚悟発動条件効果量+50%`, effect: { atkUp: 0.08, haisuiUp: 0.5 } },
+    { name: `投稿数ボーナス量アップ`, short: "投", desc: `投稿数によるステータスボーナスが上昇します`, info: `投稿数ボーナス+5%`, effect: { postXUp: 0.05 } },
+    { name: `強敵と戦うのが好き`, short: "強", desc: `敵が強ければステータスが上昇します`, info: `ステータス+(敵の攻撃 × 敵の防御 / 4)%`, effect: { enemyStatusBonus: 1 } },
+    { name: `${serifs.rpg.status.pen}+10%`, short: "貫", desc: `敵の防御の影響を減少させます`, info: `敵の防御-10%`, effect: { arpen: 0.1 } },
+    { name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndM}4`, short: "４", desc: `乱数幅が20~180 -> 60~160になります`, info: `乱数幅 20~180 -> 60~160 (%) 期待値 110% 乱数系と重複しない`, effect: { atkRndMin: 0.4, atkRndMax: -0.2 }, unique: "rnd" },
+    { name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndM}5`, short: "５", desc: `乱数幅が20~180 -> 90~130になります`, info: `乱数幅 20~180 -> 90~130 (%) 期待値 110% 乱数系と重複しない`, effect: { atkRndMin: 0.7, atkRndMax: -0.5 }, unique: "rnd" },
+    { name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndP}`, short: "乱", desc: `乱数幅が20~180 -> 5~230になります クリティカル率も上がります`, info: `乱数幅 20~180 -> 5~230 (%) 期待値 115% クリティカル率+2% 乱数系と重複しない`, effect: { atkRndMin: -0.15, atkRndMax: 0.5, critUpFixed: 0.02 }, unique: "rnd" },
+    { name: `${serifs.rpg.dmg.take}${serifs.rpg.status.rndM}`, short: "安", desc: `敵から受ける最大ダメージを減少させます`, info: `敵の乱数幅 20~180 -> 20~160 (%) 乱数系と重複しない`, effect: { defRndMin: 0, defRndMax: -0.2 }, unique: "rnd" },
+    { name: `${serifs.rpg.dmg.take}${serifs.rpg.status.rndP}`, short: "不", desc: `敵から受ける最小ダメージを減少させます`, info: `敵の乱数幅 20~180 -> 0~180 (%) 乱数系と重複しない`, effect: { defRndMin: -0.2, defRndMax: 0 }, unique: "rnd" },
+    { name: `準備を怠らない`, short: "備", desc: `ターン1にて、必ず良い効果がある武器か防具を装備します`, info: `ターン1装備率+100% ターン1悪アイテム率-100% アイテム装備率-15% 重複しない`, effect: { firstTurnItem: 1, firstTurnMindMinusAvoid: 1, itemEquip: -0.15 }, unique: "firstTurnItem" },
+    { name: `道具大好き`, short: "道", desc: `道具の使用率が上がります`, info: `アイテム装備率+40%`, effect: { itemEquip: 0.4 } },
+    { name: `道具の扱いが上手い`, short: "扱", desc: `道具の効果量が上がります`, info: `アイテム効果量+40% アイテム悪効果軽減+40%`, effect: { itemBoost: 0.4 } },
+    { name: `武器が大好き`, short: "武", desc: `武器を装備しやすくなり、武器の効果量が上がります`, info: `武器装備率2倍 武器効果量+60% 種類大好き系と重複しない`, effect: { weaponSelect: 1, weaponBoost: 0.6 }, unique: "itemSelect" },
+    { name: `防具が大好き`, short: "防", desc: `防具を装備しやすくなり、防具の効果量が上がります`, info: `防具装備率2倍 防具効果量+60% 種類大好き系と重複しない`, effect: { armorSelect: 1, armorBoost: 0.6 }, unique: "itemSelect" },
+    { name: `食いしんぼう`, short: "食", desc: `食べ物を食べやすくなり、食べ物の効果量が上がります`, info: `食べ物使用率2倍 食べ物効果量+60% 毒食べ物ダメージ-60% 種類大好き系と重複しない`, effect: { foodSelect: 1, foodBoost: 0.6, poisonResist: 0.6 }, unique: "itemSelect" },
+    { name: `なんでも口に入れない`, short: "捨", desc: `良くないものを食べなくなることがあります`, info: `毒食べ物を50%で捨てる 100%以上になると悪アイテム率減少に変換`, effect: { poisonAvoid: 0.5 } },
+    { name: `道具の選択が上手い`, short: "選", desc: `道具の効果量がすこし上がり、悪いアイテムを選びにくくなります`, info: `道具効果量+15% 悪アイテム率-15%`, effect: { itemBoost: 0.15, mindMinusAvoid: 0.15 } },
+    { name: `お腹が空いてから食べる`, short: "空", desc: `体力が減ったら食べ物を食べやすくなり、食べ物の効果量が少し上がります`, info: `残HP%で食べ物を食べるようになる 食べ物効果量+20% 毒食べ物ダメージ-20%`, effect: { lowHpFood: 1, foodBoost: 0.2, poisonResist: 0.2 }, unique: "lowHpFood" },
+    { name: `たまにたくさん成長`, short: "成", desc: `たまにステータスが多く増加します ★変更不可`, info: `2Lv毎になにかのステータス+1 ★変更不可（変更してもステータスは残るため）`, effect: { statusBonus: 1 }, unique: "status", cantReroll: true },
+    { name: `連続攻撃完遂率上昇`, short: "遂", desc: `連続攻撃を相手に止められにくくなります`, info: `連続攻撃中断率-30% 効果がない場合、${serifs.rpg.status.atk}+10%`, effect: { abortDown: 0.3 } },
+    { name: `クリティカル性能上昇`, short: "急", desc: `クリティカル率とクリティカルダメージが上昇します`, info: `クリティカル率1.2倍&+3% クリティカルダメージ+20%`, effect: { critUp: 0.2, critUpFixed: 0.03, critDmgUp: 0.2 } },
+    { name: `敵のクリティカル性能減少`, short: "守", desc: `相手のクリティカル率とクリティカルダメージが減少します`, info: `敵のクリティカル率-30% 敵のクリティカルダメージ-30% レイド時は、${serifs.rpg.status.def}+10%`, effect: { enemyCritDown: 0.3, enemyCritDmgDown: 0.3 } },
+    { name: `負けた時、しっかり反省`, short: "省", desc: `敗北時のボーナスが上昇します ★変更不可`, info: `敗北毎にステータス+2 ★変更不可（変更してもステータスは残るため）`, effect: { loseBonus: 1 }, unique: "loseBonus", cantReroll: true },
+    { name: `７フィーバー！`, short: "７", desc: `Lv・パワー・防御の値に「7」が含まれている程ステータスアップ`, info: `Lv・パワー・防御の値に「7」が含まれている場合ステータス+7%\n「77」が含まれている場合ステータス+77% 「777」が含まれている場合...`, effect: { sevenFever: 1 } },
+    { name: `不運チャージ`, short: "Ｃ", desc: `不運だった場合、次回幸運になりやすくなります`, info: `ステータス+5% 低乱数を引いた時、次回以降に高乱数を引きやすくなる`, effect: { atkUp: 0.05, defUp: 0.05, charge: 1 } },
+    { name: `お守り整備`, short: "整", desc: `お守りの効果が上がり、お守りが壊れにくくなります`, info: `お守り効果+50% お守り耐久+50%`, effect: { amuletBoost: 0.5 }, skillOnly: true },
+    { name: `値切り術`, short: "値", desc: `ショップのアイテムが少し安くなります`, info: `ショップアイテム全品10%OFF`, effect: { priceOff: 0.1 }, skillOnly: true },
+    { name: `天国か地獄か`, short: "天", desc: `戦闘開始時に強くなるか弱くなるかどちらかが起こります`, info: `60%でステータス+20% 40%でステータス-20%`, effect: { heavenOrHell: 0.2 } },
 ]
 
 export const getSkill = (data) => {
@@ -413,7 +411,7 @@ export function aggregateSkillsEffects(data: { items?: ShopItem[], skills: Skill
     if (data.items?.filter((x) => x.type === "amulet").length) {
         const amulet = data.items?.filter((x) => x.type === "amulet")[0]
         console.log("amulet: " + amulet.name);
-        const item = shopItems.find((x) => x.name === amulet.name) as AmuletItem
+        const item = [...shopItems, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null))] : [])].find((x) => x.name === amulet.name) as AmuletItem
         if (item.isUsed(data)) {
             const boost = dataSkills.filter((x) => x.effect?.amuletBoost).reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0;
             const adjustEffect = (effect: any, boost: number): any => {
@@ -474,6 +472,15 @@ export function aggregateSkillsEffects(data: { items?: ShopItem[], skills: Skill
     }
 
     return aggregatedEffect;
+}
+
+export function getSkillsShortName(data: { items?: ShopItem[], skills: Skill[] }): { skills?: string | undefined, amulet?: string | undefined } {
+    const dataSkills = data.skills?.length ? "[" + data.skills.map((x) => x.short).join("") + "]" : undefined
+    const amulet = data.items?.filter((x) => x.type === "amulet").length ? data.items?.filter((x) => x.type === "amulet")[0] : undefined;
+    const amuletItem = amulet ? [...shopItems, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null))] : [])].find((x) => x.name === amulet.name) as AmuletItem : undefined;
+    const amuletShort = amuletItem ? "[" + amuletItem.short + "]" : undefined;
+
+    return {skills: dataSkills, amulet: amuletShort};
 }
 
 export function amuletMinusDurability(data: { items?: ShopItem[], skills: Skill[] }): string {

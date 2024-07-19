@@ -37,6 +37,7 @@ export type AmuletItem = Omit<BaseItem, 'type' | 'effect'> & {
     effect: SkillEffect;
     durability: number;
     skillName?: string | string[];
+    short: string;
     isUsed: (data: any) => boolean;
     isMinusDurability?: (data: any) => boolean;
 }
@@ -119,7 +120,7 @@ export const shopItems: ShopItem[] = [
     { name: "しあわせ草", desc: "購入時、？？？", limit: (data, rnd) => rnd() < 0.2, price: (data, rnd) => rnd() < 0.5 ? 20 : rnd() < 0.5 ? 10 : 30, type: "item", effect: fortuneEffect },
     { name: "タクシーチケット", desc: "購入時、旅モードのステージがベスト-1になる", limit: (data, rnd) => (data.maxEndress ?? 0) - (data.endress ?? 0) > 2, price: (data, rnd) => ((data.maxEndress ?? 0) - (data.endress ?? 0) - 1) * 8, type: "item", effect: (data) => { data.endress = (data.maxEndress ?? 0) - 1 }, infinite: true },
     { name: "不幸の種", limit: (data, rnd) => data.lv > 50 && rnd() < 0.35, desc: "Lv-1 パワー-4 防御-3", price: 30, type: "item", effect: (data) => { data.lv -= 1; data.atk -= 4; data.def -= 3 } },
-    { name: `呪いの人形`, limit: (data) => data.revenge, price: 44, desc: `持っていると前回負けた敵に戦う際に20%ステータスアップ 耐久1 リベンジ成功時耐久減少`, type: "amulet", effect: { atkUp: 0.2, defUp: 0.2 }, durability: 1, isUsed: (data) => data.enemy?.name === data.revenge, isMinusDurability: (data) => !data.revenge },
+    { name: `呪いの人形`, limit: (data) => data.revenge, price: 44, desc: `持っていると前回負けた敵に戦う際に20%ステータスアップ 耐久1 リベンジ成功時耐久減少`, type: "amulet", effect: { atkUp: 0.2, defUp: 0.2 }, durability: 1, short: "呪", isUsed: (data) => data.enemy?.name === data.revenge, isMinusDurability: (data) => !data.revenge } as AmuletItem,
     { name: `交通安全のお守り`, price: 30, desc: `持っているとターン1で30%ダメージカット 耐久10 使用時耐久減少`, type: "amulet", effect: { firstTurnResist: 0.3 }, durability: 10, isUsed: (data) => data.count === 1 } as AmuletItem,
     { name: `高級交通安全のお守り`, price: 99, desc: `持っているとターン1で70%ダメージカット 耐久10 使用時耐久減少`, type: "amulet", effect: { firstTurnResist: 0.7 }, durability: 10, isUsed: (data) => data.count === 1 } as AmuletItem,
     { name: `気合のハチマキ`, price: 55, desc: `購入時、気合アップ`, type: "item", effect: (data) => data.endure = (data.endure ?? 0) + 4 },
@@ -130,12 +131,12 @@ export const shopItems: ShopItem[] = [
     { name: `うねうねした壺`, limit: (data) => (data.jar ?? 0) === 4, price: 1600, desc: `なんかうねうねした感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
     { name: `ナノサイズ壺`, limit: (data) => (data.jar ?? 0) === 5, price: 2000, desc: `小さくて見えない感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
     { name: `謎の壺`, limit: (data) => (data.jar ?? 0) >= 6, price: (data) => (data.jar ?? 0) * 400, desc: `なんか謎な感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
-    { name: `苦労のお守り`, limit: (data) => data.lv >= 90 && data.allClear && data.streak > 0, price: (data) => Math.max(50 - data.winCount, 1), desc: `持っていると通常モードの敵が強くなります 耐久1 敗北時耐久減少`, type: "amulet", effect: { enemyBuff: 1 }, durability: 1, isUsed: (data) => data.enemy && data.clearHistory.includes(data.enemy), isMinusDurability: (data) => data.streak < 1 },
-    { name: `全身全霊のお守り`, price: 20, desc: `持っていると行動回数が1回になるが、すごく重い一撃を放てる 耐久10 使用時耐久減少`, type: "amulet", effect: { allForOne: 1 }, durability: 10, isUsed: (data) => true } as AmuletItem,
-    { name: `運命不変のお守り`, price: 40, desc: `持っていると与ダメージがランダム変化しなくなる 耐久20 使用時耐久減少`, type: "amulet", effect: { notRandom: 1 }, durability: 20, isUsed: (data) => true } as AmuletItem,
-    { name: `しあわせのお守り`, price: 20, desc: `レイド時、ステータスの割合がランダムに一時的に変化する 耐久10 レイドでの使用時耐久減少`, type: "amulet", effect: { fortuneEffect: 1 }, durability: 10, isUsed: (data) => data.raid } as AmuletItem,
-    { name: `全力の一撃のお守り`, price: 20, desc: `レイド時、ターン7で発生する全力の一撃を強化します 耐久10 レイドでの使用時耐久減少`, type: "amulet", effect: { finalAttackUp: 0.3 }, durability: 10, isUsed: (data) => data.raid } as AmuletItem,
-    ...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly).map((x): AmuletItem => ({ name: `${x.name}のお守り`, price: (data, rnd, ai) => skillPrice(ai, x.name, rnd), desc: `持っているとスキル「${x.name}」を使用できる 耐久6 使用時耐久減少`, type: "amulet", effect: x.effect, durability: 6, skillName: x.name, isUsed: (data) => true })),
+    { name: `苦労のお守り`, limit: (data) => data.lv >= 90 && data.allClear && data.streak > 0, price: (data) => Math.max(50 - data.winCount, 1), desc: `持っていると通常モードの敵が強くなります 耐久1 敗北時耐久減少`, type: "amulet", effect: { enemyBuff: 1 }, durability: 1, short: "苦", isUsed: (data) => data.enemy && data.clearHistory.includes(data.enemy), isMinusDurability: (data) => data.streak < 1 } as AmuletItem,
+    { name: `全身全霊のお守り`, price: 20, desc: `持っていると行動回数が1回になるが、すごく重い一撃を放てる 耐久10 使用時耐久減少`, type: "amulet", effect: { allForOne: 1 }, durability: 10, short: "全", isUsed: (data) => true } as AmuletItem,
+    { name: `運命不変のお守り`, price: 40, desc: `持っていると与ダメージがランダム変化しなくなる 耐久20 使用時耐久減少`, type: "amulet", effect: { notRandom: 1 }, durability: 20, short: "定", isUsed: (data) => true } as AmuletItem,
+    { name: `しあわせのお守り`, price: 20, desc: `レイド時、ステータスの割合がランダムに一時的に変化する 耐久10 レイドでの使用時耐久減少`, type: "amulet", effect: { fortuneEffect: 1 }, durability: 10, short: "し", isUsed: (data) => data.raid } as AmuletItem,
+    { name: `全力の一撃のお守り`, price: 20, desc: `レイド時、ターン7で発生する全力の一撃を強化します 耐久10 レイドでの使用時耐久減少`, type: "amulet", effect: { finalAttackUp: 0.3 }, durability: 10, short: "撃", isUsed: (data) => data.raid } as AmuletItem,
+    ...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly).map((x): AmuletItem => ({ name: `${x.name}のお守り`, price: (data, rnd, ai) => skillPrice(ai, x.name, rnd), desc: `持っているとスキル「${x.name}」を使用できる 耐久6 使用時耐久減少`, type: "amulet", effect: x.effect, durability: 6, skillName: x.name, short: x.short, isUsed: (data) => true })),
     { name: `お守りを捨てる`, limit: (data) => data.items.filter((x) => x.type === "amulet").length, price: 0, desc: `今所持しているお守りを捨てます`, type:"item", effect: (data) => data.items = data.items?.filter((x) => x.type !== "amulet"), always: true },
 ]
 
@@ -173,7 +174,7 @@ function getRandomSkills(ai, num) {
 
     return selectedSkills;
 }
-function mergeSkillAmulet(ai, rnd, skills: Skill[]) {
+export function mergeSkillAmulet(ai, rnd = Math.random, skills: Skill[]) {
     // スキル名のセットを作成し、同じ名前のスキルを弾く
     const uniqueSkillsMap = new Map<string, Skill>();
     skills.forEach(skill => {
@@ -205,6 +206,7 @@ function mergeSkillAmulet(ai, rnd, skills: Skill[]) {
         type: "amulet",
         effect,
         durability,
+        short: uniqueSkills.map((x) => x.short).join(""),
         skillName: uniqueSkills.map((x) => x.name),
         isUsed: (data) => true
     });
