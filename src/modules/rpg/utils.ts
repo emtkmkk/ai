@@ -219,34 +219,25 @@ export function getPostX(postCount) {
 
 /**
  * 投稿数からステータス倍率を計算します（レイド用）
- * 3 で 1倍
- * 10 で 2倍
- * 25 で 3倍
- * 75 で 4倍
- * 以降 175(+100) x5 375(+200) x6 775(+400) x7 ...
+ * 0 で 4倍
+ * 100 で 5倍
+ * 300 で 6倍
+ * 以降 700(+400) x7 1500(+800) x8 3100(+1600) x9 ...
  * @param postCount 投稿数
  * @returns ステータス倍率
  */
 export function getRaidPostX(postCount) {
-    if (postCount >= 25) {
-        let baseValue = 3;
-        let threshold = 25;
-        let incrementValue = 50;
+    let baseValue = 4;
+    let threshold = 0;
+    let incrementValue = 100;
 
-        while (postCount >= threshold + incrementValue) {
-            baseValue++;
-            threshold += incrementValue;
-            incrementValue *= 2;
-        }
-
-        return baseValue + (postCount - threshold) / incrementValue;
-    } else if (postCount >= 10) {
-        return (postCount - 10) / 15 + 2;
-    } else if (postCount >= 3) {
-        return (postCount - 3) / 7 + 1;
-    } else {
-        return Math.max(postCount / 3, 1 / 3);
+    while (postCount >= threshold + incrementValue) {
+        baseValue++;
+        threshold += incrementValue;
+        incrementValue *= 2;
     }
+
+    return baseValue + (postCount - threshold) / incrementValue;
 }
 
 /**

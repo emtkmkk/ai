@@ -976,7 +976,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         for (let i = 0; i < spd; i++) {
             const rng = (atkMinRnd + random(data, startCharge, skillEffects, false) * atkMaxRnd);
             if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`
-            const dmgBonus = ((1 + (skillEffects.atkDmgUp ?? 0)) * (i < 2 ? 1 : i < 3 ? 0.5 : 0.25)) + (skillEffects.thunder ? (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 0);
+            const dmgBonus = ((1 + (skillEffects.atkDmgUp ?? 0)) * (i < 2 ? 1 : i < 3 ? 0.5 : i < 4 ? 0.25 : 0.125)) + (skillEffects.thunder ? (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 0);
             //** クリティカルかどうか */
             let crit = Math.random() < ((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0))) + (skillEffects.critUpFixed ?? 0);
             const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
@@ -1162,12 +1162,13 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     };
 }
 function getSpdX(spd: number) {
-    return spd <= 2 ? spd : spd <= 3 ? 2 + (spd - 2) * 0.5 : 2.5 + (spd - 3) * 0.25
+    return spd <= 2 ? spd : spd <= 3 ? 2 + (spd - 2) * 0.5 : spd <= 4 ? 2.5 + (spd - 3) * 0.25 : 2.75 + (spd - 4) * 0.125
 }
 
 function getSpd(spdX: number) {
     if (spdX <= 2) return spdX;
     if (spdX <= 2.5) return 2 + (spdX - 2) * 2;
-    return 3 + (spdX - 2.5) * 4
+    if (spdX <= 2.75) return 3 + (spdX - 2.5) * 4;
+    return 4 + (spdX - 2.75) * 8
 }
 
