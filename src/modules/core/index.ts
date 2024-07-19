@@ -112,7 +112,10 @@ export default class extends Module {
 
 		const exp = /@(\w+)@?([\w.-]+)?/.exec(msg.extractedText.replace("リンク",""));
 		if (!exp?.[1]) {
-			if (!msg.friend.doc.linkedAccounts) return { reaction: ":mk_hotchicken:" };
+			if (!msg.friend.doc.linkedAccounts) {
+				msg.reply("リンクしているアカウントがありません！\n新しくアカウントをリンクさせたい場合は、リンクの後にあなたのサブアカウントへのメンションを入れてください！")
+				return { reaction: ":mk_hotchicken:" };
+			}
 			let message = "とリンクしているアカウント一覧\n\n"
             // ユーザの投稿数を取得
             const chart = await this.ai.api('charts/user/notes', {

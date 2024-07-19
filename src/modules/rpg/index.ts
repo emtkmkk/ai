@@ -16,8 +16,17 @@ import Friend from '@/friend';
 import config from '@/config';
 import * as loki from 'lokijs';
 
+type List = {
+    id: string;
+    createdAt: any;
+    name: string;
+    userIds: string[];
+}
+
 export default class extends Module {
     public readonly name = 'rpg';
+
+    private rpgPlayerList: List | undefined;
 
     private raids: loki.Collection<Raid>;
 
@@ -111,6 +120,7 @@ export default class extends Module {
 
         const hours = new Date().getHours();
         if ((hours === 0 || hours === 12 || hours === 18) && new Date().getMinutes() >= 1 && new Date().getMinutes() < 6) {
+            this.rpgAccountListAdd();
             const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
             if (rpgData) {
                 rpgData.maxLv += 1;
@@ -157,6 +167,11 @@ export default class extends Module {
         let helpMessage = [serifs.rpg.help.title];
         if ((data.lv ?? 0) < 7) {
             helpMessage.push(serifs.rpg.help.normal1)
+            if (data.coin > 0) {
+                helpMessage.push(serifs.rpg.help.okawari2(rpgData.maxLv - data.lv))
+            } else {
+                helpMessage.push(serifs.rpg.help.okawari1(rpgData.maxLv - data.lv))
+            }
         } else {
             helpMessage.push(serifs.rpg.help.normal2)
             if (data.lv < rpgData.maxLv) {
@@ -184,6 +199,7 @@ export default class extends Module {
             helpMessage.push(serifs.rpg.help.shop(data.coin))
         }
         helpMessage.push(serifs.rpg.help.status)
+        helpMessage.push(serifs.rpg.help.link)
         helpMessage.push(serifs.rpg.help.help)
 
         msg.reply("\n" + helpMessage.join("\n\n"));
@@ -958,8 +974,8 @@ export default class extends Module {
         let enemyDef = (typeof data.enemy.def === "function") ? data.enemy.def(atk, def, spd) : lv * 3.5 * data.enemy.def;
 
         if (skillEffects.enemyBuff && data.enemy.name !== endressEnemy(data).name) {
-					if (!data.enemy.spd && enemyAtk + enemyDef <= (lv * 10.5)) data.enemy.spd = 3;
-					if (!data.enemy.spd && enemyAtk + enemyDef <= (lv * 15.75)) data.enemy.spd = 2;
+            if (!data.enemy.spd && enemyAtk + enemyDef <= (lv * 10.5)) data.enemy.spd = 3;
+            if (!data.enemy.spd && enemyAtk + enemyDef <= (lv * 15.75)) data.enemy.spd = 2;
             enemyAtk = (typeof data.enemy.atk === "function") ? data.enemy.atk(atk, def, spd) * 1.25 : lv * 3.5 * (data.enemy.atk + 1);
             enemyDef = (typeof data.enemy.def === "function") ? data.enemy.def(atk, def, spd) * 1.25 : lv * 3.5 * (data.enemy.def + 1);
             if (typeof data.enemy.atkx === "number") data.enemy.atkx += 1
@@ -1226,7 +1242,7 @@ export default class extends Module {
                 /** 受けた最大ダメージ */
                 let maxDmg = 0;
                 if (!enemyTurnFinished) {
-									message += "\n";
+                    message += "\n";
                     for (let i = 0; i < (data.enemy.spd ?? 1); i++) {
                         const rng = (defMinRnd + random(data, startCharge, skillEffects, true) * defMaxRnd);
                         if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`
@@ -1479,6 +1495,35 @@ export default class extends Module {
                 this.subscribeReply("replayOkawari:" + msg.userId, reply.id);
             });
             return { reaction: 'hmm' }
+        }
+    }
+
+    @autobind
+    private async rpgAccountListAdd() {
+        const lists = await this.ai.api("users/lists/list", {}) as List[]
+        this.rpgPlayerList = lists.find((x) => x.name === "rpgPlayers");
+        if (!this.rpgPlayerList) {
+            this.rpgPlayerList = await this.ai.api("users/lists/create", { name: "rpgPlayers" }) as List
+            if (!this.rpgPlayerList) return
+            console.log("rpgPlayers List Create: " + this.rpgPlayerList.id)
+        }
+        if (this.rpgPlayerList) {
+            console.log("rpgPlayers List: " + this.rpgPlayerList.id)
+            const friends = this.ai.friends.find() ?? [];
+            const rpgPlayers = friends.filter((x) => x.perModulesData.rpg.lv >= 20);
+            const listUserIds = new Set(this.rpgPlayerList.userIds);
+            let newRpgPlayersUserIds = new Set();
+
+            for (const rpgPlayer of rpgPlayers) {
+                if (!listUserIds.has(rpgPlayer.userId)) {
+                    newRpgPlayersUserIds.add(rpgPlayer.userId)
+                }
+            }
+
+            newRpgPlayersUserIds.forEach(async (x) => {
+                if (this.rpgPlayerList?.id) await this.ai.api("users/lists/push", { listId: this.rpgPlayerList.id, userId: x })
+                console.log("rpgPlayers Account List Push: " + x)
+            })
         }
     }
 }
