@@ -465,7 +465,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         `${data.atk > data.def ? serifs.rpg.status.atk.slice(0,1) : serifs.rpg.status.def.slice(0,1)}${(Math.max(data.atk, data.def) / (data.atk + data.def) * 100).toFixed(0)}%`,
         skillsStr.skills,
         skillsStr.amulet ? `お守り ${skillsStr.amulet}` : undefined
-    ]
+    ].filter(Boolean).join(" ")
     message += `$[x2 ${me}:vs:]\n\n${serifs.rpg.start}\n\n`;
 
     /** バフを得た数。行数のコントロールに使用 */
