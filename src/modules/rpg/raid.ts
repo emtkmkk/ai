@@ -466,7 +466,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         skillsStr.skills,
         skillsStr.amulet ? `お守り ${skillsStr.amulet}` : undefined
     ].filter(Boolean).join(" ")
-    message += `$[x2 ${me}:vs:]\n\n${serifs.rpg.start}\n\n`;
+    message += `$[x2 ${me}]\n\n${serifs.rpg.start}\n\n`;
 
     /** バフを得た数。行数のコントロールに使用 */
     let buff = 0;
