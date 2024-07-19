@@ -137,7 +137,7 @@ export async function start(triggerUserId?: string, flg?: any) {
     /** すべてのレイドゲームのリスト */
     const games = raids.find({});
 
-    if (Date.now() - games[games.length - 1].startedAt < 45 * 60 * 1000) return;
+    if (Date.now() - games[games.length - 1].startedAt < 31 * 60 * 1000) return;
 
     ai.decActiveFactor();
 
