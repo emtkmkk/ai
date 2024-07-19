@@ -529,15 +529,16 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
     if (isSuper) {
         const superColor = colors.find((x) => x.alwaysSuper)?.name ?? colors.find((x) => x.default)?.name ?? colors[0]?.name;
+        const up = Math.max(spd + 2, Math.round(getSpd(getSpdX(spd) * 1.2))) - spd;
         if (me !== superColor) {
             // バフが1つでも付与された場合、改行を追加する
             if (buff > 0) message += "\n"
             buff += 1;
             me = superColor;
-            message += serifs.rpg.super(me) + `\n`;
+            message += serifs.rpg.super(me, up) + `\n`;
             data.superCount = (data.superCount ?? 0) + 1
         }
-        spd += 2;
+        spd = spd + up;
     }
 
     if (skillEffects.heavenOrHell) {
