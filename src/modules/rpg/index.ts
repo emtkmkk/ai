@@ -37,6 +37,7 @@ export default class extends Module {
         setInterval(this.scheduleLevelUpdateAndRemind, 1000 * 60 * 5);
         setInterval(this.scheduleDailyNoteCountsUpdate, 1000 * 60 * 5);
         this.calculateMaxLv();
+        this.rpgAccountListAdd();
         skillCalculate(this.ai);
 
         return {
