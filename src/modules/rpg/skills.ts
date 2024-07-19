@@ -409,7 +409,7 @@ export function aggregateSkillsEffects(data: { items?: ShopItem[], skills: Skill
     let dataSkills = data.skills
     data.items?.filter((x) => x.type = (shopItems.find((y) => x.name === y.name)?.type ?? "token"))
     if (data.items?.filter((x) => x.type === "amulet").length) {
-        const amulet = data.items?.filter((x) => x.type === "amulet")[0]
+        const amulet = data.items?.filter((x) => x.type === "amulet")[0] as AmuletItem
         console.log("amulet: " + amulet.name);
         const item = [...shopItems, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem
         if (item.isUsed(data)) {
@@ -476,7 +476,7 @@ export function aggregateSkillsEffects(data: { items?: ShopItem[], skills: Skill
 
 export function getSkillsShortName(data: { items?: ShopItem[], skills: Skill[] }): { skills?: string | undefined, amulet?: string | undefined } {
     const dataSkills = data.skills?.length ? "[" + data.skills.map((x) => x.short).join("") + "]" : undefined
-    const amulet = data.items?.filter((x) => x.type === "amulet").length ? data.items?.filter((x) => x.type === "amulet")[0] : undefined;
+    const amulet = data.items?.filter((x) => x.type === "amulet").length ? data.items?.filter((x) => x.type === "amulet")[0] as AmuletItem : undefined;
     const amuletItem = amulet ? [...shopItems, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem : undefined;
     const amuletShort = amuletItem ? "[" + amuletItem.short + "]" : undefined;
 
