@@ -411,7 +411,7 @@ export function aggregateSkillsEffects(data: { items?: ShopItem[], skills: Skill
     if (data.items?.filter((x) => x.type === "amulet").length) {
         const amulet = data.items?.filter((x) => x.type === "amulet")[0]
         console.log("amulet: " + amulet.name);
-        const item = [...shopItems, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null))] : [])].find((x) => x.name === amulet.name) as AmuletItem
+        const item = [...shopItems, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null)) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem
         if (item.isUsed(data)) {
             const boost = dataSkills.filter((x) => x.effect?.amuletBoost).reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0;
             const adjustEffect = (effect: any, boost: number): any => {
@@ -477,7 +477,7 @@ export function aggregateSkillsEffects(data: { items?: ShopItem[], skills: Skill
 export function getSkillsShortName(data: { items?: ShopItem[], skills: Skill[] }): { skills?: string | undefined, amulet?: string | undefined } {
     const dataSkills = data.skills?.length ? "[" + data.skills.map((x) => x.short).join("") + "]" : undefined
     const amulet = data.items?.filter((x) => x.type === "amulet").length ? data.items?.filter((x) => x.type === "amulet")[0] : undefined;
-    const amuletItem = amulet ? [...shopItems, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null))] : [])].find((x) => x.name === amulet.name) as AmuletItem : undefined;
+    const amuletItem = amulet ? [...shopItems, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null)) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem : undefined;
     const amuletShort = amuletItem ? "[" + amuletItem.short + "]" : undefined;
 
     return {skills: dataSkills, amulet: amuletShort};
