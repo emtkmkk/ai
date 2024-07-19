@@ -1,3 +1,5 @@
+import serifs from '@/serifs';
+
 export function calculateStats(data, msg, skillEffects, color) {
   const stbonus =
     (Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3) +
@@ -25,4 +27,75 @@ export function calculateStats(data, msg, skillEffects, color) {
   def *= 1 + (skillEffects.defUp ?? 0);
 
   return { atk, def, spd };
+}
+
+export function fortune(_atk, _def, effect = 1) {
+  let atk = _atk;
+  let def = _def;
+
+  const rnd = Math.random;
+
+  for (let i = 0; i < effect; i++) {
+    atk = Math.floor(atk * 1.05);
+    def = Math.floor(def * 1.05);
+
+    let targetAllStatus = rnd() < 0.2;
+
+    if (rnd() < 0.5) {
+      if (rnd() < 0.5) {
+        atk = Math.floor(atk * 1.01);
+        def = Math.floor(def * 1.01);
+      } else {
+        if (targetAllStatus) {
+          const a = Math.floor(atk);
+          const d = Math.floor(def);
+          atk = Math.floor((a + d) / 2);
+          def = Math.floor((a + d) / 2);
+        } else {
+          const a = Math.floor(atk * 0.3);
+          const d = Math.floor(def * 0.3);
+          atk = atk - a + Math.floor((a + d) / 2);
+          def = def - d + Math.floor((a + d) / 2);
+        }
+      }
+    } else {
+      if (rnd() < 0.5) {
+        if (targetAllStatus) {
+          if (rnd() < 0.5) {
+            atk = 0;
+            def = def + atk;
+          } else {
+            atk = atk + def;
+            def = 0;
+          }
+        } else {
+          const a = Math.floor(atk * 0.3);
+          const d = Math.floor(def * 0.3);
+          if (rnd() < 0.5) {
+            atk = atk - a;
+            def = def + a;
+          } else {
+            atk = atk + d;
+            def = def - d;
+          }
+        }
+      } else {
+        const a = atk;
+        atk = def;
+        def = a;
+      }
+    }
+  }
+
+  const atkDiff = atk - _atk;
+  const defDiff = def - _def;
+
+  const message = [
+    `${serifs.rpg.status.atk} : ${atk ?? 0}${atkDiff !== 0 ? ` (${atkDiff > 0 ? '+' + atkDiff : atkDiff})` : ''}`,
+    `${serifs.rpg.status.def} : ${def ?? 0}${defDiff !== 0 ? ` (${defDiff > 0 ? '+' + defDiff : defDiff})` : ''}`,
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  return { atk, def, message };
 }

@@ -330,6 +330,29 @@ export function getPostX(postCount) {
 }
 
 /**
+ * 投稿数からステータス倍率を計算します（レイド用）
+ * 0 で 4倍
+ * 100 で 5倍
+ * 300 で 6倍
+ * 以降 700(+400) x7 1500(+800) x8 3100(+1600) x9 ...
+ * @param postCount 投稿数
+ * @returns ステータス倍率
+ */
+export function getRaidPostX(postCount) {
+  let baseValue = 4;
+  let threshold = 0;
+  let incrementValue = 100;
+
+  while (postCount >= threshold + incrementValue) {
+    baseValue++;
+    threshold += incrementValue;
+    incrementValue *= 2;
+  }
+
+  return baseValue + (postCount - threshold) / incrementValue;
+}
+
+/**
  * プレイヤーが与えるダメージを計算します
  * @param data RPGモジュールのData
  * @param atk 攻撃力
@@ -414,7 +437,7 @@ export function getEnemyDmg(
 }
 
 export function random(data, startCharge = 0, skillEffects, reverse = false) {
-  let rnd = Math.random();
+  let rnd = skillEffects.notRandom && !reverse ? 0.55 : Math.random();
   if (skillEffects.charge) {
     const charge = Math.min(startCharge, data.charge);
     if (charge > 0) {

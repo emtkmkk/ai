@@ -122,8 +122,12 @@ export default class extends Module {
       msg.extractedText.replace('リンク', ''),
     );
     if (!exp?.[1]) {
-      if (!msg.friend.doc.linkedAccounts)
-        return { reaction: ':mk_hotchicken:' };
+      if (!msg.friend.doc.linkedAccounts) {
+        msg.reply(
+          'リンクしているアカウントがありません！\n新しくアカウントをリンクさせたい場合は、リンクの後にあなたのサブアカウントへのメンションを入れてください！',
+        );
+        return { reaction: ':neofox_approve:' };
+      }
       let message = 'とリンクしているアカウント一覧\n\n';
       // ユーザの投稿数を取得
       const chart = await this.ai.api('charts/user/notes', {
@@ -181,7 +185,7 @@ export default class extends Module {
               acct(friend.doc.user) +
               ' 未リンク（リンク先のアカウントから' +
               acct(msg.user) +
-              'をリンクしてください）';
+              'をリンクしてほしいのじゃ）';
           }
 
           // ユーザの投稿数を取得
@@ -268,14 +272,38 @@ export default class extends Module {
         filteredDoc = doc.filter((x) => x.user.host == null);
       }
 
-      if (filteredDoc.length !== 1) return { reaction: ':neofox_thumbsup:' };
+      if (
+        filteredDoc.length !== 1 ||
+        (filteredDoc[0].userId === msg.userId &&
+          exp?.[2] &&
+          exp?.[2] !== 'minazukey.uk')
+      ) {
+        msg.reply(
+          `そのユーザはわらわが知らないユーザのようなのじゃ！\n@${exp[1]}@${exp[2]} から \`@ai@minzukey.uk リンク ${acct(msg.user)}\`と送信すると上手く行く可能性があるのじゃ！`,
+        );
+        msg.reply(
+          `そのユーザはわらわが知らないユーザのようなのじゃ！\n@${exp[1]}@${exp[2]} から \`@ai@minzukey.uk リンク ${acct(msg.user, true)}\`と送信すると上手く行く可能性があるのじゃ！`,
+        );
+        return { reaction: ':neofox_confused:' };
+      }
 
-      if (filteredDoc[0].userId === msg.userId)
-        return { reaction: ':neofox_thumbsup:' };
+      if (filteredDoc[0].userId === msg.userId) {
+        msg.reply(`自身のアカウントとリンクはできないのじゃ……`);
+        return { reaction: ':neofox_confused:' };
+      }
 
       if (!msg.friend.doc.linkedAccounts) msg.friend.doc.linkedAccounts = [];
 
+      if (msg.friend.doc.linkedAccounts.includes(filteredDoc[0].userId)) {
+        msg.reply(`そのアカウントは既にリンク済みじゃ！`);
+        return { reaction: ':neofox_confused:' };
+      }
+
       msg.friend.doc.linkedAccounts?.push(filteredDoc[0].userId);
+
+      msg.friend.doc.linkedAccounts = Array.from(
+        new Set(msg.friend.doc.linkedAccounts),
+      );
 
       msg.friend.save();
 
@@ -761,7 +789,7 @@ export default class extends Module {
         inventory.join('\n'),
       ) +
         (msg.friend.doc.kazutoriData?.inventory?.length === 50
-          ? `\n\n沢山プレゼントがあるのう！\n次に物を入手すると最も古い物が消えてしまうから注意してほしいのじゃ（次は「**${msg.friend.doc.kazutoriData?.inventory[0]}**」が消滅します。）`
+          ? `\n\n沢山プレゼントがあるのう！\n次に物を入手すると最も古い物が消えてしまうから注意してほしいのじゃ（次は「**${msg.friend.doc.kazutoriData?.inventory[0]}**」が消滅するのじゃ。）`
           : msg.friend.doc.kazutoriData?.inventory?.length >= 35
             ? `\n\n沢山プレゼントがあるのう！\n**50**個を超えると古い物から消えてしまうから注意してほしいのじゃ（現在**${msg.friend.doc.kazutoriData?.inventory?.length}**個）`
             : ''),
@@ -1073,8 +1101,8 @@ ${data.recentlyReceivedReactions
       //リモート
       msg.reply(
         `
-※リモートユーザの為、絵文字がうまく表示されない可能性、正しい情報が表示されない可能性があります。
-絵文字がうまく表示されない場合はリモートで表示などのボタンを使用し、皆尽村にて確認してください。
+※リモートユーザの為、絵文字がうまく表示されない可能性、正しい情報が表示されない可能性があるのじゃ。
+絵文字がうまく表示されない場合はリモートで表示などのボタンを使用し、皆尽村にて確認してほしいのじゃ。
 
 受け取った事がある絵文字の種類 : **${data.receivedReactionsCount}** 種類
 

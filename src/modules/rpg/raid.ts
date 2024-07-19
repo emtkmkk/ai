@@ -1,8 +1,6 @@
 import 藍 from '@/ai';
-import { InstallerResult } from '@/ai';
 import { Collection } from 'lokijs';
 import Message from '@/message';
-import * as loki from 'lokijs';
 import { User } from '@/misskey/user';
 import rpg from './index';
 import { colors } from './colors';
@@ -12,6 +10,7 @@ import {
   aggregateSkillsEffects,
   calcSevenFever,
   amuletMinusDurability,
+  getSkillsShortName,
 } from './skills';
 import { aggregateTokensEffects } from './shop';
 import {
@@ -24,8 +23,9 @@ import {
   getPostX,
   getVal,
   random,
+  getRaidPostX,
 } from './utils';
-import { calculateStats } from './battle';
+import { calculateStats, fortune } from './battle';
 import serifs from '@/serifs';
 import getDate from '@/utils/get-date';
 import { acct } from '@/utils/acct';
@@ -52,8 +52,14 @@ export type Raid = {
     lv: number;
     /** 攻撃者の攻撃回数 */
     count: number;
+    /** 所持しているスキル情報 */
+    skillsStr?: {
+      skills?: string | undefined;
+      amulets?: string | undefined;
+    };
     /** 攻撃者のマーク */
     mark: string;
+    replyId?: string;
   }[];
   /** レイドの敵 */
   enemy: RaidEnemy;
@@ -142,13 +148,15 @@ function scheduleRaidStart() {
  * @param flg 特殊なフラグ
  */
 export async function start(triggerUserId?: string, flg?: any) {
-  ai.decActiveFactor();
-
   /** すべてのレイドゲームのリスト */
   const games = raids.find({});
 
+  if (Date.now() - games[games.length - 1].startedAt < 31 * 60 * 1000) return;
+
+  ai.decActiveFactor();
+
   const recentRaidList = games
-    .slice(Math.min((raidEnemys.length - 1) * -1, -5))
+    .slice(Math.min((raidEnemys.length - 1) * -1, -6))
     .map((obj) => obj.enemy.name ?? '');
 
   /** 過去のレイドボスを除外したリスト */
@@ -255,13 +263,21 @@ function finish(raid: Raid) {
     if (sortAttackers?.[0].mark === ':blank:') {
       sortAttackers[0].mark = '👑';
     }
+    const friend = ai.lookupFriend(sortAttackers?.[0].user.id);
+    if (!friend) return;
+    const data = friend.getPerModulesData(module_);
+    data.coin = Math.max((data.coin ?? 0) + 1, data.coin);
+    friend.setPerModulesData(module_, data);
   }
 
+  let references: string[] = [];
+
   for (let attacker of sortAttackers) {
-    if (attacker.dmg > 0) {
-      results.push(
-        `${attacker.me} ${acct(attacker.user)}:\n${attacker.mark === ':blank:' && attacker.dmg === 100 ? '💯' : attacker.mark} Lv${String(attacker.lv).padStart(levelSpace, ' ')} ${attacker.count}ターン ${attacker.dmg.toLocaleString()}ダメージ`,
-      );
+    results.push(
+      `${attacker.me} ${acct(attacker.user)}:\n${attacker.mark === ':blank:' && attacker.dmg === 100 ? '💯' : attacker.mark} Lv${String(attacker.lv).padStart(levelSpace, ' ')} ${attacker.count}ターン ${attacker.dmg.toLocaleString()}ダメージ`,
+    );
+    if (references.length < 100) {
+      if (attacker.replyId) references.push(attacker.replyId);
     }
   }
 
@@ -320,6 +336,7 @@ function finish(raid: Raid) {
     text: text,
     cw: serifs.rpg.finishCw(raid.enemy.name),
     renoteId: raid.postId,
+    referenceIds: references,
   });
 
   module_.unsubscribeReply(raid.postId);
@@ -356,7 +373,7 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
   if (raid == null) return;
 
   if (raid.attackers.some((x) => x.user.id == msg.userId)) {
-    msg.reply('すでに参加済みの様です！').then((reply) => {
+    msg.reply('すでに参加済みのようじゃ！').then((reply) => {
       raid.replyKey.push(raid.postId + ':' + reply.id);
       module_.subscribeReply(raid.postId + ':' + reply.id, reply.id);
       raids.update(raid);
@@ -375,7 +392,7 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
   const result = await getTotalDmg(msg, enemy);
 
   if (raid.attackers.some((x) => x.user.id == msg.userId)) {
-    msg.reply('すでに参加済みの様です！').then((reply) => {
+    msg.reply('すでに参加済みのようじゃ！').then((reply) => {
       raid.replyKey.push(raid.postId + ':' + reply.id);
       module_.subscribeReply(raid.postId + ':' + reply.id, reply.id);
       raids.update(raid);
@@ -397,7 +414,9 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
     me: result.me ?? '',
     lv: result.lv ?? 1,
     count: result.count ?? 1,
+    skillsStr: result.skillsStr ?? { skills: undefined, amulets: undefined },
     mark: result.mark ?? ':blank:',
+    replyId: result.reply.id ?? undefined,
   });
 
   raids.update(raid);
@@ -435,9 +454,12 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     return {
       reaction: 'confused',
     };
+  data.raid = true;
   const colorData = colors.map((x) => x.unlock(data));
   // 所持しているスキル効果を読み込み
   const skillEffects = aggregateSkillsEffects(data);
+
+  const skillsStr = getSkillsShortName(data);
 
   /** 現在の敵と戦ってるターン数。 敵がいない場合は1 */
   let count = 1;
@@ -464,9 +486,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
   }
 
   // 投稿数に応じてステータス倍率を得る
-  // 連続プレイの場合は倍率アップ
   /** ステータス倍率（投稿数） */
-  let tp = getPostX(postCount) * (1 + (skillEffects.postXUp ?? 0));
+  let tp = getRaidPostX(postCount) * (1 + (skillEffects.postXUp ?? 0));
 
   if (!isSuper) {
     data.superPoint = Math.max(data.superPoint ?? 0 - (tp - 2), -3);
@@ -492,7 +513,15 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
   // 敵が消された？？
   if (!enemy) enemy = endressEnemy(data);
   // 敵の開始メッセージなどを設定
-  cw += `${enemy.msg}`;
+  cw += [
+    me,
+    `Lv${data.lv}`,
+    `${(Math.max(data.atk, data.def) / (data.atk + data.def)) * 100 <= 53 ? '' : data.atk > data.def ? serifs.rpg.status.atk.slice(0, 1) : serifs.rpg.status.def.slice(0, 1)}${((Math.max(data.atk, data.def) / (data.atk + data.def)) * 100).toFixed(0)}%`,
+    skillsStr.skills,
+    skillsStr.amulet ? `お守り ${skillsStr.amulet}` : undefined,
+  ]
+    .filter(Boolean)
+    .join(' ');
   message += `$[x2 ${me}]\n\n${serifs.rpg.start}\n\n`;
 
   /** バフを得た数。行数のコントロールに使用 */
@@ -514,9 +543,11 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
   } else {
     if (aggregateTokensEffects(data).showPostBonus) {
       buff += 1;
-      message +=
-        serifs.rpg.postBonusInfo.continuous.a(Math.floor(continuousBonusNum)) +
-        `\n`;
+      if (continuousBonusNum)
+        message +=
+          serifs.rpg.postBonusInfo.continuous.a(
+            Math.floor(continuousBonusNum),
+          ) + `\n`;
       if (isSuper) {
         message += serifs.rpg.postBonusInfo.super + `\n`;
       }
@@ -532,8 +563,13 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
   // ここで残りのステータスを計算しなおす
   let { atk, def, spd } = calculateStats(data, msg, skillEffects, color);
-  atk = atk * (1 + (skillEffects.atkUp ?? 0));
-  def = def * (1 + (skillEffects.defUp ?? 0));
+  if (skillEffects.fortuneEffect) {
+    const result = fortune(atk, def, skillEffects.fortuneEffect);
+    atk = result.atk;
+    def = result.def;
+    message += serifs.rpg.skill.fortune + `\n`;
+    message += result.message + `\n`;
+  }
   /** 敵の最大HP */
   let enemyMaxHp = 100000;
   /** 敵のHP */
@@ -567,15 +603,16 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
       colors.find((x) => x.alwaysSuper)?.name ??
       colors.find((x) => x.default)?.name ??
       colors[0]?.name;
+    const up = Math.max(spd + 2, Math.round(getSpd(getSpdX(spd) * 1.2))) - spd;
     if (me !== superColor) {
       // バフが1つでも付与された場合、改行を追加する
       if (buff > 0) message += '\n';
       buff += 1;
       me = superColor;
-      message += serifs.rpg.super(me) + `\n`;
+      message += serifs.rpg.super(me, up) + `\n`;
       data.superCount = (data.superCount ?? 0) + 1;
     }
-    spd += 2;
+    spd = spd + up;
   }
 
   if (skillEffects.heavenOrHell) {
@@ -605,7 +642,9 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
   }
 
   // 風魔法発動時
-  let spdUp = spd * (skillEffects.spdUp ?? 0);
+  let spdUp =
+    getSpd(getSpdX(spd) * (1 + (skillEffects.spdUp ?? 0))) -
+    getSpd(getSpdX(spd));
   if (Math.random() < spdUp % 1) {
     spdUp = Math.floor(spdUp) + 1;
   } else {
@@ -950,8 +989,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
       }
       if (aggregateTokensEffects(data).showItemBonus) {
         const itemMessage = [
-          `${itemBonus.atk ? `${serifs.rpg.status.atk}+${itemBonus.atk}` : ''}`,
-          `${itemBonus.def ? `${serifs.rpg.status.def}+${itemBonus.def}` : ''}`,
+          `${itemBonus.atk ? `${serifs.rpg.status.atk}+${itemBonus.atk.toFixed(0)}` : ''}`,
+          `${itemBonus.def ? `${serifs.rpg.status.def}+${itemBonus.def.toFixed(0)}` : ''}`,
         ]
           .filter(Boolean)
           .join(' / ');
@@ -1129,7 +1168,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     }
 
     if (skillEffects.allForOne) {
-      atk = atk * spd * 1.1;
+      const spdx = getSpdX(spd);
+      atk = atk * spdx * 1.1;
       if (itemBonus?.atk) itemBonus.atk = itemBonus.atk * spd * 1.1;
       spd = 1;
     }
@@ -1143,11 +1183,11 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         message += `⚂ ${Math.floor(rng * 100)}%\n`;
       const dmgBonus =
         (1 + (skillEffects.atkDmgUp ?? 0)) *
+          (i < 2 ? 1 : i < 3 ? 0.5 : i < 4 ? 0.25 : 0.125) +
         (skillEffects.thunder
-          ? 1 +
-            (skillEffects.thunder * ((i + 1) / spd)) /
-              (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)
-          : 1);
+          ? (skillEffects.thunder * ((i + 1) / spd)) /
+            (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)
+          : 0);
       //** クリティカルかどうか */
       let crit =
         Math.random() <
@@ -1338,7 +1378,11 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
   }
 
   if (playerHp > 0) {
-    const dmg = Math.round((playerHp / (100 + lv * 3)) * 1000);
+    const dmg = Math.round(
+      (playerHp / (100 + lv * 3)) *
+        1000 *
+        (1 + (skillEffects.finalAttackUp ?? 0)),
+    );
     message +=
       '\n\n' +
       serifs.rpg.finalAttack(dmg) +
@@ -1376,6 +1420,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     message += '\n\n' + amuletmsg;
   }
 
+  data.raid = false;
   msg.friend.setPerModulesData(module_, data);
 
   // 色解禁確認
@@ -1413,6 +1458,23 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     lv,
     count,
     mark,
+    skillsStr,
     reply,
   };
+}
+function getSpdX(spd: number) {
+  return spd <= 2
+    ? spd
+    : spd <= 3
+      ? 2 + (spd - 2) * 0.5
+      : spd <= 4
+        ? 2.5 + (spd - 3) * 0.25
+        : 2.75 + (spd - 4) * 0.125;
+}
+
+function getSpd(spdX: number) {
+  if (spdX <= 2) return spdX;
+  if (spdX <= 2.5) return 2 + (spdX - 2) * 2;
+  if (spdX <= 2.75) return 3 + (spdX - 2.5) * 4;
+  return 4 + (spdX - 2.75) * 8;
 }

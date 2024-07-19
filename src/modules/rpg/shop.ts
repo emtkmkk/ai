@@ -45,7 +45,8 @@ export type AmuletItem = Omit<BaseItem, 'type' | 'effect'> & {
   type: 'amulet';
   effect: SkillEffect;
   durability: number;
-  skillName?: string;
+  skillName?: string | string[];
+  short: string;
   isUsed: (data: any) => boolean;
   isMinusDurability?: (data: any) => boolean;
 };
@@ -89,6 +90,16 @@ export const skillPrice = (
   rnd: () => number,
 ) => {
   const skillP = skillPower(_ai, skillName);
+  const filteredSkills = skills.filter(
+    (x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly,
+  );
+
+  // totalSkillCountにfilteredSkillsのnameに含まれるskillP.skillNameCountMapに含まれる値の合計を代入
+  const totalSkillCount = filteredSkills.reduce(
+    (acc, skill) => acc + (skillP.skillNameCountMap.get(skill.name) || 0),
+    0,
+  );
+
   const price = Math.max(
     Math.floor(
       12 *
@@ -96,10 +107,11 @@ export const skillPrice = (
           isNaN(skillP.skillNameCount) ? 0 : skillP.skillNameCount,
           0.5,
         ) /
-          (skillP.totalSkillCount / skills.filter((x) => !x.moveTo).length)),
+          (totalSkillCount / filteredSkills.length)),
     ),
     6,
   );
+
   const rand = rnd();
   return rand < 0.1
     ? Math.floor(price * 0.5)
@@ -121,7 +133,7 @@ export const shopItems: ShopItem[] = [
       !data.items.filter((x) => x.name === 'おかわり2RPG自動支払いの札')
         .length && data.replayOkawari != null,
     desc: '所持している間、おかわりおかわりRPGをプレイする際に確認をスキップして自動でコインを消費します',
-    price: 5,
+    price: 1,
     type: 'token',
     effect: { autoReplayOkawari: true },
     always: true,
@@ -129,9 +141,11 @@ export const shopItems: ShopItem[] = [
   {
     name: '自動修行モードの札',
     limit: (data) =>
+      (data.maxEndress ?? 0) > 0 &&
       !data.items.filter((x) => x.name === '自動修行モードの札').length,
     desc: '所持している間、修行モードに自動で突入します',
-    price: 5,
+    price: (data) =>
+      data.allClear ? 1 : Math.max(8 - (data.maxEndress ?? 0), 1),
     type: 'token',
     effect: { autoJournal: true },
     always: true,
@@ -190,6 +204,7 @@ export const shopItems: ShopItem[] = [
   {
     name: '乱数透視の札',
     limit: (data) =>
+      data.lv >= 7 &&
       !data.items.filter((x) => x.name === '乱数透視の札').length,
     desc: '所持している間、ダメージの乱数が表示されるようになります',
     price: 50,
@@ -199,6 +214,7 @@ export const shopItems: ShopItem[] = [
   {
     name: '投稿数ボーナス表示の札',
     limit: (data) =>
+      data.lv >= 20 &&
       !data.items.filter((x) => x.name === '投稿数ボーナス表示の札').length,
     desc: '所持している間、投稿数ボーナスの詳細情報が表示されるようになります',
     price: 50,
@@ -208,6 +224,7 @@ export const shopItems: ShopItem[] = [
   {
     name: 'スキル詳細表示の札',
     limit: (data) =>
+      data.lv >= 20 &&
       !data.items.filter((x) => x.name === 'スキル詳細表示の札').length,
     desc: '所持している間、スキルの詳細情報が表示されるようになります',
     price: 50,
@@ -217,6 +234,7 @@ export const shopItems: ShopItem[] = [
   {
     name: '装備詳細表示の札',
     limit: (data) =>
+      data.lv >= 7 &&
       !data.items.filter((x) => x.name === '装備詳細表示の札').length,
     desc: '所持している間、武器・防具の詳細な効果が表示されます',
     price: 50,
@@ -309,6 +327,16 @@ export const shopItems: ShopItem[] = [
     },
   },
   {
+    name: '仕切り直しの札',
+    desc: '全ての敵が再出現するようになります',
+    limit: (data, rnd) =>
+      data.allClear && data.clearEnemy?.length && (data.maxEndress ?? 0) >= 6,
+    price: 1,
+    type: 'item',
+    effect: (data) => (data.clearEnemy = []),
+    always: true,
+  },
+  {
     name: 'しあわせ草',
     desc: '購入時、？？？',
     limit: (data, rnd) => rnd() < 0.2,
@@ -348,37 +376,52 @@ export const shopItems: ShopItem[] = [
     type: 'amulet',
     effect: { atkUp: 0.2, defUp: 0.2 },
     durability: 1,
+    short: '呪',
     isUsed: (data) => data.enemy?.name === data.revenge,
     isMinusDurability: (data) => !data.revenge,
-  },
+  } as AmuletItem,
+  {
+    name: `呪いの人形`,
+    limit: (data) => data.revenge,
+    price: 44,
+    desc: `持っていると前回負けた敵に戦う際に20%ステータスアップ 耐久1 リベンジ成功時耐久減少`,
+    type: 'amulet',
+    effect: { atkUp: 0.2, defUp: 0.2 },
+    durability: 1,
+    short: '呪',
+    isUsed: (data) => data.enemy?.name === data.revenge,
+    isMinusDurability: (data) => !data.revenge,
+  } as AmuletItem,
   {
     name: `交通安全のお守り`,
     price: 30,
-    desc: `持っているとターン1で30%ダメージカット 耐久6 使用時耐久減少`,
+    desc: `持っているとターン1で30%ダメージカット 耐久10 使用時耐久減少`,
     type: 'amulet',
     effect: { firstTurnResist: 0.3 },
-    durability: 6,
-    isUsed: (data) => data.count === 1,
-  },
+    durability: 10,
+    short: '安',
+    isUsed: (data) => data.raid || data.count === 1,
+  } as AmuletItem,
   {
     name: `高級交通安全のお守り`,
-    price: 70,
-    desc: `持っているとターン1で60%ダメージカット 耐久6 使用時耐久減少`,
+    price: 99,
+    desc: `持っているとターン1で70%ダメージカット 耐久10 使用時耐久減少`,
     type: 'amulet',
-    effect: { firstTurnResist: 0.6 },
-    durability: 6,
-    isUsed: (data) => data.count === 1,
-  },
+    effect: { firstTurnResist: 0.7 },
+    durability: 10,
+    short: 'S安',
+    isUsed: (data) => data.raid || data.count === 1,
+  } as AmuletItem,
   {
     name: `気合のハチマキ`,
     price: 55,
     desc: `購入時、気合アップ`,
     type: 'item',
-    effect: (data) => (data.endure = (data.endure ?? 0) + 2),
+    effect: (data) => (data.endure = (data.endure ?? 0) + 4),
   },
-
   {
     name: `穢根くんのチェキ`,
+    limit: (data) => data.lv >= 20,
     price: 200,
     desc: `普通の自撮り写真のチェキ 特に効果なし`,
     type: 'item',
@@ -440,9 +483,10 @@ export const shopItems: ShopItem[] = [
     type: 'amulet',
     effect: { enemyBuff: 1 },
     durability: 1,
+    short: '苦',
     isUsed: (data) => data.enemy && data.clearHistory.includes(data.enemy),
     isMinusDurability: (data) => data.streak < 1,
-  },
+  } as AmuletItem,
   {
     name: `全身全霊のお守り`,
     price: 20,
@@ -450,8 +494,39 @@ export const shopItems: ShopItem[] = [
     type: 'amulet',
     effect: { allForOne: 1 },
     durability: 10,
+    short: '全',
     isUsed: (data) => true,
-  },
+  } as AmuletItem,
+  {
+    name: `運命不変のお守り`,
+    price: 40,
+    desc: `持っていると与ダメージがランダム変化しなくなる 耐久20 使用時耐久減少`,
+    type: 'amulet',
+    effect: { notRandom: 1 },
+    durability: 20,
+    short: '不変',
+    isUsed: (data) => true,
+  } as AmuletItem,
+  {
+    name: `しあわせのお守り`,
+    price: 20,
+    desc: `レイド時、ステータスの割合がランダムに一時的に変化する 耐久10 レイドでの使用時耐久減少`,
+    type: 'amulet',
+    effect: { fortuneEffect: 1 },
+    durability: 10,
+    short: 'し',
+    isUsed: (data) => data.raid,
+  } as AmuletItem,
+  {
+    name: `全力の一撃のお守り`,
+    price: 20,
+    desc: `レイド時、ターン7で発生する全力の一撃を強化します 耐久10 レイドでの使用時耐久減少`,
+    type: 'amulet',
+    effect: { finalAttackUp: 0.3 },
+    durability: 10,
+    short: '撃',
+    isUsed: (data) => data.raid,
+  } as AmuletItem,
   ...skills
     .filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly)
     .map(
@@ -463,10 +538,106 @@ export const shopItems: ShopItem[] = [
         effect: x.effect,
         durability: 6,
         skillName: x.name,
+        short: x.short,
         isUsed: (data) => true,
       }),
     ),
+  {
+    name: `お守りを捨てる`,
+    limit: (data) => data.items.filter((x) => x.type === 'amulet').length,
+    price: 0,
+    desc: `今所持しているお守りを捨てます`,
+    type: 'item',
+    effect: (data) =>
+      (data.items = data.items?.filter((x) => x.type !== 'amulet')),
+    always: true,
+  },
 ];
+
+function getRandomSkills(ai, num) {
+  let filteredSkills = skills.filter(
+    (x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly,
+  );
+  const { skillNameCountMap, totalSkillCount } = skillCalculate(ai);
+
+  let selectedSkills: Skill[] = [];
+
+  // スキルの合計重みを計算
+  let totalWeight = filteredSkills.reduce((total, skill) => {
+    const skillCount = !skill.cantReroll
+      ? skillNameCountMap.get(skill.name) || 0
+      : totalSkillCount / skills.filter((x) => !x.moveTo).length;
+    return total + 1 / (1 + skillCount); // 出現回数に応じて重みを計算
+  }, 0);
+
+  for (let i = 0; i < num; i++) {
+    // 0からtotalWeightまでのランダム値を生成
+    let randomValue = Math.random() * totalWeight;
+
+    // ランダム値に基づいてスキルを選択
+    for (let skill of filteredSkills) {
+      const skillCount = !skill.cantReroll
+        ? skillNameCountMap.get(skill.name) || 0
+        : totalSkillCount / skills.filter((x) => !x.moveTo).length;
+      const weight = 1 / (1 + skillCount); // 出現回数に応じて重みを計算
+
+      if (randomValue < weight) {
+        selectedSkills.push(skill); // ランダム値が現在のスキルの重み未満であればそのスキルを選択
+        totalWeight -= weight;
+        filteredSkills = filteredSkills.filter((x) => x.name !== skill.name);
+        break;
+      }
+
+      randomValue -= weight; // ランダム値を減少させる
+    }
+  }
+
+  return selectedSkills;
+}
+export function mergeSkillAmulet(ai, rnd = Math.random, skills: Skill[]) {
+  // スキル名のセットを作成し、同じ名前のスキルを弾く
+  const uniqueSkillsMap = new Map<string, Skill>();
+  skills.forEach((skill) => {
+    if (!uniqueSkillsMap.has(skill.name)) {
+      uniqueSkillsMap.set(skill.name, skill);
+    }
+  });
+  const uniqueSkills = Array.from(uniqueSkillsMap.values());
+
+  const name = uniqueSkills.map((x) => x.name).join('&');
+
+  const durability = uniqueSkills.length * 6;
+
+  const prices = uniqueSkills.map((x) => skillPrice(ai, x.name, rnd));
+
+  const priceSum = prices.reduce((pre, cur) => pre + cur, 0);
+
+  const price = Math.floor(
+    priceSum *
+      (Math.pow(1.5, uniqueSkills.length - 1) *
+        Math.max(
+          prices.reduce((pre, cur) => pre * (0.5 + cur / 24), 1),
+          1,
+        )),
+  );
+
+  // スキルの効果をマージ
+  const effect = uniqueSkills.reduce((acc, skill) => {
+    return { ...acc, ...skill.effect };
+  }, {} as SkillEffect);
+
+  return {
+    name: `${name}のお守り`,
+    price,
+    desc: `持っているとスキル${uniqueSkills.map((x) => `「${x.name}」`).join('と')}を使用できる 耐久${durability} 使用時耐久減少`,
+    type: 'amulet',
+    effect,
+    durability,
+    short: uniqueSkills.map((x) => x.short).join(''),
+    skillName: uniqueSkills.map((x) => x.name),
+    isUsed: (data) => true,
+  };
+}
 
 export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
   // データを読み込み
@@ -498,14 +669,38 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
       getShopItems(),
       getShopItems(),
       getShopItems(),
-      getShopItems(),
+      !data.items?.some((y) => y.type === 'amulet') &&
+      data.lv > 50 &&
+      data.coin >= 36 &&
+      Math.random() < 0.2
+        ? getRandomSkills(
+            ai,
+            data.lv < 100 || data.coin < 81 || Math.random() > 0.2
+              ? 2
+              : data.lv < 170 || data.coin < 162 || Math.random() > 0.2
+                ? 3
+                : data.lv < 255 || data.coin < 303 || Math.random() > 0.2
+                  ? 4
+                  : 5,
+          ).map((x) => x.name)
+        : getShopItems(),
     ];
     data.lastShopVisited = getDate();
     module.unsubscribeReply('shopBuy:' + msg.userId);
   }
 
-  const _shopItems = (data.shopItems as string[])
-    .map((x) => shopItems.find((y) => x === y.name) ?? undefined)
+  const _shopItems = (data.shopItems as (string | string[])[])
+    .map((x) =>
+      Array.isArray(x)
+        ? mergeSkillAmulet(
+            ai,
+            rnd,
+            x
+              .map((y) => skills.find((z) => y === z.name) ?? undefined)
+              .filter((y) => y != null) as Skill[],
+          )
+        : shopItems.find((y) => x === y.name) ?? undefined,
+    )
     .filter((x) => x != null) as ShopItem[];
 
   const showShopItems = _shopItems
@@ -527,10 +722,10 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
     .slice(0, 9)
     .map((x) => {
       let _x = x;
-      _x.price = Math.ceil(
+      const price = Math.ceil(
         getVal(x.price, [data, rnd, ai]) * (1 - (skillEffects.priceOff ?? 0)),
       );
-      return _x;
+      return { ..._x, price };
     });
 
   const reply = await msg.reply(
@@ -538,7 +733,7 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
       '',
       serifs.rpg.shop.welcome(data.coin),
       ...showShopItems.map(
-        (x, index) => `[${index + 1}] ${x.name} ${x.price}個\n${x.desc}\n`,
+        (x, index) => `[${index + 1}] ${x.name} ${x.price}枚\n${x.desc}\n`,
       ),
     ].join('\n'),
     { visibility: 'specified' },
@@ -573,7 +768,7 @@ export function shopContextHook(
 ) {
   if (key.replace('shopBuy:', '') !== msg.userId) {
     return {
-      reaction: ':neofox_think:',
+      reaction: 'hmm',
     };
   }
 
@@ -581,12 +776,12 @@ export function shopContextHook(
   const rpgData = msg.friend.getPerModulesData(module);
   if (!rpgData)
     return {
-      reaction: ':neofox_think:',
+      reaction: 'hmm',
     };
 
   if (rpgData.lastShopVisited !== getDate()) {
     return {
-      reaction: ':neofox_think:',
+      reaction: 'hmm',
     };
   }
 
@@ -601,7 +796,7 @@ export function shopContextHook(
           const item = shopItems.find(
             (x) => x.name === data.showShopItems[i].name,
           ) as Item;
-          if (!item) return { reaction: ':neofox_think:' };
+          if (!item) return { reaction: 'hmm' };
           const [_lv, _atk, _def] = [rpgData.lv, rpgData.atk, rpgData.def];
           item.effect(rpgData);
           const [lvDiff, atkDiff, defDiff] = [
@@ -612,12 +807,12 @@ export function shopContextHook(
           if (data.showShopItems[i].price === 0) {
             message += data.showShopItems[i].name.replace(
               '捨てる',
-              '捨てたのじゃ',
+              '捨てました！',
             );
           }
           if (lvDiff || atkDiff || defDiff) {
             message += [
-              `\n${serifs.rpg.shop.useItem(item.name)}`,
+              `\n\n${serifs.rpg.shop.useItem(item.name)}`,
               `${serifs.rpg.status.lv} : ${rpgData.lv ?? 1}${lvDiff !== 0 ? ` (${lvDiff > 0 ? '+' + lvDiff : lvDiff})` : ''}`,
               `${serifs.rpg.status.atk} : ${rpgData.atk ?? 0}${atkDiff !== 0 ? ` (${atkDiff > 0 ? '+' + atkDiff : atkDiff})` : ''}`,
               `${serifs.rpg.status.def} : ${rpgData.def ?? 0}${defDiff !== 0 ? ` (${defDiff > 0 ? '+' + defDiff : defDiff})` : ''}`,
@@ -655,7 +850,7 @@ export function shopContextHook(
     }
   }
 
-  return { reaction: ':neofox_think:' };
+  return { reaction: 'hmm' };
 }
 
 /**

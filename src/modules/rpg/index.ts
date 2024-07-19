@@ -42,8 +42,17 @@ import Friend from '@/friend';
 import config from '@/config';
 import * as loki from 'lokijs';
 
+type List = {
+  id: string;
+  createdAt: any;
+  name: string;
+  userIds: string[];
+};
+
 export default class extends Module {
   public readonly name = 'rpg';
+
+  private rpgPlayerList: List | undefined;
 
   private raids: loki.Collection<Raid>;
 
@@ -54,6 +63,7 @@ export default class extends Module {
     setInterval(this.scheduleLevelUpdateAndRemind, 1000 * 60 * 5);
     setInterval(this.scheduleDailyNoteCountsUpdate, 1000 * 60 * 5);
     this.calculateMaxLv();
+    this.rpgAccountListAdd();
     skillCalculate(this.ai);
 
     return {
@@ -162,6 +172,7 @@ export default class extends Module {
       new Date().getMinutes() >= 1 &&
       new Date().getMinutes() < 6
     ) {
+      this.rpgAccountListAdd();
       const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
       if (rpgData) {
         rpgData.maxLv += 1;
@@ -227,6 +238,11 @@ export default class extends Module {
     let helpMessage = [serifs.rpg.help.title];
     if ((data.lv ?? 0) < 7) {
       helpMessage.push(serifs.rpg.help.normal1);
+      if (data.coin > 0) {
+        helpMessage.push(serifs.rpg.help.okawari2(rpgData.maxLv - data.lv));
+      } else {
+        helpMessage.push(serifs.rpg.help.okawari1(rpgData.maxLv - data.lv));
+      }
     } else {
       helpMessage.push(serifs.rpg.help.normal2);
       if (data.lv < rpgData.maxLv) {
@@ -253,6 +269,7 @@ export default class extends Module {
       helpMessage.push(serifs.rpg.help.shop(data.coin));
     }
     helpMessage.push(serifs.rpg.help.status);
+    helpMessage.push(serifs.rpg.help.link);
     helpMessage.push(serifs.rpg.help.help);
 
     msg.reply('\n' + helpMessage.join('\n\n'));
@@ -365,7 +382,6 @@ export default class extends Module {
 
     // ここで残りのステータスを計算しなおす
     let { atk, def, spd } = calculateStats(data, msg, skillEffects, color);
-    def = def * (1 + (skillEffects.defUp ?? 0));
 
     if (isSuper) {
       spd += 2;
@@ -871,8 +887,8 @@ export default class extends Module {
       }
       message +=
         serifs.rpg.postBonusInfo.post(
-          postCount,
-          tp > 1
+          Math.floor(postCount),
+          tp >= 1
             ? '+' + Math.floor((tp - 1) * 100)
             : '-' + Math.floor((tp - 1) * 100),
         ) + `\n`;
@@ -1226,8 +1242,8 @@ export default class extends Module {
       }
       if (aggregateTokensEffects(data).showItemBonus) {
         const itemMessage = [
-          `${itemBonus.atk ? `${serifs.rpg.status.atk}+${itemBonus.atk}` : ''}`,
-          `${itemBonus.def ? `${serifs.rpg.status.def}+${itemBonus.def}` : ''}`,
+          `${itemBonus.atk ? `${serifs.rpg.status.atk}+${itemBonus.atk.toFixed(0)}` : ''}`,
+          `${itemBonus.def ? `${serifs.rpg.status.def}+${itemBonus.def.toFixed(0)}` : ''}`,
         ]
           .filter(Boolean)
           .join(' / ');
@@ -1250,6 +1266,10 @@ export default class extends Module {
         : lv * 3.5 * data.enemy.def;
 
     if (skillEffects.enemyBuff && data.enemy.name !== endressEnemy(data).name) {
+      if (!data.enemy.spd && enemyAtk + enemyDef <= lv * 10.5)
+        data.enemy.spd = 3;
+      if (!data.enemy.spd && enemyAtk + enemyDef <= lv * 15.75)
+        data.enemy.spd = 2;
       enemyAtk =
         typeof data.enemy.atk === 'function'
           ? data.enemy.atk(atk, def, spd) * 1.25
@@ -1498,7 +1518,8 @@ export default class extends Module {
         const rng =
           atkMinRnd +
           random(data, startCharge, skillEffects, false) * atkMaxRnd;
-        message += `⚂ ${Math.floor(rng * 100)}%\n`;
+        if (aggregateTokensEffects(data).showRandom)
+          message += `⚂ ${Math.floor(rng * 100)}%\n`;
         const dmgBonus =
           (1 + (skillEffects.atkDmgUp ?? 0)) *
           (skillEffects.thunder
@@ -2018,6 +2039,43 @@ export default class extends Module {
         this.subscribeReply('replayOkawari:' + msg.userId, reply.id);
       });
       return { reaction: 'hmm' };
+    }
+  }
+
+  @autobind
+  private async rpgAccountListAdd() {
+    const lists = (await this.ai.api('users/lists/list', {})) as List[];
+    this.rpgPlayerList = lists.find((x) => x.name === 'rpgPlayers');
+    if (!this.rpgPlayerList) {
+      this.rpgPlayerList = (await this.ai.api('users/lists/create', {
+        name: 'rpgPlayers',
+      })) as List;
+      if (!this.rpgPlayerList) return;
+      console.log('rpgPlayers List Create: ' + this.rpgPlayerList.id);
+    }
+    if (this.rpgPlayerList) {
+      console.log('rpgPlayers List: ' + this.rpgPlayerList.id);
+      const friends = this.ai.friends.find() ?? [];
+      const rpgPlayers = friends.filter(
+        (x) => x.perModulesData?.rpg?.lv && x.perModulesData?.rpg?.lv >= 20,
+      );
+      const listUserIds = new Set(this.rpgPlayerList.userIds);
+      let newRpgPlayersUserIds = new Set();
+
+      for (const rpgPlayer of rpgPlayers) {
+        if (!listUserIds.has(rpgPlayer.userId)) {
+          newRpgPlayersUserIds.add(rpgPlayer.userId);
+        }
+      }
+
+      newRpgPlayersUserIds.forEach(async (x) => {
+        if (this.rpgPlayerList?.id)
+          await this.ai.api('users/lists/push', {
+            listId: this.rpgPlayerList.id,
+            userId: x,
+          });
+        console.log('rpgPlayers Account List Push: ' + x);
+      });
     }
   }
 }
