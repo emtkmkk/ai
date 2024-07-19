@@ -850,7 +850,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
                     break;
             }
             if (aggregateTokensEffects(data).showItemBonus) {
-                const itemMessage = [`${itemBonus.atk ? `${serifs.rpg.status.atk}+${itemBonus.atk}` : ""}`, `${itemBonus.def ? `${serifs.rpg.status.def}+${itemBonus.def}` : ""}`].filter(Boolean).join(" / ")
+                const itemMessage = [`${itemBonus.atk ? `${serifs.rpg.status.atk}+${itemBonus.atk.toFixed(0)}` : ""}`, `${itemBonus.def ? `${serifs.rpg.status.def}+${itemBonus.def.toFixed(0)}` : ""}`].filter(Boolean).join(" / ")
                 if (itemMessage) {
                     message += `(${itemMessage})\n`;
                 }
