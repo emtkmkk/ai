@@ -977,13 +977,14 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         for (let i = 0; i < spd; i++) {
             const rng = (atkMinRnd + random(data, startCharge, skillEffects, false) * atkMaxRnd);
             if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`
-            const dmgBonus = ((1 + (skillEffects.atkDmgUp ?? 0)) * (i < 2 ? 1 : i < 3 ? 0.5 : i < 4 ? 0.25 : 0.125)) + (skillEffects.thunder ? (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 0);
+					const turnDmgX = (i < 2 ? 1 : i < 3 ? 0.5 : i < 4 ? 0.25 : 0.125)
+            const dmgBonus = ((1 + (skillEffects.atkDmgUp ?? 0)) * turnDmgX) + (skillEffects.thunder ? (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 0);
             //** クリティカルかどうか */
             let crit = Math.random() < ((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0))) + (skillEffects.critUpFixed ?? 0);
             const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
             /** ダメージ */
-            let dmg = getAtkDmg(data, atk, tp, 1, crit ? critDmg : false, enemyDef, enemyMaxHp, rng * dmgBonus, getVal(enemy.defx, [tp])) + trueDmg
-            const noItemDmg = getAtkDmg(data, atk - itemBonus.atk, tp, 1, crit, enemyDef, enemyMaxHp, rng * dmgBonus, getVal(enemy.defx, [tp])) + trueDmg
+            let dmg = getAtkDmg(data, atk, tp, 1, crit ? critDmg : false, enemyDef, enemyMaxHp, rng * dmgBonus, getVal(enemy.defx, [tp])) + (trueDmg * turnDmgX)
+            const noItemDmg = getAtkDmg(data, atk - itemBonus.atk, tp, 1, crit, enemyDef, enemyMaxHp, rng * dmgBonus, getVal(enemy.defx, [tp])) + (trueDmg * turnDmgX)
             // 最大ダメージ制限処理
             if (maxdmg && maxdmg > 0 && dmg > Math.round(maxdmg * (1 / ((abort || spd) - i)))) {
                 // 最大ダメージ制限を超えるダメージの場合は、ダメージが制限される。
