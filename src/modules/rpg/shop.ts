@@ -211,14 +211,7 @@ export function mergeSkillAmulet(ai, rnd = Math.random, skills: Skill[]) {
         isUsed: (data) => true
     });
 }
-
-const getShopItems = (filteredShopItems, rnd) => {
-	const itemName = filteredShopItems[Math.floor(rnd() * filteredShopItems.length)].name;
-	filteredShopItems = filteredShopItems.filter((x) => x.name !== itemName);
-	return itemName;
-}
-
-const determineOutcome = (ai, data, filteredShopItems, rnd) => {
+const determineOutcome = (ai, data, getShopItems) => {
   // コインの必要数を計算する関数
   const calculateRequiredCoins = (skillCount) => {
     return Math.floor((12 * skillCount) * (Math.pow(1.5, skillCount - 1)));
@@ -285,12 +278,19 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
     let filteredShopItems = shopItems.filter((x) => (!x.limit || x.limit(data, rnd)) && !(x.type === "amulet" && (data.lv < 20 || data.items?.some((y) => y.type === "amulet"))) && !x.always)
 
     if (data.lastShopVisited !== getDate() || !data.shopItems?.length) {
+
+        const getShopItems = () => {
+            const itemName = filteredShopItems[Math.floor(rnd() * filteredShopItems.length)].name;
+            filteredShopItems = filteredShopItems.filter((x) => x.name !== itemName);
+            return itemName;
+        }
+        
         data.shopItems = [
-            getShopItems(filteredShopItems, rnd),
-            getShopItems(filteredShopItems, rnd),
-            getShopItems(filteredShopItems, rnd),
-            getShopItems(filteredShopItems, rnd),
-            determineOutcome(ai, data, filteredShopItems, rnd),
+            getShopItems(),
+            getShopItems(),
+            getShopItems(),
+            getShopItems(),
+            determineOutcome(ai, data, getShopItems),
         ]
         data.lastShopVisited = getDate()
         module.unsubscribeReply("shopBuy:" + msg.userId)
