@@ -983,8 +983,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
             let crit = Math.random() < ((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0))) + (skillEffects.critUpFixed ?? 0);
             const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
             /** ダメージ */
-            let dmg = getAtkDmg(data, atk, tp, 1, crit ? critDmg : false, enemyDef, enemyMaxHp, rng * dmgBonus, getVal(enemy.defx, [tp])) + (trueDmg * turnDmgX)
-            const noItemDmg = getAtkDmg(data, atk - itemBonus.atk, tp, 1, crit, enemyDef, enemyMaxHp, rng * dmgBonus, getVal(enemy.defx, [tp])) + (trueDmg * turnDmgX)
+            let dmg = getAtkDmg(data, atk, tp, 1, crit ? critDmg : false, enemyDef, enemyMaxHp, rng * dmgBonus, getVal(enemy.defx, [tp])) + Math.round(trueDmg * turnDmgX)
+            const noItemDmg = getAtkDmg(data, atk - itemBonus.atk, tp, 1, crit, enemyDef, enemyMaxHp, rng * dmgBonus, getVal(enemy.defx, [tp])) + Math.round(trueDmg * turnDmgX)
             // 最大ダメージ制限処理
             if (maxdmg && maxdmg > 0 && dmg > Math.round(maxdmg * (1 / ((abort || spd) - i)))) {
                 // 最大ダメージ制限を超えるダメージの場合は、ダメージが制限される。
