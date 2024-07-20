@@ -212,7 +212,7 @@ export function mergeSkillAmulet(ai, rnd = Math.random, skills: Skill[]) {
     });
 }
 
-const getShopItems = () => {
+const getShopItems = (filteredShopItems) => {
 	const itemName = filteredShopItems[Math.floor(rnd() * filteredShopItems.length)].name;
 	filteredShopItems = filteredShopItems.filter((x) => x.name !== itemName);
 	return itemName;
@@ -267,7 +267,7 @@ const determineOutcome = (ai, data) => {
   }
 
   // 条件を満たさない場合は、ショップのアイテムリストを返す
-  return getShopItems();
+  return getShopItems(filteredShopItems);
 };
 
 export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
@@ -286,11 +286,11 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 
     if (data.lastShopVisited !== getDate() || !data.shopItems?.length) {
         data.shopItems = [
-            getShopItems(),
-            getShopItems(),
-            getShopItems(),
-            getShopItems(),
-            determineOutcome(ai, data),
+            getShopItems(filteredShopItems),
+            getShopItems(filteredShopItems),
+            getShopItems(filteredShopItems),
+            getShopItems(filteredShopItems),
+            determineOutcome(ai, data, filteredShopItems),
         ]
         data.lastShopVisited = getDate()
         module.unsubscribeReply("shopBuy:" + msg.userId)
