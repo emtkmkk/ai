@@ -224,7 +224,7 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 
     let rnd = seedrandom(getDate() + ai.account.id + msg.userId)
 
-    let filteredShopItems = shopItems.filter((x) => (!x.limit || x.limit(data, rnd)) && !(x.type === "amulet" && data.items?.some((y) => y.type === "amulet")) && !x.always)
+    let filteredShopItems = shopItems.filter((x) => (!x.limit || x.limit(data, rnd)) && !(x.type === "amulet" && (data.lv < 20 || data.items?.some((y) => y.type === "amulet"))) && !x.always)
 
     if (data.lastShopVisited !== getDate() || !data.shopItems?.length) {
         const getShopItems = () => {
