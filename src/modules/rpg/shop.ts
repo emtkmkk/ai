@@ -267,7 +267,7 @@ const determineOutcome = (ai, data, filteredShopItems, rnd) => {
   }
 
   // 条件を満たさない場合は、ショップのアイテムリストを返す
-  return getShopItems(filteredShopItems);
+  return getShopItems(filteredShopItems, rnd);
 };
 
 export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
