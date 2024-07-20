@@ -212,13 +212,13 @@ export function mergeSkillAmulet(ai, rnd = Math.random, skills: Skill[]) {
     });
 }
 
-const getShopItems = (filteredShopItems) => {
+const getShopItems = (filteredShopItems, rnd) => {
 	const itemName = filteredShopItems[Math.floor(rnd() * filteredShopItems.length)].name;
 	filteredShopItems = filteredShopItems.filter((x) => x.name !== itemName);
 	return itemName;
 }
 
-const determineOutcome = (ai, data) => {
+const determineOutcome = (ai, data, filteredShopItems, rnd) => {
   // コインの必要数を計算する関数
   const calculateRequiredCoins = (skillCount) => {
     return Math.floor((12 * skillCount) * (Math.pow(1.5, skillCount - 1)));
@@ -286,11 +286,11 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 
     if (data.lastShopVisited !== getDate() || !data.shopItems?.length) {
         data.shopItems = [
-            getShopItems(filteredShopItems),
-            getShopItems(filteredShopItems),
-            getShopItems(filteredShopItems),
-            getShopItems(filteredShopItems),
-            determineOutcome(ai, data, filteredShopItems),
+            getShopItems(filteredShopItems, rnd),
+            getShopItems(filteredShopItems, rnd),
+            getShopItems(filteredShopItems, rnd),
+            getShopItems(filteredShopItems, rnd),
+            determineOutcome(ai, data, filteredShopItems, rnd),
         ]
         data.lastShopVisited = getDate()
         module.unsubscribeReply("shopBuy:" + msg.userId)
