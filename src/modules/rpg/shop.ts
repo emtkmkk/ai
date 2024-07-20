@@ -639,6 +639,71 @@ export function mergeSkillAmulet(ai, rnd = Math.random, skills: Skill[]) {
   };
 }
 
+const getShopItems = (filteredShopItems, rnd) => {
+  const itemName =
+    filteredShopItems[Math.floor(rnd() * filteredShopItems.length)].name;
+  filteredShopItems = filteredShopItems.filter((x) => x.name !== itemName);
+  return itemName;
+};
+
+const determineOutcome = (ai, data, filteredShopItems, rnd) => {
+  // コインの必要数を計算する関数
+  const calculateRequiredCoins = (skillCount) => {
+    return Math.floor(12 * skillCount * Math.pow(1.5, skillCount - 1));
+  };
+
+  // 確率を計算する関数
+  const calculateProbability = (baseProbability, skillCount, data) => {
+    const levelThresholds = [50, 100, 170, 255]; // 定数配列
+    const levelCount =
+      levelThresholds.filter((threshold) => data.lv >= threshold).length +
+      Math.max(Math.floor(data.lv / 256) - 1, 0); // 満たしているレベル条件の数
+    const delta = levelCount - skillCount;
+
+    let probability = baseProbability;
+    if (delta < 0) {
+      probability *= Math.pow(0.5, Math.abs(delta)); // 半減処理
+    } else if (delta > 0) {
+      probability *= Math.pow(1.5, delta); // 1.5倍処理
+    }
+
+    return probability;
+  };
+
+  // ベース確率
+  const baseProbability = 0.2;
+
+  // チェック: 'amulet'タイプのアイテムが無く、レベルが50以上、コインが36以上の場合
+  if (!data.items.some((y) => y.type === 'amulet')) {
+    let skillCount = 1; // 初期スキルカウント
+
+    while (skillCount <= 10) {
+      const requiredCoins = calculateRequiredCoins(skillCount + 1);
+      const probability = calculateProbability(
+        baseProbability,
+        skillCount,
+        data,
+      );
+
+      // コインの条件と確率を満たす場合、スキルカウントを増やす
+      if (data.coin >= requiredCoins && Math.random() < probability) {
+        skillCount++;
+      } else {
+        skillCount--; // スキルカウントを一つ戻す
+        break;
+      }
+    }
+
+    // スキルカウントが2以上の場合、スキルを取得
+    if (skillCount > 1) {
+      return getRandomSkills(ai, skillCount).map((x) => x.name);
+    }
+  }
+
+  // 条件を満たさない場合は、ショップのアイテムリストを返す
+  return getShopItems(filteredShopItems, rnd);
+};
+
 export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
   // データを読み込み
   const data = initializeData(module, msg);
@@ -653,37 +718,20 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
   let filteredShopItems = shopItems.filter(
     (x) =>
       (!x.limit || x.limit(data, rnd)) &&
-      !(x.type === 'amulet' && data.items?.some((y) => y.type === 'amulet')) &&
+      !(
+        x.type === 'amulet' &&
+        (data.lv < 20 || data.items?.some((y) => y.type === 'amulet'))
+      ) &&
       !x.always,
   );
 
   if (data.lastShopVisited !== getDate() || !data.shopItems?.length) {
-    const getShopItems = () => {
-      const itemName =
-        filteredShopItems[Math.floor(rnd() * filteredShopItems.length)].name;
-      filteredShopItems = filteredShopItems.filter((x) => x.name !== itemName);
-      return itemName;
-    };
     data.shopItems = [
-      getShopItems(),
-      getShopItems(),
-      getShopItems(),
-      getShopItems(),
-      !data.items?.some((y) => y.type === 'amulet') &&
-      data.lv > 50 &&
-      data.coin >= 36 &&
-      Math.random() < 0.2
-        ? getRandomSkills(
-            ai,
-            data.lv < 100 || data.coin < 81 || Math.random() > 0.2
-              ? 2
-              : data.lv < 170 || data.coin < 162 || Math.random() > 0.2
-                ? 3
-                : data.lv < 255 || data.coin < 303 || Math.random() > 0.2
-                  ? 4
-                  : 5,
-          ).map((x) => x.name)
-        : getShopItems(),
+      getShopItems(filteredShopItems, rnd),
+      getShopItems(filteredShopItems, rnd),
+      getShopItems(filteredShopItems, rnd),
+      getShopItems(filteredShopItems, rnd),
+      determineOutcome(ai, data, filteredShopItems, rnd),
     ];
     data.lastShopVisited = getDate();
     module.unsubscribeReply('shopBuy:' + msg.userId);

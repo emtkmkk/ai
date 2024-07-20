@@ -112,7 +112,6 @@ function crawleGameEnd() {
     finish(raid);
   }
 }
-
 /**
  * レイド開始時間をスケジュール
  */
@@ -120,25 +119,51 @@ function scheduleRaidStart() {
   const now = new Date();
   const hours = now.getHours();
   const minutes = now.getMinutes();
+  const day = now.getDay();
+  const isWeekend = day === 0 || day === 6; // 0は日曜日、6は土曜日
 
   // 12:15, 12:45, 18:15, 21:15 にレイドを開始する
   if (
-    (hours === 12 && (minutes === 15 || minutes === 45)) ||
+    (hours === 12 && (minutes === 15 || minutes === 46)) ||
     ((hours === 18 || hours === 21) && minutes === 15)
   ) {
     start();
   }
 
-  // ランダムな時間にレイドを開始する
-  const day = new Date().getDay();
-  const randomHours = [7, 9, 10, 11, 13, 14, 15, 16, 17, 19, 20, 22];
+  const usedTimes: string[] = []; // 使用済みの時間を記録する配列
+  const randomHours = [7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 19, 20, 22];
   const randomMinutes = [0, 15, 30, 45];
   let rnd = seedrandom(getDate() + ai.account.id);
-  if (
-    hours === randomHours[Math.floor(rnd() * randomHours.length)] &&
-    minutes === randomMinutes[Math.floor(rnd() * randomMinutes.length)]
-  ) {
-    start();
+
+  // ランダムな時間にレイドを開始する関数
+  function scheduleRandomRaid() {
+    let selectedTime: string;
+    do {
+      const selectedHour = randomHours[Math.floor(rnd() * randomHours.length)];
+      const selectedMinute =
+        randomMinutes[Math.floor(rnd() * randomMinutes.length)];
+      selectedTime = `${selectedHour}:${selectedMinute}`;
+    } while (usedTimes.includes(selectedTime));
+
+    usedTimes.push(selectedTime); // 使用した時間を記録
+
+    const [selectedHours, selectedMinutes] = selectedTime
+      .split(':')
+      .map(Number);
+
+    if (hours === selectedHours && minutes === selectedMinutes) {
+      start();
+    }
+  }
+
+  // 通常のランダムレイド
+  scheduleRandomRaid();
+
+  // 土日の場合、さらに2回のランダム開始を追加
+  if (isWeekend) {
+    for (let i = 0; i < 2; i++) {
+      scheduleRandomRaid();
+    }
   }
 }
 
@@ -516,7 +541,9 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
   cw += [
     me,
     `Lv${data.lv}`,
-    `${(Math.max(data.atk, data.def) / (data.atk + data.def)) * 100 <= 53 ? '' : data.atk > data.def ? serifs.rpg.status.atk.slice(0, 1) : serifs.rpg.status.def.slice(0, 1)}${((Math.max(data.atk, data.def) / (data.atk + data.def)) * 100).toFixed(0)}%`,
+    (Math.max(data.atk, data.def) / (data.atk + data.def)) * 100 <= 53
+      ? ''
+      : `${data.atk > data.def ? serifs.rpg.status.atk.slice(0, 1) : serifs.rpg.status.def.slice(0, 1)}${((Math.max(data.atk, data.def) / (data.atk + data.def)) * 100).toFixed(0)}%`,
     skillsStr.skills,
     skillsStr.amulet ? `お守り ${skillsStr.amulet}` : undefined,
   ]
@@ -1181,9 +1208,9 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         atkMinRnd + random(data, startCharge, skillEffects, false) * atkMaxRnd;
       if (aggregateTokensEffects(data).showRandom)
         message += `⚂ ${Math.floor(rng * 100)}%\n`;
+      const turnDmgX = i < 2 ? 1 : i < 3 ? 0.5 : i < 4 ? 0.25 : 0.125;
       const dmgBonus =
-        (1 + (skillEffects.atkDmgUp ?? 0)) *
-          (i < 2 ? 1 : i < 3 ? 0.5 : i < 4 ? 0.25 : 0.125) +
+        (1 + (skillEffects.atkDmgUp ?? 0)) * turnDmgX +
         (skillEffects.thunder
           ? (skillEffects.thunder * ((i + 1) / spd)) /
             (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)
@@ -1206,7 +1233,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
           enemyMaxHp,
           rng * dmgBonus,
           getVal(enemy.defx, [tp]),
-        ) + trueDmg;
+        ) + Math.round(trueDmg * turnDmgX);
       const noItemDmg =
         getAtkDmg(
           data,
@@ -1218,7 +1245,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
           enemyMaxHp,
           rng * dmgBonus,
           getVal(enemy.defx, [tp]),
-        ) + trueDmg;
+        ) + Math.round(trueDmg * turnDmgX);
       // 最大ダメージ制限処理
       if (
         maxdmg &&
