@@ -491,7 +491,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
 
     // ここで残りのステータスを計算しなおす
-    let { atk, def, spd } = calculateStats(data, msg, skillEffects, color)
+    let { atk, def, spd } = calculateStats(data, msg, skillEffects, color, 0.2)
     if (skillEffects.fortuneEffect) {
         const result = fortune(atk, def, skillEffects.fortuneEffect)
         atk = result.atk;
