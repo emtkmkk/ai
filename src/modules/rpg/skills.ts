@@ -370,8 +370,8 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
 
     let amuletSkill: string[] = []
     if (data.items?.filter((x) => x.type === "amulet").length) {
-        const amulet = data.items?.filter((x) => x.type === "amulet")[0]
-        const item = shopItems.find((x) => x.name === amulet.name) as AmuletItem
+        const amulet = data.items?.filter((x) => x.type === "amulet")[0];
+		const item = [...shopItems, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem
         const skill = amulet.skillName && !Array.isArray(amulet.skillName) ? [skills.find((x) => amulet.skillName === x.name)] : amulet.skillName && Array.isArray(amulet.skillName) ? amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) : undefined;
         if (amulet.durability) amuletSkill.push(`[お守り] ${amulet.skillName && !Array.isArray(amulet.skillName) ? amulet.skillName : amulet.name} 残耐久${amulet.durability}${skillInfo(skill, item.desc, aggregateTokensEffects(data).showSkillBonus)}`)
     }
@@ -486,7 +486,7 @@ export function amuletMinusDurability(data: { items?: ShopItem[], skills: Skill[
     let ret = "";
     if (data.items?.filter((x) => x.type === "amulet").length) {
         const amulet = data.items?.filter((x) => x.type === "amulet")[0]
-        const item = shopItems.find((x) => x.name === amulet.name) as AmuletItem
+        const item = [...shopItems, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem
         if ((item.isMinusDurability ?? item.isUsed)(data)) {
             const boost = data.skills ? data.skills?.filter((x) => x.effect?.amuletBoost).reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0 : 0;
             data.items.forEach((x) => {
