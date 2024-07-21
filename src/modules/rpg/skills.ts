@@ -485,7 +485,7 @@ export function getSkillsShortName(data: { items?: ShopItem[], skills: Skill[] }
 export function amuletMinusDurability(data: { items?: ShopItem[], skills: Skill[] }): string {
     let ret = "";
     if (data.items?.filter((x) => x.type === "amulet").length) {
-        const amulet = data.items?.filter((x) => x.type === "amulet")[0]
+        const amulet = data.items?.filter((x) => x.type === "amulet")[0] as AmuletItem;
         const item = [...shopItems, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem
         if ((item.isMinusDurability ?? item.isUsed)(data)) {
             const boost = data.skills ? data.skills?.filter((x) => x.effect?.amuletBoost).reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0 : 0;
