@@ -51,8 +51,8 @@ export const fortuneEffect = (data: any) => {
             data.atk += 1
             data.def += 1
         } else {
-            const a = Math.floor(data.atk * 0.3)
-            const d = Math.floor(data.def * 0.3)
+            const a = Math.floor(data.atk * 0.6)
+            const d = Math.floor(data.def * 0.6)
             data.atk = data.atk - a + Math.floor((a + d) / 2)
             data.def = data.def - d + Math.floor((a + d) / 2)
         }
