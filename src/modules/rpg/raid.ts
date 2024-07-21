@@ -759,12 +759,12 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
                     if (!(isBattle && isPhysical)) {
                         mindMsg(item.mind)
                         if (item.mind < 0 && isSuper) item.mind = item.mind / 2
-                        itemBonus.atk = atk * (item.mind * 0.0025);
-                        itemBonus.def = def * (item.mind * 0.0025);
+                        itemBonus.atk = atk * (item.mind * 0.0035);
+                        itemBonus.def = def * (item.mind * 0.0035);
                         atk = atk + itemBonus.atk;
                         def = def + itemBonus.def;
                     } else {
-                        itemBonus.atk = (lv * 4) * (item.effect * 0.005);
+                        itemBonus.atk = (lv * 4) * (item.effect * 0.007);
                         atk = atk + itemBonus.atk;
                         if (item.effect >= 100) {
                             message += `もこチキのパワーが特大アップ！\n`
@@ -782,12 +782,12 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
                     if (isTired) {
                         mindMsg(item.mind)
                         if (item.mind < 0 && isSuper) item.mind = item.mind / 2
-                        itemBonus.atk = atk * (item.mind * 0.0025);
-                        itemBonus.def = def * (item.mind * 0.0025);
+                        itemBonus.atk = atk * (item.mind * 0.0035);
+                        itemBonus.def = def * (item.mind * 0.0035);
                         atk = atk + itemBonus.atk;
                         def = def + itemBonus.def;
                     } else {
-                        itemBonus.def = (lv * 4) * (item.effect * 0.005);
+                        itemBonus.def = (lv * 4) * (item.effect * 0.007);
                         def = def + itemBonus.def;
                         if (item.effect >= 100) {
                             message += `もこチキの防御が特大アップ！\n`
@@ -854,7 +854,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
                     break;
             }
             if (aggregateTokensEffects(data).showItemBonus) {
-                const itemMessage = [`${itemBonus.atk ? `${serifs.rpg.status.atk}+${itemBonus.atk.toFixed(0)}` : ""}`, `${itemBonus.def ? `${serifs.rpg.status.def}+${itemBonus.def.toFixed(0)}` : ""}`].filter(Boolean).join(" / ")
+                const itemMessage = [`${itemBonus.atk > 0 ? `${serifs.rpg.status.atk}+${itemBonus.atk.toFixed(0)}` : ""}`, `${itemBonus.def > 0 ? `${serifs.rpg.status.def}+${itemBonus.def.toFixed(0)}` : ""}`].filter(Boolean).join(" / ")
                 if (itemMessage) {
                     message += `(${itemMessage})\n`;
                 }
