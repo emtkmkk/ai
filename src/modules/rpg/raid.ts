@@ -499,7 +499,11 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         message += serifs.rpg.skill.fortune + `\n`;
         message += result.message + `\n`;
     }
-    /** 敵の最大HP */
+	// 数取りボーナスに上限がついたため、その分の補填を全員に付与
+	// 全員に50%分のステータスバフ
+	atk = Math.round(atk * 1.5);
+	def = Math.round(def * 1.5);
+	/** 敵の最大HP */
     let enemyMaxHp = 100000;
     /** 敵のHP */
     let enemyHp = 100000;
