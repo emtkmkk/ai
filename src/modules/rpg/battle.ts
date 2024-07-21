@@ -1,9 +1,9 @@
 import serifs from "@/serifs";
 
-export function calculateStats(data, msg, skillEffects, color) {
+export function calculateStats(data, msg, skillEffects, color, maxBonus = 100) {
     const stbonus = (((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) + ((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0))) / 2;
-    let atk = Math.max(5 + (data.atk ?? 0) + Math.floor(stbonus * ((100 + (data.atk ?? 0)) / 100)), 15);
-    let def = Math.max(5 + (data.def ?? 0) + Math.floor(stbonus * ((100 + (data.def ?? 0)) / 100)), 15);
+    let atk = Math.max(5 + (data.atk ?? 0) + Math.floor(Math.min(stbonus * ((100 + (data.atk ?? 0)) / 100), (data.atk ?? 0) * maxBonus)), 10);
+    let def = Math.max(5 + (data.def ?? 0) + Math.floor(Math.min(stbonus * ((100 + (data.def ?? 0)) / 100), (data.def ?? 0) * maxBonus)), 10);
     let spd = Math.floor((msg.friend.love ?? 0) / 100) + 1;
 
     if (color.reverseStatus) {
