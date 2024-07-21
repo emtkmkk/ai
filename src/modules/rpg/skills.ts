@@ -406,9 +406,8 @@ export function aggregateSkillsEffects(data: { items?: ShopItem[], skills: Skill
     const aggregatedEffect: SkillEffect = {};
 
     if (!data.skills) return aggregatedEffect;
-    let dataSkills = data.skills
-    data.items?.filter((x) => x.type = (shopItems.find((y) => x.name === y.name)?.type ?? x.name.includes("お守り") ? "amulet" : "token"))
-    if (data.items?.filter((x) => x.type === "amulet").length) {
+    let dataSkills = data.skills;
+	if (data.items?.filter((x) => x.type === "amulet").length) {
         const amulet = data.items?.filter((x) => x.type === "amulet")[0] as AmuletItem
         console.log("amulet: " + amulet.name);
         const item = [...shopItems, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem
