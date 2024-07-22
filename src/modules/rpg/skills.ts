@@ -181,13 +181,13 @@ export type Skill = {
 export const skills: Skill[] = [
     { name: `${serifs.rpg.status.atk}+10%`, short: `${serifs.rpg.status.atk.slice(0,1)}`, desc: `常に${serifs.rpg.status.atk}が10%上がります`, info: `条件無しで${serifs.rpg.status.atk}+10%`, effect: { atkUp: 0.1 } },
     { name: `${serifs.rpg.status.def}+10%`, short: `${serifs.rpg.status.def.slice(0,1)}`, desc: `常に${serifs.rpg.status.def}が10%上がります`, info: `条件無しで${serifs.rpg.status.def}+10%`, effect: { defUp: 0.1 } },
-    { name: `炎属性剣攻撃`, short: "炎", desc: `戦闘時、最低ダメージが上昇します`, info: `戦闘時、Lvの10%がダメージに固定加算\n非戦闘時、${serifs.rpg.status.atk}+Lvの35%`, effect: { fire: 0.1 } },
-    { name: `氷属性剣攻撃`, short: "氷", desc: `戦闘時、たまに敵を凍らせます`, info: `戦闘時、10%で相手のターンをスキップ\n非戦闘時、${serifs.rpg.status.def}+10%`, effect: { ice: 0.1 } },
-    { name: `雷属性剣攻撃`, short: "雷", desc: `戦闘時、連続攻撃をすればダメージが上がります`, info: `(現在攻撃数/最大攻撃数)×20%のダメージ上昇を得る`, effect: { thunder: 0.2 } },
-    { name: `風属性剣攻撃`, short: "風", desc: `戦闘時、たまに行動回数が上がります`, info: `戦闘時、10%で行動回数が2倍\n非戦闘時、${serifs.rpg.status.atk}+10%`, effect: { spdUp: 0.1 } },
-    { name: `土属性剣攻撃`, short: "土", desc: `戦闘時、最大ダメージが上昇します`, info: `戦闘時かつ最大ダメージ制限がある場合、その制限を20%増加\n非戦闘時、${serifs.rpg.status.atk}+10%`, effect: { dart: 0.2 } },
-    { name: `光属性剣攻撃`, short: "光", desc: `戦闘時、たまに敵の攻撃力を下げます`, info: `戦闘時、20%でダメージカット50%\nそれ以外の場合、${serifs.rpg.status.def}+10%`, effect: { light: 0.2 } },
-    { name: `闇属性剣攻撃`, short: "闇", desc: `戦闘時、たまに敵の周辺に高重力領域が発生させます`, info: `戦闘時、10%で敵の現在HPの半分のダメージを与える\n行動回数が2回以上の敵に20%で行動回数を1にする\nそれ以外の場合、${serifs.rpg.status.def}+7%`, effect: { dark: 0.1 } },
+    { name: `炎属性剣攻撃`, short: "炎", desc: `戦闘時、最低ダメージが上昇します`, info: `戦闘時、Lvの9%がダメージに固定加算\n非戦闘時、${serifs.rpg.status.atk}+Lvの35%\n火曜日に全ての効果量が33%アップ`, effect: { fire: 0.09 } },
+    { name: `氷属性剣攻撃`, short: "氷", desc: `戦闘時、たまに敵を凍らせます`, info: `戦闘時、9%で相手のターンをスキップ\n非戦闘時、${serifs.rpg.status.def}+9%\n水曜日に全ての効果量が33%アップ`, effect: { ice: 0.09 } },
+    { name: `雷属性剣攻撃`, short: "雷", desc: `戦闘時、連続攻撃をすればダメージが上がります`, info: `(現在攻撃数/最大攻撃数)×18%のダメージ上昇を得る\n日曜日に全ての効果量が33%アップ`, effect: { thunder: 0.18 } },
+    { name: `風属性剣攻撃`, short: "風", desc: `戦闘時、たまに行動回数が上がります`, info: `戦闘時、9%で行動回数が2倍\n非戦闘時、${serifs.rpg.status.atk}+9%\n木曜日に全ての効果量が33%アップ`, effect: { spdUp: 0.09 } },
+    { name: `土属性剣攻撃`, short: "土", desc: `戦闘時、最大ダメージが上昇します`, info: `戦闘時かつ最大ダメージ制限がある場合、その制限を18%増加\n非戦闘時、${serifs.rpg.status.atk}+9%\n土曜日に全ての効果量が33%アップ`, effect: { dart: 0.18 } },
+    { name: `光属性剣攻撃`, short: "光", desc: `戦闘時、たまに敵の攻撃力を下げます`, info: `戦闘時、18%でダメージカット50%\nそれ以外の場合、${serifs.rpg.status.def}+9%\n金曜日に全ての効果量が33%アップ`, effect: { light: 0.18 } },
+    { name: `闇属性剣攻撃`, short: "闇", desc: `戦闘時、たまに敵の周辺に高重力領域を発生させます`, info: `戦闘時、9%で敵の現在HPの半分のダメージを与える\n行動回数が2回以上の敵に18%で行動回数を1にする\nそれ以外の場合、${serifs.rpg.status.def}+6.3%\n月曜日に全ての効果量が33%アップ`, effect: { dark: 0.09 } },
     { name: `毒属性剣攻撃`, short: "毒", desc: `戦闘時、ターン経過ごとに相手が弱体化します`, info: `ターン経過ごとに敵のステータス-5%`, effect: { weak: 0.05 } },
     { name: `テキパキこなす`, short: "効", desc: `戦闘以外の事の効率が上がります`, info: `非戦闘時、${serifs.rpg.status.atk}+20%`, effect: { notBattleBonusAtk: 0.2 } },
     { name: `疲れにくい`, short: "疲", desc: `疲れでダメージを受ける際にそのダメージを軽減します`, info: `ダメージメッセージに疲が入っている場合、${serifs.rpg.status.def}+18%`, effect: { notBattleBonusDef: 0.18 } },
@@ -450,6 +450,31 @@ export function aggregateSkillsEffects(data: { items?: ShopItem[], skills: Skill
         }
     });
 
+	const day = new Date().getDay();
+
+	//曜日ボーナス
+	if (day == 0 && aggregatedEffect.thunder) {
+		aggregatedEffect.thunder *= 4/3
+	}
+	if (day == 1 && aggregatedEffect.dark) {
+		aggregatedEffect.dark *= 4/3
+	}
+	if (day == 2 && aggregatedEffect.fire) {
+		aggregatedEffect.fire *= 4/3
+	}
+	if (day == 3 && aggregatedEffect.ice) {
+		aggregatedEffect.ice *= 4/3
+	}
+	if (day == 4 && aggregatedEffect.spdUp) {
+		aggregatedEffect.spdUp *= 4/3
+	}
+	if (day == 5 && aggregatedEffect.light) {
+		aggregatedEffect.light *= 4/3
+	}
+	if (day == 6 && aggregatedEffect.dart) {
+		aggregatedEffect.dart *= 4/3
+	}
+		
     if (aggregatedEffect.itemEquip && aggregatedEffect.itemEquip > 1.5) {
         aggregatedEffect.itemBoost = (aggregatedEffect.itemBoost ?? 0) + (aggregatedEffect.itemEquip - 1.5)
         aggregatedEffect.itemEquip = 1.5;
