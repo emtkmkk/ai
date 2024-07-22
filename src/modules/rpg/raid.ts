@@ -420,19 +420,19 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     /** 投稿数（今日と明日の多い方）*/
     let postCount = 0;
     let continuousBonusNum = 0;
+	let tp;
     if (enemy.forcePostCount) {
         postCount = enemy.forcePostCount
+		tp = getPostX(postCount) * (1 + (skillEffects.postXUp ?? 0));
     } else {
         postCount = await getPostCount(ai, module_, data, msg, (isSuper ? 200 : 0));
 
         continuousBonusNum = (Math.min(Math.max(10, postCount / 2), 25));
 
         postCount = postCount + continuousBonusNum;
+		
+		tp = getRaidPostX(postCount) * (1 + (skillEffects.postXUp ?? 0));
     }
-
-    // 投稿数に応じてステータス倍率を得る
-    /** ステータス倍率（投稿数） */
-    let tp = getRaidPostX(postCount) * (1 + (skillEffects.postXUp ?? 0));
 
     if (!isSuper) {
         data.superPoint = Math.max(data.superPoint ?? 0 - (tp - 2), -3)
