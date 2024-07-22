@@ -503,8 +503,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	// ID毎に決められた得意曜日に従って最大50%分のステータスバフ
 	const day = new Date().getDay();
 	const bonusX = day === 6 || day === 0 ? 1.5 : (Math.floor(seedrandom("" + msg.user.id + ai.account.id)() * 5 + day) % 5) * 1.125;
-	atk = Math.round(atk * bonusX);
-	def = Math.round(def * bonusX);
+	atk = Math.round(atk * (1 + bonusX));
+	def = Math.round(def * (1 + bonusX));
 	/** 敵の最大HP */
     let enemyMaxHp = 100000;
     /** 敵のHP */
