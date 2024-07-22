@@ -977,7 +977,7 @@ export default class extends Module {
         if (skillEffects.enemyBuff && data.enemy.name !== endressEnemy(data).name) {
             if (!data.enemy.spd && enemyAtk + enemyDef <= (lv * 10.5)) data.enemy.spd = 3;
             if (!data.enemy.spd && enemyAtk + enemyDef <= (lv * 15.75)) data.enemy.spd = 2;
-			const statusX = math.floor(data.streak / 10) + 1;
+			const statusX = Math.floor(data.streak / 10) + 1;
             enemyAtk = (typeof data.enemy.atk === "function") ? data.enemy.atk(atk, def, spd) * (1.15 + (0.1 * statusX)) : lv * 3.5 * (data.enemy.atk + 1 + statusX / 2.5);
             enemyDef = (typeof data.enemy.def === "function") ? data.enemy.def(atk, def, spd) * (1 + (0.25 * statusX)) : lv * 3.5 * (data.enemy.def + statusX);
             if (typeof data.enemy.atkx === "number") data.enemy.atkx += 1 + (0.2 * statusX);
