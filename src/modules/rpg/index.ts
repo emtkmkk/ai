@@ -317,7 +317,7 @@ export default class extends Module {
 
 
         // 敵のステータスを計算
-        const edef = data.lv * 3.5;
+        let edef = data.lv * 3.5;
 			edef -= Math.max(atk * (skillEffects.arpen ?? 0), edef * (skillEffects.arpen ?? 0))
 
         atk = atk * (1 + ((skillEffects.critUpFixed ?? 0) * (1 + (skillEffects.critDmgUp ?? 0))));
