@@ -240,6 +240,7 @@ export default class extends Module {
         }
         if (msg.includes(["dataFix"])) {
 
+					const ai = this.ai;
             const games = this.raids.find({});
             const recentGame = games.length == 0 ? null : games[games.length - 1];
             if (!recentGame) return { reaction: "hmm" }
@@ -261,7 +262,7 @@ export default class extends Module {
                 console.log(x.user.id + " : fix");
                 friend.setPerModulesData(this, data);
             });
-			games.update(recentGame);
+			this.raids.update(recentGame);
 			const recent2Game = games.length < 1 ? null : games[games.length - 2];
             if (!recent2Game) return { reaction: "hmm" }
 			
@@ -281,7 +282,7 @@ export default class extends Module {
                 console.log(x.user.id + " : fix");
                 friend.setPerModulesData(this, data);
             });
-			games.update(recent2Game);
+			this.raids.update(recent2Game);
             return { reaction: "love" };
         }
         return { reaction: "hmm" }
