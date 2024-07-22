@@ -112,6 +112,7 @@ function crawleGameEnd() {
     finish(raid);
   }
 }
+
 /**
  * レイド開始時間をスケジュール
  */
@@ -122,9 +123,9 @@ function scheduleRaidStart() {
   const day = now.getDay();
   const isWeekend = day === 0 || day === 6; // 0は日曜日、6は土曜日
 
-  // 12:15, 12:45, 18:15, 21:15 にレイドを開始する
+  // 12:15, 12:50, 18:15, 21:15 にレイドを開始する
   if (
-    (hours === 12 && (minutes === 15 || minutes === 46)) ||
+    (hours === 12 && (minutes === 15 || minutes === 50)) ||
     ((hours === 18 || hours === 21) && minutes === 15)
   ) {
     start();
@@ -383,7 +384,7 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
 
   const _data = msg.friend.getPerModulesData(module_);
   if (!_data.lv) {
-    msg.reply('RPGモードを先に1回プレイしてください！');
+    msg.reply('RPGモードを先に1回プレイしてほしいのじゃ！');
     return {
       reaction: 'hmm',
     };
@@ -398,7 +399,7 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
   if (raid == null) return;
 
   if (raid.attackers.some((x) => x.user.id == msg.userId)) {
-    msg.reply('すでに参加済みのようじゃ！').then((reply) => {
+    msg.reply('すでに参加済みのようじゃぞ！').then((reply) => {
       raid.replyKey.push(raid.postId + ':' + reply.id);
       module_.subscribeReply(raid.postId + ':' + reply.id, reply.id);
       raids.update(raid);
@@ -417,7 +418,7 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
   const result = await getTotalDmg(msg, enemy);
 
   if (raid.attackers.some((x) => x.user.id == msg.userId)) {
-    msg.reply('すでに参加済みのようじゃ！').then((reply) => {
+    msg.reply('すでに参加済みのようじゃぞ！').then((reply) => {
       raid.replyKey.push(raid.postId + ':' + reply.id);
       module_.subscribeReply(raid.postId + ':' + reply.id, reply.id);
       raids.update(raid);
@@ -589,7 +590,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
   }
 
   // ここで残りのステータスを計算しなおす
-  let { atk, def, spd } = calculateStats(data, msg, skillEffects, color);
+  let { atk, def, spd } = calculateStats(data, msg, skillEffects, color, 0.2);
   if (skillEffects.fortuneEffect) {
     const result = fortune(atk, def, skillEffects.fortuneEffect);
     atk = result.atk;
@@ -597,6 +598,17 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     message += serifs.rpg.skill.fortune + `\n`;
     message += result.message + `\n`;
   }
+  // 数取りボーナスに上限がついたため、その分の補填を全員に付与
+  // ID毎に決められた得意曜日に従って最大50%分のステータスバフ
+  const day = new Date().getDay();
+  const bonusX =
+    day === 6 || day === 0
+      ? 0.5
+      : (Math.floor(seedrandom('' + msg.user.id + ai.account.id)() * 5 + day) %
+          5) *
+        0.125;
+  atk = Math.round(atk * (1 + bonusX));
+  def = Math.round(def * (1 + bonusX));
   /** 敵の最大HP */
   let enemyMaxHp = 100000;
   /** 敵のHP */
@@ -726,7 +738,10 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     message += serifs.rpg.skill.firstTurnResist + '\n';
   }
 
-  enemyDef -= atk * (skillEffects.arpen ?? 0);
+  enemyDef -= Math.max(
+    atk * (skillEffects.arpen ?? 0),
+    enemyDef * (skillEffects.arpen ?? 0),
+  );
 
   // バフが1つでも付与された場合、改行を追加する
   if (buff > 0) message += '\n';
@@ -750,6 +765,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
   const _atk = atk;
   const _def = def;
   const _spd = spd;
+  const _enemyAtk = enemyAtk;
+  const _enemyDef = enemyDef;
 
   const plusActionX = 5;
 
@@ -776,7 +793,27 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     atk = _atk;
     def = _def;
     spd = _spd;
+    enemyAtk = _enemyAtk;
+    enemyDef = _enemyDef;
     itemBonus = { atk: 0, def: 0 };
+
+    // 毒属性妖術
+    if (skillEffects.weak && count > 1) {
+      if (isBattle && isPhysical) {
+        buff += 1;
+        message += serifs.rpg.skill.weak(enemy.dname ?? enemy.name) + '\n';
+      }
+      enemyAtk -= Math.max(
+        enemyAtk * (skillEffects.weak * (count - 1)),
+        atk * (skillEffects.weak * (count - 1)),
+      );
+      enemyDef -= Math.max(
+        enemyDef * (skillEffects.weak * (count - 1)),
+        atk * (skillEffects.weak * (count - 1)),
+      );
+      if (enemyAtk < 0) enemyAtk = 0;
+      if (enemyDef < 0) enemyDef = 0;
+    }
 
     // spdが低い場合、確率でspdが+1。
     if (spd === 2 && Math.random() < 0.2) {
@@ -916,12 +953,12 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
           if (!(isBattle && isPhysical)) {
             mindMsg(item.mind);
             if (item.mind < 0 && isSuper) item.mind = item.mind / 2;
-            itemBonus.atk = atk * (item.mind * 0.0025);
-            itemBonus.def = def * (item.mind * 0.0025);
+            itemBonus.atk = atk * (item.mind * 0.0035);
+            itemBonus.def = def * (item.mind * 0.0035);
             atk = atk + itemBonus.atk;
             def = def + itemBonus.def;
           } else {
-            itemBonus.atk = lv * 4 * (item.effect * 0.005);
+            itemBonus.atk = lv * 4 * (item.effect * 0.007);
             atk = atk + itemBonus.atk;
             if (item.effect >= 100) {
               message += `阨ちゃんのパワーが特大アップ！\n`;
@@ -939,12 +976,12 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
           if (isTired) {
             mindMsg(item.mind);
             if (item.mind < 0 && isSuper) item.mind = item.mind / 2;
-            itemBonus.atk = atk * (item.mind * 0.0025);
-            itemBonus.def = def * (item.mind * 0.0025);
+            itemBonus.atk = atk * (item.mind * 0.0035);
+            itemBonus.def = def * (item.mind * 0.0035);
             atk = atk + itemBonus.atk;
             def = def + itemBonus.def;
           } else {
-            itemBonus.def = lv * 4 * (item.effect * 0.005);
+            itemBonus.def = lv * 4 * (item.effect * 0.007);
             def = def + itemBonus.def;
             if (item.effect >= 100) {
               message += `阨ちゃんの防御が特大アップ！\n`;
@@ -1016,8 +1053,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
       }
       if (aggregateTokensEffects(data).showItemBonus) {
         const itemMessage = [
-          `${itemBonus.atk ? `${serifs.rpg.status.atk}+${itemBonus.atk.toFixed(0)}` : ''}`,
-          `${itemBonus.def ? `${serifs.rpg.status.def}+${itemBonus.def.toFixed(0)}` : ''}`,
+          `${itemBonus.atk > 0 ? `${serifs.rpg.status.atk}+${itemBonus.atk.toFixed(0)}` : ''}`,
+          `${itemBonus.def > 0 ? `${serifs.rpg.status.def}+${itemBonus.def.toFixed(0)}` : ''}`,
         ]
           .filter(Boolean)
           .join(' / ');
@@ -1031,7 +1068,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     /** 1ターンに与えられる最大ダメージ量 */
     let maxdmg = enemy.maxdmg ? enemyMaxHp * enemy.maxdmg : undefined;
 
-    // 土属性剣攻撃
+    // 土属性妖術
     if (skillEffects.dart && isBattle && isPhysical && maxdmg) {
       buff += 1;
       message += serifs.rpg.skill.dart + '\n';
@@ -1043,7 +1080,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
     let trueDmg = 0;
 
-    // 炎属性剣攻撃
+    // 炎属性妖術
     if (skillEffects.fire && isBattle && isPhysical) {
       buff += 1;
       message += serifs.rpg.skill.fire + '\n';
@@ -1051,16 +1088,6 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     } else if (skillEffects.fire && !(isBattle && isPhysical)) {
       // 非戦闘時は、パワーに還元される
       atk = atk + lv * 3.75 * skillEffects.fire;
-    }
-
-    // 毒属性剣攻撃
-    if (skillEffects.weak && count > 1) {
-      if (isBattle && isPhysical) {
-        buff += 1;
-        message += serifs.rpg.skill.weak(enemy.dname ?? enemy.name) + '\n';
-      }
-      enemyAtk = Math.max(enemyAtk * (1 - skillEffects.weak * (count - 1)), 0);
-      enemyDef = Math.max(enemyDef * (1 - skillEffects.weak * (count - 1)), 0);
     }
 
     // バフが1つでも付与された場合、改行を追加する
@@ -1281,7 +1308,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     } else {
       let enemyAtkX = 1;
       // 攻撃後発動スキル効果
-      // 氷属性剣攻撃
+      // 氷属性妖術
       if (
         isBattle &&
         isPhysical &&
@@ -1294,7 +1321,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         // 非戦闘時は氷の効果はないが、防御に還元される
         def = def * (1 + (skillEffects.ice ?? 0));
       }
-      // 光属性剣攻撃
+      // 光属性妖術
       if (
         isBattle &&
         isPhysical &&
@@ -1307,7 +1334,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         // 非戦闘時は光の効果はないが、防御に還元される
         def = def * (1 + (skillEffects.light ?? 0) * 0.5);
       }
-      // 闇属性剣攻撃
+      // 闇属性妖術
       if (
         enemy.spd &&
         enemy.spd >= 2 &&
@@ -1467,7 +1494,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
   if (Number.isNaN(totalDmg) || totalDmg < 0) {
     reply = await msg.reply(
-      `エラーが発生しました。もう一度試してみてください。`,
+      `エラーが発生したのじゃ。もう一度試してほしいのじゃ。`,
       {
         visibility: 'specified',
       },

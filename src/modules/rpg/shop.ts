@@ -60,8 +60,8 @@ export const fortuneEffect = (data: any) => {
       data.atk += 1;
       data.def += 1;
     } else {
-      const a = Math.floor(data.atk * 0.3);
-      const d = Math.floor(data.def * 0.3);
+      const a = Math.floor(data.atk * 0.6);
+      const d = Math.floor(data.def * 0.6);
       data.atk = data.atk - a + Math.floor((a + d) / 2);
       data.def = data.def - d + Math.floor((a + d) / 2);
     }
@@ -151,13 +151,12 @@ export const shopItems: ShopItem[] = [
     always: true,
   },
   {
-    name: '穢根くんの秘密が書かれた札',
+    name: '穢根くんの身分証の写し',
     limit: (data) =>
-      !data.items.filter((x) => x.name === '穢根くんの秘密が書かれた札')
-        .length &&
+      !data.items.filter((x) => x.name === '穢根くんの身分証の写し').length &&
       data.lv >= 99 &&
       !data.clearHistory.includes(':aine_youshou:'),
-    desc: '所持している間、より怖い穢根くんに遭遇します',
+    desc: '穢根くんの本名が書かれている 所持している間、穢根くんが本気で怒ります',
     price: 5,
     type: 'token',
     effect: { appearStrongBoss: true },
@@ -188,16 +187,16 @@ export const shopItems: ShopItem[] = [
     always: true,
   },
   {
-    name: '穢根くんの秘密が書かれた札を捨てる',
+    name: '穢根くんの身分証の写しを捨てる',
     limit: (data) =>
-      data.items.filter((x) => x.name === '穢根くんの秘密が書かれた札')
-        .length && !data.clearHistory.includes(':aine_youshou:'),
-    desc: '怖い穢根くんが出現しなくなります',
+      data.items.filter((x) => x.name === '穢根くんの身分証の写し').length &&
+      !data.clearHistory.includes(':aine_youshou:'),
+    desc: '本気の穢根くんが出現しなくなります',
     price: 0,
     type: 'item',
     effect: (data) =>
       (data.items = data.items.filter(
-        (x) => x.name !== '穢根くんの秘密が書かれた札',
+        (x) => x.name !== '穢根くんの身分証の写し',
       )),
     always: true,
   },
@@ -368,18 +367,6 @@ export const shopItems: ShopItem[] = [
       data.def -= 3;
     },
   },
-  {
-    name: `呪いの人形`,
-    limit: (data) => data.revenge,
-    price: 44,
-    desc: `持っていると前回負けた敵に戦う際に20%ステータスアップ 耐久1 リベンジ成功時耐久減少`,
-    type: 'amulet',
-    effect: { atkUp: 0.2, defUp: 0.2 },
-    durability: 1,
-    short: '呪',
-    isUsed: (data) => data.enemy?.name === data.revenge,
-    isMinusDurability: (data) => !data.revenge,
-  } as AmuletItem,
   {
     name: `呪いの人形`,
     limit: (data) => data.revenge,
@@ -638,15 +625,7 @@ export function mergeSkillAmulet(ai, rnd = Math.random, skills: Skill[]) {
     isUsed: (data) => true,
   };
 }
-
-const getShopItems = (filteredShopItems, rnd) => {
-  const itemName =
-    filteredShopItems[Math.floor(rnd() * filteredShopItems.length)].name;
-  filteredShopItems = filteredShopItems.filter((x) => x.name !== itemName);
-  return itemName;
-};
-
-const determineOutcome = (ai, data, filteredShopItems, rnd) => {
+const determineOutcome = (ai, data, getShopItems) => {
   // コインの必要数を計算する関数
   const calculateRequiredCoins = (skillCount) => {
     return Math.floor(12 * skillCount * Math.pow(1.5, skillCount - 1));
@@ -701,7 +680,7 @@ const determineOutcome = (ai, data, filteredShopItems, rnd) => {
   }
 
   // 条件を満たさない場合は、ショップのアイテムリストを返す
-  return getShopItems(filteredShopItems, rnd);
+  return getShopItems();
 };
 
 export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
@@ -726,12 +705,19 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
   );
 
   if (data.lastShopVisited !== getDate() || !data.shopItems?.length) {
+    const getShopItems = () => {
+      const itemName =
+        filteredShopItems[Math.floor(rnd() * filteredShopItems.length)].name;
+      filteredShopItems = filteredShopItems.filter((x) => x.name !== itemName);
+      return itemName;
+    };
+
     data.shopItems = [
-      getShopItems(filteredShopItems, rnd),
-      getShopItems(filteredShopItems, rnd),
-      getShopItems(filteredShopItems, rnd),
-      getShopItems(filteredShopItems, rnd),
-      determineOutcome(ai, data, filteredShopItems, rnd),
+      getShopItems(),
+      getShopItems(),
+      getShopItems(),
+      getShopItems(),
+      determineOutcome(ai, data, getShopItems),
     ];
     data.lastShopVisited = getDate();
     module.unsubscribeReply('shopBuy:' + msg.userId);
@@ -855,7 +841,7 @@ export function shopContextHook(
           if (data.showShopItems[i].price === 0) {
             message += data.showShopItems[i].name.replace(
               '捨てる',
-              '捨てました！',
+              '捨てたのじゃ！',
             );
           }
           if (lvDiff || atkDiff || defDiff) {

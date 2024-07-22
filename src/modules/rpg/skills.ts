@@ -213,50 +213,50 @@ export const skills: Skill[] = [
     name: `炎属性妖術`,
     short: '炎',
     desc: `戦闘時、最低ダメージが上昇します`,
-    info: `戦闘時、Lvの10%がダメージに固定加算\n非戦闘時、${serifs.rpg.status.atk}+Lvの35%`,
-    effect: { fire: 0.1 },
+    info: `戦闘時、Lvの9%がダメージに固定加算\n非戦闘時、${serifs.rpg.status.atk}+Lvの35%\n火曜日に全ての効果量が66%アップ`,
+    effect: { fire: 0.09 },
   },
   {
     name: `氷属性妖術`,
     short: '氷',
     desc: `戦闘時、たまに敵を凍らせます`,
-    info: `戦闘時、10%で相手のターンをスキップ\n非戦闘時、${serifs.rpg.status.def}+10%`,
-    effect: { ice: 0.1 },
+    info: `戦闘時、9%で相手のターンをスキップ\n非戦闘時、${serifs.rpg.status.def}+9%\n水曜日に全ての効果量が66%アップ`,
+    effect: { ice: 0.09 },
   },
   {
     name: `雷属性妖術`,
     short: '雷',
     desc: `戦闘時、連続攻撃をすればダメージが上がります`,
-    info: `(現在攻撃数/最大攻撃数)×20%のダメージ上昇を得る`,
-    effect: { thunder: 0.2 },
+    info: `(現在攻撃数/最大攻撃数)×18%のダメージ上昇を得る\n日曜日に全ての効果量が66%アップ`,
+    effect: { thunder: 0.18 },
   },
   {
     name: `風属性妖術`,
     short: '風',
     desc: `戦闘時、たまに行動回数が上がります`,
-    info: `戦闘時、10%で行動回数が2倍\n非戦闘時、${serifs.rpg.status.atk}+10%`,
-    effect: { spdUp: 0.1 },
+    info: `戦闘時、9%で行動回数が2倍\n非戦闘時、${serifs.rpg.status.atk}+9%\n木曜日に全ての効果量が66%アップ`,
+    effect: { spdUp: 0.09 },
   },
   {
     name: `土属性妖術`,
     short: '土',
     desc: `戦闘時、最大ダメージが上昇します`,
-    info: `戦闘時かつ最大ダメージ制限がある場合、その制限を20%増加\n非戦闘時、${serifs.rpg.status.atk}+10%`,
-    effect: { dart: 0.2 },
+    info: `戦闘時かつ最大ダメージ制限がある場合、その制限を18%増加\n非戦闘時、${serifs.rpg.status.atk}+9%\n土曜日に全ての効果量が66%アップ`,
+    effect: { dart: 0.18 },
   },
   {
     name: `光属性妖術`,
     short: '光',
     desc: `戦闘時、たまに敵の攻撃力を下げます`,
-    info: `戦闘時、20%でダメージカット50%\nそれ以外の場合、${serifs.rpg.status.def}+10%`,
-    effect: { light: 0.2 },
+    info: `戦闘時、18%でダメージカット50%\nそれ以外の場合、${serifs.rpg.status.def}+9%\n金曜日に全ての効果量が66%アップ`,
+    effect: { light: 0.18 },
   },
   {
     name: `闇属性妖術`,
     short: '闇',
-    desc: `戦闘時、たまに敵の周辺に高重力領域が発生させます`,
-    info: `戦闘時、10%で敵の現在HPの半分のダメージを与える\n行動回数が2回以上の敵に20%で行動回数を1にする\nそれ以外の場合、${serifs.rpg.status.def}+7%`,
-    effect: { dark: 0.1 },
+    desc: `戦闘時、たまに敵の周辺に高重力領域を発生させます`,
+    info: `戦闘時、9%で敵の現在HPの半分のダメージを与える\n行動回数が2回以上の敵に18%で行動回数を1にする\nそれ以外の場合、${serifs.rpg.status.def}+6.3%\n月曜日に全ての効果量が66%アップ`,
+    effect: { dark: 0.09 },
   },
   {
     name: `毒属性妖術`,
@@ -280,7 +280,7 @@ export const skills: Skill[] = [
     effect: { notBattleBonusDef: 0.18 },
   },
   {
-    name: `油断しない`,
+    name: `油断せず行こう`,
     short: '断',
     desc: `ターン1に受けるダメージを大きく軽減します`,
     info: `ターン1にてダメージカット30%を得る\n100%以上になる場合、残りはターン2に持ち越す`,
@@ -757,7 +757,20 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
   let amuletSkill: string[] = [];
   if (data.items?.filter((x) => x.type === 'amulet').length) {
     const amulet = data.items?.filter((x) => x.type === 'amulet')[0];
-    const item = shopItems.find((x) => x.name === amulet.name) as AmuletItem;
+    const item = [
+      ...shopItems,
+      ...(Array.isArray(amulet.skillName)
+        ? [
+            mergeSkillAmulet(
+              ai,
+              undefined,
+              amulet.skillName
+                .map((y) => skills.find((z) => y === z.name) ?? undefined)
+                .filter((y) => y != null) as Skill[],
+            ) as AmuletItem,
+          ]
+        : []),
+    ].find((x) => x.name === amulet.name) as AmuletItem;
     const skill =
       amulet.skillName && !Array.isArray(amulet.skillName)
         ? [skills.find((x) => amulet.skillName === x.name)]
@@ -820,9 +833,6 @@ export function aggregateSkillsEffects(data: {
 
   if (!data.skills) return aggregatedEffect;
   let dataSkills = data.skills;
-  data.items?.filter(
-    (x) => (x.type = shopItems.find((y) => x.name === y.name)?.type ?? 'token'),
-  );
   if (data.items?.filter((x) => x.type === 'amulet').length) {
     const amulet = data.items?.filter(
       (x) => x.type === 'amulet',
@@ -887,6 +897,31 @@ export function aggregateSkillsEffects(data: {
       console.log(JSON.stringify(_skill));
     }
   });
+
+  const day = new Date().getDay();
+
+  //曜日ボーナス
+  if (day == 0 && aggregatedEffect.thunder) {
+    aggregatedEffect.thunder *= 5 / 3;
+  }
+  if (day == 1 && aggregatedEffect.dark) {
+    aggregatedEffect.dark *= 5 / 3;
+  }
+  if (day == 2 && aggregatedEffect.fire) {
+    aggregatedEffect.fire *= 5 / 3;
+  }
+  if (day == 3 && aggregatedEffect.ice) {
+    aggregatedEffect.ice *= 5 / 3;
+  }
+  if (day == 4 && aggregatedEffect.spdUp) {
+    aggregatedEffect.spdUp *= 5 / 3;
+  }
+  if (day == 5 && aggregatedEffect.light) {
+    aggregatedEffect.light *= 5 / 3;
+  }
+  if (day == 6 && aggregatedEffect.dart) {
+    aggregatedEffect.dart *= 5 / 3;
+  }
 
   if (aggregatedEffect.itemEquip && aggregatedEffect.itemEquip > 1.5) {
     aggregatedEffect.itemBoost =
@@ -961,8 +996,23 @@ export function amuletMinusDurability(data: {
 }): string {
   let ret = '';
   if (data.items?.filter((x) => x.type === 'amulet').length) {
-    const amulet = data.items?.filter((x) => x.type === 'amulet')[0];
-    const item = shopItems.find((x) => x.name === amulet.name) as AmuletItem;
+    const amulet = data.items?.filter(
+      (x) => x.type === 'amulet',
+    )[0] as AmuletItem;
+    const item = [
+      ...shopItems,
+      ...(Array.isArray(amulet.skillName)
+        ? [
+            mergeSkillAmulet(
+              ai,
+              undefined,
+              amulet.skillName
+                .map((y) => skills.find((z) => y === z.name) ?? undefined)
+                .filter((y) => y != null) as Skill[],
+            ) as AmuletItem,
+          ]
+        : []),
+    ].find((x) => x.name === amulet.name) as AmuletItem;
     if ((item.isMinusDurability ?? item.isUsed)(data)) {
       const boost = data.skills
         ? data.skills
@@ -975,7 +1025,7 @@ export function amuletMinusDurability(data: {
             x.durability -= 1;
             if (x.durability <= 0) {
               data.items = data.items?.filter((x) => x.type !== 'amulet');
-              ret = `${x.name}が壊れました！`;
+              ret = `${x.name}が壊れてしまったのじゃ！`;
             } else {
               ret = `${x.name} 残耐久${x.durability}`;
             }

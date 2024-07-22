@@ -869,7 +869,7 @@ export const enemys: Enemy[] = [
     mark: '☆',
     mark2: '★',
     lToR: true,
-    atkmsg: (dmg) => `阨ちゃんはお散歩した！\n${dmg}ポイントの満足した！`,
+    atkmsg: (dmg) => `阨ちゃんはお散歩した！\n${dmg}ポイント満足した！`,
     defmsg: (dmg) =>
       `:blobdog_dropear:はものすごい速さで走った！阨ちゃんは疲れて${dmg}ポイントのダメージ！`,
     winmsg: ':blobdog_dropear:をお散歩させることに成功した！',
@@ -1177,7 +1177,7 @@ export const raidEnemys: RaidEnemy[] = [
     def: 5,
     atkx: 3,
     defx: 4,
-    power: 26,
+    power: 35,
   },
 
   {
@@ -1196,7 +1196,7 @@ export const raidEnemys: RaidEnemy[] = [
     def: 2,
     atkx: 5,
     defx: 5,
-    power: 30,
+    power: 35,
   },
   {
     name: ':katsuo:',

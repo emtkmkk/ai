@@ -282,7 +282,7 @@ export default class extends Module {
       const id = /\w{10}/.exec(msg.extractedText)?.[0];
       if (id) {
         const friend = this.ai.lookupFriend(id);
-        if (friend == null) return { reaction: ':neofox_approve:' };
+        if (friend == null) return { reaction: ':neofox_reach:' };
         friend.doc.perModulesData.rpg.lastPlayedAt = '';
         friend.doc.perModulesData.rpg.lv = friend.doc.perModulesData.rpg.lv - 1;
         friend.doc.perModulesData.rpg.atk =
@@ -299,7 +299,7 @@ export default class extends Module {
       const num = /\s(\d)\s/.exec(msg.extractedText)?.[1];
       if (id && skill && num) {
         const friend = this.ai.lookupFriend(id);
-        if (friend == null) return { reaction: ':neofox_approve:' };
+        if (friend == null) return { reaction: ':neofox_reach:' };
         friend.doc.perModulesData.rpg.skills[num] = skills.find((x) =>
           x.name.startsWith(skill),
         );
@@ -312,25 +312,49 @@ export default class extends Module {
       return { reaction: 'love' };
     }
     if (msg.includes(['dataFix'])) {
+      const ai = this.ai;
       const games = this.raids.find({});
       const recentGame = games.length == 0 ? null : games[games.length - 1];
       if (!recentGame) return { reaction: 'hmm' };
+
+      const rpgData = ai.moduleData.findOne({ type: 'rpg' });
+      if (rpgData) {
+        if (rpgData.raidScore[recentGame.enemy.name]) {
+          rpgData.raidScore[recentGame.enemy.name] = 0;
+        }
+        ai.moduleData.update(rpgData);
+      }
+
       recentGame.attackers.forEach((x) => {
         const friend = this.ai.lookupFriend(x.user.id);
         if (!friend) return;
         const data = friend.getPerModulesData(this);
-        data.coin = Math.min(
-          games.reduce(
-            (acc, cur) =>
-              acc +
-              (cur.attackers.some((y) => y.user.id === x.user.id) ? 4 : 0),
-            0,
-          ) - data.items.reduce((acc, cur) => acc + cur.price, 0),
-          80,
-        );
-        console.log(x.user.id + ' : ' + data.coin);
+        data.raidScore[recentGame.enemy.name] = 0;
+        x.dmg = 0;
+        console.log(x.user.id + ' : fix');
         friend.setPerModulesData(this, data);
       });
+      this.raids.update(recentGame);
+      const recent2Game = games.length < 1 ? null : games[games.length - 2];
+      if (!recent2Game) return { reaction: 'hmm' };
+
+      if (rpgData) {
+        if (rpgData.raidScore[recent2Game.enemy.name]) {
+          rpgData.raidScore[recent2Game.enemy.name] = 0;
+        }
+        ai.moduleData.update(rpgData);
+      }
+
+      recent2Game.attackers.forEach((x) => {
+        const friend = this.ai.lookupFriend(x.user.id);
+        if (!friend) return;
+        const data = friend.getPerModulesData(this);
+        data.raidScore[recent2Game.enemy.name] = 0;
+        x.dmg = 0;
+        console.log(x.user.id + ' : fix');
+        friend.setPerModulesData(this, data);
+      });
+      this.raids.update(recent2Game);
       return { reaction: 'love' };
     }
     return { reaction: 'hmm' };
@@ -402,7 +426,11 @@ export default class extends Module {
     message += `$[x2 ${me}]\n\n${serifs.rpg.start}\n\n`;
 
     // 敵のステータスを計算
-    const edef = data.lv * 3.5 - atk * (skillEffects.arpen ?? 0);
+    let edef = data.lv * 3.5;
+    edef -= Math.max(
+      atk * (skillEffects.arpen ?? 0),
+      edef * (skillEffects.arpen ?? 0),
+    );
 
     atk =
       atk *
@@ -666,12 +694,12 @@ export default class extends Module {
     /** 現在の敵と戦ってるターン数。 敵がいない場合は1 */
     let count = data.count ?? 1;
 
-    // 修行モード（エンドレスモード）のフラグ
+    // 旅モード（エンドレスモード）のフラグ
     if (
       msg.includes([serifs.rpg.command.journey]) &&
       !aggregateTokensEffects(data).autoJournal
     ) {
-      // 現在戦っている敵がいない場合で修行モード指定がある場合はON
+      // 現在戦っている敵がいない場合で旅モード指定がある場合はON
       if (!data.enemy || count === 1 || data.endressFlg) {
         data.endressFlg = true;
       } else {
@@ -681,7 +709,7 @@ export default class extends Module {
         };
       }
     } else {
-      // 現在戦っている敵がいない場合で修行モード指定がない場合はOFF
+      // 現在戦っている敵がいない場合で旅モード指定がない場合はOFF
       if (!data.enemy || count === 1) {
         data.endressFlg = false;
       }
@@ -781,7 +809,8 @@ export default class extends Module {
       /** すでにこの回で倒している敵、出現条件を満たしていない敵を除外 */
       const filteredEnemys = enemys.filter(
         (x) =>
-          !(data.clearEnemy ?? []).includes(x.name) &&
+          (skillEffects.enemyBuff ||
+            !(data.clearEnemy ?? []).includes(x.name)) &&
           (!x.limit || x.limit(data, msg.friend)),
       );
       if (filteredEnemys.length && !data.endressFlg) {
@@ -801,8 +830,8 @@ export default class extends Module {
             filteredEnemys[Math.floor(filteredEnemys.length * Math.random())];
         }
       } else {
-        // 修行モード（エンドレスモード）
-        // 倒す敵がいなくてこのモードに入った場合、修行モード任意入場フラグをOFFにする
+        // 旅モード（エンドレスモード）
+        // 倒す敵がいなくてこのモードに入った場合、旅モード任意入場フラグをOFFにする
         if (!filteredEnemys.length) {
           if (!data.allClear) {
             data.allClear = lv - 1;
@@ -1242,8 +1271,8 @@ export default class extends Module {
       }
       if (aggregateTokensEffects(data).showItemBonus) {
         const itemMessage = [
-          `${itemBonus.atk ? `${serifs.rpg.status.atk}+${itemBonus.atk.toFixed(0)}` : ''}`,
-          `${itemBonus.def ? `${serifs.rpg.status.def}+${itemBonus.def.toFixed(0)}` : ''}`,
+          `${itemBonus.atk > 0 ? `${serifs.rpg.status.atk}+${itemBonus.atk.toFixed(0)}` : ''}`,
+          `${itemBonus.def > 0 ? `${serifs.rpg.status.def}+${itemBonus.def.toFixed(0)}` : ''}`,
         ]
           .filter(Boolean)
           .join(' / ');
@@ -1270,16 +1299,19 @@ export default class extends Module {
         data.enemy.spd = 3;
       if (!data.enemy.spd && enemyAtk + enemyDef <= lv * 15.75)
         data.enemy.spd = 2;
+      const statusX = Math.floor(data.streak / 10) + 1;
       enemyAtk =
         typeof data.enemy.atk === 'function'
-          ? data.enemy.atk(atk, def, spd) * 1.25
-          : lv * 3.5 * (data.enemy.atk + 1);
+          ? data.enemy.atk(atk, def, spd) * (1.15 + 0.1 * statusX)
+          : lv * 3.5 * (data.enemy.atk + 1 + statusX / 2.5);
       enemyDef =
         typeof data.enemy.def === 'function'
-          ? data.enemy.def(atk, def, spd) * 1.25
-          : lv * 3.5 * (data.enemy.def + 1);
-      if (typeof data.enemy.atkx === 'number') data.enemy.atkx += 1;
-      if (typeof data.enemy.defx === 'number') data.enemy.defx += 1;
+          ? data.enemy.def(atk, def, spd) * (1 + 0.25 * statusX)
+          : lv * 3.5 * (data.enemy.def + statusX);
+      if (typeof data.enemy.atkx === 'number')
+        data.enemy.atkx += 1 + 0.2 * statusX;
+      if (typeof data.enemy.defx === 'number')
+        data.enemy.defx += 1 + 0.5 * statusX;
     }
 
     if (skillEffects.enemyStatusBonus) {
@@ -1297,7 +1329,10 @@ export default class extends Module {
       }
     }
 
-    enemyDef -= atk * (skillEffects.arpen ?? 0);
+    enemyDef -= Math.max(
+      atk * (skillEffects.arpen ?? 0),
+      enemyDef * (skillEffects.arpen ?? 0),
+    );
 
     if (skillEffects.firstTurnResist && count === 1 && isBattle && isPhysical) {
       buff += 1;
@@ -1800,7 +1835,7 @@ export default class extends Module {
                 data.maxEndress = data.endress - 1;
               data.endress = (data.endress ?? 0) - minusStage;
             }
-            // これが任意に入った修行モードだった場合は、各種フラグをリセットしない
+            // これが任意に入った旅モードだった場合は、各種フラグをリセットしない
             if (!data.endressFlg) {
               data.streak = 0;
               data.clearEnemy = [];

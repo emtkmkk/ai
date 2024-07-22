@@ -13,7 +13,10 @@ export function initializeData(module: rpg, msg) {
   if (!data.items) data.items = [];
   if (!data.coin) data.coin = 0;
   data.items?.filter(
-    (x) => (x.type = shopItems.find((y) => x.name === y.name)?.type ?? 'token'),
+    (x) =>
+      (x.type =
+        shopItems.find((y) => x.name === y.name)?.type ??
+        (x.skillName ? 'amulet' : 'token')),
   );
   if (data.items.filter((x) => x.type === 'amulet').length > 1) {
     data.items

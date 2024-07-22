@@ -473,8 +473,7 @@ export default class 藍 {
             );
             if (
               error.response?.statusCode >= 400 &&
-              error.response?.statusCode < 500 &&
-              attempt >= 3
+              error.response?.statusCode < 500
             )
               resolve(error);
             else if (attempt >= maxRetries - 1) {

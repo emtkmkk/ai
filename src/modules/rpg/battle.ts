@@ -1,6 +1,6 @@
 import serifs from '@/serifs';
 
-export function calculateStats(data, msg, skillEffects, color) {
+export function calculateStats(data, msg, skillEffects, color, maxBonus = 100) {
   const stbonus =
     (Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3) +
       (msg.friend.doc.kazutoriData?.medal ?? 0) +
@@ -8,12 +8,26 @@ export function calculateStats(data, msg, skillEffects, color) {
         (msg.friend.doc.kazutoriData?.medal ?? 0))) /
     2;
   let atk = Math.max(
-    5 + (data.atk ?? 0) + Math.floor(stbonus * ((100 + (data.atk ?? 0)) / 100)),
-    15,
+    5 +
+      (data.atk ?? 0) +
+      Math.floor(
+        Math.min(
+          stbonus * ((100 + (data.atk ?? 0)) / 100),
+          (data.atk ?? 0) * maxBonus,
+        ),
+      ),
+    10,
   );
   let def = Math.max(
-    5 + (data.def ?? 0) + Math.floor(stbonus * ((100 + (data.def ?? 0)) / 100)),
-    15,
+    5 +
+      (data.def ?? 0) +
+      Math.floor(
+        Math.min(
+          stbonus * ((100 + (data.def ?? 0)) / 100),
+          (data.def ?? 0) * maxBonus,
+        ),
+      ),
+    10,
   );
   let spd = Math.floor((msg.friend.love ?? 0) / 100) + 1;
 
@@ -52,8 +66,8 @@ export function fortune(_atk, _def, effect = 1) {
           atk = Math.floor((a + d) / 2);
           def = Math.floor((a + d) / 2);
         } else {
-          const a = Math.floor(atk * 0.3);
-          const d = Math.floor(def * 0.3);
+          const a = Math.floor(atk * 0.6);
+          const d = Math.floor(def * 0.6);
           atk = atk - a + Math.floor((a + d) / 2);
           def = def - d + Math.floor((a + d) / 2);
         }
@@ -62,8 +76,8 @@ export function fortune(_atk, _def, effect = 1) {
       if (rnd() < 0.5) {
         if (targetAllStatus) {
           if (rnd() < 0.5) {
-            atk = 0;
-            def = def + atk;
+            atk = 1;
+            def = def + atk - 1;
           } else {
             atk = atk + def;
             def = 0;
