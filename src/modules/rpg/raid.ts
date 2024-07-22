@@ -617,7 +617,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         message += serifs.rpg.skill.firstTurnResist + "\n"
     }
 
-    enemyDef -= (atk * (skillEffects.arpen ?? 0))
+    enemyDef -= Math.max(atk * (skillEffects.arpen ?? 0), enemyDef * (skillEffects.arpen ?? 0))
 
     // バフが1つでも付与された場合、改行を追加する
     if (buff > 0) message += "\n"
@@ -641,6 +641,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     const _atk = atk;
     const _def = def;
     const _spd = spd;
+	const _enemyAtk = enemyAtk;
+    const _enemyDef = enemyDef;
 
     const plusActionX = 5
 
@@ -664,7 +666,21 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         atk = _atk;
         def = _def;
         spd = _spd;
+		enemyAtk = _enemyAtk;
+		enemyDef = _enemyDef;
         itemBonus = { atk: 0, def: 0 };
+
+		// 毒属性剣攻撃
+        if (skillEffects.weak && count > 1) {
+            if (isBattle && isPhysical) {
+                buff += 1
+                message += serifs.rpg.skill.weak(enemy.dname ?? enemy.name) + "\n"
+            }
+            enemyAtk -= Math.max(enemyAtk * (skillEffects.weak * (count - 1)), atk * (skillEffects.weak * (count - 1)))
+            enemyDef -= Math.max(enemyDef * (skillEffects.weak * (count - 1)), atk * (skillEffects.weak * (count - 1)))
+			if (enemyAtk < 0) enemyAtk = 0;
+			if (enemyDef < 0) enemyDef = 0;
+		}
 
         // spdが低い場合、確率でspdが+1。
         if (spd === 2 && Math.random() < 0.2) {
@@ -887,16 +903,6 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         } else if (skillEffects.fire && !(isBattle && isPhysical)) {
             // 非戦闘時は、パワーに還元される
             atk = atk + lv * 3.75 * skillEffects.fire;
-        }
-
-        // 毒属性剣攻撃
-        if (skillEffects.weak && count > 1) {
-            if (isBattle && isPhysical) {
-                buff += 1
-                message += serifs.rpg.skill.weak(enemy.dname ?? enemy.name) + "\n"
-            }
-            enemyAtk = Math.max(enemyAtk * (1 - (skillEffects.weak * (count - 1))), 0)
-            enemyDef = Math.max(enemyDef * (1 - (skillEffects.weak * (count - 1))), 0)
         }
 
         // バフが1つでも付与された場合、改行を追加する
