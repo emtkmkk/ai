@@ -598,7 +598,7 @@ export default class extends Module {
             data.count = 1
             playerHp = 100 + lv * 3
             /** すでにこの回で倒している敵、出現条件を満たしていない敵を除外 */
-            const filteredEnemys = enemys.filter((x) => !(data.clearEnemy ?? []).includes(x.name) && (!x.limit || x.limit(data, msg.friend)));
+            const filteredEnemys = enemys.filter((x) => (skillEffects.enemyBuff || !(data.clearEnemy ?? []).includes(x.name)) && (!x.limit || x.limit(data, msg.friend)));
             if (filteredEnemys.length && !data.endressFlg) {
                 /** 1度も倒した事のない敵 */
                 const notClearedEnemys = filteredEnemys.filter((x) => !(data.clearHistory ?? []).includes(x.name));
@@ -977,10 +977,11 @@ export default class extends Module {
         if (skillEffects.enemyBuff && data.enemy.name !== endressEnemy(data).name) {
             if (!data.enemy.spd && enemyAtk + enemyDef <= (lv * 10.5)) data.enemy.spd = 3;
             if (!data.enemy.spd && enemyAtk + enemyDef <= (lv * 15.75)) data.enemy.spd = 2;
-            enemyAtk = (typeof data.enemy.atk === "function") ? data.enemy.atk(atk, def, spd) * 1.25 : lv * 3.5 * (data.enemy.atk + 1);
-            enemyDef = (typeof data.enemy.def === "function") ? data.enemy.def(atk, def, spd) * 1.25 : lv * 3.5 * (data.enemy.def + 1);
-            if (typeof data.enemy.atkx === "number") data.enemy.atkx += 1
-            if (typeof data.enemy.defx === "number") data.enemy.defx += 1
+			const statusX = math.floor(data.streak / 10) + 1;
+            enemyAtk = (typeof data.enemy.atk === "function") ? data.enemy.atk(atk, def, spd) * (1.15 + (0.1 * statusX)) : lv * 3.5 * (data.enemy.atk + 1 + statusX / 2.5);
+            enemyDef = (typeof data.enemy.def === "function") ? data.enemy.def(atk, def, spd) * (1 + (0.25 * statusX)) : lv * 3.5 * (data.enemy.def + statusX);
+            if (typeof data.enemy.atkx === "number") data.enemy.atkx += 1 + (0.2 * statusX);
+            if (typeof data.enemy.defx === "number") data.enemy.defx += 1 + (0.5 * statusX);
         }
 
         if (skillEffects.enemyStatusBonus) {
