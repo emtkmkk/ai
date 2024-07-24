@@ -485,7 +485,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
             if (isSuper) {
                 message += serifs.rpg.postBonusInfo.super + `\n`
             }
-            message += serifs.rpg.postBonusInfo.post(postCount, tp > 1 ? "+" + Math.floor((tp - 1) * 100) : "-" + Math.floor((tp - 1) * 100)) + `\n`
+            message += serifs.rpg.postBonusInfo.post(postCount, tp > 1 ? "+" + Math.floor((tp - 1) * 100) : (tp != 1 ? "-" : "") + Math.floor((tp - 1) * 100)) + `\n`
         }
     }
 
@@ -1126,7 +1126,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         }
         data.raidScore[enemy.name] = totalDmg;
     } else {
-        if (data.raidScore[enemy.name]) message += `\n（これまでのベスト: ${data.raidScore[enemy.name]}）`
+        if (data.raidScore[enemy.name]) message += `\n（これまでのベスト: ${data.raidScore[enemy.name].toLocaleString()}）`
     }
 
     const amuletmsg = amuletMinusDurability(data)
