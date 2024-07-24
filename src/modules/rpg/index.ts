@@ -947,7 +947,7 @@ export default class extends Module {
                         atk = atk + itemBonus.atk;
                         def = def + itemBonus.def;
                     } else {
-						if (item.effect >= 200) {
+						if (item.effect > 200) {
 							const overHeal = item.effect - 200;
 							mindMsg(overHeal);
 							itemBonus.atk = atk * (overHeal * 0.0025);
