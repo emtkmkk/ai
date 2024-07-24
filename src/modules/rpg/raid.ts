@@ -151,7 +151,7 @@ export async function start(triggerUserId?: string, flg?: any) {
 	if (rpgData)　{
 		if (!rpgData.raidScore) rpgData.raidScore = {};
 	}
-	const notPlayedBoss = raidEnemys.filter((x) => !rpgData || !rpgData.raidScore[x]);
+	const notPlayedBoss = raidEnemys.filter((x) => !rpgData || !rpgData.raidScore[x.name]);
 
     /** ランダムに選ばれたレイドボス */
     const enemy = notPlayedBoss.length ? notPlayedBoss[Math.floor(Math.random() * notPlayedBoss.length)] : filteredRaidEnemys[Math.floor(Math.random() * filteredRaidEnemys.length)];
