@@ -129,6 +129,7 @@ export const raidEnemys: RaidEnemy[] = [
     { name: ":sinkansen:", msg: ":sinkansen:討伐戦！", short: "", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの攻撃！\n${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:sinkansen:は加速してもこチキから逃げた！\nなんとか追いついた！\n疲れで${dmg}ポイントのダメージ！`, winmsg: "撃退した！", losemsg: ":sinkansen:はさらに加速してもこチキから逃げた！\n:sinkansen:に逃げられてしまった…", abortmsg: ":sinkansen:の移動速度が速すぎて、連続攻撃出来ない！", atk: 3, def: 1, atkx: 3, defx: 1, abort: 1, power: 20 },
     { name: ":mk_crystal:", msg: ":mk_crystal:討伐戦！", short: "", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの攻撃！\n${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mk_crystal:はめちゃくちゃ頑丈だ…\n疲れで${dmg}ポイントのダメージ！`, winmsg: "撃退した！", losemsg: "もこチキは疲れで倒れてしまった…", atk: 0.5, def: 8, atkx: 3, defx: 8, power: 30 },
     { name: ":mk_lovechicken:", msg: ":mk_lovechicken:討伐戦！", short: "", mark: "☆", mark2: "★", atkmsg: (dmg) => `もこチキの攻撃！\n${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mk_lovechicken:の愛の抱擁！もこチキに${dmg}ポイントのダメージ！`, winmsg: "", losemsg: "もこチキはやられてしまった…", atk: 1, def: 1, atkx: 3, defx: 3, power: 25, forcePostCount: 3 },
+    { name: ":mk_senryu_kun:", msg: ":mk_senryu_kun:討伐戦！", short: "", mark: "☆", mark2: "★", atkmsg: (dmg) => `もこチキの攻撃！\n${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mk_senryu_kun:の川柳ビーム！もこチキに${dmg}ポイントのダメージ！`, winmsg: "", losemsg: "もこチキは吹き飛んでいった…", atk: 10, def: 10, atkx: (count) => count * 2, defx: (count) => count, power: 100 },
 ]
 
 /*

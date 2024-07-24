@@ -602,7 +602,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     let enemyDef = (typeof enemy.def === "function") ? enemy.def(atk, def, spd) : lv * 3.5 * (enemy.def ?? 1);
 
     if (skillEffects.enemyStatusBonus) {
-        const enemyStrongs = (enemyAtk / (lv * 3.5)) * (getVal(enemy.atkx, [tp]) ?? 3) + (enemyDef / (lv * 3.5)) * (getVal(enemy.defx, [tp]) ?? 3);
+        const enemyStrongs = (enemyAtk / (lv * 3.5)) * (getVal(enemy.atkx, [3]) ?? 3) + (enemyDef / (lv * 3.5)) * (getVal(enemy.defx, [3]) ?? 3);
         const bonus = Math.floor((enemyStrongs / 4) * skillEffects.enemyStatusBonus);
         atk = atk * (1 + (bonus / 100))
         def = def * (1 + (bonus / 100))
@@ -933,7 +933,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         const defMaxRnd = Math.max(1.6 + (isSuper ? -0.3 : 0) + (skillEffects.defRndMax ?? 0), 0)
 
         /** 予測最大ダメージ */
-        let predictedDmg = Math.round((atk * tp * (atkMinRnd + atkMaxRnd)) * (1 / (((enemyDef * (getVal(enemy.defx, [tp]) ?? 3)) + 100) / 100))) * (abort || spd);
+        let predictedDmg = Math.round((atk * tp * (atkMinRnd + atkMaxRnd)) * (1 / (((enemyDef * (getVal(enemy.defx, [count]) ?? 3)) + 100) / 100))) * (abort || spd);
 
         // 予測最大ダメージは最大ダメージ制限を超えない
         if (maxdmg && predictedDmg > maxdmg) predictedDmg = maxdmg;
@@ -956,8 +956,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
                 if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`
                 const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
                 /** ダメージ */
-                const dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [tp]))
-                const noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [tp]))
+                const dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [count]))
+                const noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [count]))
                 // ダメージが負けるほど多くなる場合は、先制攻撃しない
                 if (playerHp > dmg || (count === 3 && enemy.fire && (data.thirdFire ?? 0) <= 2)) {
                     playerHp -= dmg
@@ -995,8 +995,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
             let crit = Math.random() < ((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0))) + (skillEffects.critUpFixed ?? 0);
             const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
             /** ダメージ */
-            let dmg = getAtkDmg(data, atk, tp, 1, crit ? critDmg : false, enemyDef, enemyMaxHp, rng * dmgBonus, getVal(enemy.defx, [tp])) + Math.round(trueDmg * turnDmgX)
-            const noItemDmg = getAtkDmg(data, atk - itemBonus.atk, tp, 1, crit, enemyDef, enemyMaxHp, rng * dmgBonus, getVal(enemy.defx, [tp])) + Math.round(trueDmg * turnDmgX)
+            let dmg = getAtkDmg(data, atk, tp, 1, crit ? critDmg : false, enemyDef, enemyMaxHp, rng * dmgBonus, getVal(enemy.defx, [count])) + Math.round(trueDmg * turnDmgX)
+            const noItemDmg = getAtkDmg(data, atk - itemBonus.atk, tp, 1, crit, enemyDef, enemyMaxHp, rng * dmgBonus, getVal(enemy.defx, [count])) + Math.round(trueDmg * turnDmgX)
             // 最大ダメージ制限処理
             if (maxdmg && maxdmg > 0 && dmg > Math.round(maxdmg * (1 / ((abort || spd) - i)))) {
                 // 最大ダメージ制限を超えるダメージの場合は、ダメージが制限される。
@@ -1068,8 +1068,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
                     const crit = Math.random() < (playerHpPercent - enemyHpPercent) * (1 - (skillEffects.enemyCritDown ?? 0));
                     const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
                     /** ダメージ */
-                    const dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX, getVal(enemy.atkx, [tp]));
-                    const noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX, getVal(enemy.atkx, [tp]));
+                    const dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX, getVal(enemy.atkx, [count]));
+                    const noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX, getVal(enemy.atkx, [count]));
                     playerHp -= dmg
                     message += (crit ? `**${enemy.defmsg(dmg)}**` : enemy.defmsg(dmg)) + "\n"
                     if (noItemDmg - dmg > 1) {
