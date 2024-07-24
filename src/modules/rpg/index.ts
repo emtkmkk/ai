@@ -947,6 +947,15 @@ export default class extends Module {
                         atk = atk + itemBonus.atk;
                         def = def + itemBonus.def;
                     } else {
+						if (item.effect >= 200) {
+							const overHeal = item.effect - 200;
+							mindMsg(overHeal);
+							itemBonus.atk = atk * (overHeal * 0.0025);
+							itemBonus.def = def * (overHeal * 0.0025);
+							atk = atk + itemBonus.atk;
+							def = def + itemBonus.def;
+							item.effect = 200;
+						}
                         const heal = Math.round(((100 + lv * 3) - playerHp) * (item.effect * 0.005))
                         playerHp += heal
                         if (heal > 0) {
