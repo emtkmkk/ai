@@ -147,8 +147,14 @@ export async function start(triggerUserId?: string, flg?: any) {
     const filteredRaidEnemys =
         raidEnemys.filter((x) => !recentRaidList.includes(x.name));
 
+	const rpgData = ai.moduleData.findOne({ type: 'rpg' });
+	if (rpgData)　{
+		if (!rpgData.raidScore) rpgData.raidScore = {};
+	}
+	const notPlayedBoss = raidEnemys.filter((x) => !rpgData || !rpgData.raidScore[x]);
+
     /** ランダムに選ばれたレイドボス */
-    const enemy = filteredRaidEnemys[Math.floor(Math.random() * filteredRaidEnemys.length)];
+    const enemy = notPlayedBoss.length ? notPlayedBoss[Math.floor(Math.random() * notPlayedBoss.length)] : filteredRaidEnemys[Math.floor(Math.random() * filteredRaidEnemys.length)];
 
     // レイドの制限時間（分）
     let limitMinutes = 30;
