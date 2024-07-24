@@ -38,6 +38,8 @@ export function fortune(_atk, _def, effect = 1) {
                 def = Math.floor(def * 1.01)
             } else {
                 if (targetAllStatus) {
+                    atk = Math.floor(atk * 1.02)
+                    def = Math.floor(def * 1.02)
                     const a = Math.floor(atk)
                     const d = Math.floor(def)
                     atk = Math.floor((a + d) / 2)
@@ -52,6 +54,8 @@ export function fortune(_atk, _def, effect = 1) {
         } else {
             if (rnd() < 0.5) {
                 if (targetAllStatus) {
+                    atk = Math.floor(atk * 1.02)
+                    def = Math.floor(def * 1.02)
                     if (rnd() < 0.5) {
                         atk = 1
                         def = def + atk - 1
