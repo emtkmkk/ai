@@ -80,6 +80,7 @@ export default class Message {
 		renote?: string;
 		immediate?: boolean;
 		visibility?: string;
+		visibilityForce?: boolean;
 		localOnly?: boolean;
 	}) {
 		if (text == null) return;
@@ -97,6 +98,7 @@ export default class Message {
 			cw: opts?.cw,
 			renoteId: opts?.renote,
 			visibility: opts?.visibility ?? 'home',
+			visibilityForce: opts.visibilityForce
 			localOnly: opts?.localOnly || false,
 			...(opts?.visibility === 'specified' ? {visibleUserIds: [this.userId],} : {})
 		});
