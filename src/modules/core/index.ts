@@ -362,7 +362,7 @@ export default class extends Module {
 
 	@autobind
 	private mergeData(msg: Message) {
-		if (msg.usep.host || msg.user.username !== config.master) return false
+		if (msg.user.host || msg.user.username !== config.master) return false
 		if (!msg.text) return false;
 		if (!msg.includes(['データ合体'])) return false;
 
