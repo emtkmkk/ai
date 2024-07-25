@@ -152,10 +152,12 @@ export default class 藍 {
 		//#region Main stream
 		const mainStream = this.connection.useSharedConnection('main');
 
+		const host = new URL(config.host).host.replace(/\./g, '\\.');
+
 		// メンションされたとき
 		mainStream.on('mention', async data => {
 			if (data.userId == this.account.id) return; // 自分は弾く
-			if (data.text && data.text.toLowerCase().includes(data.user.host ? `@${this.account.username}@${config.host}` : '@' + this.account.username)) {
+			if (data.text && data.text.toLowerCase().includes(data.user.host ? `@${this.account.username}@${host}` : '@' + this.account.username)) {
 				// Misskeyのバグで投稿が非公開扱いになる
 				if (data.text == null) data = await this.api('notes/show', { noteId: data.id });
 				this.onReceiveMessage(new Message(this, data));
@@ -165,7 +167,7 @@ export default class 藍 {
 		// 返信されたとき
 		mainStream.on('reply', async data => {
 			if (data.userId == this.account.id) return; // 自分は弾く
-			if (data.text && data.text.toLowerCase().includes(data.user.host ? `@${this.account.username}@${config.host}` : '@' + this.account.username)) return;
+			if (data.text && data.text.toLowerCase().includes(data.user.host ? `@${this.account.username}@${host}` : '@' + this.account.username)) return;
 			// Misskeyのバグで投稿が非公開扱いになる
 			if (data.text == null) data = await this.api('notes/show', { noteId: data.id });
 			this.onReceiveMessage(new Message(this, data));
