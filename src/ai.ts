@@ -152,7 +152,7 @@ export default class 藍 {
 		//#region Main stream
 		const mainStream = this.connection.useSharedConnection('main');
 
-		const host = new URL(config.host).host.replace(/\./g, '\\.');
+		const host = new URL(config.host).host;
 
 		// メンションされたとき
 		mainStream.on('mention', async data => {
