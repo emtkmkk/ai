@@ -27,7 +27,7 @@ export default class Message {
 	}
 
 	public get text(): string {
-		return typeof this.note.text !== "string" ? this.note.text : this.note.text.replace(/[０-９]/g, m => '０１２３４５６７８９'.indexOf(m).toString()).match(/[0-9]+/);
+		return typeof this.note.text !== "string" ? this.note.text : this.note.text.replace(/[０-９]/g, m => '０１２３４５６７８９'.indexOf(m).toString());
 	}
 
 	public get quoteId(): string | null {
