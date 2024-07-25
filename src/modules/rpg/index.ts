@@ -49,7 +49,7 @@ export default class extends Module {
 
     @autobind
     private async mentionHook(msg: Message) {
-        if (msg.user.username === config.master && msg.includes([serifs.rpg.command.rpg]) && msg.includes(["admin"])) {
+        if (!msg.user.host && msg.user.username === config.master && msg.includes([serifs.rpg.command.rpg]) && msg.includes(["admin"])) {
             // 管理者モード
             return this.handleAdminCommands(msg);
         }

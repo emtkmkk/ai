@@ -189,7 +189,7 @@ export default class extends Module {
 			const cth = Math.max((msg.friend.love >= 200 ? 0.5 : msg.friend.love >= 100 ? 1 : msg.friend.love >= 20 ? 2 : msg.friend.love >= 5 ? 3 : 4) * (["public", "home"].includes(msg.visibility) ? 1 : 2), 1);
 
 			// トリガー者が管理人でない かつ クールタイムが開けていない場合
-			if (msg.user.username !== config.master && Date.now() - recentGame.startedAt < 1000 * 60 * 60 * cth) {
+			if ((msg.user.host || msg.user.username !== config.master) && Date.now() - recentGame.startedAt < 1000 * 60 * 60 * cth) {
 				const ct = Math.ceil((60 * cth) - ((Date.now() - recentGame.startedAt) / (1000 * 60)));
 				msg.reply(serifs.kazutori.matakondo(ct, Math.ceil((recentGame.startedAt + 1000 * 60 * 60 * cth) / 1000)));
 				return {
@@ -197,8 +197,8 @@ export default class extends Module {
 				};
 			}
 
-			if (msg.user.username === config.master && msg.includes(['inf'])) flg = "inf";
-			if (msg.user.username === config.master && msg.includes(['med'])) flg += " med";
+			if (!msg.user.host && msg.user.username === config.master && msg.includes(['inf'])) flg = "inf";
+			if (!msg.user.host && msg.user.username === config.master && msg.includes(['med'])) flg += " med";
 		}
 
 		//TODO : このへんのセリフをserifに移行する

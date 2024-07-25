@@ -267,7 +267,7 @@ export default class extends Module {
 			msg.reply('私が覚えた答えです！\n```\n' + pollresultstr + '\n```');
 			return { reaction: 'love' };
 		} else {
-			if (!msg.includes(['/poll']) || msg.user.username !== config.master) {
+			if (!msg.includes(['/poll']) || msg.user.host || msg.user.username !== config.master) {
 				return false;
 			} else {
 			}

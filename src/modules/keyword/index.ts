@@ -41,7 +41,7 @@ export default class extends Module {
 
 		@autobind
 	private async mentionHook(msg: Message) {
-		if (!msg.or(['/check']) || msg.user.username !== config.master) {
+		if (!msg.or(['/check']) || msg.user.host || msg.user.username !== config.master) {
 				return false;
 		} else {
 			this.log('checkLearnedKeywords...');
