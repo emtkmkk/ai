@@ -632,10 +632,6 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         atk = atk * (1 + (skillEffects.plusActionX ?? 0) / 10)
     }
 
-    if (skillEffects.escape) {
-        def = def * (1 + (skillEffects.escape ?? 0) / 10)
-    }
-
     if (skillEffects.enemyCritDmgDown) {
         def = def * (1 + (skillEffects.enemyCritDmgDown ?? 0) / 30)
     }
@@ -735,7 +731,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
                     }
                 }
                 if ((count !== 1 || enemy.pLToR) && skillEffects.lowHpFood && Math.random() < skillEffects.lowHpFood * playerHpPercent) {
-                    if (playerHpPercent < 0.5) message += serifs.rpg.skill.lowHpFood
+                    if (skillEffects.lowHpFood && playerHpPercent < 0.5) message += serifs.rpg.skill.lowHpFood
                     types = ["medicine", "poison"]
                 }
                 const type = types[Math.floor(Math.random() * types.length)]
@@ -1100,13 +1096,20 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
                     playerHp = 1;
                     endureCount -= 1;
                 }
+				if (actionX + 1 < plusActionX && playerHp <= 0 && playerHp >= (100 + lv * 3) * (skillEffects.escape / -10) && !enemy.notEndure) {
+					message += "やられそうになったので、一旦距離を取って1ターン分回復に徹した！\n"
+					const heal = Math.ceil((100 + lv * 3) * (skillEffects.escape / 10)) + 1;
+					playerHp += heal
+					if (heal > 0) message += heal + "ポイントの体力を回復！"
+					actionX += 1;
+					skillEffects.escape -= 1;
+				}
                 if (maxDmg > (data.superMuscle ?? 0) && playerHp > 0) data.superMuscle = maxDmg;
             }
             // 敗北処理
             if (playerHp <= 0) {
-                message += "\n" + enemy.losemsg
-
-                break;
+				message += "\n" + enemy.losemsg;
+				break;
             } else {
                 // 決着がつかない場合
                 if (actionX === plusActionX) {
