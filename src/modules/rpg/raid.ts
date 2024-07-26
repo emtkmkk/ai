@@ -1096,7 +1096,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
                     playerHp = 1;
                     endureCount -= 1;
                 }
-				if (actionX + 1 < plusActionX && playerHp <= 0 && playerHp >= (100 + lv * 3) * (skillEffects.escape / -10) && !enemy.notEndure) {
+				if (skillEffects.escape && actionX + 1 < plusActionX && playerHp <= 0 && playerHp >= (100 + lv * 3) * (skillEffects.escape / -10) && !enemy.notEndure) {
 					message += "やられそうになったので、一旦距離を取って1ターン分回復に徹した！\n"
 					const heal = Math.ceil((100 + lv * 3) * (skillEffects.escape / 10)) + 1;
 					playerHp += heal
