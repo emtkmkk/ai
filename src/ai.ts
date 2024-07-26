@@ -218,7 +218,7 @@ export default class 藍 {
 	}
 
 	@autobind
-	private async handlerTimeout(handlerPromise: Promise<boolean | HandlerResult | null>, obj?: any): Promise<boolean | HandlerResult | null> {
+	private async handlerTimeout<T>(handlerPromise: Promise<T>, obj?: any): Promise<boolean | T> {
 		// 30秒応答が帰ってこない場合、falseとする
 		return Promise.race([
 			handlerPromise,
