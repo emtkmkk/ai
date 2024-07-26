@@ -199,7 +199,7 @@ export const skills: Skill[] = [
     { name: `脳筋`, short: "筋", desc: `与えるダメージが上がりますが、受けるダメージも上がります`, info: `${serifs.rpg.dmg.give}+18% ${serifs.rpg.dmg.take}+8%`, effect: { atkDmgUp: 0.18, defDmgUp: 0.08 } },
     { name: `慎重`, short: "慎", desc: `与えるダメージが下がりますが、受けるダメージも下がります`, info: `${serifs.rpg.dmg.give}-8% ${serifs.rpg.dmg.take}-18%`, effect: { atkDmgUp: -0.08, defDmgUp: -0.18 } },
     { name: `連続・毎日ボーナス強化`, short: "連", desc: `連続・毎日ボーナスの上昇量が上がります`, info: `毎日ボーナスの増加量+50% (5 ~ 12.5投稿↑)`, effect: { continuousBonusUp: 0.5 } },
-    { name: `負けそうなら逃げる`, short: "逃", desc: `逃げると負けた事になりません 連続で発動しにくい`, info: `スキルの数まで100%逃走 以降失敗まで発動度に確率半減し続ける\nレイド時は、${serifs.rpg.status.def}+10%`, effect: { escape: 1 } },
+    { name: `負けそうなら逃げる`, short: "逃", desc: `逃げると負けた事になりません 連続で発動しにくい`, info: `スキルの数まで100%逃走 以降失敗まで発動度に確率半減し続ける\nレイド時は、1ターン距離を取って回復する`, effect: { escape: 1 } },
     { name: `気合で頑張る`, short: "気", desc: `パワー・防御が少し上がり、気合耐えの確率が上がります`, info: `ステータス+3% 気合耐え確率+50%`, effect: { atkUp: 0.03, defUp: 0.03, endureUp: 0.5 } },
     { name: `すぐ決死の覚悟をする`, short: "決", desc: `決死の覚悟の発動条件が緩くなり、効果量が上がります`, info: `${serifs.rpg.status.atk}+8% 覚悟発動条件効果量+50%`, effect: { atkUp: 0.08, haisuiUp: 0.5 } },
     { name: `投稿数ボーナス量アップ`, short: "投", desc: `投稿数によるステータスボーナスが上昇します`, info: `投稿数ボーナス+5%`, effect: { postXUp: 0.05 } },
