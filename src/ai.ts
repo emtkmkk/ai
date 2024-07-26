@@ -217,25 +217,29 @@ export default class 藍 {
 		this.log(chalk.green.bold('Ai am now running!'));
 	}
 	
-	@autobind
-	private async handlerTimeout<T>(handlerPromise: Promise<T>, obj?: any): Promise<boolean | T> {
-		// 30秒応答が帰ってこない場合、falseとする
-		return Promise.race([
-			handlerPromise,
-			new Promise<boolean>((resolve) =>
-				setTimeout(() => {
-					console.log("hooks Timeout!");
-					if (obj) console.dir(obj);
-					// 管理者にDM
-					this.post({
-						text: "何らかの処理がタイムアウトしました！\nログをご確認ください。",
-						visibility: "specified",
-						visibleUserIds: ["9d5ts6in38"],
-					});
-					resolve(false); // resolveでfalseを返す
-				}, 30000)
-			)
-		]) as Promise<boolean | T>;
+@autobind
+private async handlerTimeout<T>(handlerPromise: Promise<T>, obj?: any): Promise<boolean | T> {
+    return new Promise<boolean | T>((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+            console.log("hooks Timeout!");
+            if (obj) console.dir(obj);
+            // 管理者にDM
+            this.post({
+                text: "ハンドラーの処理がタイムアウトしました！\nログをご確認ください。",
+                visibility: "specified",
+                visibleUserIds: ["9d5ts6in38"],
+            });
+            resolve(false); // resolveでfalseを返す
+        }, 30000);
+
+        handlerPromise.then(result => {
+            clearTimeout(timeoutId);
+            resolve(result);
+        }).catch(error => {
+            clearTimeout(timeoutId);
+            reject(error);
+        });
+    });
 	}
 
 	/**
