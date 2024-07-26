@@ -608,7 +608,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     let enemyDef = (typeof enemy.def === "function") ? enemy.def(atk, def, spd) : lv * 3.5 * (enemy.def ?? 1);
 
     if (skillEffects.enemyStatusBonus) {
-        const enemyStrongs = (enemyAtk / (lv * 3.5)) * (getVal(enemy.atkx, [3]) ?? 3) + (enemyDef / (lv * 3.5)) * (getVal(enemy.defx, [3]) ?? 3);
+        const enemyStrongs = Math.min((enemyAtk / (lv * 3.5)) * (getVal(enemy.atkx, [3]) ?? 3) + (enemyDef / (lv * 3.5)) * (getVal(enemy.defx, [3]) ?? 3), 40);
         const bonus = Math.floor((enemyStrongs / 4) * skillEffects.enemyStatusBonus);
         atk = atk * (1 + (bonus / 100))
         def = def * (1 + (bonus / 100))
