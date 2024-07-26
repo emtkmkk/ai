@@ -217,6 +217,27 @@ export default class 藍 {
 		this.log(chalk.green.bold('Ai am now running!'));
 	}
 
+	@autobind
+	private async handlerTimeout(handlerPromise: Promise<MentionHook | ContextHook>): Promise<boolean | HandlerResult | null> {
+		// 30秒応答が帰ってこない場合、falseとする
+		return Promise.race([
+			handlerPromise,
+			new Promise((resolve) =>
+				setTimeout(() => {
+					console.log("hooks Timeout!");
+					console.dir(msg);
+					// 管理者にDM
+					this.post({
+						text: "何らかの処理がタイムアウトしました！\nログをご確認ください。",
+						visibility: "specified",
+						visibleUserIds: ["9d5ts6in38"],
+					});
+					resolve(false); // resolveでfalseを返す
+				}, 30000)
+			)
+		]);
+	}
+
 	/**
 	 * ユーザーから話しかけられたとき
 	 * (メンション、リプライ、トークのメッセージ)
@@ -246,7 +267,7 @@ export default class 藍 {
 			let res: boolean | HandlerResult | null = null;
 
 			for (const handler of this.mentionHooks) {
-				res = await handler(msg);
+				res = await handlerTimeout(handler(msg));
 				if (res === true || typeof res === 'object') break;
 			}
 
@@ -260,7 +281,7 @@ export default class 藍 {
 		// なければそれぞれのモジュールについてフックが引っかかるまで呼び出し
 		if (context != null) {
 			const handler = this.contextHooks[context.module];
-			const res = await handler(context.key, msg, context.data);
+			const res = await handlerTimeout(handler(context.key, msg, context.data));
 
 			if (res != null && typeof res === 'object') {
 				if (res.reaction != null) reaction = res.reaction;
