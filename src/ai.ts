@@ -218,14 +218,14 @@ export default class 藍 {
 	}
 
 	@autobind
-	private async handlerTimeout(handlerPromise: Promise<MentionHook | ContextHook>): Promise<boolean | HandlerResult | null> {
+	private async handlerTimeout(handlerPromise: Promise<MentionHook | ContextHook>, obj?: any): Promise<boolean | HandlerResult | null> {
 		// 30秒応答が帰ってこない場合、falseとする
 		return Promise.race([
 			handlerPromise,
 			new Promise((resolve) =>
 				setTimeout(() => {
 					console.log("hooks Timeout!");
-					console.dir(msg);
+					if (obj) console.dir(obj);
 					// 管理者にDM
 					this.post({
 						text: "何らかの処理がタイムアウトしました！\nログをご確認ください。",
@@ -267,7 +267,7 @@ export default class 藍 {
 			let res: boolean | HandlerResult | null = null;
 
 			for (const handler of this.mentionHooks) {
-				res = await handlerTimeout(handler(msg));
+				res = await this.handlerTimeout(handler(msg), msg);
 				if (res === true || typeof res === 'object') break;
 			}
 
@@ -281,7 +281,7 @@ export default class 藍 {
 		// なければそれぞれのモジュールについてフックが引っかかるまで呼び出し
 		if (context != null) {
 			const handler = this.contextHooks[context.module];
-			const res = await handlerTimeout(handler(context.key, msg, context.data));
+			const res = await this.handlerTimeout(handler(context.key, msg, context.data), {key:context.key, msg, data:context.data});
 
 			if (res != null && typeof res === 'object') {
 				if (res.reaction != null) reaction = res.reaction;
