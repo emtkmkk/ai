@@ -216,13 +216,13 @@ export default class 藍 {
 
 		this.log(chalk.green.bold('Ai am now running!'));
 	}
-
+	
 	@autobind
 	private async handlerTimeout<T>(handlerPromise: Promise<T>, obj?: any): Promise<boolean | T> {
 		// 30秒応答が帰ってこない場合、falseとする
 		return Promise.race([
 			handlerPromise,
-			new Promise((resolve) =>
+			new Promise<boolean>((resolve) =>
 				setTimeout(() => {
 					console.log("hooks Timeout!");
 					if (obj) console.dir(obj);
@@ -235,7 +235,7 @@ export default class 藍 {
 					resolve(false); // resolveでfalseを返す
 				}, 30000)
 			)
-		]);
+		]) as Promise<boolean | T>;
 	}
 
 	/**
