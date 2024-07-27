@@ -358,12 +358,12 @@ export const shopItems: ShopItem[] = [
   {
     name: '不幸の種',
     limit: (data, rnd) => data.lv > 50 && rnd() < 0.35,
-    desc: 'Lv-1 パワー-4 防御-3',
-    price: 30,
+    desc: 'Lv-1 パワー-3 防御-3',
+    price: (data, rnd) => (rnd() < 0.7 ? 20 : rnd() < 0.5 ? 10 : 30),
     type: 'item',
     effect: (data) => {
       data.lv -= 1;
-      data.atk -= 4;
+      data.atk -= 3;
       data.def -= 3;
     },
   },
