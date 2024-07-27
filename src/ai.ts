@@ -227,6 +227,36 @@ export default class 藍 {
     this.log('Ai am now running!');
   }
 
+  @autobind
+  private async handlerTimeout<T>(
+    handlerPromise: Promise<T>,
+    obj?: any,
+  ): Promise<boolean | T> {
+    return new Promise<boolean | T>((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        console.log('hooks Timeout!');
+        if (obj) console.dir(obj);
+        // 管理者にDM
+        this.post({
+          text: 'ハンドラーの処理がタイムアウトしました！\nログをご確認ください。',
+          visibility: 'specified',
+          visibleUserIds: ['9d5ts6in38'],
+        });
+        resolve(false); // resolveでfalseを返す
+      }, 30000);
+
+      handlerPromise
+        .then((result) => {
+          clearTimeout(timeoutId);
+          resolve(result);
+        })
+        .catch((error) => {
+          clearTimeout(timeoutId);
+          reject(error);
+        });
+    });
+  }
+
   /**
    * ユーザーから話しかけられたとき
    * (メンション、リプライ、トークのメッセージ)
@@ -261,7 +291,7 @@ export default class 藍 {
       let res: boolean | HandlerResult | null = null;
 
       for (const handler of this.mentionHooks) {
-        res = await handler(msg);
+        res = await this.handlerTimeout(handler(msg), msg);
         if (res === true || typeof res === 'object') break;
       }
 
@@ -275,7 +305,10 @@ export default class 藍 {
     // なければそれぞれのモジュールについてフックが引っかかるまで呼び出し
     if (context != null) {
       const handler = this.contextHooks[context.module];
-      const res = await handler(context.key, msg, context.data);
+      const res = await this.handlerTimeout(
+        handler(context.key, msg, context.data),
+        { key: context.key, msg, data: context.data },
+      );
 
       if (res != null && typeof res === 'object') {
         if (res.reaction != null) reaction = res.reaction;
