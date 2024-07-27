@@ -265,7 +265,7 @@ export default class extends Module {
 
       // トリガー者が管理人でない かつ クールタイムが開けていない場合
       if (
-        msg.user.username !== config.master &&
+        (msg.user.host || msg.user.username !== config.master) &&
         Date.now() - recentGame.startedAt < 1000 * 60 * 60 * cth
       ) {
         const ct = Math.ceil(
@@ -282,9 +282,17 @@ export default class extends Module {
         };
       }
 
-      if (msg.user.username === config.master && msg.includes(['inf']))
+      if (
+        !msg.user.host &&
+        msg.user.username === config.master &&
+        msg.includes(['inf'])
+      )
         flg = 'inf';
-      if (msg.user.username === config.master && msg.includes(['med']))
+      if (
+        !msg.user.host &&
+        msg.user.username === config.master &&
+        msg.includes(['med'])
+      )
         flg += ' med';
     }
 

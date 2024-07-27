@@ -440,7 +440,11 @@ export default class extends Module {
       msg.reply('わらわが覚えた答えじゃ！\n```\n' + pollresultstr + '\n```');
       return { reaction: ':neofox_heart:' };
     } else {
-      if (!msg.includes(['/poll']) || msg.user.username !== config.master) {
+      if (
+        !msg.includes(['/poll']) ||
+        msg.user.host ||
+        msg.user.username !== config.master
+      ) {
         return false;
       } else {
       }
