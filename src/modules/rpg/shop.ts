@@ -767,7 +767,7 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
       '',
       serifs.rpg.shop.welcome(data.coin),
       ...showShopItems.map(
-        (x, index) => `[${index + 1}] ${x.name} ${x.price}枚\n${x.desc}\n`,
+        (x, index) => `[${index + 1}] ${x.name} ${x.price}個\n${x.desc}\n`,
       ),
     ].join('\n'),
     { visibility: 'specified' },

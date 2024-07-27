@@ -1961,9 +1961,7 @@ export default class extends Module {
       }
     }
 
-    const skillCounts = [20, 50, 100, 175, 255].filter(
-      (x) => data.lv >= x,
-    ).length;
+    const skillCounts = [1, 20, 50, 80, 100].filter((x) => data.lv >= x).length;
 
     if ((data.skills ?? []).length < skillCounts) {
       if (!data.skills) data.skills = [];

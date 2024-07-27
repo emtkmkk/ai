@@ -604,7 +604,16 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
   const bonusX =
     day === 6 || day === 0
       ? 0.5
-      : (Math.floor(seedrandom('' + msg.user.id + ai.account.id)() * 5 + day) %
+      : (Math.floor(
+          seedrandom(
+            '' +
+              msg.user.id +
+              Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) +
+              ai.account.id,
+          )() *
+            5 +
+            day,
+        ) %
           5) *
         0.125;
   atk = Math.round(atk * (1 + bonusX));
