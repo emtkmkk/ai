@@ -1047,11 +1047,11 @@ export const enemys: Enemy[] = [
     losemsg: '阨ちゃんは悲しくて逃げ出してしまった…',
     endingmsg:
       'aine_youshou:の大人げない本気の暴言にも負けずに追い返す事が出来た！',
-    atk: 15,
-    def: 15,
-    maxdmg: 0.6,
-    atkx: 7,
-    defx: 7,
+    atk: 20,
+    def: 20,
+    maxdmg: 0.8,
+    atkx: 10,
+    defx: 10,
     abort: 0.04,
   },
   {
@@ -1256,6 +1256,62 @@ export const raidEnemys: RaidEnemy[] = [
     atkx: 3,
     defx: 8,
     power: 30,
+  },
+  {
+    name: ':manbou_lefthand:',
+    msg: ':manbou_lefthand:討伐戦！',
+    short: '',
+    mark: '☆',
+    mark2: '★',
+    atkmsg: (dmg) =>
+      `阨ちゃんの攻撃！\n:manbou_lefthand:に${dmg}ポイントのダメージ！`,
+    defmsg: (dmg) =>
+      `::manbou_lefthand:は跳ねた！\n阨ちゃんに${dmg}ポイントのダメージ！`,
+    winmsg: '',
+    losemsg: '阨ちゃんは疲れで倒れてしまった…',
+    atk: 1,
+    def: 0.1,
+    atkx: 3,
+    defx: 0.01,
+    power: 1,
+  },
+  {
+    name: ':aichan:',
+    msg: 'もう一人の自分討伐戦！',
+    short: '',
+    mark: '☆',
+    mark2: '★',
+    lToR: false,
+    atkmsg: (dmg) =>
+      `阨ちゃんの攻撃！\nもう一人の自分に${dmg}ポイントのダメージ！`,
+    defmsg: (dmg) =>
+      `もう一人の自分攻撃！\n阨ちゃんに${dmg}ポイントのダメージ！`,
+    winmsg: '',
+    losemsg: '阨ちゃんはやられてしまった…',
+    atk: (atk, def, spd) => def,
+    def: (atk, def, spd) =>
+      atk * (spd <= 2 ? spd : spd === 3 ? 2.5 : 2.75 + spd * 0.125),
+    atkx: 4.25,
+    defx: 4.25,
+    power: 25,
+  },
+  {
+    name: ':ainekun_dot_oko:',
+    msg: ':ainekun_dot_oko:討伐戦！',
+    short: '',
+    mark: '☆',
+    mark2: '★',
+    atkmsg: (dmg) =>
+      `阨ちゃんのお話し攻撃！\n:ainekun_dot_oko:の精神に${dmg}ポイントのダメージ！`,
+    defmsg: (dmg) =>
+      `:ainekun_dot_oko:の超絶悪逆残酷非道マインドクラッシュ罵詈雑言！\n阨ちゃんの精神に${dmg}ポイントのダメージ！`,
+    winmsg: '',
+    losemsg: '阨ちゃんは目の前が真っ暗になった…',
+    atk: 10,
+    def: 10,
+    atkx: (count) => Math.min(count * 2 + 1, 12),
+    defx: (count) => Math.min(count + 1, 6),
+    power: 100,
   },
 ];
 
