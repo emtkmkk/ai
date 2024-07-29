@@ -779,8 +779,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
                     if (!(isBattle && isPhysical)) {
                         mindMsg(item.mind)
                         if (item.mind < 0 && isSuper) item.mind = item.mind / 2
-                        itemBonus.atk = atk * (item.mind * 0.0035);
-                        itemBonus.def = def * (item.mind * 0.0035);
+                        itemBonus.atk = atk * (item.mind * 0.0025);
+                        itemBonus.def = def * (item.mind * 0.0025);
                         atk = atk + itemBonus.atk;
                         def = def + itemBonus.def;
                     } else {
@@ -973,7 +973,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
                 if (playerHp > dmg || (count === 3 && enemy.fire && (data.thirdFire ?? 0) <= 2)) {
                     playerHp -= dmg
                     message += (crit ? `**${enemy.defmsg(dmg)}**` : enemy.defmsg(dmg)) + "\n"
-                    if (noItemDmg - dmg > 1) {
+                    if (itemBonus.def && noItemDmg - dmg > 1) {
                         message += `(道具効果: -${noItemDmg - dmg})\n`
                     }
                     if (playerHp <= 0 && !enemy.notEndure) {
@@ -1020,7 +1020,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
             // メッセージの出力
             message += (crit ? `**${enemy.atkmsg(dmg)}**` : enemy.atkmsg(dmg)) + "\n"
             totalDmg += dmg
-            if (dmg - noItemDmg > 1) {
+            if (itemBonus.atk && dmg - noItemDmg > 1) {
                 message += `(道具効果: +${dmg - noItemDmg})\n`
             }
             // 敵のHPが0以下になった場合は、以降の攻撃をキャンセル
@@ -1083,7 +1083,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
                     const noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX, getVal(enemy.atkx, [count]));
                     playerHp -= dmg
                     message += (crit ? `**${enemy.defmsg(dmg)}**` : enemy.defmsg(dmg)) + "\n"
-                    if (noItemDmg - dmg > 1) {
+                    if (itemBonus.def && noItemDmg - dmg > 1) {
                         message += `(道具効果: -${noItemDmg - dmg})\n`
                     }
                     if (dmg > maxDmg) maxDmg = dmg;
