@@ -507,7 +507,7 @@ export function getSkillsShortName(data: { items?: ShopItem[], skills: Skill[] }
     return {skills: dataSkills, amulet: amuletShort};
 }
 
-export function amuletMinusDurability(data: { items?: ShopItem[], skills: Skill[] }): string {
+export function amuletMinusDurability(data: { items?: ShopItem[], skills: Skill[], lastBreakItem?: string }): string {
     let ret = "";
     if (data.items?.filter((x) => x.type === "amulet").length) {
         const amulet = data.items?.filter((x) => x.type === "amulet")[0] as AmuletItem;
