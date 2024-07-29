@@ -2038,7 +2038,6 @@ export default class extends Module {
 
     msg.reply(`<center>${message}</center>`, {
       cw,
-      visibility: 'public',
     });
 
     return {

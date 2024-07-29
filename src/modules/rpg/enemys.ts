@@ -1266,7 +1266,7 @@ export const raidEnemys: RaidEnemy[] = [
     atkmsg: (dmg) =>
       `阨ちゃんの攻撃！\n:manbou_lefthand:に${dmg}ポイントのダメージ！`,
     defmsg: (dmg) =>
-      `::manbou_lefthand:は跳ねた！\n阨ちゃんに${dmg}ポイントのダメージ！`,
+      `:manbou_lefthand:は跳ねた！\n阨ちゃんに${dmg}ポイントのダメージ！`,
     winmsg: '',
     losemsg: '阨ちゃんは疲れで倒れてしまった…',
     atk: 1,

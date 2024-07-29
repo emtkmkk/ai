@@ -1526,6 +1526,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
   } else {
     reply = await msg.reply(`<center>${message}</center>`, {
       cw,
+      visibility: 'home', // 強制的にhome公開させる
     });
   }
 
