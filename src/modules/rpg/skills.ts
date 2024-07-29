@@ -317,7 +317,7 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
             if (msg.includes([String(i + 1)])) {
                 if (!playerSkills[i].cantReroll) {
                     const oldSkillName = playerSkills[i].name
-                    const list = data.skills.filter((x) => x.name !== oldSkillName && !x.unique && !x.cantReroll)
+                    const list = playerSkills.filter((x) => x.name !== oldSkillName && !x.unique && !x.cantReroll)
                     if (!list.length) {
                         msg.reply(`\n複製可能なスキルがありません！`);
                         return { reaction: 'confused' };
