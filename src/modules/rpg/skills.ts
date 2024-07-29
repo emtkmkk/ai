@@ -322,7 +322,7 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
                         msg.reply(`\n複製可能なスキルがありません！`);
                         return { reaction: 'confused' };
                     }
-                    data.skills[i] = list[Math.random() * list.length];
+                    data.skills[i] = list[Math.floor(Math.random() * list.length)];
                     msg.reply(`\n` + serifs.rpg.moveToSkill(oldSkillName, data.skills[i].name) + `\n効果: ${data.skills[i].desc}` + (aggregateTokensEffects(data).showSkillBonus && data.skills[i].info ? `\n詳細効果: ${data.skills[i].info}` : ""))
                     data.duplicationOrb -= 1
                     msg.friend.setPerModulesData(module, data);
