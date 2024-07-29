@@ -1156,6 +1156,59 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         message += "\n\n" + amuletmsg
     }
 
+    data.exp = (data.exp ?? 0) + 1;
+
+    if (data.exp >= 3) {
+        message += "\n\n" + serifs.rpg.expPoint(data.exp);
+    }
+
+    const rpgData = ai.moduleData.findOne({ type: 'rpg' });
+    if (data.exp >= 5 && data.lv < rpgData.maxLv) {
+
+        // レベルアップ処理
+        data.lv = (data.lv ?? 1) + 1;
+        let atkUp = (2 + Math.floor(Math.random() * 4));
+        let totalUp = 7;
+        while (Math.random() < 0.335) {
+            totalUp += 1;
+            if (Math.random() < 0.5) atkUp += 1
+        }
+
+        if (totalUp > (data.maxStatusUp ?? 7)) data.maxStatusUp = totalUp;
+
+        if (skillEffects.statusBonus && skillEffects.statusBonus > 0 && data.lv % Math.max(2 / skillEffects.statusBonus, 1) === 0) {
+            const upBonus = Math.ceil(skillEffects.statusBonus / 2)
+            for (let i = 0; i < upBonus; i++) {
+                if (Math.random() < 0.5) atkUp += 1
+            }
+        }
+
+        while (data.lv >= 3 && data.atk + data.def + totalUp < (data.lv - 1) * 7) {
+            totalUp += 1
+            if (Math.random() < 0.5) atkUp += 1
+        }
+
+        if (data.atk > 0 && data.def > 0) {
+            /** 攻撃力と防御力の差 */
+            const diff = data.atk - data.def;
+            const totalrate = 0.2 + Math.min(Math.abs(diff) * 0.005, 0.3)
+            const rate = (Math.pow(0.5, Math.abs(diff / 100)) * (totalrate / 2))
+            if (Math.random() < (diff > 0 ? totalrate - rate : rate)) atkUp = totalUp;
+            else if (Math.random() < (diff < 0 ? totalrate - rate : rate)) atkUp = 0;
+        }
+        data.atk = (data.atk ?? 0) + atkUp;
+        data.def = (data.def ?? 0) + totalUp - atkUp;
+        data.exp = 0;
+        
+        message += [
+            `\n\n${serifs.rpg.lvUp}`,
+            `  ${serifs.rpg.status.lv} : ${data.lv ?? 1} (+1)`,
+            `  ${serifs.rpg.status.atk} : ${data.atk ?? 0} (+${atkUp})`,
+            `  ${serifs.rpg.status.def} : ${data.def ?? 0} (+${totalUp - atkUp})`,
+        ].filter(Boolean).join("\n")
+
+    }
+
     data.raid = false;
     msg.friend.setPerModulesData(module_, data);
 
