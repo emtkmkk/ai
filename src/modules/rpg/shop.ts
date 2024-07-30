@@ -123,7 +123,7 @@ export const shopItems: ShopItem[] = [
     { name: `呪いの人形`, limit: (data) => data.revenge, price: 44, desc: `持っていると前回負けた敵に戦う際に20%ステータスアップ 耐久1 リベンジ成功時耐久減少`, type: "amulet", effect: { atkUp: 0.2, defUp: 0.2 }, durability: 1, short: "呪", isUsed: (data) => data.enemy?.name === data.revenge, isMinusDurability: (data) => !data.revenge } as AmuletItem,
     { name: `交通安全のお守り`, price: 30, desc: `持っているとターン1で30%ダメージカット 耐久10 使用時耐久減少`, type: "amulet", effect: { firstTurnResist: 0.3 }, durability: 10, short: "安", isUsed: (data) => data.raid || data.count === 1 } as AmuletItem,
     { name: `高級交通安全のお守り`, price: 99, desc: `持っているとターン1で70%ダメージカット 耐久10 使用時耐久減少`, type: "amulet", effect: { firstTurnResist: 0.7 }, durability: 10, short: "S安", isUsed: (data) => data.raid || data.count === 1 } as AmuletItem,
-    { name: `気合のハチマキ`, price: 55, desc: `購入時、気合アップ`, type: "item", effect: (data) => data.endure = (data.endure ?? 0) + 4 },
+    { name: `気合のハチマキ`, price: 55, desc: `購入時、気合アップ`, limit: (data) => data.endure <= 6 ,type: "item", effect: (data) => data.endure = (data.endure ?? 0) + 4 },
     { name: `壺`, limit: (data) => data.lv >= 20, price: 200, desc: `なんかいい感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
     { name: `きれいな壺`, limit: (data) => (data.jar ?? 0) === 1, price: 400, desc: `なんかきれいな感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
     { name: `すごい壺`, limit: (data) => (data.jar ?? 0) === 2, price: 800, desc: `なんかすごい感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
