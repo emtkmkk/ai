@@ -444,7 +444,7 @@ export default {
 		totalDmg: (dmg) => `合計 ${dmg.toLocaleString()} ダメージを与えた！`,
 		hiScore: (old: number, dmg: number) => `自己ベスト更新！\n${old.toLocaleString()} -> **${dmg.toLocaleString()}**`,
 		GlobalHiScore: (old: number, date, dmg: number) => `ベストダメージ更新！\n${old.toLocaleString()}(${date}) -> **${dmg.toLocaleString()}**`,
-		expPoint: (exp: number) => `RPGモードでのレベルアップまでに、\nレイドボスに5回参加すると、\nレベルアップが発生します！\nレイド経験値: ${"◆".repeat(exp) + "◇".repeat(Math.max(5-exp, 0))}`,
+		expPoint: (exp: number) => `RPGモードで1つレベルが上がるまでに\nレイドボスに5回参加で\nレイドでのレベルアップが発生！\nレイド経験値: ${"◆".repeat(exp) + "◇".repeat(Math.max(5-exp, 0))}`,
 		nowStatus: "現在のステータス",
 		lvUp: "今回のレベルアップ :",
 		rpgMode: "RPGモード : ",
