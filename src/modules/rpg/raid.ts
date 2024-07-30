@@ -110,8 +110,8 @@ function scheduleRaidStart() {
         start();
     }
     const day = new Date().getDay()
-    const randomHours = [7, 9, 10, 11, 13, 14, 15, 16, 17, 19, 20, 22];
-    const randomMinutes = [0, 15, 30, 45];
+    const randomHours = [6, 7, 9, 10, 11, 13, 14, 15, 16, 17, 19, 20, 22];
+    const randomMinutes = [0, 20, 30, 50];
     let rnd = seedrandom(getDate() + ai.account.id)
     if (day >= 1 && day <= 4 && hours === randomHours[Math.floor(rnd() * randomHours.length)] && minutes === randomMinutes[Math.floor(rnd() * randomMinutes.length)]) {
         start();
