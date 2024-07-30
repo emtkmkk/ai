@@ -685,14 +685,14 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
       if (msg.includes([String(i + 1)])) {
         if (!playerSkills[i].cantReroll) {
           const oldSkillName = playerSkills[i].name;
-          const list = data.skills.filter(
+          const list = playerSkills.filter(
             (x) => x.name !== oldSkillName && !x.unique && !x.cantReroll,
           );
           if (!list.length) {
             msg.reply(`\n複製可能なスキルがありません！`);
             return { reaction: 'confused' };
           }
-          data.skills[i] = list[Math.random() * list.length];
+          data.skills[i] = list[Math.floor(Math.random() * list.length)];
           msg.reply(
             `\n` +
               serifs.rpg.moveToSkill(oldSkillName, data.skills[i].name) +
@@ -993,6 +993,7 @@ export function getSkillsShortName(data: {
 export function amuletMinusDurability(data: {
   items?: ShopItem[];
   skills: Skill[];
+  lastBreakItem?: string;
 }): string {
   let ret = '';
   if (data.items?.filter((x) => x.type === 'amulet').length) {
@@ -1024,8 +1025,9 @@ export function amuletMinusDurability(data: {
           if (boost <= 0 || Math.random() < 1 / Math.pow(1.5, boost * 2)) {
             x.durability -= 1;
             if (x.durability <= 0) {
+              data.lastBreakItem = amulet.name;
               data.items = data.items?.filter((x) => x.type !== 'amulet');
-              ret = `${x.name}が壊れてしまったのじゃ！`;
+              ret = `${x.name}が壊れました！`;
             } else {
               ret = `${x.name} 残耐久${x.durability}`;
             }

@@ -716,10 +716,13 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
       getShopItems(),
       getShopItems(),
       getShopItems(),
-      getShopItems(),
+      data.lastBreakItem && Math.random() < 0.95
+        ? data.lastBreakItem
+        : getShopItems(),
       determineOutcome(ai, data, getShopItems),
     ];
     data.lastShopVisited = getDate();
+    data.lastBreakItem = null;
     module.unsubscribeReply('shopBuy:' + msg.userId);
   }
 

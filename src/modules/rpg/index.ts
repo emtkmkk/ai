@@ -1919,6 +1919,7 @@ export default class extends Module {
     }
     data.atk = (data.atk ?? 0) + atkUp;
     data.def = (data.def ?? 0) + totalUp - atkUp;
+    data.exp = 0;
 
     /** 追加表示メッセージ */
     let addMessage = '';

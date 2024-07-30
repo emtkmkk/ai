@@ -501,6 +501,8 @@ export default {
     hiScore: (old, dmg) => `自己ベスト更新！\n${old} -> **${dmg}**`,
     GlobalHiScore: (old, date, dmg) =>
       `ベストダメージ更新！\n${old}(${date}) -> **${dmg}**`,
+    expPoint: (exp: number) =>
+      `RPGモードで1つレベルが上がるまでに\nレイドボスに5回参加で\nレイドでのレベルアップが発生！\nレイド経験値: ${'◆'.repeat(exp) + '◇'.repeat(Math.max(5 - exp, 0))}`,
     nowStatus: '現在のステータス',
     lvUp: '今回のレベルアップ :',
     rpgMode: 'RPGモード : ',

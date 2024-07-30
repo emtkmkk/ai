@@ -132,7 +132,7 @@ function scheduleRaidStart() {
   }
 
   const usedTimes: string[] = []; // 使用済みの時間を記録する配列
-  const randomHours = [7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 19, 20, 22];
+  const randomHours = [7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 19, 20, 22, 23];
   const randomMinutes = [0, 15, 30, 45];
   let rnd = seedrandom(getDate() + ai.account.id);
 
@@ -961,8 +961,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
           if (!(isBattle && isPhysical)) {
             mindMsg(item.mind);
             if (item.mind < 0 && isSuper) item.mind = item.mind / 2;
-            itemBonus.atk = atk * (item.mind * 0.0035);
-            itemBonus.def = def * (item.mind * 0.0035);
+            itemBonus.atk = atk * (item.mind * 0.0025);
+            itemBonus.def = def * (item.mind * 0.0025);
             atk = atk + itemBonus.atk;
             def = def + itemBonus.def;
           } else {
@@ -1213,7 +1213,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
           playerHp -= dmg;
           message +=
             (crit ? `**${enemy.defmsg(dmg)}**` : enemy.defmsg(dmg)) + '\n';
-          if (noItemDmg - dmg > 1) {
+          if (itemBonus.def && noItemDmg - dmg > 1) {
             message += `(道具効果: -${noItemDmg - dmg})\n`;
           }
           if (playerHp <= 0 && !enemy.notEndure) {
@@ -1297,7 +1297,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
       // メッセージの出力
       message += (crit ? `**${enemy.atkmsg(dmg)}**` : enemy.atkmsg(dmg)) + '\n';
       totalDmg += dmg;
-      if (dmg - noItemDmg > 1) {
+      if (itemBonus.atk && dmg - noItemDmg > 1) {
         message += `(道具効果: +${dmg - noItemDmg})\n`;
       }
       // 敵のHPが0以下になった場合は、以降の攻撃をキャンセル
@@ -1404,7 +1404,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
           playerHp -= dmg;
           message +=
             (crit ? `**${enemy.defmsg(dmg)}**` : enemy.defmsg(dmg)) + '\n';
-          if (noItemDmg - dmg > 1) {
+          if (itemBonus.def && noItemDmg - dmg > 1) {
             message += `(道具効果: -${noItemDmg - dmg})\n`;
           }
           if (dmg > maxDmg) maxDmg = dmg;
@@ -1455,9 +1455,12 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
   }
 
   if (playerHp > 0) {
+    const enemySAtk = (_enemyAtk / (lv * 3.5)) * (getVal(enemy.atkx, [6]) ?? 3);
+    const enemySDef = (_enemyDef / (lv * 3.5)) * (getVal(enemy.defx, [6]) ?? 3);
     const dmg = Math.round(
       (playerHp / (100 + lv * 3)) *
-        1000 *
+        (1000 + (enemySAtk >= 24 ? enemySAtk / 0.048 : 0)) *
+        Math.max(enemySAtk / enemySDef, 1) *
         (1 + (skillEffects.finalAttackUp ?? 0)),
     );
     message +=
@@ -1495,6 +1498,55 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
   if (amuletmsg) {
     message += '\n\n' + amuletmsg;
+  }
+
+  data.exp = (data.exp ?? 0) + 1;
+
+  if (data.exp >= 3) {
+    message += '\n\n' + serifs.rpg.expPoint(data.exp);
+  }
+
+  const rpgData = ai.moduleData.findOne({ type: 'rpg' });
+  if (data.exp >= 5 && data.lv < rpgData.maxLv) {
+    // レベルアップ処理
+    data.lv = (data.lv ?? 1) + 1;
+    let atkUp = 2 + Math.floor(Math.random() * 4);
+    let totalUp = 7;
+    while (Math.random() < 0.335) {
+      totalUp += 1;
+      if (Math.random() < 0.5) atkUp += 1;
+    }
+
+    if (totalUp > (data.maxStatusUp ?? 7)) data.maxStatusUp = totalUp;
+
+    if (
+      skillEffects.statusBonus &&
+      skillEffects.statusBonus > 0 &&
+      data.lv % Math.max(2 / skillEffects.statusBonus, 1) === 0
+    ) {
+      const upBonus = Math.ceil(skillEffects.statusBonus / 2);
+      for (let i = 0; i < upBonus; i++) {
+        if (Math.random() < 0.5) atkUp += 1;
+      }
+    }
+
+    while (data.lv >= 3 && data.atk + data.def + totalUp < (data.lv - 1) * 7) {
+      totalUp += 1;
+      if (Math.random() < 0.5) atkUp += 1;
+    }
+
+    data.atk = (data.atk ?? 0) + atkUp;
+    data.def = (data.def ?? 0) + totalUp - atkUp;
+    data.exp = 0;
+
+    message += [
+      `\n\n${serifs.rpg.lvUp}`,
+      `  ${serifs.rpg.status.lv} : ${data.lv ?? 1} (+1)`,
+      `  ${serifs.rpg.status.atk} : ${data.atk ?? 0} (+${atkUp})`,
+      `  ${serifs.rpg.status.def} : ${data.def ?? 0} (+${totalUp - atkUp})`,
+    ]
+      .filter(Boolean)
+      .join('\n');
   }
 
   data.raid = false;
