@@ -684,6 +684,17 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		enemyDef = _enemyDef;
         itemBonus = { atk: 0, def: 0 };
 
+			if (skillEffects.berserk) {
+				const berserkDmg = Math.min(Math.floor((100 + lv * 3) * (skillEffects.berserk ?? 0)), playerHp - 1)
+				playerHp -= berserkDmg;
+				playerHpPercent = playerHp / (100 + lv * 3);
+				if (berserkDmg >= 0) {
+					atk = atk * (1 + (skillEffects.berserk ?? 0))
+					buff += 1
+					message += serifs.rpg.skill.berserk(berserkDmg) + "\n"
+				}
+			}
+
 		// 毒属性剣攻撃
         if (skillEffects.weak && count > 1) {
             if (isBattle && isPhysical) {
