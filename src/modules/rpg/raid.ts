@@ -279,7 +279,7 @@ function finish(raid: Raid) {
     }
 
 		if (sortAttackers.length >= 5) {
-			const luckyUser = sortAttackers[Math.floor(Math.random() * sortAttackers.length)];
+			const luckyUser = sortAttackers[Math.floor(Math.random() * sortAttackers.length)].user;
 			const bonus = Math.ceil(sortAttackers.length / 25 * scoreRaw);
 			results.push("\nラッキー！: " + acct(luckyUser) + "\nもこコイン+" + bonus + "枚");
 			const friend = ai.lookupFriend(luckyUser.id);
