@@ -155,6 +155,7 @@ export type SkillEffect = {
     fortuneEffect?: number;
     /** 全力の一撃のダメージをn%増加 */
     finalAttackUp?: number;
+   	berserk?: number;
 };
 
 export type Skill = {
