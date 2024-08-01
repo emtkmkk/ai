@@ -278,9 +278,9 @@ function finish(raid: Raid) {
         ai.moduleData.insert({ type: 'rpg', maxLv: 1, raidScore: { [raid.enemy.name]: total }, raidScoreDate: { [raid.enemy.name]: getDate() } });
     }
 
-		if (sortAttackers.length >= 5) {
+		if (sortAttackers.length >= 3) {
 			const luckyUser = sortAttackers[Math.floor(Math.random() * sortAttackers.length)].user;
-			const bonus = Math.ceil(sortAttackers.length / 25 * scoreRaw);
+			const bonus = Math.ceil(sortAttackers.length / 5 * scoreRaw);
 			results.push("\nラッキー！: " + acct(luckyUser) + "\nもこコイン+" + bonus + "枚");
 			const friend = ai.lookupFriend(luckyUser.id);
         if (!friend) return;
