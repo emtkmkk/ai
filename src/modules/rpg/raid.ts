@@ -233,6 +233,7 @@ function finish(raid: Raid) {
 
     /** 評価スコア */
     const score = Math.max(Math.floor(Math.log2(total / (1024 / ((raid.enemy.power ?? 30) / 30))) + 1), 1);
+	const scoreRaw = Math.max(Math.log2(total / (1024 / ((raid.enemy.power ?? 30) / 30))) + 1, 1);
 
     if (sortAttackers?.[0]) {
         if (sortAttackers?.[0].mark === ":blank:") {
@@ -276,6 +277,17 @@ function finish(raid: Raid) {
     } else {
         ai.moduleData.insert({ type: 'rpg', maxLv: 1, raidScore: { [raid.enemy.name]: total }, raidScoreDate: { [raid.enemy.name]: getDate() } });
     }
+
+		if (sortAttackers.length >= 5) {
+			const luckyUser = sortAttackers[Math.floor(Math.random() * sortAttackers.length)];
+			const bonus = Math.ceil(sortAttackers.length / 25 * scoreRaw);
+			results.push("\nラッキー！: " + acct(luckyUser) + "\nもこコイン+" + bonus + "枚");
+			const friend = ai.lookupFriend(luckyUser.id);
+        if (!friend) return;
+        const data = friend.getPerModulesData(module_);
+        data.coin = Math.max((data.coin ?? 0) + (bonus ?? 1), data.coin);
+        friend.setPerModulesData(module_, data);
+		}
 
     const text = results.join('\n') + '\n\n' + serifs.rpg.finish(raid.enemy.name, score);
 
