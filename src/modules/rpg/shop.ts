@@ -98,6 +98,7 @@ export const skillPrice = (_ai: 藍, skillName: Skill["name"], rnd: () => number
 }
 
 export const shopItems: ShopItem[] = [
+	{ name: `お守りを捨てる`, limit: (data) => data.items.filter((x) => x.type === "amulet").length, price: 0, desc: `今所持しているお守りを捨てます`, type:"item", effect: (data) => data.items = data.items?.filter((x) => x.type !== "amulet"), always: true },
     { name: "おかわり2RPG自動支払いの札", limit: (data) => !data.items.filter((x) => x.name === "おかわり2RPG自動支払いの札").length && data.replayOkawari != null, desc: "所持している間、おかわりおかわりRPGをプレイする際に確認をスキップして自動でコインを消費します", price: 1, type: "token", effect: { autoReplayOkawari: true }, always: true },
     { name: "自動旅モードの札", limit: (data) => (data.maxEndress ?? 0) > 0 && !data.items.filter((x) => x.name === "自動旅モードの札").length, desc: "所持している間、旅モードに自動で突入します", price: (data) => data.allClear ? 1 : Math.max(8 - (data.maxEndress ?? 0), 1), type: "token", effect: { autoJournal: true }, always: true },
     { name: "†の札", limit: (data) => !data.items.filter((x) => x.name === "†の札").length && data.lv >= 99 && !data.clearHistory.includes(":mk_chickenda_gtgt:"), desc: "所持している間、本気の†を味わう事が出来ます", price: 5, type: "token", effect: { appearStrongBoss: true }, always: true },
@@ -121,8 +122,8 @@ export const shopItems: ShopItem[] = [
     { name: "タクシーチケット", desc: "購入時、旅モードのステージがベスト-1になる", limit: (data, rnd) => (data.maxEndress ?? 0) - (data.endress ?? 0) > 2, price: (data, rnd) => ((data.maxEndress ?? 0) - (data.endress ?? 0) - 1) * 8, type: "item", effect: (data) => { data.endress = (data.maxEndress ?? 0) - 1 }, infinite: true },
     { name: "不幸の種", limit: (data, rnd) => data.lv > 50 && rnd() < 0.35, desc: "Lv-1 パワー-3 防御-3", price: (data, rnd) => rnd() < 0.7 ? 20 : rnd() < 0.5 ? 10 : 30, type: "item", effect: (data) => { data.lv -= 1; data.atk -= 3; data.def -= 3 } },
     { name: `呪いの人形`, limit: (data) => data.revenge, price: 44, desc: `持っていると前回負けた敵に戦う際に20%ステータスアップ 耐久1 リベンジ成功時耐久減少`, type: "amulet", effect: { atkUp: 0.2, defUp: 0.2 }, durability: 1, short: "呪", isUsed: (data) => data.enemy?.name === data.revenge, isMinusDurability: (data) => !data.revenge } as AmuletItem,
-    { name: `交通安全のお守り`, price: 30, desc: `持っているとターン1で30%ダメージカット 耐久10 使用時耐久減少`, type: "amulet", effect: { firstTurnResist: 0.3 }, durability: 10, short: "安", isUsed: (data) => data.raid || data.count === 1 } as AmuletItem,
-    { name: `高級交通安全のお守り`, price: 99, desc: `持っているとターン1で70%ダメージカット 耐久10 使用時耐久減少`, type: "amulet", effect: { firstTurnResist: 0.7 }, durability: 10, short: "S安", isUsed: (data) => data.raid || data.count === 1 } as AmuletItem,
+    { name: `交通安全のお守り`, price: 30, desc: `持っているとターン1で30%ダメージカット 耐久10 使用時耐久減少`, type: "amulet", effect: { firstTurnResist: 0.3 }, durability: 10, short: "交安", isUsed: (data) => data.raid || data.count === 1 } as AmuletItem,
+    { name: `高級交通安全のお守り`, price: 99, desc: `持っているとターン1で70%ダメージカット 耐久10 使用時耐久減少`, type: "amulet", effect: { firstTurnResist: 0.7 }, durability: 10, short: "S交安", isUsed: (data) => data.raid || data.count === 1 } as AmuletItem,
     { name: `気合のハチマキ`, price: 55, desc: `購入時、気合アップ`, limit: (data) => data.endure <= 6 ,type: "item", effect: (data) => data.endure = (data.endure ?? 0) + 4 },
     { name: `壺`, limit: (data) => data.lv >= 20, price: 200, desc: `なんかいい感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
     { name: `きれいな壺`, limit: (data) => (data.jar ?? 0) === 1, price: 400, desc: `なんかきれいな感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
@@ -136,8 +137,8 @@ export const shopItems: ShopItem[] = [
     { name: `運命不変のお守り`, price: 40, desc: `持っていると与ダメージがランダム変化しなくなる 耐久20 使用時耐久減少`, type: "amulet", effect: { notRandom: 1 }, durability: 20, short: "不変", isUsed: (data) => true } as AmuletItem,
     { name: `しあわせのお守り`, price: 20, desc: `レイド時、ステータスの割合がランダムに一時的に変化する 耐久10 レイドでの使用時耐久減少`, type: "amulet", effect: { fortuneEffect: 1 }, durability: 10, short: "し", isUsed: (data) => data.raid } as AmuletItem,
     { name: `全力の一撃のお守り`, price: 20, desc: `レイド時、ターン7で発生する全力の一撃を強化します 耐久10 レイドでの使用時耐久減少`, type: "amulet", effect: { finalAttackUp: 0.3 }, durability: 10, short: "撃", isUsed: (data) => data.raid } as AmuletItem,
+	{ name: `バーサクのお守り`, price: 20, desc: `レイド時、毎ターンダメージを受けますが、パワーがアップします 耐久10 レイドでの使用時耐久減少`, type: "amulet", effect: { berserk: 0.15 }, durability: 10, short: "バ", isUsed: (data) => data.raid } as AmuletItem,
     ...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly).map((x): AmuletItem => ({ name: `${x.name}のお守り`, price: (data, rnd, ai) => skillPrice(ai, x.name, rnd), desc: `持っているとスキル「${x.name}」を使用できる 耐久6 使用時耐久減少`, type: "amulet", effect: x.effect, durability: 6, skillName: x.name, short: x.short, isUsed: (data) => true })),
-    { name: `お守りを捨てる`, limit: (data) => data.items.filter((x) => x.type === "amulet").length, price: 0, desc: `今所持しているお守りを捨てます`, type:"item", effect: (data) => data.items = data.items?.filter((x) => x.type !== "amulet"), always: true },
 ]
 
 function getRandomSkills(ai, num) {
