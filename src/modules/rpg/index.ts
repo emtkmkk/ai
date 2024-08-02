@@ -277,12 +277,16 @@ export default class extends Module {
 		}
 
 		if (data.jar) {
-			message.push(createRankMessage(data.jar, "壺購入数", "jar", {suffix: "個"}));
+			message.push(createRankMessage(data.jar, "壺購入数", "jar", { suffix: "個" }));
 		}
 
 		if (data.raidScore) {
-			for (const [key, value] of data.raidScore.filter(Boolean)) {
-				message.push(createRankMessage(value, key + " 最大ダメージ", "raidScore." + key, { suffix: data.clearRaid?.includes(key) ? " ⭐️" : "" }));
+			for (const raid of data.raidScore) {
+				for (const [key, value] of Object.entries(raid)) {
+					if (value && typeof value === "number") {
+						message.push(createRankMessage(value, key + " 最大ダメージ", `raidScore.${key}`, { suffix: data.clearRaid?.includes(key) ? " ⭐️" : "" }));
+					}
+				}
 			}
 		}
 
