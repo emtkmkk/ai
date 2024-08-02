@@ -247,11 +247,11 @@ export default class extends Module {
 			if (rank === 0) {
 				rankmsg = "？"; // 順位が見つからなかった場合
 			} else if (rank <= 10) {
-				rankmsg = `${rank === 1 ? "👑 " : ""}${rank}位`;
+				rankmsg = `${rank === 1 ? "👑" : "🎖️"}${rank}位`;
 			} else {
 				const total = values.length;
 				const percentage = (rank / total) * 100;
-				rankmsg = `上位${percentage.toFixed(1)}%`;
+				rankmsg = `${percentage < 10 ? "🥈" : percentage < 35 ? "🥉" : ""}上位${percentage.toFixed(1)}%`;
 			}
 
 			// 表示するスコアにだけaddValueを適用
