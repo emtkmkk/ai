@@ -203,6 +203,7 @@ export default class extends Module {
 		if (data.coin > 0) {
 			helpMessage.push(serifs.rpg.help.shop(data.coin))
 		}
+		helpMessage.push(serifs.rpg.help.record)
 		helpMessage.push(serifs.rpg.help.status)
 		helpMessage.push(serifs.rpg.help.link)
 		helpMessage.push(serifs.rpg.help.help)
@@ -224,19 +225,19 @@ export default class extends Module {
 			label: string,
 			dataKey: string,
 			options?: { prefix?: string, suffix?: string, addValue?: number }
-		) => {
+	) => {
 			const values = allData
-				.map(friend => {
-					if (dataKey.includes(".")) {
-						// 動的にプロパティにアクセスするための処理
-						const keys = dataKey.replace(/\[(\w+)\]/g, '.$1').split('.');
-						return keys.reduce((acc, key) => acc?.[key], friend.perModulesData?.rpg);
-					} else {
-						// 既存の単純なキーでのプロパティアクセス
-						return friend.perModulesData?.rpg?.[dataKey];
-					}
-				})
-				.filter(value => value !== undefined);
+					.map(friend => {
+							if (dataKey.includes(".")) {
+									// 動的にプロパティにアクセスするための処理
+									const keys = dataKey.replace(/\[(\w+)\]/g, '.$1').split('.');
+									return keys.reduce((acc, key) => acc?.[key], friend.perModulesData?.rpg);
+							} else {
+									// 既存の単純なキーでのプロパティアクセス
+									return friend.perModulesData?.rpg?.[dataKey];
+							}
+					})
+					.filter(value => value !== undefined);
 
 			values.sort((a, b) => b - a); // 降順でソート
 
@@ -245,27 +246,33 @@ export default class extends Module {
 			let rankmsg = "";
 
 			if (rank === 0) {
-				rankmsg = "？"; // 順位が見つからなかった場合
+					rankmsg = "？"; // 順位が見つからなかった場合
 			} else if (rank <= 10) {
-				rankmsg = `${rank === 1 ? "👑" : "🎖️"}${rank}位`;
+					rankmsg = `${rank === 1 ? "👑 " : "🎖️"}${rank}位`;
 			} else {
-				const total = values.length;
-				const percentage = (rank / total) * 100;
-				rankmsg = `${percentage < 10 ? "🥈" : percentage < 35 ? "🥉" : ""}上位${percentage.toFixed(1)}%`;
+					const total = values.length;
+					const percentage = (rank / total) * 100;
+
+					if (percentage < 50) {
+							rankmsg = `${percentage < 10 ? "🥈" : percentage < 35 ? "🥉" : ""}上位${percentage.toFixed(1)}%`;
+					} else {
+							const surpassedCount = total - rank;
+							rankmsg = `${surpassedCount}人超え`;
+					}
 			}
 
 			// 表示するスコアにだけaddValueを適用
 			const finalScoreDisplay = `${options?.prefix || ''}${(score + (options?.addValue || 0)).toLocaleString()}${options?.suffix || ''}`;
 
 			return `${label}\n${finalScoreDisplay} ${rankmsg}`;
-		};
+	};
 
 		if (data.lv) {
 			message.push(createRankMessage(data.lv, "Lv", "lv"));
 		}
 
 		if (data.bestScore) {
-			message.push(createRankMessage(data.bestScore, "最大木人ダメージ", "bestScore"));
+			message.push(createRankMessage(data.bestScore, "最大木人ダメージ", "bestScore", { suffix: "ダメージ" }));
 		}
 
 		if (data.maxEndress) {
@@ -273,7 +280,7 @@ export default class extends Module {
 		}
 
 		if (data.maxStatusUp) {
-			message.push(createRankMessage(data.maxStatusUp, "運の良さ", "maxStatusUp"));
+			message.push(createRankMessage(data.maxStatusUp, "運の良さ", "maxStatusUp", { suffix: "pts" }));
 		}
 
 		if (data.jar) {
@@ -283,7 +290,7 @@ export default class extends Module {
 		if (data.raidScore) {
 			for (const [key, value] of Object.entries(data.raidScore)) {
 				if (value && typeof value === "number") {
-					message.push(createRankMessage(value, key + " 最大ダメージ", `raidScore.${key}`, { suffix: data.clearRaid?.includes(key) ? " ⭐️" : "" }));
+					message.push(createRankMessage(value, key + " 最大ダメージ", `raidScore.${key}`, { suffix: data.clearRaid?.includes(key) ? "ダメージ ⭐️" : "ダメージ" }));
 				}
 			}
 		}
