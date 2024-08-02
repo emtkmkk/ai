@@ -1481,8 +1481,8 @@ export default class extends Module {
         const calcRerollOrbCount = Math.max(Math.min(Math.floor((data.lv - skillBorders[1]) / ((skillBorders[2] - skillBorders[1]) / 5)), 5), 0) + 
 					Math.max(Math.min(Math.floor((data.lv - skillBorders[2]) / ((skillBorders[3] - skillBorders[2]) / 10)), 10), 0) + 
 					Math.max(Math.min(Math.floor((data.lv - skillBorders[3]) / ((skillBorders[4] - skillBorders[3]) / 17)), 17), 0) + 
-					Math.max(Math.floor((data.lv + 1 - skillBorders[4]) / 2, 0) +
-					(Math.max(Math.floor((data.lv - (skillBorders[4] + 1)) / 64, 0) * 16);
+					Math.max(Math.floor((data.lv + 1 - skillBorders[4]) / 2), 0) +
+					(Math.max(Math.floor((data.lv - (skillBorders[4] + 1)) / 64), 0) * 16);
 
         if ((data.totalRerollOrb ?? 0) < calcRerollOrbCount) {
             const getNum = calcRerollOrbCount - (data.totalRerollOrb ?? 0)
