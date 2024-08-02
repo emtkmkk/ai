@@ -595,6 +595,7 @@ export default {
 			skill: "スキル",
 			shop: "ショップ",
 			help: ["h", "ヘルプ"],
+			Record: "殿堂",
 			duplication: "複製"
 		}
 	},

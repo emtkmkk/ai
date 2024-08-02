@@ -448,7 +448,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         continuousBonusNum = (Math.min(Math.max(10, postCount / 2), 25));
 
         postCount = postCount + continuousBonusNum;
-		
+
 		tp = getRaidPostX(postCount) * (1 + (skillEffects.postXUp ?? 0));
     }
 
@@ -1172,6 +1172,10 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     } else {
         if (data.raidScore[enemy.name]) message += `\n（これまでのベスト: ${data.raidScore[enemy.name].toLocaleString()}）`
     }
+		if (!data.clearRaid) data.clearRaid = [];
+		if (count === 7 && !data.clearRaid.includes(enemy.name)) {
+			data.clearRaid.push(enemy.name);
+		}
 
     const amuletmsg = amuletMinusDurability(data)
 
@@ -1214,7 +1218,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         data.atk = (data.atk ?? 0) + atkUp;
         data.def = (data.def ?? 0) + totalUp - atkUp;
         data.exp = 0;
-        
+
         message += [
             `\n\n${serifs.rpg.lvUp}`,
             `  ${serifs.rpg.status.lv} : ${data.lv ?? 1} (+1)`,
@@ -1276,4 +1280,3 @@ function getSpd(spdX: number) {
     if (spdX <= 2.75) return 3 + (spdX - 2.5) * 4;
     return 4 + (spdX - 2.75) * 8
 }
-
