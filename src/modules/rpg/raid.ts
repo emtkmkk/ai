@@ -284,6 +284,10 @@ function finish(raid: Raid) {
     Math.floor(Math.log2(total / (1024 / ((raid.enemy.power ?? 30) / 30))) + 1),
     1,
   );
+  const scoreRaw = Math.max(
+    Math.log2(total / (1024 / ((raid.enemy.power ?? 30) / 30))) + 1,
+    1,
+  );
 
   if (sortAttackers?.[0]) {
     if (sortAttackers?.[0].mark === ':blank:') {
@@ -345,6 +349,20 @@ function finish(raid: Raid) {
       raidScore: { [raid.enemy.name]: total },
       raidScoreDate: { [raid.enemy.name]: getDate() },
     });
+  }
+
+  if (sortAttackers.length >= 3) {
+    const luckyUser =
+      sortAttackers[Math.floor(Math.random() * sortAttackers.length)].user;
+    const bonus = Math.ceil((sortAttackers.length / 5) * scoreRaw);
+    results.push(
+      '\nラッキー！: ' + acct(luckyUser) + '\nキレイなどんぐり+' + bonus + '個',
+    );
+    const friend = ai.lookupFriend(luckyUser.id);
+    if (!friend) return;
+    const data = friend.getPerModulesData(module_);
+    data.coin = Math.max((data.coin ?? 0) + (bonus ?? 1), data.coin);
+    friend.setPerModulesData(module_, data);
   }
 
   const text =
@@ -803,6 +821,20 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     enemyAtk = _enemyAtk;
     enemyDef = _enemyDef;
     itemBonus = { atk: 0, def: 0 };
+
+    if (skillEffects.berserk) {
+      const berserkDmg = Math.min(
+        Math.floor((100 + lv * 3) * (skillEffects.berserk ?? 0)),
+        playerHp - 1,
+      );
+      playerHp -= berserkDmg;
+      playerHpPercent = playerHp / (100 + lv * 3);
+      if (berserkDmg >= 0) {
+        atk = atk * (1 + (skillEffects.berserk ?? 0));
+        buff += 1;
+        message += serifs.rpg.skill.berserk(berserkDmg) + '\n';
+      }
+    }
 
     // 毒属性妖術
     if (skillEffects.weak && count > 1) {
@@ -1455,8 +1487,14 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
   }
 
   if (playerHp > 0) {
-    const enemySAtk = (_enemyAtk / (lv * 3.5)) * (getVal(enemy.atkx, [6]) ?? 3);
-    const enemySDef = (_enemyDef / (lv * 3.5)) * (getVal(enemy.defx, [6]) ?? 3);
+    const enemySAtk = Math.max(
+      (_enemyAtk / (lv * 3.5)) * (getVal(enemy.atkx, [6]) ?? 3),
+      0.01,
+    );
+    const enemySDef = Math.max(
+      (_enemyDef / (lv * 3.5)) * (getVal(enemy.defx, [6]) ?? 3),
+      enemySAtk / 3000,
+    );
     const dmg = Math.round(
       (playerHp / (100 + lv * 3)) *
         (1000 + (enemySAtk >= 24 ? enemySAtk / 0.048 : 0)) *

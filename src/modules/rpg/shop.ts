@@ -128,6 +128,16 @@ export const skillPrice = (
 
 export const shopItems: ShopItem[] = [
   {
+    name: `お守りを捨てる`,
+    limit: (data) => data.items.filter((x) => x.type === 'amulet').length,
+    price: 0,
+    desc: `今所持しているお守りを捨てます`,
+    type: 'item',
+    effect: (data) =>
+      (data.items = data.items?.filter((x) => x.type !== 'amulet')),
+    always: true,
+  },
+  {
     name: 'おかわり2RPG自動支払いの札',
     limit: (data) =>
       !data.items.filter((x) => x.name === 'おかわり2RPG自動支払いの札')
@@ -243,9 +253,15 @@ export const shopItems: ShopItem[] = [
   {
     name: 'スキル変更珠',
     desc: 'スキルを変更するのに必要なアイテムです',
-    limit: (data) => data.lv > 60,
+    limit: (data) => data.skills.length >= 2,
     price: (data) =>
-      data.lv > 255 ? 7 : data.lv > 170 ? 25 : data.lv > 100 ? 35 : 50,
+      data.skills.length >= 5
+        ? 7
+        : data.skills.length >= 4
+          ? 25
+          : data.skills.length >= 3
+            ? 35
+            : 50,
     type: 'item',
     effect: (data) => (data.rerollOrb = (data.rerollOrb ?? 0) + 1),
     infinite: true,
@@ -253,8 +269,9 @@ export const shopItems: ShopItem[] = [
   {
     name: 'スキル複製珠',
     desc: 'スキルを変更し、既に覚えているスキルのどれかを1つ覚えます',
-    limit: (data, rnd) => data.lv > 100 && rnd() < 0.2,
-    price: (data) => (data.lv > 255 ? 30 : data.lv > 170 ? 100 : 140),
+    limit: (data, rnd) => data.skills.length >= 3 && rnd() < 0.2,
+    price: (data) =>
+      data.skills.length >= 5 ? 30 : data.skills.length >= 4 ? 100 : 140,
     type: 'item',
     effect: (data) => (data.duplicationOrb = (data.duplicationOrb ?? 0) + 1),
     infinite: true,
@@ -338,7 +355,7 @@ export const shopItems: ShopItem[] = [
   {
     name: 'しあわせ草',
     desc: '購入時、？？？',
-    limit: (data, rnd) => rnd() < 0.2,
+    limit: (data, rnd) => data.lv > 20 && rnd() < 0.2,
     price: (data, rnd) => (rnd() < 0.5 ? 20 : rnd() < 0.5 ? 10 : 30),
     type: 'item',
     effect: fortuneEffect,
@@ -386,7 +403,7 @@ export const shopItems: ShopItem[] = [
     type: 'amulet',
     effect: { firstTurnResist: 0.3 },
     durability: 10,
-    short: '安',
+    short: '交安',
     isUsed: (data) => data.raid || data.count === 1,
   } as AmuletItem,
   {
@@ -396,13 +413,14 @@ export const shopItems: ShopItem[] = [
     type: 'amulet',
     effect: { firstTurnResist: 0.7 },
     durability: 10,
-    short: 'S安',
+    short: 'S交安',
     isUsed: (data) => data.raid || data.count === 1,
   } as AmuletItem,
   {
     name: `気合のハチマキ`,
     price: 55,
     desc: `購入時、気合アップ`,
+    limit: (data) => data.endure <= 6,
     type: 'item',
     effect: (data) => (data.endure = (data.endure ?? 0) + 4),
   },
@@ -514,6 +532,16 @@ export const shopItems: ShopItem[] = [
     short: '撃',
     isUsed: (data) => data.raid,
   } as AmuletItem,
+  {
+    name: `バーサクのお守り`,
+    price: 20,
+    desc: `レイド時、毎ターンダメージを受けますが、パワーがアップします 耐久10 レイドでの使用時耐久減少`,
+    type: 'amulet',
+    effect: { berserk: 0.15 },
+    durability: 10,
+    short: 'バ',
+    isUsed: (data) => data.raid,
+  } as AmuletItem,
   ...skills
     .filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly)
     .map(
@@ -529,16 +557,6 @@ export const shopItems: ShopItem[] = [
         isUsed: (data) => true,
       }),
     ),
-  {
-    name: `お守りを捨てる`,
-    limit: (data) => data.items.filter((x) => x.type === 'amulet').length,
-    price: 0,
-    desc: `今所持しているお守りを捨てます`,
-    type: 'item',
-    effect: (data) =>
-      (data.items = data.items?.filter((x) => x.type !== 'amulet')),
-    always: true,
-  },
 ];
 
 function getRandomSkills(ai, num) {
@@ -633,10 +651,8 @@ const determineOutcome = (ai, data, getShopItems) => {
 
   // 確率を計算する関数
   const calculateProbability = (baseProbability, skillCount, data) => {
-    const levelThresholds = [50, 100, 170, 255]; // 定数配列
     const levelCount =
-      levelThresholds.filter((threshold) => data.lv >= threshold).length +
-      Math.max(Math.floor(data.lv / 256) - 1, 0); // 満たしているレベル条件の数
+      data.skills.length - 1 + Math.max(Math.floor(data.lv / 256) - 1, 0);
     const delta = levelCount - skillCount;
 
     let probability = baseProbability;
