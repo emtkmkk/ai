@@ -1443,7 +1443,8 @@ export default class extends Module {
             }
         }
 
-        const skillCounts = [20, 50, 100, 175, 255].filter((x) => data.lv >= x).length
+			  const skillBorders = [20, 50, 100, 170, 255]
+        const skillCounts = skillBorders.filter((x) => data.lv >= x).length
 
         if ((data.skills ?? []).length < skillCounts) {
             if (!data.skills) data.skills = []
@@ -1477,7 +1478,11 @@ export default class extends Module {
             `\n${serifs.rpg.nextPlay(nextPlay == 24 ? "明日" : nextPlay + "時")}`,
         ].filter(Boolean).join("\n")
 
-        const calcRerollOrbCount = data.lv > 255 ? 32 + Math.floor((data.lv - 254) / 2) + Math.floor((data.lv - 256) / 64) * 16 : data.lv > 170 ? 15 + Math.floor((data.lv - 170) / 5) : data.lv > 100 ? 5 + Math.floor((data.lv - 100) / 7) : Math.floor((data.lv - 50) / 10)
+        const calcRerollOrbCount = Math.max(Math.min(Math.floor((data.lv - skillBorders[1]) / ((skillBorders[2] - skillBorders[1]) / 5)), 5), 0) + 
+					Math.max(Math.min(Math.floor((data.lv - skillBorders[2]) / ((skillBorders[3] - skillBorders[2]) / 10)), 10), 0) + 
+					Math.max(Math.min(Math.floor((data.lv - skillBorders[3]) / ((skillBorders[4] - skillBorders[3]) / 17)), 17), 0) + 
+					Math.max(Math.floor((data.lv + 1 - skillBorders[4]) / 2, 0) +
+					(Math.max(Math.floor((data.lv - (skillBorders[4] + 1)) / 64, 0) * 16);
 
         if ((data.totalRerollOrb ?? 0) < calcRerollOrbCount) {
             const getNum = calcRerollOrbCount - (data.totalRerollOrb ?? 0)
