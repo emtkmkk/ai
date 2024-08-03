@@ -583,6 +583,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     let sevenFever = skillEffects.sevenFever ? calcSevenFever([data.lv, data.atk, data.def]) * skillEffects.sevenFever : 0;
     if (sevenFever) {
         if (sevenFever / (skillEffects.sevenFever ?? 1) > 7) mark = "7️⃣";
+			if (sevenFever / (skillEffects.sevenFever ?? 1) > 77) sevenFever = 77 * (skillEffects.sevenFever ?? 1)
         buff += 1;
         message += serifs.rpg.skill.sevenFever(sevenFever) + "\n";
         atk = atk * (1 + (sevenFever / 100));
