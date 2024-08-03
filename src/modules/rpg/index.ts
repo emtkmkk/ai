@@ -225,47 +225,62 @@ export default class extends Module {
 			label: string,
 			dataKey: string,
 			options?: { prefix?: string, suffix?: string, addValue?: number }
-	) => {
+		) => {
 			const values = allData
-					.map(friend => {
-							if (dataKey.includes(".")) {
-									// 動的にプロパティにアクセスするための処理
-									const keys = dataKey.replace(/\[(\w+)\]/g, '.$1').split('.');
-									return keys.reduce((acc, key) => acc?.[key], friend.perModulesData?.rpg);
-							} else {
-									// 既存の単純なキーでのプロパティアクセス
-									return friend.perModulesData?.rpg?.[dataKey];
-							}
-					})
-					.filter(value => value !== undefined);
+				.map(friend => {
+					if (dataKey.includes(".")) {
+						// 動的にプロパティにアクセスするための処理
+						const keys = dataKey.replace(/\[(\w+)\]/g, '.$1').split('.');
+						return keys.reduce((acc, key) => acc?.[key], friend.perModulesData?.rpg);
+					} else {
+						// 既存の単純なキーでのプロパティアクセス
+						return friend.perModulesData?.rpg?.[dataKey];
+					}
+				})
+				.filter(value => value !== undefined);
 
 			values.sort((a, b) => b - a); // 降順でソート
+
+			// 同順位の人数を計算
+			const sameRankCount = values.filter(v => v === score).length;
 
 			// ランキングの計算には元のスコアを使用
 			const rank = values.indexOf(score) + 1;
 			let rankmsg = "";
 
 			if (rank === 0) {
-					rankmsg = "？"; // 順位が見つからなかった場合
-			} else if (rank <= 10) {
-					rankmsg = `${rank === 1 ? "👑" : "🎖️"}${rank}位`;
+				rankmsg = "？"; // 順位が見つからなかった場合
 			} else {
+				// 10位以内の場合の順位表示
+				if (rank <= 10) {
+					rankmsg = `${rank === 1 ? "👑" : "🎖️"}${rank}位`;
+				} else {
 					const total = values.length;
 					const percentage = (rank / total) * 100;
 
 					if (percentage < 50) {
-							rankmsg = `${percentage < 10 ? "🥈" : percentage < 35 ? "🥉" : ""}上位${percentage.toFixed(1)}%`;
+						rankmsg = `${percentage < 10 ? "🥈" : percentage < 35 ? "🥉" : ""}上位${percentage.toFixed(1)}%`;
 					} else {
-							const surpassedCount = total - rank;
+						const surpassedCount = total - rank - (sameRankCount - 1); // 同順位の人数を考慮
+						if (surpassedCount > 0 || sameRankCount > 1) {
 							rankmsg = `${surpassedCount}人超え`;
+						} else {
+							rankmsg = ``;
+						}
 					}
+				}
+
+				// 同順位の表記を追加
+				if (sameRankCount > 1) {
+					rankmsg += `（同順位：${sameRankCount}人）`;
+				}
 			}
 
 			// 表示するスコアにだけaddValueを適用
 			const finalScoreDisplay = `${options?.prefix || ''}${(score + (options?.addValue || 0)).toLocaleString()}${options?.suffix || ''}`;
 
 			return `${label}\n${finalScoreDisplay} ${rankmsg}`;
-	};
+		};
 
 		if (data.lv) {
 			message.push(createRankMessage(data.lv, "Lv", "lv"));
