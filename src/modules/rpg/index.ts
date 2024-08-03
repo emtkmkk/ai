@@ -310,6 +310,10 @@ export default class extends Module {
 			}
 		}
 
+		if (data.clearRaidNum) {
+			message.push(createRankMessage(data.clearRaidNum, "7ターン戦ったレイドボス (⭐️)", "clearRaidNum", { suffix: "種類" }));
+		}
+
 		if (message.length === 0) return { reaction: 'confused' };
 		msg.reply("\n" + message.join("\n\n"));
 		return { reaction: "love" };
