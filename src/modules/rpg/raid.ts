@@ -520,7 +520,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	// 数取りボーナスに上限がついたため、その分の補填を全員に付与
 	// ID毎に決められた得意曜日に従って最大50%分のステータスバフ
 	const day = new Date().getDay();
-	const bonusX = day === 6 || day === 0 ? 0.5 : (Math.floor(seedrandom("" + msg.user.id + Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) + ai.account.id)() * 5 + day) % 5) * 0.125;
+	const bonusX = (day === 6 || day === 0 ? 0.5 : (Math.floor(seedrandom("" + msg.user.id + Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) + ai.account.id)() * 5 + day) % 5) * 0.125) + (Math.random() < 0.01 ? 0.3 : 0) + (Math.random() < 0.01 ? 0.3 : 0);
 	atk = Math.round(atk * (1 + bonusX));
 	def = Math.round(def * (1 + bonusX));
 	/** 敵の最大HP */
