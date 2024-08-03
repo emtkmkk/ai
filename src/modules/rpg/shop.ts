@@ -355,8 +355,8 @@ export const shopItems: ShopItem[] = [
   {
     name: 'しあわせ草',
     desc: '購入時、？？？',
-    limit: (data, rnd) => data.lv > 20 && rnd() < 0.2,
-    price: (data, rnd) => (rnd() < 0.5 ? 20 : rnd() < 0.5 ? 10 : 30),
+    limit: (data, rnd) => data.lv > 20,
+    price: (data, rnd) => (rnd() < 0.5 ? 10 : rnd() < 0.5 ? 5 : 20),
     type: 'item',
     effect: fortuneEffect,
   },
