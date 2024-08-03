@@ -57,8 +57,8 @@ export function fortune(_atk, _def, effect = 1) {
                     atk = Math.floor(atk * 1.02)
                     def = Math.floor(def * 1.02)
                     if (rnd() < 0.5) {
+											def = def + atk - 1
                         atk = 1
-                        def = def + atk - 1
                     } else {
                         atk = atk + def
                         def = 0
