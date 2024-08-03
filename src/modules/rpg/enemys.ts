@@ -1106,6 +1106,24 @@ export const raidEnemys: RaidEnemy[] = [
     power: 32,
   },
   {
+    name: ':zucchini_iikoe:',
+    msg: '巨大:zucchini_iikoe:討伐戦！',
+    short: '',
+    mark: '☆',
+    mark2: '★',
+    atkmsg: (dmg) => `阨ちゃんの攻撃！\n${dmg}ポイントのダメージ！`,
+    defmsg: (dmg) =>
+      `:zucchini_iikoe:はオイシイヨ…と囁いた！\n耳元で大声を出されて${dmg}ポイントのダメージ！`,
+    winmsg: ':zucchini_iikoe:を鎮めた！',
+    losemsg: '阨ちゃんはやられてしまった…',
+    maxhp: 100000,
+    atk: 3,
+    def: 3,
+    atkx: 6,
+    defx: 6,
+    power: 32,
+  },
+  {
     name: ':rolling_panjandrum:',
     msg: '巨大:rolling_panjandrum:討伐戦！',
     short: '',
@@ -1179,7 +1197,6 @@ export const raidEnemys: RaidEnemy[] = [
     defx: 4,
     power: 35,
   },
-
   {
     name: ':mongolian_death_worm_dot:',
     msg: ':mongolian_death_worm_dot:討伐戦！',
