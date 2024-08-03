@@ -1531,6 +1531,10 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     if (data.raidScore[enemy.name])
       message += `\n（これまでのベスト: ${data.raidScore[enemy.name]}）`;
   }
+  if (!data.clearRaid) data.clearRaid = [];
+  if (count === 7 && !data.clearRaid.includes(enemy.name)) {
+    data.clearRaid.push(enemy.name);
+  }
 
   const amuletmsg = amuletMinusDurability(data);
 

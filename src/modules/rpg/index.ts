@@ -97,6 +97,17 @@ export default class extends Module {
     }
     if (
       msg.includes([serifs.rpg.command.rpg]) &&
+      msg.includes(
+        Array.isArray(serifs.rpg.command.Record)
+          ? serifs.rpg.command.Record
+          : [serifs.rpg.command.Record],
+      )
+    ) {
+      // 殿堂モード
+      return this.handleRecordCommands(msg);
+    }
+    if (
+      msg.includes([serifs.rpg.command.rpg]) &&
       msg.includes([serifs.rpg.command.color])
     ) {
       // 色モード
@@ -269,6 +280,7 @@ export default class extends Module {
     if (data.coin > 0) {
       helpMessage.push(serifs.rpg.help.shop(data.coin));
     }
+    helpMessage.push(serifs.rpg.help.record);
     helpMessage.push(serifs.rpg.help.status);
     helpMessage.push(serifs.rpg.help.link);
     helpMessage.push(serifs.rpg.help.help);
@@ -278,12 +290,157 @@ export default class extends Module {
   }
 
   @autobind
+  private handleRecordCommands(msg: Message) {
+    const data = initializeData(this, msg);
+    if (!data.lv) return { reaction: 'confused' };
+
+    let message: string[] = [];
+    const allData = this.ai.friends.find();
+
+    const createRankMessage = (
+      score: number,
+      label: string,
+      dataKey: string,
+      options?: { prefix?: string; suffix?: string; addValue?: number },
+    ) => {
+      const values = allData
+        .map((friend) => {
+          if (dataKey.includes('.')) {
+            // 動的にプロパティにアクセスするための処理
+            const keys = dataKey.replace(/\[(\w+)\]/g, '.$1').split('.');
+            return keys.reduce(
+              (acc, key) => acc?.[key],
+              friend.perModulesData?.rpg,
+            );
+          } else {
+            // 既存の単純なキーでのプロパティアクセス
+            return friend.perModulesData?.rpg?.[dataKey];
+          }
+        })
+        .filter((value) => value !== undefined);
+
+      values.sort((a, b) => b - a); // 降順でソート
+
+      // 同順位の人数を計算
+      const sameRankCount = values.filter((v) => v === score).length;
+
+      // ランキングの計算には元のスコアを使用
+      const rank = values.indexOf(score) + 1;
+      let rankmsg = '';
+
+      if (rank === 0) {
+        rankmsg = '？'; // 順位が見つからなかった場合
+      } else {
+        // 10位以内の場合の順位表示
+        if (rank <= 10) {
+          rankmsg = `${rank === 1 ? '👑' : '🎖️'}${rank}位`;
+        } else {
+          const total = values.length;
+          const percentage = (rank / total) * 100;
+
+          if (percentage < 50) {
+            rankmsg = `${percentage < 10 ? '🥈' : percentage < 35 ? '🥉' : ''}上位${percentage.toFixed(1)}%`;
+          } else {
+            const surpassedCount = total - rank - (sameRankCount - 1); // 同順位の人数を考慮
+            if (surpassedCount > 0 || sameRankCount > 1) {
+              rankmsg = `${surpassedCount}人超え`;
+            } else {
+              rankmsg = ``;
+            }
+          }
+        }
+
+        // 同順位の表記を追加
+        if (sameRankCount > 1) {
+          rankmsg += `（同順位：${sameRankCount - 1}人）`;
+        }
+      }
+
+      // 表示するスコアにだけaddValueを適用
+      const finalScoreDisplay = `${options?.prefix || ''}${(score + (options?.addValue || 0)).toLocaleString()}${options?.suffix || ''}`;
+
+      return `${label}\n${finalScoreDisplay} ${rankmsg}`;
+    };
+
+    if (data.lv) {
+      message.push(createRankMessage(data.lv, 'Lv', 'lv'));
+    }
+
+    if (data.bestScore) {
+      message.push(
+        createRankMessage(data.bestScore, '最大木人ダメージ', 'bestScore', {
+          suffix: 'ダメージ',
+        }),
+      );
+    }
+
+    if (data.maxEndress) {
+      message.push(
+        createRankMessage(
+          data.maxEndress,
+          '修行モード最高クリア記録',
+          'maxEndress',
+          { prefix: 'ステージ', addValue: 1 },
+        ),
+      );
+    }
+
+    if (data.maxStatusUp) {
+      message.push(
+        createRankMessage(data.maxStatusUp, '運の良さ', 'maxStatusUp', {
+          suffix: 'pts',
+        }),
+      );
+    }
+
+    if (data.jar) {
+      message.push(
+        createRankMessage(data.jar, '壺購入数', 'jar', { suffix: '個' }),
+      );
+    }
+
+    if (data.raidScore) {
+      for (const [key, value] of Object.entries(data.raidScore)) {
+        if (value && typeof value === 'number') {
+          message.push(
+            createRankMessage(
+              value,
+              key + ' 最大ダメージ',
+              `raidScore.${key}`,
+              {
+                suffix: data.clearRaid?.includes(key)
+                  ? 'ダメージ ⭐️'
+                  : 'ダメージ',
+              },
+            ),
+          );
+        }
+      }
+    }
+
+    if (data.clearRaidNum) {
+      message.push(
+        createRankMessage(
+          data.clearRaidNum,
+          '7ターン戦ったレイドボス (⭐️)',
+          'clearRaidNum',
+          { suffix: '種類' },
+        ),
+      );
+    }
+
+    if (message.length === 0) return { reaction: 'confused' };
+    msg.reply('\n' + message.join('\n\n'));
+    return { reaction: 'love' };
+  }
+
+  @autobind
   private handleAdminCommands(msg: Message) {
     if (msg.includes(['revert'])) {
       const id = /\w{10}/.exec(msg.extractedText)?.[0];
       if (id) {
         const friend = this.ai.lookupFriend(id);
-        if (friend == null) return { reaction: ':neofox_reach:' };
+        if (friend == null) return { reaction: ':neofox_approve:' };
         friend.doc.perModulesData.rpg.lastPlayedAt = '';
         friend.doc.perModulesData.rpg.lv = friend.doc.perModulesData.rpg.lv - 1;
         friend.doc.perModulesData.rpg.atk =
@@ -300,7 +457,7 @@ export default class extends Module {
       const num = /\s(\d)\s/.exec(msg.extractedText)?.[1];
       if (id && skill && num) {
         const friend = this.ai.lookupFriend(id);
-        if (friend == null) return { reaction: ':neofox_reach:' };
+        if (friend == null) return { reaction: ':neofox_approve:' };
         friend.doc.perModulesData.rpg.skills[num] = skills.find((x) =>
           x.name.startsWith(skill),
         );
@@ -695,12 +852,12 @@ export default class extends Module {
     /** 現在の敵と戦ってるターン数。 敵がいない場合は1 */
     let count = data.count ?? 1;
 
-    // 旅モード（エンドレスモード）のフラグ
+    // 修行モード（エンドレスモード）のフラグ
     if (
       msg.includes([serifs.rpg.command.journey]) &&
       !aggregateTokensEffects(data).autoJournal
     ) {
-      // 現在戦っている敵がいない場合で旅モード指定がある場合はON
+      // 現在戦っている敵がいない場合で修行モード指定がある場合はON
       if (!data.enemy || count === 1 || data.endressFlg) {
         data.endressFlg = true;
       } else {
@@ -710,7 +867,7 @@ export default class extends Module {
         };
       }
     } else {
-      // 現在戦っている敵がいない場合で旅モード指定がない場合はOFF
+      // 現在戦っている敵がいない場合で修行モード指定がない場合はOFF
       if (!data.enemy || count === 1) {
         data.endressFlg = false;
       }
@@ -831,8 +988,8 @@ export default class extends Module {
             filteredEnemys[Math.floor(filteredEnemys.length * Math.random())];
         }
       } else {
-        // 旅モード（エンドレスモード）
-        // 倒す敵がいなくてこのモードに入った場合、旅モード任意入場フラグをOFFにする
+        // 修行モード（エンドレスモード）
+        // 倒す敵がいなくてこのモードに入った場合、修行モード任意入場フラグをOFFにする
         if (!filteredEnemys.length) {
           if (!data.allClear) {
             data.allClear = lv - 1;
@@ -1223,6 +1380,15 @@ export default class extends Module {
             atk = atk + itemBonus.atk;
             def = def + itemBonus.def;
           } else {
+            if (item.effect > 200) {
+              const overHeal = item.effect - 200;
+              mindMsg(overHeal);
+              itemBonus.atk = atk * (overHeal * 0.0025);
+              itemBonus.def = def * (overHeal * 0.0025);
+              atk = atk + itemBonus.atk;
+              def = def + itemBonus.def;
+              item.effect = 200;
+            }
             const heal = Math.round(
               (100 + lv * 3 - playerHp) * (item.effect * 0.005),
             );
@@ -1836,7 +2002,7 @@ export default class extends Module {
                 data.maxEndress = data.endress - 1;
               data.endress = (data.endress ?? 0) - minusStage;
             }
-            // これが任意に入った旅モードだった場合は、各種フラグをリセットしない
+            // これが任意に入った修行モードだった場合は、各種フラグをリセットしない
             if (!data.endressFlg) {
               data.streak = 0;
               data.clearEnemy = [];
@@ -2072,6 +2238,7 @@ export default class extends Module {
 
     msg.reply(`<center>${message}</center>`, {
       cw,
+      visibility: 'public',
     });
 
     return {

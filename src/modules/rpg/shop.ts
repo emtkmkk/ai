@@ -704,6 +704,7 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
   const data = initializeData(module, msg);
   if (!data) return false;
   if (!data.lv) return false;
+  if (data.jar == null) data.jar = 0;
 
   // 所持しているスキル効果を読み込み
   const skillEffects = aggregateSkillsEffects(data);

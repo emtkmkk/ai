@@ -12,6 +12,7 @@ export function initializeData(module: rpg, msg) {
   if (!data.clearHistory) data.clearHistory = data.clearEnemy;
   if (!data.items) data.items = [];
   if (!data.coin) data.coin = 0;
+  data.clearRaidNum = Array.from(new Set(data.clearRaid ?? []))?.length ?? 0;
   data.items?.filter(
     (x) =>
       (x.type =
