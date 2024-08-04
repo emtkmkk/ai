@@ -299,8 +299,9 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
     }
 	
 	data.shopItems.forEach((x, index) => {
+		if (Array.isArray(x)) data.shopItems[index] = x.map((x) => x.replace("undefined",""));
 		if (!x.includes("&") || !x.includes("のお守り")) return;
-		data.shopItems[index] = x.replace("のお守り").split("&")
+		data.shopItems[index] = x.replace("のお守り", "").split("&")
 	})
 
     const _shopItems = (data.shopItems as (string | string[])[]).map((x) => Array.isArray(x) ? mergeSkillAmulet(ai, rnd, x.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) : shopItems.find((y) => x === y.name) ?? undefined).filter((x) => x != null) as ShopItem[];
