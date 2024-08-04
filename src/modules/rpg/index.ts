@@ -358,7 +358,7 @@ export default class extends Module {
 			if (!recentGame || recentGame.isEnded) return { reaction: "hmm" }
 			
 			recentGame.attackers.forEach(x => {
-				if (x.user.id !== '9d5ts6in38') continue;
+				if (x.user.id !== '9d5ts6in38') return;
 				const friend = this.ai.lookupFriend(x.user.id);
 				if (!friend) return;
 				const data = friend.getPerModulesData(this);
