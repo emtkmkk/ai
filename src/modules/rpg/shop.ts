@@ -297,6 +297,11 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 			data.lastBreakItem = null;
         module.unsubscribeReply("shopBuy:" + msg.userId)
     }
+	
+	data.shopItems.forEach((x) => {
+		if (!x.includes("&") || !x.includes("のお守り")) return;
+		x = x.replace("のお守り").split("&")
+	})
 
     const _shopItems = (data.shopItems as (string | string[])[]).map((x) => Array.isArray(x) ? mergeSkillAmulet(ai, rnd, x.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) : shopItems.find((y) => x === y.name) ?? undefined).filter((x) => x != null) as ShopItem[];
 
