@@ -76,8 +76,8 @@ export function fortune(_atk, _def, effect = 1) {
       if (rnd() < 0.5) {
         if (targetAllStatus) {
           if (rnd() < 0.5) {
-            atk = 1;
             def = def + atk - 1;
+            atk = 1;
           } else {
             atk = atk + def;
             def = 0;

@@ -619,8 +619,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
   // 数取りボーナスに上限がついたため、その分の補填を全員に付与
   // ID毎に決められた得意曜日に従って最大50%分のステータスバフ
   const day = new Date().getDay();
-  const bonusX =
-    day === 6 || day === 0
+  let bonusX =
+    (day === 6 || day === 0
       ? 0.5
       : (Math.floor(
           seedrandom(
@@ -633,7 +633,12 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
             day,
         ) %
           5) *
-        0.125;
+        0.125) +
+    (Math.random() < 0.01 ? 0.3 : 0) +
+    (Math.random() < 0.01 ? 0.3 : 0);
+  while (Math.random() < 0.01) {
+    bonusX += 0.3;
+  }
   atk = Math.round(atk * (1 + bonusX));
   def = Math.round(def * (1 + bonusX));
   /** 敵の最大HP */
@@ -701,6 +706,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     : 0;
   if (sevenFever) {
     if (sevenFever / (skillEffects.sevenFever ?? 1) > 7) mark = '7️⃣';
+    if (sevenFever / (skillEffects.sevenFever ?? 1) > 77)
+      sevenFever = 77 * (skillEffects.sevenFever ?? 1);
     buff += 1;
     message += serifs.rpg.skill.sevenFever(sevenFever) + '\n';
     atk = atk * (1 + sevenFever / 100);
@@ -1491,8 +1498,12 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
       (_enemyAtk / (lv * 3.5)) * (getVal(enemy.atkx, [6]) ?? 3),
       0.01,
     );
+    let enemyFDef =
+      typeof enemy.def === 'function'
+        ? enemy.def(atk, def, spd)
+        : lv * 3.5 * (enemy.def ?? 1);
     const enemySDef = Math.max(
-      (_enemyDef / (lv * 3.5)) * (getVal(enemy.defx, [6]) ?? 3),
+      (enemyFDef / (lv * 3.5)) * (getVal(enemy.defx, [6]) ?? 3),
       enemySAtk / 3000,
     );
     const dmg = Math.round(

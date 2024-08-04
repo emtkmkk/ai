@@ -253,7 +253,7 @@ export const shopItems: ShopItem[] = [
   {
     name: 'スキル変更珠',
     desc: 'スキルを変更するのに必要なアイテムです',
-    limit: (data) => data.skills.length >= 2,
+    limit: (data) => data.skills?.length >= 2,
     price: (data) =>
       data.skills.length >= 5
         ? 7
@@ -269,7 +269,7 @@ export const shopItems: ShopItem[] = [
   {
     name: 'スキル複製珠',
     desc: 'スキルを変更し、既に覚えているスキルのどれかを1つ覚えます',
-    limit: (data, rnd) => data.skills.length >= 3 && rnd() < 0.2,
+    limit: (data, rnd) => data.skills?.length >= 3 && rnd() < 0.2,
     price: (data) =>
       data.skills.length >= 5 ? 30 : data.skills.length >= 4 ? 100 : 140,
     type: 'item',
@@ -443,7 +443,7 @@ export const shopItems: ShopItem[] = [
   {
     name: `ベストショットの穢根くんのチェキ`,
     limit: (data) => (data.jar ?? 0) === 2,
-    price: 800,
+    price: 600,
     desc: `すごくよく撮れているチェキ 特に効果なし`,
     type: 'item',
     effect: (data) => (data.jar = (data.jar ?? 0) + 1),
@@ -451,7 +451,7 @@ export const shopItems: ShopItem[] = [
   {
     name: `隠し撮り穢根くんのチェキ`,
     limit: (data) => (data.jar ?? 0) === 3,
-    price: 1200,
+    price: 800,
     desc: `一体だれが撮影したのかわからないチェキ 特に効果なし`,
     type: 'item',
     effect: (data) => (data.jar = (data.jar ?? 0) + 1),
@@ -459,7 +459,7 @@ export const shopItems: ShopItem[] = [
   {
     name: `寝顔の穢根くんのチェキ`,
     limit: (data) => (data.jar ?? 0) === 4,
-    price: 1600,
+    price: 1000,
     desc: `寝起きドッキリ撮影されたチェキ 特に効果なし`,
     type: 'item',
     effect: (data) => (data.jar = (data.jar ?? 0) + 1),
@@ -467,7 +467,7 @@ export const shopItems: ShopItem[] = [
   {
     name: `女装した穢根くんのチェキ`,
     limit: (data) => (data.jar ?? 0) === 5,
-    price: 2000,
+    price: 1200,
     desc: `この世に存在しないことになっているチェキ 特に効果なし`,
     type: 'item',
     effect: (data) => (data.jar = (data.jar ?? 0) + 1),
@@ -475,7 +475,7 @@ export const shopItems: ShopItem[] = [
   {
     name: `激レア穢根くんのチェキ`,
     limit: (data) => (data.jar ?? 0) >= 6,
-    price: (data) => (data.jar ?? 0) * 400,
+    price: (data) => (data.jar ?? 0) * 200,
     desc: `幼少期の穢根くんの姿が映った世にも奇妙な不思議なチェキ 特に効果なし`,
     type: 'item',
     effect: (data) => (data.jar = (data.jar ?? 0) + 1),
