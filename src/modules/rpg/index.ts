@@ -355,46 +355,19 @@ export default class extends Module {
 			const ai = this.ai;
 			const games = this.raids.find({});
 			const recentGame = games.length == 0 ? null : games[games.length - 1];
-			if (!recentGame) return { reaction: "hmm" }
-
-			const rpgData = ai.moduleData.findOne({ type: 'rpg' });
-			if (rpgData) {
-				if (rpgData.raidScore[recentGame.enemy.name]) {
-					rpgData.raidScore[recentGame.enemy.name] = 0;
-				}
-				ai.moduleData.update(rpgData);
-			}
-
+			if (!recentGame || recentGame.isEnded) return { reaction: "hmm" }
+			
 			recentGame.attackers.forEach(x => {
+				if (x.user.id !== '9d5ts6in38') continue;
 				const friend = this.ai.lookupFriend(x.user.id);
 				if (!friend) return;
 				const data = friend.getPerModulesData(this);
 				data.raidScore[recentGame.enemy.name] = 0;
-				x.dmg = 0;
+				recentGame.attackers = recentGame.attackers.filter(y => y.user.id !== x.user.id)
 				console.log(x.user.id + " : fix");
 				friend.setPerModulesData(this, data);
 			});
 			this.raids.update(recentGame);
-			const recent2Game = games.length < 1 ? null : games[games.length - 2];
-			if (!recent2Game) return { reaction: "hmm" }
-
-			if (rpgData) {
-				if (rpgData.raidScore[recent2Game.enemy.name]) {
-					rpgData.raidScore[recent2Game.enemy.name] = 0;
-				}
-				ai.moduleData.update(rpgData);
-			}
-
-			recent2Game.attackers.forEach(x => {
-				const friend = this.ai.lookupFriend(x.user.id);
-				if (!friend) return;
-				const data = friend.getPerModulesData(this);
-				data.raidScore[recent2Game.enemy.name] = 0;
-				x.dmg = 0;
-				console.log(x.user.id + " : fix");
-				friend.setPerModulesData(this, data);
-			});
-			this.raids.update(recent2Game);
 			return { reaction: "love" };
 		}
 		return { reaction: "hmm" }
