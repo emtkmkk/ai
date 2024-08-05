@@ -996,7 +996,9 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 							  let dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [count]))
                 let noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [count]))
 							if (sevenFever) {
+								const minusDmg = dmg - Math.max(dmg - sevenFever, 0);
 								dmg = Math.max(dmg - sevenFever, 0);
+								if (minusDmg) message += `(７フィーバー: -${minusDmg})\n`
 								noItemDmg = Math.max(noItemDmg - sevenFever, 0);
 							}
                 // ダメージが負けるほど多くなる場合は、先制攻撃しない
@@ -1117,7 +1119,9 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
                     let dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX, getVal(enemy.atkx, [count]));
                     let noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX, getVal(enemy.atkx, [count]));
 									if (sevenFever) {
+										const minusDmg = dmg - Math.max(dmg - sevenFever, 0);
 										dmg = Math.max(dmg - sevenFever, 0);
+										if (minusDmg) message += `(７フィーバー: -${minusDmg})\n`;
 										noItemDmg = Math.max(noItemDmg - sevenFever, 0);
 									}
                     playerHp -= dmg
