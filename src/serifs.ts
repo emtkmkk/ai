@@ -487,6 +487,7 @@ export default {
 			dark: (enemyName, dmg) => `スキル「闇属性剣攻撃」発動！\n${enemyName}の周辺に強重力領域が発生した！\n${dmg}ポイントのダメージを与えた！`,
 			weak: (enemyName) => `スキル「毒属性剣攻撃」発動！\n${enemyName}は弱体化している！`,
 			sevenFever: (num) => `スキル「７フィーバー！」発動！\nステータス+${num}%！`,
+			sevenFeverRaid: `スキル「７フィーバー！」発動！\nステータスがアップ！`,
 			charge: `スキル「不運チャージ」発動！\n次回、良い事あるかも！`,
 			enemyStatusBonus: `スキル「強敵と戦うのが好き」発動！\nパワー・防御がアップした！`,
 			firstTurnResist: `スキル「油断しない」発動！\nもこチキは相手を警戒している…`,
