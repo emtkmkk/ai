@@ -220,7 +220,7 @@ const determineOutcome = (ai, data, getShopItems) => {
 
   // 確率を計算する関数
   const calculateProbability = (baseProbability, skillCount, data) => {
-    const levelCount = (data.skills.length - 1) + Math.max(Math.floor(data.lv / 256)-1,0);
+    const levelCount = ((data.skills?.length ?? 0) - 1) + Math.max(Math.floor(data.lv / 256)-1,0);
     const delta = levelCount - skillCount;
 
     let probability = baseProbability;
