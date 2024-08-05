@@ -585,12 +585,11 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     // ７フィーバー
     let sevenFever = skillEffects.sevenFever ? calcSevenFever([data.lv, data.atk, data.def]) * skillEffects.sevenFever : 0;
     if (sevenFever) {
-        if (sevenFever / (skillEffects.sevenFever ?? 1) > 7) mark = "7️⃣";
-			if (sevenFever / (skillEffects.sevenFever ?? 1) > 77) sevenFever = 77 * (skillEffects.sevenFever ?? 1)
+			  const bonus = 7 * (skillEffects.sevenFever ?? 1)
         buff += 1;
-        message += serifs.rpg.skill.sevenFever(sevenFever) + "\n";
-        atk = atk * (1 + (sevenFever / 100));
-        def = def * (1 + (sevenFever / 100));
+        message += serifs.rpg.skill.sevenFeverRaid + "\n";
+        atk = Math.ceil(atk * (1 + (bonus / 100)) / 7) * 7;
+        def = Math.ceil(def * (1 + (bonus / 100)) / 7) * 7;
     }
 
     // 風魔法発動時
@@ -994,8 +993,12 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
                 if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`
                 const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
                 /** ダメージ */
-                const dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [count]))
-                const noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [count]))
+							  let dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [count]))
+                let noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [count]))
+							if (sevenFever) {
+								dmg = Math.max(dmg - sevenFever, 0);
+								noItemDmg = Math.max(noItemDmg - sevenFever, 0);
+							}
                 // ダメージが負けるほど多くなる場合は、先制攻撃しない
                 if (playerHp > dmg || (count === 3 && enemy.fire && (data.thirdFire ?? 0) <= 2)) {
                     playerHp -= dmg
@@ -1034,7 +1037,12 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
             const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
             /** ダメージ */
             let dmg = getAtkDmg(data, atk, tp, 1, crit ? critDmg : false, enemyDef, enemyMaxHp, rng * dmgBonus, getVal(enemy.defx, [count])) + Math.round(trueDmg * turnDmgX)
-            const noItemDmg = getAtkDmg(data, atk - itemBonus.atk, tp, 1, crit, enemyDef, enemyMaxHp, rng * dmgBonus, getVal(enemy.defx, [count])) + Math.round(trueDmg * turnDmgX)
+            let noItemDmg = getAtkDmg(data, atk - itemBonus.atk, tp, 1, crit, enemyDef, enemyMaxHp, rng * dmgBonus, getVal(enemy.defx, [count])) + Math.round(trueDmg * turnDmgX)
+					if (sevenFever)　{
+						const num = 7 * (skillEffects.sevenFever || 1)
+						dmg = Math.ceil(dmg / num) * num;
+						noItemDmg = Math.ceil(noItemDmg / num) * num;
+					}
             // 最大ダメージ制限処理
             if (maxdmg && maxdmg > 0 && dmg > Math.round(maxdmg * (1 / ((abort || spd) - i)))) {
                 // 最大ダメージ制限を超えるダメージの場合は、ダメージが制限される。
@@ -1106,8 +1114,12 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
                     const crit = Math.random() < (playerHpPercent - enemyHpPercent) * (1 - (skillEffects.enemyCritDown ?? 0));
                     const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
                     /** ダメージ */
-                    const dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX, getVal(enemy.atkx, [count]));
-                    const noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX, getVal(enemy.atkx, [count]));
+                    let dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX, getVal(enemy.atkx, [count]));
+                    let noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX, getVal(enemy.atkx, [count]));
+									if (sevenFever) {
+										dmg = Math.max(dmg - sevenFever, 0);
+										noItemDmg = Math.max(noItemDmg - sevenFever, 0);
+									}
                     playerHp -= dmg
                     message += (crit ? `**${enemy.defmsg(dmg)}**` : enemy.defmsg(dmg)) + "\n"
                     if (itemBonus.def && noItemDmg - dmg > 1) {
