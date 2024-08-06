@@ -705,13 +705,12 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     ? calcSevenFever([data.lv, data.atk, data.def]) * skillEffects.sevenFever
     : 0;
   if (sevenFever) {
-    if (sevenFever / (skillEffects.sevenFever ?? 1) > 7) mark = '7️⃣';
-    if (sevenFever / (skillEffects.sevenFever ?? 1) > 77)
-      sevenFever = 77 * (skillEffects.sevenFever ?? 1);
+    const bonus = 7 * (skillEffects.sevenFever ?? 1);
+    sevenFever = 77 * (skillEffects.sevenFever ?? 1);
     buff += 1;
-    message += serifs.rpg.skill.sevenFever(sevenFever) + '\n';
-    atk = atk * (1 + sevenFever / 100);
-    def = def * (1 + sevenFever / 100);
+    message += serifs.rpg.skill.sevenFeverRaid + '\n';
+    atk = Math.ceil((atk * (1 + bonus / 100)) / 7) * 7;
+    def = Math.ceil((def * (1 + bonus / 100)) / 7) * 7;
   }
 
   // 風魔法発動時
@@ -1224,7 +1223,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
           message += `⚂ ${Math.floor(rng * 100)}%\n`;
         const critDmg = 1 + (skillEffects.enemyCritDmgDown ?? 0) * -1;
         /** ダメージ */
-        const dmg = getEnemyDmg(
+        let dmg = getEnemyDmg(
           _data,
           def,
           tp,
@@ -1232,9 +1231,9 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
           crit ? critDmg : false,
           enemyAtk,
           rng * defDmgX,
-          getVal(enemy.atkx, [tp]),
+          getVal(enemy.atkx, [count]),
         );
-        const noItemDmg = getEnemyDmg(
+        let noItemDmg = getEnemyDmg(
           _data,
           def - itemBonus.def,
           tp,
@@ -1242,8 +1241,15 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
           crit ? critDmg : false,
           enemyAtk,
           rng * defDmgX,
-          getVal(enemy.atkx, [tp]),
+          getVal(enemy.atkx, [count]),
         );
+        let addMessage = '';
+        if (sevenFever) {
+          const minusDmg = dmg - Math.max(dmg - sevenFever, 0);
+          dmg = Math.max(dmg - sevenFever, 0);
+          if (minusDmg) addMessage += `(７フィーバー: -${minusDmg})\n`;
+          noItemDmg = Math.max(noItemDmg - sevenFever, 0);
+        }
         // ダメージが負けるほど多くなる場合は、先制攻撃しない
         if (
           playerHp > dmg ||
@@ -1252,6 +1258,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
           playerHp -= dmg;
           message +=
             (crit ? `**${enemy.defmsg(dmg)}**` : enemy.defmsg(dmg)) + '\n';
+          if (addMessage) message += addMessage;
           if (itemBonus.def && noItemDmg - dmg > 1) {
             message += `(道具効果: -${noItemDmg - dmg})\n`;
           }
@@ -1308,7 +1315,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
           rng * dmgBonus,
           getVal(enemy.defx, [tp]),
         ) + Math.round(trueDmg * turnDmgX);
-      const noItemDmg =
+      let noItemDmg =
         getAtkDmg(
           data,
           atk - itemBonus.atk,
@@ -1318,8 +1325,13 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
           enemyDef,
           enemyMaxHp,
           rng * dmgBonus,
-          getVal(enemy.defx, [tp]),
+          getVal(enemy.defx, [count]),
         ) + Math.round(trueDmg * turnDmgX);
+      if (sevenFever) {
+        const num = 7 * (skillEffects.sevenFever || 1);
+        dmg = Math.ceil(dmg / num) * num;
+        noItemDmg = Math.ceil(noItemDmg / num) * num;
+      }
       // 最大ダメージ制限処理
       if (
         maxdmg &&
@@ -1420,7 +1432,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
               (1 - (skillEffects.enemyCritDown ?? 0));
           const critDmg = 1 + (skillEffects.enemyCritDmgDown ?? 0) * -1;
           /** ダメージ */
-          const dmg = getEnemyDmg(
+          let dmg = getEnemyDmg(
             _data,
             def,
             tp,
@@ -1428,9 +1440,9 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
             crit ? critDmg : false,
             enemyAtk,
             rng * defDmgX * enemyAtkX,
-            getVal(enemy.atkx, [tp]),
+            getVal(enemy.atkx, [count]),
           );
-          const noItemDmg = getEnemyDmg(
+          let noItemDmg = getEnemyDmg(
             _data,
             def - itemBonus.def,
             tp,
@@ -1438,11 +1450,19 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
             crit ? critDmg : false,
             enemyAtk,
             rng * defDmgX * enemyAtkX,
-            getVal(enemy.atkx, [tp]),
+            getVal(enemy.atkx, [count]),
           );
+          let addMessage = '';
+          if (sevenFever) {
+            const minusDmg = dmg - Math.max(dmg - sevenFever, 0);
+            dmg = Math.max(dmg - sevenFever, 0);
+            if (minusDmg) addMessage += `(７フィーバー: -${minusDmg})\n`;
+            noItemDmg = Math.max(noItemDmg - sevenFever, 0);
+          }
           playerHp -= dmg;
           message +=
             (crit ? `**${enemy.defmsg(dmg)}**` : enemy.defmsg(dmg)) + '\n';
+          if (addMessage) message += addMessage;
           if (itemBonus.def && noItemDmg - dmg > 1) {
             message += `(道具効果: -${noItemDmg - dmg})\n`;
           }
@@ -1506,12 +1526,16 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
       (enemyFDef / (lv * 3.5)) * (getVal(enemy.defx, [6]) ?? 3),
       enemySAtk / 3000,
     );
-    const dmg = Math.round(
+    let dmg = Math.round(
       (playerHp / (100 + lv * 3)) *
         (1000 + (enemySAtk >= 24 ? enemySAtk / 0.048 : 0)) *
         Math.max(enemySAtk / enemySDef, 1) *
         (1 + (skillEffects.finalAttackUp ?? 0)),
     );
+    if (sevenFever) {
+      const num = 7 * (skillEffects.sevenFever || 1);
+      dmg = Math.ceil(dmg / num) * num;
+    }
     message +=
       '\n\n' +
       serifs.rpg.finalAttack(dmg) +

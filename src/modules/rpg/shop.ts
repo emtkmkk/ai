@@ -652,7 +652,9 @@ const determineOutcome = (ai, data, getShopItems) => {
   // 確率を計算する関数
   const calculateProbability = (baseProbability, skillCount, data) => {
     const levelCount =
-      data.skills.length - 1 + Math.max(Math.floor(data.lv / 256) - 1, 0);
+      (data.skills?.length ?? 0) -
+      1 +
+      Math.max(Math.floor(data.lv / 256) - 1, 0);
     const delta = levelCount - skillCount;
 
     let probability = baseProbability;
@@ -742,6 +744,13 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
     data.lastBreakItem = null;
     module.unsubscribeReply('shopBuy:' + msg.userId);
   }
+
+  data.shopItems.forEach((x, index) => {
+    if (Array.isArray(x))
+      data.shopItems[index] = x.map((x) => x.replace('undefined', ''));
+    if (!x.includes('&') || !x.includes('のお守り')) return;
+    data.shopItems[index] = x.replace('のお守り', '').split('&');
+  });
 
   const _shopItems = (data.shopItems as (string | string[])[])
     .map((x) =>

@@ -554,6 +554,7 @@ export default {
         `スキル「毒属性妖術」発動！\n${enemyName}は弱体化している！`,
       sevenFever: (num) =>
         `スキル「７フィーバー！」発動！\nステータス+${num}%！`,
+      sevenFeverRaid: `スキル「７フィーバー！」発動！\nステータスがアップ！`,
       charge: `スキル「不運チャージ」発動！\n次回、良い事あるかも！`,
       enemyStatusBonus: `スキル「強敵と戦うのが好き」発動！\nパワー・防御がアップした！`,
       firstTurnResist: `スキル「油断せず行こう」発動！\n阨ちゃんは相手を警戒している…`,
