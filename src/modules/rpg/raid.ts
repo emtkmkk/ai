@@ -286,6 +286,7 @@ function finish(raid: Raid) {
 		if (!friend) return;
 		const data = friend.getPerModulesData(module_);
 		data.coin = Math.max((data.coin ?? 0) + (bonus ?? 1), data.coin);
+		if (!data.maxLucky || data.maxLucky < (bonus ?? 1)) data.maxLucky = (bonus ?? 1);
 		friend.setPerModulesData(module_, data);
 	}
 
