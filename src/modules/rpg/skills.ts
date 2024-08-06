@@ -180,8 +180,8 @@ export type Skill = {
 };
 
 export const skills: Skill[] = [
-    { name: `${serifs.rpg.status.atk}+10%`, short: `${serifs.rpg.status.atk.slice(0,1)}`, desc: `常に${serifs.rpg.status.atk}が10%上がります`, info: `条件無しで${serifs.rpg.status.atk}+10%`, effect: { atkUp: 0.1 } },
-    { name: `${serifs.rpg.status.def}+10%`, short: `${serifs.rpg.status.def.slice(0,1)}`, desc: `常に${serifs.rpg.status.def}が10%上がります`, info: `条件無しで${serifs.rpg.status.def}+10%`, effect: { defUp: 0.1 } },
+    { name: `${serifs.rpg.status.atk}+10%`, short: `Ｐ`, desc: `常に${serifs.rpg.status.atk}が10%上がります`, info: `条件無しで${serifs.rpg.status.atk}+10%`, effect: { atkUp: 0.1 } },
+    { name: `${serifs.rpg.status.def}+10%`, short: `Ｄ`, desc: `常に${serifs.rpg.status.def}が10%上がります`, info: `条件無しで${serifs.rpg.status.def}+10%`, effect: { defUp: 0.1 } },
     { name: `炎属性剣攻撃`, short: "炎", desc: `戦闘時、最低ダメージが上昇します`, info: `戦闘時、Lvの9%がダメージに固定加算\n非戦闘時、${serifs.rpg.status.atk}+Lvの35%\n火曜日に全ての効果量が66%アップ`, effect: { fire: 0.09 } },
     { name: `氷属性剣攻撃`, short: "氷", desc: `戦闘時、たまに敵を凍らせます`, info: `戦闘時、9%で相手のターンをスキップ\n非戦闘時、${serifs.rpg.status.def}+9%\n水曜日に全ての効果量が66%アップ`, effect: { ice: 0.09 } },
     { name: `雷属性剣攻撃`, short: "雷", desc: `戦闘時、連続攻撃をすればダメージが上がります`, info: `(現在攻撃数/最大攻撃数)×18%のダメージ上昇を得る\n日曜日に全ての効果量が66%アップ`, effect: { thunder: 0.18 } },
