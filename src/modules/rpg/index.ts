@@ -273,6 +273,8 @@ export default class extends Module {
 				// 同順位の表記を追加
 				if (sameRankCount > 1) {
 					rankmsg += `（同順位：${sameRankCount - 1}人）`;
+				} else if (rank <= 10 && rank >= 2) {
+					rankmsg += `（1位：${values?.[0].toLocaleString()}）`;
 				}
 			}
 
