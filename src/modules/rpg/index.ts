@@ -1569,7 +1569,7 @@ export default class extends Module {
 			addMessage,
 			minusDurability ? "\n" + minusDurability : "",
 			`\n${serifs.rpg.nextPlay(nextPlay == 24 ? "明日" : nextPlay + "時")}`,
-			isMaxLevel ? "" : data.lastOnemorePlayedAt !== getDate() ? "(無料おかわり権あり)" : data.coin >= needCoin ? `(コインでおかわり可能 ${data.coin} / ${needCoin})` : "",
+			data.lv >= rpgData.maxLv ? "" : data.lastOnemorePlayedAt !== getDate() ? "(無料おかわり権あり)" : data.coin >= needCoin ? `(コインでおかわり可能 ${data.coin} / ${needCoin})` : "",
 		].filter(Boolean).join("\n");
 
 		const calcRerollOrbCount = Math.max(Math.min(Math.floor((data.lv - skillBorders[1]) / ((skillBorders[2] - skillBorders[1]) / 5)), 5), 0) +
