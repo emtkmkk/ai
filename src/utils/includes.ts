@@ -1,6 +1,6 @@
 import { katakanaToHiragana, hankakuToZenkaku } from './japanese';
 
-export default function(text: string, words: string[]): boolean {
+export default function (text: string, words: string[]): boolean {
 	if (text == null) return false;
 
 	text = katakanaToHiragana(hankakuToZenkaku(text)).toLowerCase();

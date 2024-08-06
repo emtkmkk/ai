@@ -10,7 +10,7 @@ export default class extends Module {
 	public install() {
 		const now = new Date();
 		if (now.getHours() === 23 && now.getMinutes() >= 57) {
-			this.schedulePost()
+			this.schedulePost();
 		} else {
 			this.preSchedulePost();
 		}

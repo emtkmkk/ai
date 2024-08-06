@@ -42,7 +42,7 @@ export default class extends Module {
 		});
 
 		let secret = Math.floor(Math.random() * 100);
-		if ([25,50,75].includes(secret)) secret = Math.floor(Math.random() * 100);
+		if ([25, 50, 75].includes(secret)) secret = Math.floor(Math.random() * 100);
 
 		this.guesses.insertOne({
 			userId: msg.userId,
@@ -54,12 +54,12 @@ export default class extends Module {
 			triggerId: msg.id,
 		});
 
-		msg.reply(serifs.guessingGame.started(this.MAX_TRY), {visibility: "specified"}).then(reply => {
+		msg.reply(serifs.guessingGame.started(this.MAX_TRY), { visibility: "specified" }).then(reply => {
 			this.subscribeReply(msg.userId, reply.id);
 		});
 
 		return {
-			reaction:'love'
+			reaction: 'love'
 		};
 	}
 
@@ -72,7 +72,7 @@ export default class extends Module {
 			isEnded: false
 		});
 
-		 // 処理の流れ上、実際にnullになることは無さそうだけど一応
+		// 処理の流れ上、実際にnullになることは無さそうだけど一応
 		if (exist == null) {
 			this.unsubscribeReply(key);
 			return;
@@ -92,7 +92,7 @@ export default class extends Module {
 			this.guesses.update(exist);
 			this.unsubscribeReply(key);
 			return {
-				reaction:'love'
+				reaction: 'love'
 			};
 		}
 
@@ -103,23 +103,23 @@ export default class extends Module {
 				this.subscribeReply(msg.userId, reply.id);
 			});
 			return {
-				reaction:'hmm'
+				reaction: 'hmm'
 			};
 		}
 
 		if (guess.length > 3) return {
-			reaction:'confused'
+			reaction: 'confused'
 		};
 
 		let g = parseInt(guess[0], 10);
-		
-		const min = Math.max(...exist.tries.filter((x) => x < exist.secret),-1)
-		const max = Math.min(...exist.tries.filter((x) => x > exist.secret),101)
+
+		const min = Math.max(...exist.tries.filter((x) => x < exist.secret), -1);
+		const max = Math.min(...exist.tries.filter((x) => x > exist.secret), 101);
 
 		if (g < min) g = min;
 		if (g > max) g = max;
 
-		const firsttime = exist.tries.indexOf(g) === -1 && g !== 101 &&　g !== -1;
+		const firsttime = exist.tries.indexOf(g) === -1 && g !== 101 && g !== -1;
 
 		if (firsttime) exist.tries.push(g);
 
@@ -140,9 +140,9 @@ export default class extends Module {
 		} else {
 			end = true;
 			let comment = "";
-			if (exist.tries.length <= 1) comment = "エスパーですか……！？"
-			else if (exist.tries.length <= 3) comment = "すごいです……！"
-			else if (exist.tries.length <= 4) comment = "早いです！"
+			if (exist.tries.length <= 1) comment = "エスパーですか……！？";
+			else if (exist.tries.length <= 3) comment = "すごいです……！";
+			else if (exist.tries.length <= 4) comment = "早いです！";
 			text = serifs.guessingGame.congrats(exist.secret, exist.tries.length.toString(), exist.tries.join("→"), comment);
 		}
 
@@ -156,7 +156,7 @@ export default class extends Module {
 					replyId: exist.triggerId,
 				});
 			} catch (err) {
-				msg.reply(text)
+				msg.reply(text);
 			}
 		} else {
 			msg.reply(text).then(reply => {
@@ -168,7 +168,7 @@ export default class extends Module {
 
 		this.guesses.update(exist);
 		return {
-			reaction:'love'
-		}
+			reaction: 'love'
+		};
 	}
 }

@@ -17,7 +17,7 @@ type List = {
 	createdAt: any;
 	name: string;
 	userIds: string[];
-}
+};
 
 export default class extends Module {
 	public readonly name = 'core';
@@ -44,35 +44,35 @@ export default class extends Module {
 
 	@autobind
 	private async linkAccountListAdd() {
-		const lists = await this.ai.api("users/lists/list", {}) as List[]
+		const lists = await this.ai.api("users/lists/list", {}) as List[];
 		this.list = lists.find((x) => x.name === "Linked");
 		if (!this.list) {
-			this.list = await this.ai.api("users/lists/create", { name: "Linked" }) as List
-			if (!this.list) return
-			console.log("Linked List Create: " + this.list.id)
+			this.list = await this.ai.api("users/lists/create", { name: "Linked" }) as List;
+			if (!this.list) return;
+			console.log("Linked List Create: " + this.list.id);
 		}
 		if (this.list) {
-			console.log("Linked List: " + this.list.id)
+			console.log("Linked List: " + this.list.id);
 			const friends = this.ai.friends.find() ?? [];
-			const linkedUsers = friends.filter((x) => x.linkedAccounts)
+			const linkedUsers = friends.filter((x) => x.linkedAccounts);
 			const listUserIds = new Set(this.list.userIds);
 			let newLinkedUserIds = new Set();
-	
+
 			for (const linkedUser of linkedUsers) {
-				if (linkedUser.linkedAccounts !== Array.from(new Set(linkedUser.linkedAccounts))){
+				if (linkedUser.linkedAccounts !== Array.from(new Set(linkedUser.linkedAccounts))) {
 					linkedUser.linkedAccounts = Array.from(new Set(linkedUser.linkedAccounts));
 				}
 				for (const linkedId of linkedUser.linkedAccounts!) {
 					if (!listUserIds.has(linkedId)) {
-						newLinkedUserIds.add(linkedId)
+						newLinkedUserIds.add(linkedId);
 					}
 				}
 			}
-	
-			newLinkedUserIds.forEach(async (x)=> {
-				if (this.list?.id) await this.ai.api("users/lists/push", { listId: this.list.id, userId: x })
-				console.log("Linked Account List Push: " + x)
-			})
+
+			newLinkedUserIds.forEach(async (x) => {
+				if (this.list?.id) await this.ai.api("users/lists/push", { listId: this.list.id, userId: x });
+				console.log("Linked Account List Push: " + x);
+			});
 		}
 	}
 
@@ -105,25 +105,25 @@ export default class extends Module {
 	}
 
 
-	@autobind 
+	@autobind
 	private async linkAccount(msg: Message) {
 		if (!msg.text) return false;
-		if (!msg.includes(['リンク','link'])) return false;
+		if (!msg.includes(['リンク', 'link'])) return false;
 
-		const exp = /@(\w+)@?([\w.-]+)?/.exec(msg.extractedText.replace("リンク",""));
+		const exp = /@(\w+)@?([\w.-]+)?/.exec(msg.extractedText.replace("リンク", ""));
 		if (!exp?.[1]) {
 			if (!msg.friend.doc.linkedAccounts) {
-				msg.reply("リンクしているアカウントがありません！\n新しくアカウントをリンクさせたい場合は、リンクの後にあなたのサブアカウントへのメンションを入れてください！")
+				msg.reply("リンクしているアカウントがありません！\n新しくアカウントをリンクさせたい場合は、リンクの後にあなたのサブアカウントへのメンションを入れてください！");
 				return { reaction: ":mk_hotchicken:" };
 			}
-			let message = "とリンクしているアカウント一覧\n\n"
-            // ユーザの投稿数を取得
-            const chart = await this.ai.api('charts/user/notes', {
-                span: 'day',
-                limit: 2,
-                userId: msg.userId,
+			let message = "とリンクしているアカウント一覧\n\n";
+			// ユーザの投稿数を取得
+			const chart = await this.ai.api('charts/user/notes', {
+				span: 'day',
+				limit: 2,
+				userId: msg.userId,
 				addInfo: true,
-            })
+			});
 
 			let totalPostCount = 0;
 			// チャートがない場合
@@ -133,10 +133,10 @@ export default class extends Module {
 						(msg.friend.doc.user.notesCount ?? msg.friend.doc.perModulesData.rpg.todayNotesCount) - msg.friend.doc.perModulesData.rpg.todayNotesCount,
 						msg.friend.doc.perModulesData.rpg.todayNotesCount - (msg.friend.doc.perModulesData.rpg.yesterdayNotesCount ?? msg.friend.doc.perModulesData.rpg.todayNotesCount)
 					);
-					totalPostCount += postCount
-					message += acct(msg.friend.doc.user) + " 投稿数: " + postCount
+					totalPostCount += postCount;
+					message += acct(msg.friend.doc.user) + " 投稿数: " + postCount;
 				} else {
-					message += acct(msg.friend.doc.user)
+					message += acct(msg.friend.doc.user);
 				}
 			} else {
 				// 投稿数（今日と明日の多い方）
@@ -144,26 +144,26 @@ export default class extends Module {
 					(chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
 					(chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
 				);
-				message += acct(msg.user) + " 投稿数: " + postCount
-				totalPostCount += postCount
+				message += acct(msg.user) + " 投稿数: " + postCount;
+				totalPostCount += postCount;
 			}
 
-            if (msg.friend.doc.linkedAccounts?.length) {
+			if (msg.friend.doc.linkedAccounts?.length) {
 				msg.friend.doc.linkedAccounts = Array.from(new Set(msg.friend.doc.linkedAccounts));
 				msg.friend.save();
-                for (const userId of msg.friend.doc.linkedAccounts) {
-                    const friend = this.ai.lookupFriend(userId);
-                    if (!friend) continue;
+				for (const userId of msg.friend.doc.linkedAccounts) {
+					const friend = this.ai.lookupFriend(userId);
+					if (!friend) continue;
 					if (!friend.doc?.linkedAccounts?.includes(msg.friend.userId)) {
-						message += "\n" + acct(friend.doc.user) + " 未リンク（リンク先のアカウントから" + acct(msg.user) + "をリンクしてください）"
+						message += "\n" + acct(friend.doc.user) + " 未リンク（リンク先のアカウントから" + acct(msg.user) + "をリンクしてください）";
 					}
 
-                    // ユーザの投稿数を取得
-                    const chart = await this.ai.api('charts/user/notes', {
-                        span: 'day',
-                        limit: 2,
-                        userId: userId,
-                    })
+					// ユーザの投稿数を取得
+					const chart = await this.ai.api('charts/user/notes', {
+						span: 'day',
+						limit: 2,
+						userId: userId,
+					});
 
 					// チャートがない場合
 					if (!chart?.diffs) {
@@ -172,24 +172,24 @@ export default class extends Module {
 								(friend.doc.user.notesCount ?? friend.doc.perModulesData.rpg.todayNotesCount) - friend.doc.perModulesData.rpg.todayNotesCount,
 								friend.doc.perModulesData.rpg.todayNotesCount - (friend.doc.perModulesData.rpg.yesterdayNotesCount ?? friend.doc.perModulesData.rpg.todayNotesCount)
 							);
-							totalPostCount += postCount
-							message += "\n" + acct(friend.doc.user) + " 投稿数: " + postCount
+							totalPostCount += postCount;
+							message += "\n" + acct(friend.doc.user) + " 投稿数: " + postCount;
 						} else {
-							message += "\n" + acct(friend.doc.user)
+							message += "\n" + acct(friend.doc.user);
 						}
 					} else {
 						let postCount = Math.max(
 							(chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
 							(chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
 						);
-						totalPostCount += postCount
+						totalPostCount += postCount;
 
-						message += "\n" + acct(friend.doc.user) + " 投稿数: " + postCount
+						message += "\n" + acct(friend.doc.user) + " 投稿数: " + postCount;
 					}
-                }
-            }
+				}
+			}
 			if (chart.add) {
-				const userstats = chart.add.filter((x) => !msg.friend.doc.linkedAccounts?.includes(x.id))
+				const userstats = chart.add.filter((x) => !msg.friend.doc.linkedAccounts?.includes(x.id));
 				let postCount = 0;
 				for (const userstat of userstats) {
 					postCount += Math.max(
@@ -197,73 +197,73 @@ export default class extends Module {
 						(userstat.diffs.normal?.[1] ?? 0) + (userstat.diffs.reply?.[1] ?? 0) + (userstat.diffs.withFile?.[1] ?? 0)
 					);
 				}
-				totalPostCount += Math.floor(postCount * 0.3)
+				totalPostCount += Math.floor(postCount * 0.3);
 
-				message += "\n" + "同一IDのユーザの投稿数: " + postCount + ` (× 30% = ${Math.floor(postCount * 0.3)})`
+				message += "\n" + "同一IDのユーザの投稿数: " + postCount + ` (× 30% = ${Math.floor(postCount * 0.3)})`;
 			}
-			message += "\n\n" + "リンク内合計投稿数: " + totalPostCount
-			msg.reply(`${message}`,{
+			message += "\n\n" + "リンク内合計投稿数: " + totalPostCount;
+			msg.reply(`${message}`, {
 				visibility: 'specified',
 			});
-	
+
 			return true;
 		} else {
 			const doc = this.ai.friends.find({
 				'user.username': exp[1],
-				...(exp?.[2] ? {'user.host': exp[2]} : {})
+				...(exp?.[2] ? { 'user.host': exp[2] } : {})
 			} as any) as any;
 			let filteredDoc = exp?.[2] ? doc : doc.filter((x) => x.user.host == null);
-	
+
 			if (filteredDoc.length === 0) {
 				const doc = this.ai.friends.find({
 					'user.username': exp[1],
 				} as any) as any;
 				filteredDoc = doc.filter((x) => x.user.host == null);
 			}
-			
+
 			if (filteredDoc.length !== 1 || (filteredDoc[0].userId === msg.userId && (exp?.[2] && exp?.[2] !== "mkkey.net"))) {
 				msg.reply(`そのユーザは私が知らないユーザの様です！\n@${exp[1]}@${exp[2]} から \`@mkck@mkkey.net リンク ${acct(msg.user, true)}\`と送信していただけると上手く行く可能性があります！`);
 				return { reaction: ":mk_hotchicken:" };
 			}
-	
+
 			if (filteredDoc[0].userId === msg.userId) {
 				msg.reply(`自身のアカウントとリンクはできないです……`);
 				return { reaction: ":mk_hotchicken:" };
 			}
-	
+
 			if (!msg.friend.doc.linkedAccounts) msg.friend.doc.linkedAccounts = [];
 
 			if (msg.friend.doc.linkedAccounts.includes(filteredDoc[0].userId)) {
 				msg.reply(`そのアカウントは既にリンク済みです！`);
 				return { reaction: ":mk_hotchicken:" };
 			}
-			
+
 			msg.friend.doc.linkedAccounts?.push(filteredDoc[0].userId);
 
 			msg.friend.doc.linkedAccounts = Array.from(new Set(msg.friend.doc.linkedAccounts));
-	
+
 			msg.friend.save();
 
 			this.linkAccountListAdd();
-	
+
 			if (filteredDoc[0].linkedAccounts?.includes(msg.friend.userId)) {
 				msg.reply(`アカウントのリンクに成功しました！\n投稿数が使用される際にリンクしたアカウントの合計投稿数で計算されるようになります！\n\n\`リンク\`と話しかけてもらえれば、リンクしているアカウントの情報を表示します！`);
 			} else {
 				msg.reply(`アカウントを登録しました！\nリンク先のアカウントからも同じ操作を実行してください！`);
 			}
-	
+
 			return true;
 		};
 	}
 
 	@autobind
 	private async findData(msg: Message) {
-		if (msg.user.host || msg.user.username !== config.master) return false
+		if (msg.user.host || msg.user.username !== config.master) return false;
 		if (!msg.text) return false;
 		if (!msg.includes(['データ照会'])) return false;
 
 		const doc = this.ai.friends.find({
-			'user.username': { '$regex': new RegExp(msg.extractedText.replace("データ照会 ",""), "i") }
+			'user.username': { '$regex': new RegExp(msg.extractedText.replace("データ照会 ", ""), "i") }
 		} as any) as any;
 
 		if (doc == null || (Array.isArray(doc) && !doc.length)) return { reaction: ":mk_hotchicken:" };
@@ -280,16 +280,16 @@ export default class extends Module {
 		}
 
 		let json = JSON.parse(JSON.stringify(doc));
-		console.log("json : " + JSON.stringify(json, null, 2).length)
+		console.log("json : " + JSON.stringify(json, null, 2).length);
 		try {
 			if (Array.isArray(json)) {
 				for (let i = 0; i < json.length; i++) {
 					for (let key2 in json[i].user) {
 						if (json[i].user[key2] != null && Array.isArray(json[i].user[key2])) {
-							console.log("json[" + i + "].user[" + key2 + "] is Array")
+							console.log("json[" + i + "].user[" + key2 + "] is Array");
 							json[i].user[key2] = "[Array]";
 						} else if (typeof json[i].user[key2] === 'object' && json[i].user[key2] != null) {
-							console.log("json[" + i + "].user[" + key2 + "] is Object")
+							console.log("json[" + i + "].user[" + key2 + "] is Object");
 							json[i].user[key2] = json[i].user[key2].name || "[Object]";
 						}
 					}
@@ -298,17 +298,17 @@ export default class extends Module {
 				for (let key in json) {
 					for (let key2 in json[key].user) {
 						if (json[key].user[key2] != null && Array.isArray(json[key].user[key2])) {
-							console.log("json[" + key + "].user[" + key2 + "] is Array")
+							console.log("json[" + key + "].user[" + key2 + "] is Array");
 							json[key].user[key2] = "[Array]";
 						} else if (typeof json[key].user[key2] === 'object' && json[key].user[key2] != null) {
-							console.log("json[" + key + "].user[" + key2 + "] is Object")
+							console.log("json[" + key + "].user[" + key2 + "] is Object");
 							json[key].user[key2] = json[key].user[key2].name || "[Object]";
 						}
 					}
 				}
 			}
 		} catch (e) {
-			console.log(e)
+			console.log(e);
 		}
 
 		const text = JSON.stringify(json, null, 2);
@@ -330,52 +330,52 @@ export default class extends Module {
 	private mergeAndSum(obj1, obj2) {
 		// 結果を格納する新しいオブジェクト
 		const result = { ...obj1 };
-	
+
 		// obj2のキーと値を結果に追加、同じキーがあれば値を足し合わせる
 		for (const key in obj2) {
-		  if (result[key] != undefined) {
-			if (Array.isArray(result[key]) && Array.isArray(obj2[key])) {
-			  // 配列の場合は結合する
-				if (key === "linkedAccounts") continue;
-			  result[key] = result[key].concat(obj2[key]);
-			} else if (typeof result[key] === 'number' && typeof obj2[key] === 'number') {
-			  // 数値の場合は足し合わせる
-			  result[key] += obj2[key];
-			} else if (result[key] instanceof Date && obj2[key] instanceof Date) {
-			  // 日付の場合は未来の日付を採用する
-			  result[key] = result[key] > obj2[key] ? result[key] : obj2[key];
-			} else if (typeof result[key] === 'object' && typeof obj2[key] === 'object' && !Array.isArray(result[key])) {
-			  // オブジェクトの場合は再帰的にマージする
-				if (key === "rpg") continue;
-			  result[key] = this.mergeAndSum(result[key], obj2[key]);
+			if (result[key] != undefined) {
+				if (Array.isArray(result[key]) && Array.isArray(obj2[key])) {
+					// 配列の場合は結合する
+					if (key === "linkedAccounts") continue;
+					result[key] = result[key].concat(obj2[key]);
+				} else if (typeof result[key] === 'number' && typeof obj2[key] === 'number') {
+					// 数値の場合は足し合わせる
+					result[key] += obj2[key];
+				} else if (result[key] instanceof Date && obj2[key] instanceof Date) {
+					// 日付の場合は未来の日付を採用する
+					result[key] = result[key] > obj2[key] ? result[key] : obj2[key];
+				} else if (typeof result[key] === 'object' && typeof obj2[key] === 'object' && !Array.isArray(result[key])) {
+					// オブジェクトの場合は再帰的にマージする
+					if (key === "rpg") continue;
+					result[key] = this.mergeAndSum(result[key], obj2[key]);
+				} else {
+					// 他の型の場合は後の方を採用する（ここでは単純に上書きするようにしています）
+					result[key] = obj2[key];
+				}
 			} else {
-			  // 他の型の場合は後の方を採用する（ここでは単純に上書きするようにしています）
-			  result[key] = obj2[key];
+				result[key] = obj2[key];
 			}
-		  } else {
-			result[key] = obj2[key];
-		  }
 		}
-	
+
 		return result;
 	}
 
 	@autobind
 	private mergeData(msg: Message) {
-		if (msg.user.host || msg.user.username !== config.master) return false
+		if (msg.user.host || msg.user.username !== config.master) return false;
 		if (!msg.text) return false;
 		if (!msg.includes(['データ合体'])) return false;
 
-		const ids = /データ合体 (\w{10}) (\w{10})/.exec(msg.extractedText)
+		const ids = /データ合体 (\w{10}) (\w{10})/.exec(msg.extractedText);
 
 		if (!ids?.[1]) return { reaction: ":mk_hotchicken:" };
 		if (!ids?.[2]) return { reaction: ":mk_hotchicken:" };
 
-		const doc1 = this.ai.lookupFriend(ids?.[1])
+		const doc1 = this.ai.lookupFriend(ids?.[1]);
 
 		if (doc1 == null) return { reaction: ":mk_hotchicken:" };
 
-		const doc2 = this.ai.lookupFriend(ids?.[2])
+		const doc2 = this.ai.lookupFriend(ids?.[2]);
 
 		if (doc2 == null) return { reaction: ":mk_hotchicken:" };
 
@@ -383,25 +383,25 @@ export default class extends Module {
 		let x = 0;
 		let y = 0;
 		while (y < doc1.love) {
-			const amount = y > 100 ? (Math.ceil(0.5 / ((y || 0) * 2 / 100 - 1) * 100) / 100) : 0.5
-			y = parseFloat((y + amount || 0).toFixed(2))
-			x += 1
+			const amount = y > 100 ? (Math.ceil(0.5 / ((y || 0) * 2 / 100 - 1) * 100) / 100) : 0.5;
+			y = parseFloat((y + amount || 0).toFixed(2));
+			x += 1;
 		}
-		console.log(`${x} : ${y}`)
+		console.log(`${x} : ${y}`);
 		for (let i = 0; i < x; i++) {
-			doc2.incLove(0.1, "merge")
+			doc2.incLove(0.1, "merge");
 		}
 		doc1.doc.love = 0;
 		doc2.doc.married = doc1.married || doc2.married;
 		doc2.doc.perModulesData = this.mergeAndSum(doc1.doc.perModulesData, doc2.doc.perModulesData);
-		doc2.doc.kazutoriData = this.mergeAndSum(doc1.doc.kazutoriData, doc2.doc.kazutoriData)
+		doc2.doc.kazutoriData = this.mergeAndSum(doc1.doc.kazutoriData, doc2.doc.kazutoriData);
 		doc1.doc.kazutoriData = { winCount: 0, playCount: 0, rate: 0, inventory: [] };
 		doc2.save();
 		doc1.save();
 
 		let json = JSON.parse(JSON.stringify(doc2.doc));
 
-		delete json.user
+		delete json.user;
 
 		const text = JSON.stringify(json, null, 2);
 
@@ -419,13 +419,13 @@ export default class extends Module {
 
 	@autobind
 	private async ranking(msg: Message) {
-		if (msg.user.host || msg.user.username !== config.master) return false
+		if (msg.user.host || msg.user.username !== config.master) return false;
 		if (!msg.text) return false;
 		if (!msg.includes(['ランキング'])) return false;
 
 		const friends = this.ai.friends.find() ?? [];
 
-		const docs = friends.filter((x) => (x.love && x.love >= 100)).slice(0, 100) as any
+		const docs = friends.filter((x) => (x.love && x.love >= 100)).slice(0, 100) as any;
 
 		for (let i = 0; i < docs.length; i++) {
 			if (docs[i].user.fields == "[Array]" || docs[i].user.emojis == "[Array]" || docs[i].user.pinnedNoteIds == "[Array]") {
@@ -438,7 +438,7 @@ export default class extends Module {
 			}
 		}
 
-		const rank = docs.sort((a,b) => (b.love ?? 0) - (a.love ?? 0)).map((x) => `${x.user ? `@${x.user?.username}${x.user?.host ? `@${x.user.host}` : ""}` : x.userId} : ★${((x.love ?? 0) / (100 / 7)).toFixed(2)}` )
+		const rank = docs.sort((a, b) => (b.love ?? 0) - (a.love ?? 0)).map((x) => `${x.user ? `@${x.user?.username}${x.user?.host ? `@${x.user.host}` : ""}` : x.userId} : ★${((x.love ?? 0) / (100 / 7)).toFixed(2)}`);
 
 		msg.reply(`ランキング\n\n${rank.join("\n")}`, {
 			visibility: 'specified',
@@ -454,7 +454,7 @@ export default class extends Module {
 
 		const code = msg.friend.generateTransferCode();
 
-		console.log("move account code generated : " + msg.user.id + " : " + code)
+		console.log("move account code generated : " + msg.user.id + " : " + code);
 
 		msg.reply(serifs.core.transferCode(code), {
 			visibility: 'specified',
@@ -559,16 +559,16 @@ export default class extends Module {
 		let love = "";
 		let over = Math.floor(lovep / (100 / 7)) - 7;
 		let point = (lovep / (100 / 7)).toFixed(2);
-		love += lovep >= -29 ? "★" : "☆"
-		love += lovep >= -10 ? "★" : "☆"
-		love += lovep >= 0 ? "★" : "☆"
-		love += lovep >= 5 ? "★" : "☆"
-		love += lovep >= 20 ? "★" : "☆"
-		love += lovep >= 50 ? "★" : "☆"
-		love += lovep >= 100 ? "★" : "☆"
-		love += over >= 1 ? "★".repeat(over) + "\n(★\\(" + point + "\\))" : ""
+		love += lovep >= -29 ? "★" : "☆";
+		love += lovep >= -10 ? "★" : "☆";
+		love += lovep >= 0 ? "★" : "☆";
+		love += lovep >= 5 ? "★" : "☆";
+		love += lovep >= 20 ? "★" : "☆";
+		love += lovep >= 50 ? "★" : "☆";
+		love += lovep >= 100 ? "★" : "☆";
+		love += over >= 1 ? "★".repeat(over) + "\n(★\\(" + point + "\\))" : "";
 
-		msg.reply(serifs.core.getLove(msg.friend.name || 'あなた', love))
+		msg.reply(serifs.core.getLove(msg.friend.name || 'あなた', love));
 
 		return true;
 	}
@@ -581,25 +581,25 @@ export default class extends Module {
 		const lovep = msg.friend.love || 0;
 		let love = "";
 		let over = Math.floor(lovep / (100 / 7)) - 7;
-		love += lovep >= -29 ? "★" : "☆"
-		love += lovep >= -10 ? "★" : "☆"
-		love += lovep >= 0 ? "★" : "☆"
-		love += lovep >= 5 ? "★" : "☆"
-		love += lovep >= 20 ? "★" : "☆"
-		love += lovep >= 50 ? "★" : "☆"
-		love += lovep >= 100 ? "★" : "☆"
-		love += over >= 1 ? "+" + (over >= 2 ? over : "") : ""
+		love += lovep >= -29 ? "★" : "☆";
+		love += lovep >= -10 ? "★" : "☆";
+		love += lovep >= 0 ? "★" : "☆";
+		love += lovep >= 5 ? "★" : "☆";
+		love += lovep >= 20 ? "★" : "☆";
+		love += lovep >= 50 ? "★" : "☆";
+		love += lovep >= 100 ? "★" : "☆";
+		love += over >= 1 ? "+" + (over >= 2 ? over : "") : "";
 
-		const name = msg.friend.name ? '呼び方 : ' + msg.friend.name : ''
+		const name = msg.friend.name ? '呼び方 : ' + msg.friend.name : '';
 
 		const lovemsg = `懐き度 : ${love}`;
 
-		const kazutori = msg.friend.doc.kazutoriData?.playCount 
-		? `数取り : ${msg.friend.doc.kazutoriData?.winCount} / ${msg.friend.doc.kazutoriData?.playCount}${msg.friend.doc.kazutoriData?.rate > 0 ? ` (${msg.friend.doc.kazutoriData?.rate})` : ""}${msg.friend.doc.kazutoriData?.medal ? "\nトロフィー : " + msg.friend.doc.kazutoriData?.medal : ""}` 
-		: undefined;
+		const kazutori = msg.friend.doc.kazutoriData?.playCount
+			? `数取り : ${msg.friend.doc.kazutoriData?.winCount} / ${msg.friend.doc.kazutoriData?.playCount}${msg.friend.doc.kazutoriData?.rate > 0 ? ` (${msg.friend.doc.kazutoriData?.rate})` : ""}${msg.friend.doc.kazutoriData?.medal ? "\nトロフィー : " + msg.friend.doc.kazutoriData?.medal : ""}`
+			: undefined;
 
 		const bonus = msg.friend.doc.perModulesData?.rpg ? (((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) + ((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0))) / 2 : 0;
-		const rpg = msg.friend.doc.perModulesData?.rpg 
+		const rpg = msg.friend.doc.perModulesData?.rpg
 			? [
 				serifs.rpg.rpgMode + ((msg.friend.doc.perModulesData.rpg.clearHistory ?? []).includes("ending") ? "⭐" : ""),
 				`  ${serifs.rpg.status.enemy} : ${msg.friend.doc.perModulesData.rpg.enemy ? (msg.friend.doc.perModulesData.rpg.enemy?.short ?? "") : "探索中"}`,
@@ -608,12 +608,12 @@ export default class extends Module {
 				`  ${serifs.rpg.status.def} : ${msg.friend.doc.perModulesData.rpg.def ?? 0}${bonus >= 1 ? ` (+${Math.floor(bonus * ((100 + (msg.friend.doc.perModulesData.rpg.def ?? 0)) / 100))})` : ""}`,
 				lovep >= 100 ? `  ${serifs.rpg.status.spd} : ${Math.floor(lovep / 100) + 1}` : "",
 				msg.friend.doc.perModulesData.rpg.skills ? `  ${serifs.rpg.status.skill} : ` : undefined,
-				...(msg.friend.doc.perModulesData.rpg.skills ? msg.friend.doc.perModulesData.rpg.skills.map((x) => "    "　+ x.name) : []),
+				...(msg.friend.doc.perModulesData.rpg.skills ? msg.friend.doc.perModulesData.rpg.skills.map((x) => "    " + x.name) : []),
 				msg.friend.doc.perModulesData.rpg.coin ? `  ${serifs.rpg.status.coin} : ${msg.friend.doc.perModulesData.rpg.coin}` : "",
 			].filter(Boolean).join("\n")
-			: ""
+			: "";
 
-		msg.reply(serifs.core.getStatus([name, lovemsg, kazutori, rpg].filter(Boolean).join("\n")))
+		msg.reply(serifs.core.getStatus([name, lovemsg, kazutori, rpg].filter(Boolean).join("\n")));
 
 		return true;
 	}
@@ -632,7 +632,7 @@ export default class extends Module {
 				: msg.friend.doc.kazutoriData?.inventory?.length >= 35
 					? `\n\n沢山プレゼントがありますね！\n**50**個を超えると古い物から消えてしまうので注意してください！（現在**${msg.friend.doc.kazutoriData?.inventory?.length}**個）`
 					: ""
-		))
+		));
 
 		return true;
 	}
@@ -650,17 +650,17 @@ export default class extends Module {
 				if (Math.random() > 0.1) adana = itemPrefixes[Math.floor(Math.random() * itemPrefixes.length)];
 				const words = this.learnedKeywords.find();
 				const word = words ? words[Math.floor(Math.random() * words.length)].keyword : undefined;
-				adana += word
+				adana += word;
 			}
 			if (Math.random() < 0.4) {
-				adana += titles[Math.floor(Math.random() * titles.length)]
+				adana += titles[Math.floor(Math.random() * titles.length)];
 			}
 			return adana;
-		}
+		};
 
-		const adanas = msg.includes(['たくさん', '沢山', 'いっぱい', '大量']) ? [genAdana(), genAdana(), genAdana(), genAdana(), genAdana(), genAdana(), genAdana(), genAdana(), genAdana(), genAdana(), genAdana(), genAdana()] : [genAdana(), genAdana(), genAdana()]
+		const adanas = msg.includes(['たくさん', '沢山', 'いっぱい', '大量']) ? [genAdana(), genAdana(), genAdana(), genAdana(), genAdana(), genAdana(), genAdana(), genAdana(), genAdana(), genAdana(), genAdana(), genAdana()] : [genAdana(), genAdana(), genAdana()];
 
-		msg.reply(serifs.core.getAdana(adanas))
+		msg.reply(serifs.core.getAdana(adanas));
 
 		return true;
 	}
@@ -669,20 +669,20 @@ export default class extends Module {
 	private getBananasu(msg: Message): boolean {
 		if (!msg.text) return false;
 		if (!(msg.includes(['バナナス', 'バニャニャス']))) return false;
-		let debug = false
+		let debug = false;
 		if (msg.includes(['-d'])) debug = true;
 
 		let inputWord: string | undefined;
 		if (/^[^\s]{1,10}(の|で)(たくさん)?(バナナス|バニャニャス|ばななす|ばにゃにゃす)/.test(msg.extractedText)) {
 			inputWord = /^([^\s]+)(の|で)(たくさん)?(バナナス|バニャニャス|ばななす|ばにゃにゃす)/.exec(msg.extractedText)?.[1];
 		}
-		
+
 		invalidChars.forEach((x) => {
-			if (inputWord) inputWord = inputWord.replaceAll(x,"");
+			if (inputWord) inputWord = inputWord.replaceAll(x, "");
 		});
-		
+
 		ngword.forEach((x) => {
-			if (inputWord) inputWord = inputWord.replaceAll(x,"");
+			if (inputWord) inputWord = inputWord.replaceAll(x, "");
 		});
 
 		const words = this.learnedKeywords.find()?.filter((x) => x.keyword.length >= 3 && !/^[0-9]/.test(x.keyword) && !/[0-9]$/.test(x.keyword));
@@ -730,7 +730,7 @@ ${data.recentlySentReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.n
 
 最近よく貰う絵文字 : 
 ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/, "").replace(":", "")})` : ''}`).join('\n')}
-`, { cw: `${acct(msg.user)} ${msg.friend.name || 'さん'}の絵文字情報（リアクション）` })
+`, { cw: `${acct(msg.user)} ${msg.friend.name || 'さん'}の絵文字情報（リアクション）` });
 		} else {
 			//リモート
 			msg.reply(`
@@ -750,7 +750,7 @@ ${data.recentlySentReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.n
 
 最近よく貰う絵文字 : 
 ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/, "").replace(":", "")})` : ''}`).join('\n')}
-`, { cw: `${acct(msg.user)} ${msg.friend.name || 'さん'}の絵文字情報（リアクション）` })
+`, { cw: `${acct(msg.user)} ${msg.friend.name || 'さん'}の絵文字情報（リアクション）` });
 		}
 
 		return true;
@@ -840,16 +840,16 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 		if (msg.text.includes('はい')) {
 			msg.friend.updateName(data.name + 'さん');
 			done();
-			return { reaction: 'love' }
+			return { reaction: 'love' };
 		} else if (msg.text.includes('いいえ')) {
 			msg.friend.updateName(data.name);
 			done();
-			return { reaction: 'love' }
+			return { reaction: 'love' };
 		} else {
 			msg.reply(serifs.core.yesOrNo).then(reply => {
 				this.subscribeReply(msg.userId, reply.id, data);
 			});
-			return { reaction: 'hmm' }
+			return { reaction: 'hmm' };
 		}
 	}
 }

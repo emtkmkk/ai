@@ -14,12 +14,12 @@ export function initializeData(module: rpg, msg) {
     if (!data.items) data.items = [];
     if (!data.coin) data.coin = 0;
     data.clearRaidNum = (Array.from(new Set(data.clearRaid ?? []))?.length) ?? 0;
-    data.items?.filter((x) => x.type = (shopItems.find((y) => x.name === y.name)?.type ?? (x.skillName ? "amulet" : "token")))
+    data.items?.filter((x) => x.type = (shopItems.find((y) => x.name === y.name)?.type ?? (x.skillName ? "amulet" : "token")));
     if (data.items.filter((x) => x.type === "amulet").length > 1) {
         data.items.filter((x) => x.type === "amulet").forEach((x) => {
-            data.coin += x.price
-            data.shopItems.push(x.name)
-        })
+            data.coin += x.price;
+            data.shopItems.push(x.name);
+        });
         data.items = data.items.filter((x) => x.type !== "amulet");
 
     }
@@ -47,32 +47,32 @@ export function getColor(data) {
 export function showStatus(data, playerHp: number, enemyHp: number, enemyMaxHp: number, me = colors.find((x) => x.default)?.name ?? colors[0].name): string {
 
     // 敵
-    const enemyHpMarkCount = Math.min(Math.ceil(enemyHp / enemyMaxHp / (1 / 7)), 7)
+    const enemyHpMarkCount = Math.min(Math.ceil(enemyHp / enemyMaxHp / (1 / 7)), 7);
     const enemyHpMarkStr = data.enemy.lToR
         ? data.enemy.mark2.repeat(7 - enemyHpMarkCount) + data.enemy.mark.repeat(enemyHpMarkCount)
-        : data.enemy.mark2.repeat(enemyHpMarkCount) + data.enemy.mark.repeat(7 - enemyHpMarkCount)
+        : data.enemy.mark2.repeat(enemyHpMarkCount) + data.enemy.mark.repeat(7 - enemyHpMarkCount);
     const enemyHpInfoStr = data.enemy.lToR
         ? (Math.ceil((100 - Math.min(Math.ceil(enemyHp / enemyMaxHp / (1 / 100)), 100)) / 5) * 5) + " " + serifs.rpg.infoPercent
-        : (Math.ceil((Math.min(Math.ceil(enemyHp / enemyMaxHp / (1 / 100)), 100)) / 5) * 5) + " " + serifs.rpg.infoPercent
+        : (Math.ceil((Math.min(Math.ceil(enemyHp / enemyMaxHp / (1 / 100)), 100)) / 5) * 5) + " " + serifs.rpg.infoPercent;
 
     // プレイヤー
-    const playerHpMarkCount = Math.min(Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 7)), 7)
+    const playerHpMarkCount = Math.min(Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 7)), 7);
     const playerHpMarkStr = data.enemy.pLToR
         ? serifs.rpg.player.mark2.repeat(7 - playerHpMarkCount) + serifs.rpg.player.mark.repeat(playerHpMarkCount)
-        : serifs.rpg.player.mark2.repeat(playerHpMarkCount) + serifs.rpg.player.mark.repeat(7 - playerHpMarkCount)
+        : serifs.rpg.player.mark2.repeat(playerHpMarkCount) + serifs.rpg.player.mark.repeat(7 - playerHpMarkCount);
     const PlayerHpInfoStr = data.enemy.pLToR
         ? (Math.ceil((100 - Math.min(Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 100)), 100)) / 5) * 5) + " " + serifs.rpg.infoPercent
-        : (Math.ceil((Math.min(Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 100)), 100)) / 5) * 5) + " " + serifs.rpg.infoPercent
+        : (Math.ceil((Math.min(Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 100)), 100)) / 5) * 5) + " " + serifs.rpg.infoPercent;
     const playerHpStr = data.enemy.pLToR
         ? PlayerHpInfoStr
-        : `${playerHp} / ${100 + (data.lv ?? 1) * 3}`
+        : `${playerHp} / ${100 + (data.lv ?? 1) * 3}`;
 
-    const debuff = [data.enemy.fire ? serifs.rpg.fire + data.count : ""].filter(Boolean).join(" ")
+    const debuff = [data.enemy.fire ? serifs.rpg.fire + data.count : ""].filter(Boolean).join(" ");
 
     if (data.enemy.pLToR) {
-        return `\n${data.enemy.hpmsg ? serifs.rpg.player.hpmsg : me} : ${data.info && (data.clearHistory ?? []).includes(data.enemy.name) ? enemyHpInfoStr : enemyHpMarkStr}\n${data.enemy.hpmsg ?? data.enemy.dname ?? data.enemy.name} : ${data.info ? PlayerHpInfoStr : playerHpMarkStr}${debuff ? `\n${debuff}` : ""}`
+        return `\n${data.enemy.hpmsg ? serifs.rpg.player.hpmsg : me} : ${data.info && (data.clearHistory ?? []).includes(data.enemy.name) ? enemyHpInfoStr : enemyHpMarkStr}\n${data.enemy.hpmsg ?? data.enemy.dname ?? data.enemy.name} : ${data.info ? PlayerHpInfoStr : playerHpMarkStr}${debuff ? `\n${debuff}` : ""}`;
     } else {
-        return `\n${data.enemy.hpmsg ?? data.enemy.dname ?? data.enemy.name} : ${data.info && (data.clearHistory ?? []).includes(data.enemy.name) ? enemyHpInfoStr : enemyHpMarkStr}\n${data.enemy.hpmsg ? serifs.rpg.player.hpmsg : me} : ${data.info >= 3 ? playerHpStr : data.info ? PlayerHpInfoStr : playerHpMarkStr}${debuff ? `\n${debuff}` : ""}`
+        return `\n${data.enemy.hpmsg ?? data.enemy.dname ?? data.enemy.name} : ${data.info && (data.clearHistory ?? []).includes(data.enemy.name) ? enemyHpInfoStr : enemyHpMarkStr}\n${data.enemy.hpmsg ? serifs.rpg.player.hpmsg : me} : ${data.info >= 3 ? playerHpStr : data.info ? PlayerHpInfoStr : playerHpMarkStr}${debuff ? `\n${debuff}` : ""}`;
     }
 }
 
@@ -87,20 +87,20 @@ export function showStatus(data, playerHp: number, enemyHp: number, enemyMaxHp: 
 export function showStatusDmg(data, playerHp: number, totalDmg: number, enemyMaxHp: number, me = colors.find((x) => x.default)?.name ?? colors[0].name): string {
 
     // プレイヤー
-    const playerHpMarkCount = Math.min(Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 7)), 7)
+    const playerHpMarkCount = Math.min(Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 7)), 7);
     const playerHpMarkStr = false
         ? serifs.rpg.player.mark2.repeat(7 - playerHpMarkCount) + serifs.rpg.player.mark.repeat(playerHpMarkCount)
-        : serifs.rpg.player.mark2.repeat(playerHpMarkCount) + serifs.rpg.player.mark.repeat(7 - playerHpMarkCount)
+        : serifs.rpg.player.mark2.repeat(playerHpMarkCount) + serifs.rpg.player.mark.repeat(7 - playerHpMarkCount);
     const PlayerHpInfoStr = false
         ? (Math.ceil((100 - Math.min(Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 100)), 100)) / 5) * 5) + " " + serifs.rpg.infoPercent
-        : (Math.ceil((Math.min(Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 100)), 100)) / 5) * 5) + " " + serifs.rpg.infoPercent
+        : (Math.ceil((Math.min(Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 100)), 100)) / 5) * 5) + " " + serifs.rpg.infoPercent;
     const playerHpStr = false
         ? PlayerHpInfoStr
-        : `${playerHp} / ${100 + (data.lv ?? 1) * 3}`
+        : `${playerHp} / ${100 + (data.lv ?? 1) * 3}`;
 
-    const debuff = [data.enemy?.fire ? serifs.rpg.fire + data.count : ""].filter(Boolean).join(" ")
+    const debuff = [data.enemy?.fire ? serifs.rpg.fire + data.count : ""].filter(Boolean).join(" ");
 
-    return `\n${"与えたダメージ"} : ${totalDmg}\n${me} : ${data.info >= 3 ? playerHpStr : data.info ? PlayerHpInfoStr : playerHpMarkStr}${debuff ? `\n${debuff}` : ""}`
+    return `\n${"与えたダメージ"} : ${totalDmg}\n${me} : ${data.info >= 3 ? playerHpStr : data.info ? PlayerHpInfoStr : playerHpMarkStr}${debuff ? `\n${debuff}` : ""}`;
 }
 
 /**
@@ -117,7 +117,7 @@ export async function getPostCount(ai: 藍, module: rpg, data, msg, bonus = 0): 
         limit: 2,
         userId: msg.userId,
         addInfo: true
-    })
+    });
 
     // チャートがない場合
     if (!chart?.diffs) {
@@ -134,7 +134,7 @@ export async function getPostCount(ai: 藍, module: rpg, data, msg, bonus = 0): 
             for (const userId of msg.friend.doc.linkedAccounts) {
                 if (msg.userId === userId) {
                     msg.friend.doc.linkedAccounts = msg.friend.doc.linkedAccounts.filter((x) => x !== userId);
-                    msg.friend.doc.save()
+                    msg.friend.doc.save();
                 }
                 const friend = ai.lookupFriend(userId);
                 if (!friend || !friend.doc?.linkedAccounts?.includes(msg.friend.userId)) continue;
@@ -163,7 +163,7 @@ export async function getPostCount(ai: 藍, module: rpg, data, msg, bonus = 0): 
             for (const userId of msg.friend.doc.linkedAccounts) {
                 if (msg.userId === userId) {
                     msg.friend.doc.linkedAccounts = msg.friend.doc.linkedAccounts.filter((x) => x !== userId);
-                    msg.friend.doc.save()
+                    msg.friend.doc.save();
                 }
                 const friend = ai.lookupFriend(userId);
                 if (!friend || !friend.doc?.linkedAccounts?.includes(msg.friend.userId)) continue;
@@ -173,7 +173,7 @@ export async function getPostCount(ai: 藍, module: rpg, data, msg, bonus = 0): 
                     span: 'day',
                     limit: 2,
                     userId: userId
-                })
+                });
 
                 postCount += Math.max(
                     (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
@@ -182,7 +182,7 @@ export async function getPostCount(ai: 藍, module: rpg, data, msg, bonus = 0): 
             }
         }
         if (chart.add) {
-            const userstats = chart.add.filter((x) => !msg.friend.doc.linkedAccounts?.includes(x.id))
+            const userstats = chart.add.filter((x) => !msg.friend.doc.linkedAccounts?.includes(x.id));
             let total = 0;
             for (const userstat of userstats) {
                 total += Math.max(
@@ -190,7 +190,7 @@ export async function getPostCount(ai: 藍, module: rpg, data, msg, bonus = 0): 
                     (userstat.diffs.normal?.[1] ?? 0) + (userstat.diffs.reply?.[1] ?? 0) + (userstat.diffs.withFile?.[1] ?? 0)
                 );
             }
-            postCount += Math.floor(total * 0.3)
+            postCount += Math.floor(total * 0.3);
         }
         return postCount + bonus;
     }
@@ -215,7 +215,7 @@ export function getPostX(postCount) {
                 ? (postCount - 10) / 15 + 2
                 : postCount >= 3
                     ? (postCount - 3) / 7 + 1
-                    : Math.max(postCount / 3, (1 / 3))
+                    : Math.max(postCount / 3, (1 / 3));
 }
 
 /**
@@ -255,13 +255,13 @@ export function getRaidPostX(postCount) {
  * @returns プレイヤーが与えるダメージ
  */
 export function getAtkDmg(data, atk: number, tp: number, count: number, crit: number | boolean, enemyDef: number, enemyMaxHp: number, rng = (0.2 + Math.random() * 1.6), defx?: number) {
-    let dmg = Math.round((atk * tp * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * rng * (crit ? typeof crit === "number" ? (2 * crit) : 2 : 1)) * (1 / (((enemyDef * (defx ?? getVal(data.enemy.defx, [tp]) ?? 3)) + 100) / 100)))
+    let dmg = Math.round((atk * tp * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * rng * (crit ? typeof crit === "number" ? (2 * crit) : 2 : 1)) * (1 / (((enemyDef * (defx ?? getVal(data.enemy.defx, [tp]) ?? 3)) + 100) / 100)));
     if (data.fireAtk > 0 && enemyMaxHp < 10000) {
-        dmg += Math.round((data.fireAtk) * enemyMaxHp * 0.01)
+        dmg += Math.round((data.fireAtk) * enemyMaxHp * 0.01);
         data.fireAtk = (data.fireAtk ?? 0) - 1;
     }
     if (Number.isNaN(dmg)) {
-        throw new Error()
+        throw new Error();
     }
     return Math.max(dmg, 1);
 }
@@ -278,12 +278,12 @@ export function getAtkDmg(data, atk: number, tp: number, count: number, crit: nu
  * @returns プレイヤーが受けるダメージ
  */
 export function getEnemyDmg(data, def: number, tp: number, count: number, crit: number | boolean, enemyAtk: number, rng = (0.2 + Math.random() * 1.6), atkx?) {
-    let dmg = Math.round((enemyAtk * (atkx ?? getVal(data.enemy.atkx, [tp]) ?? 3) * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * rng * (crit ? typeof crit === "number" ? (2 * crit) : 2 : 1)) * (1 / (((def * tp) + 100) / 100)))
+    let dmg = Math.round((enemyAtk * (atkx ?? getVal(data.enemy.atkx, [tp]) ?? 3) * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * rng * (crit ? typeof crit === "number" ? (2 * crit) : 2 : 1)) * (1 / (((def * tp) + 100) / 100)));
     if (data.enemy?.fire) {
-        dmg += Math.round(((data.count ?? count) - 1) * (100 + data.lv * 3) * data.enemy.fire)
+        dmg += Math.round(((data.count ?? count) - 1) * (100 + data.lv * 3) * data.enemy.fire);
     }
     if (Number.isNaN(dmg)) {
-        throw new Error()
+        throw new Error();
     }
     return Math.max(dmg, 1);
 }
@@ -291,7 +291,7 @@ export function getEnemyDmg(data, def: number, tp: number, count: number, crit: 
 export function random(data, startCharge = 0, skillEffects, reverse = false) {
     let rnd = skillEffects.notRandom && !reverse ? 0.55 : Math.random();
     if (skillEffects.charge) {
-        const charge = Math.min(startCharge, data.charge)
+        const charge = Math.min(startCharge, data.charge);
         if (charge > 0) {
             rnd = (charge / 2) + (rnd * (1 - (charge / 2)));
         }

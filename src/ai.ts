@@ -47,8 +47,8 @@ export default class 藍 {
 	public connection: Stream;
 	public modules: Module[] = [];
 	private mentionHooks: MentionHook[] = [];
-	private contextHooks: { [moduleName: string]: ContextHook } = {};
-	private timeoutCallbacks: { [moduleName: string]: TimeoutCallback } = {};
+	private contextHooks: { [moduleName: string]: ContextHook; } = {};
+	private timeoutCallbacks: { [moduleName: string]: TimeoutCallback; } = {};
 	public db: loki;
 	public lastSleepedAt: number;
 	public activeFactor: number;
@@ -216,30 +216,30 @@ export default class 藍 {
 
 		this.log(chalk.green.bold('Ai am now running!'));
 	}
-	
-@autobind
-private async handlerTimeout<T>(handlerPromise: Promise<T>, obj?: any): Promise<boolean | T> {
-    return new Promise<boolean | T>((resolve, reject) => {
-        const timeoutId = setTimeout(() => {
-            console.log("hooks Timeout!");
-            if (obj) console.dir(obj);
-            // 管理者にDM
-            this.post({
-                text: "ハンドラーの処理がタイムアウトしました！\nログをご確認ください。",
-                visibility: "specified",
-                visibleUserIds: ["9d5ts6in38"],
-            });
-            resolve(false); // resolveでfalseを返す
-        }, 30000);
 
-        handlerPromise.then(result => {
-            clearTimeout(timeoutId);
-            resolve(result);
-        }).catch(error => {
-            clearTimeout(timeoutId);
-            reject(error);
-        });
-    });
+	@autobind
+	private async handlerTimeout<T>(handlerPromise: Promise<T>, obj?: any): Promise<boolean | T> {
+		return new Promise<boolean | T>((resolve, reject) => {
+			const timeoutId = setTimeout(() => {
+				console.log("hooks Timeout!");
+				if (obj) console.dir(obj);
+				// 管理者にDM
+				this.post({
+					text: "ハンドラーの処理がタイムアウトしました！\nログをご確認ください。",
+					visibility: "specified",
+					visibleUserIds: ["9d5ts6in38"],
+				});
+				resolve(false); // resolveでfalseを返す
+			}, 30000);
+
+			handlerPromise.then(result => {
+				clearTimeout(timeoutId);
+				resolve(result);
+			}).catch(error => {
+				clearTimeout(timeoutId);
+				reject(error);
+			});
+		});
 	}
 
 	/**
@@ -285,7 +285,7 @@ private async handlerTimeout<T>(handlerPromise: Promise<T>, obj?: any): Promise<
 		// なければそれぞれのモジュールについてフックが引っかかるまで呼び出し
 		if (context != null) {
 			const handler = this.contextHooks[context.module];
-			const res = await this.handlerTimeout(handler(context.key, msg, context.data), {key:context.key, msg, data:context.data});
+			const res = await this.handlerTimeout(handler(context.key, msg, context.data), { key: context.key, msg, data: context.data });
 
 			if (res != null && typeof res === 'object') {
 				if (res.reaction != null) reaction = res.reaction;
@@ -444,7 +444,7 @@ private async handlerTimeout<T>(handlerPromise: Promise<T>, obj?: any): Promise<
 
 		return new Promise((resolve, reject) => {
 			const attemptRequest = (attempt: number) => {
-				if (attempt !== 0) this.log(`Retry ${attempt} / ${maxRetries} : ${endpoint} : ${JSON.stringify(param)}`)
+				if (attempt !== 0) this.log(`Retry ${attempt} / ${maxRetries} : ${endpoint} : ${JSON.stringify(param)}`);
 				request.post(`${config.apiUrl}/${endpoint}`, {
 					json: Object.assign({
 						i: config.i
@@ -454,7 +454,7 @@ private async handlerTimeout<T>(handlerPromise: Promise<T>, obj?: any): Promise<
 						resolve(response);
 					})
 					.catch(error => {
-						this.log(`API Error ${attempt + 1} / ${maxRetries} : ${endpoint} : ${JSON.stringify(param)} : ${JSON.stringify(error.response)}`)
+						this.log(`API Error ${attempt + 1} / ${maxRetries} : ${endpoint} : ${JSON.stringify(param)} : ${JSON.stringify(error.response)}`);
 						if (error.response?.statusCode >= 400 && error.response?.statusCode < 500 && attempt >= 3) resolve(error);
 						else if (attempt >= maxRetries - 1) {
 							resolve(error);
@@ -464,7 +464,7 @@ private async handlerTimeout<T>(handlerPromise: Promise<T>, obj?: any): Promise<
 							}, retryIntervals[Math.min(attempt, retryIntervals.length - 1)]);
 						}
 					});
-			}
+			};
 
 			attemptRequest(0);
 		});
@@ -553,7 +553,7 @@ private async handlerTimeout<T>(handlerPromise: Promise<T>, obj?: any): Promise<
 
 	@autobind
 	public incActiveFactor(amount = 0.003) {
-		const incNum = ((amount / Math.max(this.activeFactor,1)));
+		const incNum = ((amount / Math.max(this.activeFactor, 1)));
 		this.activeFactor = Math.floor(Math.min(this.activeFactor + incNum, 2) * 1000) / 1000;
 		this.log(`ActiveFactor: ${(this.activeFactor * 100).toFixed(1)}% (+${(incNum * 100).toFixed(1)}%)`);
 		this.setMeta({
@@ -564,7 +564,7 @@ private async handlerTimeout<T>(handlerPromise: Promise<T>, obj?: any): Promise<
 	@autobind
 	public decActiveFactor(amount = 0.05) {
 		amount = amount * 0.36;
-		const _activeFactor = this.activeFactor
+		const _activeFactor = this.activeFactor;
 		let decNum = amount;
 		if (this.activeFactor < 1) {
 			decNum = (amount * this.activeFactor);
@@ -587,7 +587,7 @@ private async handlerTimeout<T>(handlerPromise: Promise<T>, obj?: any): Promise<
 		const words2 = argWords2 || exWords?.filter((x) => x.keyword.length >= 4);
 		const jpWords = argJpWords || exWords?.filter((x) => !/[a-zA-Z0-9_]$/.test(x.keyword));
 		const hirakanaWords = argHirakanaWords || jpWords?.filter((x) => /[ぁ-んァ-ンヴー]$/.test(x.keyword));
-		
+
 		if (!(exWords.length && words2.length && jpWords.length && hirakanaWords.length)) return "";
 		let i = 0;
 		while (words && (i < 100 && (!word1error || !word2error))) {
@@ -602,7 +602,7 @@ private async handlerTimeout<T>(handlerPromise: Promise<T>, obj?: any): Promise<
 					word1 = inputWord;
 					word2s = words.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice(-1)));
 					longword2s = words2.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice(-2)));
-					pc = word2s.length + longword2s.length
+					pc = word2s.length + longword2s.length;
 					if (pc === 0) {
 						word1error = true;
 						i += 1;
@@ -619,7 +619,7 @@ private async handlerTimeout<T>(handlerPromise: Promise<T>, obj?: any): Promise<
 					word2 = inputWord;
 					word2s = words.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().endsWith(katakanaToHiragana(hankakuToZenkaku(word2)).toLowerCase().slice(0, 1)));
 					longword2s = words2.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().endsWith(katakanaToHiragana(hankakuToZenkaku(word2)).toLowerCase().slice(0, 2)));
-					pc = word2s.length + longword2s.length
+					pc = word2s.length + longword2s.length;
 					if (pc === 0) {
 						word2error = true;
 						i += 1;
@@ -647,7 +647,7 @@ private async handlerTimeout<T>(handlerPromise: Promise<T>, obj?: any): Promise<
 
 				word2s = words.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice(-1)));
 				longword2s = words2.filter((x) => katakanaToHiragana(hankakuToZenkaku(x.keyword)).toLowerCase().startsWith(katakanaToHiragana(hankakuToZenkaku(word1)).toLowerCase().slice(-2)));
-				pc = word2s.length + longword2s.length
+				pc = word2s.length + longword2s.length;
 
 				if (pc === 0 || (pc <= 3 && Math.random() < (0.75 / pc) + (pc === 1 && word2s.length === 1 ? 0.2 : 0))) {
 					i += 1;
@@ -669,9 +669,9 @@ private async handlerTimeout<T>(handlerPromise: Promise<T>, obj?: any): Promise<
 
 			const notMatchCase = !word2.startsWith(word1.slice((matchStringNum) * -1));
 
-			const info = `\n[${word1.slice(-1)} : ${word2s.length}${longword2s.length ? ` , ${word1.slice(-2)} : ${longword2s.length}` : ""}]`
+			const info = `\n[${word1.slice(-1)} : ${word2s.length}${longword2s.length ? ` , ${word1.slice(-2)} : ${longword2s.length}` : ""}]`;
 
-			return `${word1} の ${word2}、${word1.slice(0, matchStringNum * -1)}${notMatchCase ? word2.slice(0, matchStringNum).toUpperCase() + word2.slice(matchStringNum) : word2}`
+			return `${word1} の ${word2}、${word1.slice(0, matchStringNum * -1)}${notMatchCase ? word2.slice(0, matchStringNum).toUpperCase() + word2.slice(matchStringNum) : word2}`;
 		}
 		return "";
 	}

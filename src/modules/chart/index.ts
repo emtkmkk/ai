@@ -113,7 +113,7 @@ export default class extends Module {
 				limit: 30,
 			});
 
-			const data = {...dataA,...dataU};
+			const data = { ...dataA, ...dataU };
 
 			chart = {
 				title: `もこきーのユーザ数`,
@@ -189,7 +189,7 @@ export default class extends Module {
 		});
 
 		this.log('Replying...');
-		msg.reply(serifs.chart.foryou, { file,visibility: 'public', localOnly: !!msg.user.host && !!title });
+		msg.reply(serifs.chart.foryou, { file, visibility: 'public', localOnly: !!msg.user.host && !!title });
 
 		return {
 			reaction: 'like'

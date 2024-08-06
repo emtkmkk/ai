@@ -48,14 +48,14 @@ export default class extends Module {
 
 			const data = msg.friend.getPerModulesData(this);
 
-			if (data.lastGreetedAt == today) return {reaction: 'like'};
+			if (data.lastGreetedAt == today) return { reaction: 'like' };
 
 			data.lastGreetedAt = today;
 			msg.friend.setPerModulesData(this, data);
 
 			msg.friend.incLove(0.6, "greet");
-			
-			return {reaction: 'love'}
+
+			return { reaction: 'love' };
 			//#endregion
 		};
 
@@ -86,7 +86,7 @@ export default class extends Module {
 
 		if (msg.includes(['行ってくる', '行ってきます', 'いってくる', 'いってきます'])) {
 			msg.reply(
-					serifs.core.itterassyai.normal(msg.friend.name));
+				serifs.core.itterassyai.normal(msg.friend.name));
 			return incLove();
 		}
 
@@ -110,26 +110,26 @@ export default class extends Module {
 		const match = msg.extractedText.match(/(.+?)た(から|ので)(褒|ほ)めて/);
 		if (match) {
 			msg.reply(getSerif(serifs.core.erait.specify(match[1], msg.friend.name)));
-			return {reaction: 'love'};
+			return { reaction: 'love' };
 		}
 
 		const match2 = msg.extractedText.match(/(.+?)る(から|ので)(褒|ほ)めて/);
 		if (match2) {
 			msg.reply(getSerif(serifs.core.erait.specify(match2[1], msg.friend.name)));
-			return {reaction: 'love'};
+			return { reaction: 'love' };
 		}
 
 		const match3 = msg.extractedText.match(/(.+?)だから(褒|ほ)めて/);
 		if (match3) {
 			msg.reply(getSerif(serifs.core.erait.specify(match3[1], msg.friend.name)));
-			return {reaction: 'love'};
+			return { reaction: 'love' };
 		}
 
 		if (!msg.includes(['褒めて', 'ほめて'])) return false;
 
 		msg.reply(getSerif(serifs.core.erait.general(msg.friend.name)));
 
-		return {reaction: 'love'};
+		return { reaction: 'love' };
 	}
 
 	@autobind
@@ -138,7 +138,7 @@ export default class extends Module {
 
 		msg.reply(serifs.core.omedeto(msg.friend.name));
 
-		return {reaction: ':mk_discochicken:'};
+		return { reaction: ':mk_discochicken:' };
 	}
 
 	@autobind
@@ -162,12 +162,12 @@ export default class extends Module {
 
 		msg.reply(getSerif(
 			msg.friend.love >= 10 ? serifs.core.nadenade.love3 :
-			msg.friend.love >= 5 ? serifs.core.nadenade.love2 :
-			msg.friend.love <= -15 ? serifs.core.nadenade.hate4 :
-			msg.friend.love <= -10 ? serifs.core.nadenade.hate3 :
-			msg.friend.love <= -5 ? serifs.core.nadenade.hate2 :
-			msg.friend.love <= -1 ? serifs.core.nadenade.hate1 :
-			serifs.core.nadenade.normal
+				msg.friend.love >= 5 ? serifs.core.nadenade.love2 :
+					msg.friend.love <= -15 ? serifs.core.nadenade.hate4 :
+						msg.friend.love <= -10 ? serifs.core.nadenade.hate3 :
+							msg.friend.love <= -5 ? serifs.core.nadenade.hate2 :
+								msg.friend.love <= -1 ? serifs.core.nadenade.hate1 :
+									serifs.core.nadenade.normal
 		));
 
 		return true;
@@ -179,8 +179,8 @@ export default class extends Module {
 
 		msg.reply(getSerif(
 			msg.friend.love >= 5 ? serifs.core.kawaii.love :
-			msg.friend.love <= -3 ? serifs.core.kawaii.hate :
-			serifs.core.kawaii.normal));
+				msg.friend.love <= -3 ? serifs.core.kawaii.hate :
+					serifs.core.kawaii.normal));
 
 		return true;
 	}
@@ -191,8 +191,8 @@ export default class extends Module {
 
 		msg.reply(
 			msg.friend.love >= 5 ? (msg.friend.name ? serifs.core.suki.love(msg.friend.name) : serifs.core.suki.normal) :
-			msg.friend.love <= -3 ? serifs.core.suki.hate :
-			serifs.core.suki.normal);
+				msg.friend.love <= -3 ? serifs.core.suki.hate :
+					serifs.core.suki.normal);
 
 		return true;
 	}
@@ -222,8 +222,8 @@ export default class extends Module {
 
 		msg.reply(
 			msg.friend.love >= 5 ? serifs.core.hug.love :
-			msg.friend.love <= -3 ? serifs.core.hug.hate :
-			serifs.core.hug.normal);
+				msg.friend.love <= -3 ? serifs.core.hug.hate :
+					serifs.core.hug.normal);
 
 		return true;
 	}
@@ -234,8 +234,8 @@ export default class extends Module {
 
 		msg.reply(
 			msg.friend.love >= 5 ? serifs.core.humu.love :
-			msg.friend.love <= -3 ? serifs.core.humu.hate :
-			serifs.core.humu.normal);
+				msg.friend.love <= -3 ? serifs.core.humu.hate :
+					serifs.core.humu.normal);
 
 		return true;
 	}
@@ -246,8 +246,8 @@ export default class extends Module {
 
 		msg.reply(
 			msg.friend.love >= 5 ? serifs.core.batou.love :
-			msg.friend.love <= -5 ? serifs.core.batou.hate :
-			serifs.core.batou.normal);
+				msg.friend.love <= -5 ? serifs.core.batou.hate :
+					serifs.core.batou.normal);
 
 		return true;
 	}
@@ -267,8 +267,8 @@ export default class extends Module {
 
 		msg.reply(
 			msg.friend.love >= 10 ? serifs.core.ote.love2 :
-			msg.friend.love >= 5 ? serifs.core.ote.love1 :
-			serifs.core.ote.normal);
+				msg.friend.love >= 5 ? serifs.core.ote.love1 :
+					serifs.core.ote.normal);
 
 		return true;
 	}

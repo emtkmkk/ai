@@ -29,8 +29,8 @@ export default class extends Module {
 		this.learnedKeywords = this.ai.getCollection('_keyword_learnedKeywords', {
 			indices: ['userId']
 		});
-		
-		const hours = new Date().getHours()
+
+		const hours = new Date().getHours();
 
 		setInterval(this.learn, 1000 * 60 * 10);
 
@@ -39,19 +39,19 @@ export default class extends Module {
 		};
 	}
 
-		@autobind
+	@autobind
 	private async mentionHook(msg: Message) {
 		if (!msg.or(['/check']) || msg.user.host || msg.user.username !== config.master) {
-				return false;
+			return false;
 		} else {
 			this.log('checkLearnedKeywords...');
 
 			const keywords = this.learnedKeywords.find();
 
 			keywords.forEach(async (x) => {
-					const tokens = await mecab(x.keyword, config.mecab, config.mecabDic, config.mecabCustom);
-				  if (tokens?.length === 1){
-						const token = tokens[0];
+				const tokens = await mecab(x.keyword, config.mecab, config.mecabDic, config.mecabCustom);
+				if (tokens?.length === 1) {
+					const token = tokens[0];
 					if (
 						token[8] == null ||
 						!checkNgWord(token[0]) ||
@@ -61,7 +61,7 @@ export default class extends Module {
 						this.log(`delete ${token[0]}[${token[2]}:${token[3]}](${token[8]})...`);
 						this.learnedKeywords.remove(x);
 					}
-					}
+				}
 			});
 
 			this.log('finish!');
@@ -73,7 +73,7 @@ export default class extends Module {
 	@autobind
 	private async learn() {
 
-		const learnRnd = (Math.max(this.ai.activeFactor,0.25) / 2);
+		const learnRnd = (Math.max(this.ai.activeFactor, 0.25) / 2);
 		if (Math.random() >= learnRnd) {
 			return;
 		}
@@ -121,7 +121,7 @@ export default class extends Module {
 				learnedAt: Date.now()
 			});
 
-			text = serifs.keyword.learned(keyword[0]?.replaceAll(/\s/g,""), kanaToHira(keyword[0]) !== kanaToHira(keyword[8]) ? kanaToHira(keyword[8]) : null);
+			text = serifs.keyword.learned(keyword[0]?.replaceAll(/\s/g, ""), kanaToHira(keyword[0]) !== kanaToHira(keyword[8]) ? kanaToHira(keyword[8]) : null);
 		}
 
 		if (this.ai.activeFactor < 0.25) {

@@ -41,7 +41,7 @@ export default class extends Module {
 		this.crawleGameEnd();
 		setInterval(this.crawleGameEnd, 1000);
 		setInterval(() => {
-			const hours = new Date().getHours()
+			const hours = new Date().getHours();
 			const rnd = ((hours === 12 || (hours > 17 && hours < 24)) ? 0.5 : 0.1) * this.ai.activeFactor;
 			if (Math.random() < rnd) {
 				this.start();
@@ -68,7 +68,7 @@ export default class extends Module {
 		let publicOnly = false;
 
 		// ゲーム開始条件判定
-		const h = new Date().getHours()
+		const h = new Date().getHours();
 
 		// 前回がお流れの場合はランダム発生のクールダウンを120分にする
 		if (
@@ -84,7 +84,7 @@ export default class extends Module {
 					) && !triggerUserId
 				)
 			)
-		) return
+		) return;
 
 		// 最大値は(前回の参加者＋前々回の参加者/2)に50%で1を足した物
 		let maxnum = (Math.floor(((recentGame?.votes?.length || 0) + (penultimateGame?.votes?.length || 0)) / 2) + (Math.random() < 0.5 ? 1 : 0)) || 1;
@@ -109,7 +109,7 @@ export default class extends Module {
 		// 今日が1/1の場合 最大値は新年の年数
 		if (now.getMonth() === 0 && now.getDate() === 1) maxnum = now.getFullYear();
 
-		let visibility
+		let visibility;
 
 		if (this.ai.activeFactor >= 0.85) {
 			// 自然発生かつ3%の確率でフォロワー限定になる
@@ -175,13 +175,13 @@ export default class extends Module {
 				};
 			}
 
-			const h = new Date().getHours()
+			const h = new Date().getHours();
 
 			if (h > 0 && h < 8) {
-				msg.reply("現在、数取り開催不可に指定されている時間です。8時から開催を受け付けます！")
+				msg.reply("現在、数取り開催不可に指定されている時間です。8時から開催を受け付けます！");
 				return {
 					reaction: 'hmm'
-				}
+				};
 			}
 
 			// 懐き度が高いほどトリガーのクールタイムを短く
@@ -227,7 +227,7 @@ export default class extends Module {
 		if (game == null) return;
 
 		// 数取りトリガー者で、開始から1分以内の場合
-		const time = Date.now() - game.startedAt
+		const time = Date.now() - game.startedAt;
 		if (game.triggerUserId === msg.user.id && time < 60 * 1000 && msg.visibility !== 'specified') {
 			msg.reply(`\n${60 - Math.floor(time / 1000)}秒後にもう一度送ってください！`, { visibility: 'specified' }).then(reply => {
 				game.replyKey.push(msg.userId);
@@ -308,13 +308,13 @@ export default class extends Module {
 		// 範囲外
 		if (game.maxnum > 0 && (num < 0 || num > game.maxnum)) {
 			let strn = String(num);
-			if (strn == "Infinity") strn = "∞"
+			if (strn == "Infinity") strn = "∞";
 			if (strn.includes("e+")) {
 				strn = strn.replace(/^1e/, "");
 				strn = strn.replace("e", "×");
 				strn = strn.replace("+", "10^{");
-				strn += "}\\)"
-				strn = "\\(" + strn
+				strn += "}\\)";
+				strn = "\\(" + strn;
 			}
 			msg.reply(`\n「${strn}」は今回のゲームでは範囲外です！\n0~${game.maxnum}の範囲で指定してくださいね！`).then(reply => {
 				game.replyKey.push(msg.userId);
@@ -348,7 +348,7 @@ export default class extends Module {
 			} else {
 				msg.friend.doc.kazutoriData = { winCount: 0, playCount: 1, rate: -1, inventory: [] };
 			}
-			msg.friend.save()
+			msg.friend.save();
 		}
 
 		return {
@@ -390,11 +390,11 @@ export default class extends Module {
 		// お流れ
 		if (game.votes?.filter((x) => x.user.winCount < 50).length <= 1 && !medal) {
 			game.votes.forEach((x) => {
-				const friend = this.ai.lookupFriend(x.user.id)
+				const friend = this.ai.lookupFriend(x.user.id);
 				if (friend) {
 					friend.doc.kazutoriData.playCount -= 1;
 					friend.doc.kazutoriData.rate = (friend.doc.kazutoriData.rate ?? 0) + 1;
-					friend.save()
+					friend.save();
 				}
 			});
 			this.ai.decActiveFactor((game.finishedAt.valueOf() - game.startedAt.valueOf()) / (60 * 1000 * 100) * Math.max(1 - (game.votes.length / 3), 0));
@@ -447,13 +447,13 @@ export default class extends Module {
 		for (let i = 0; i < useNumbers.length; i++) {
 			const n = useNumbers[i];
 			let strn = String(n);
-			if (strn == "Infinity") strn = "∞"
+			if (strn == "Infinity") strn = "∞";
 			if (strn.includes("e+")) {
 				strn = strn.replace(/^1e/, "");
 				strn = strn.replace("e", "×");
 				strn = strn.replace("+", "10^{");
-				strn += "}\\)"
-				strn = "\\(" + strn
+				strn += "}\\)";
+				strn = "\\(" + strn;
 			}
 			const users = game.votes
 				.filter(x => x.number == n)
@@ -485,18 +485,18 @@ export default class extends Module {
 			}
 		}
 		if (winRank != -1) {
-			useNumbers.reverse()
+			useNumbers.reverse();
 			// 反転
 			for (let i = 0; i < useNumbers.length; i++) {
 				const n = useNumbers[i];
 				let strn = String(n);
-				if (strn == "Infinity") strn = "∞"
+				if (strn == "Infinity") strn = "∞";
 				if (strn.includes("e+")) {
 					strn = strn.replace(/^1e/, "");
 					strn = strn.replace("e", "×");
 					strn = strn.replace("+", "10^{");
-					strn += "}\\)"
-					strn = "\\(" + strn
+					strn += "}\\)";
+					strn = "\\(" + strn;
 				}
 				const users = game.votes
 					.filter(x => x.number == n)
@@ -556,7 +556,7 @@ export default class extends Module {
 		if (winnerFriend) {
 			if (winnerFriend.doc.kazutoriData.winCount != null) {
 				winnerFriend.doc.kazutoriData.winCount += 1;
-				winnerFriend.doc.kazutoriData.rate += game.votes.length
+				winnerFriend.doc.kazutoriData.rate += game.votes.length;
 			} else {
 				winnerFriend.doc.kazutoriData = { winCount: 1, playCount: 1, rate: game.votes.length, inventory: [] };
 			}
@@ -569,19 +569,19 @@ export default class extends Module {
 			} else {
 				winnerFriend.doc.kazutoriData.inventory = [item];
 			}
-			winnerFriend.save()
+			winnerFriend.save();
 		}
 
 		let strmed = med != null ? String(med) : "";
 		if (strmed.includes("e+")) {
-			if (strmed == "Infinity") strmed = "∞"
+			if (strmed == "Infinity") strmed = "∞";
 			strmed = strmed.replace(/^1e/, "");
 			strmed = strmed.replace("e", "×");
 			strmed = strmed.replace("+", "10^{");
-			strmed += "}\\)"
-			strmed = "\\(" + strmed
+			strmed += "}\\)";
+			strmed = "\\(" + strmed;
 		}
-		const text = (game.winRank > 0 ? game.winRank === 1 ? "" : "勝利条件 : "　+ game.winRank + "番目に大きい値\n\n" : "勝利条件 : 中央値 (" + strmed + ")\n\n") + results.join('\n') + '\n\n' + (winner
+		const text = (game.winRank > 0 ? game.winRank === 1 ? "" : "勝利条件 : " + game.winRank + "番目に大きい値\n\n" : "勝利条件 : 中央値 (" + strmed + ")\n\n") + results.join('\n') + '\n\n' + (winner
 			? serifs.kazutori.finishWithWinner(acct(winner), name, item, reverse, perfect, winnerFriend?.doc?.kazutoriData?.winCount ?? 0, medal && (winnerFriend?.doc?.kazutoriData?.winCount ?? 0) > 50 ? winnerFriend?.doc?.kazutoriData?.medal ?? 0 : null)
 			: serifs.kazutori.finishWithNoWinner(item));
 

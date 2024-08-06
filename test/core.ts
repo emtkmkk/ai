@@ -8,7 +8,7 @@ process.env.NODE_ENV = 'test';
 let ai: 藍;
 
 beforeEach(() => {
-  ai = new 藍(account, [
+	ai = new 藍(account, [
 		new TestModule(),
 	]);
 });
@@ -16,5 +16,5 @@ beforeEach(() => {
 test('mention hook', async () => {
 	const streaming = new StreamingApi();
 
-	
+
 });

@@ -20,7 +20,7 @@ export default class extends Module {
 	private onLocalNote(note: any) {
 		if (!note.user?.isBot && !note.user.host) {
 			const friend = new Friend(this.ai, { user: note.user });
-			const data = friend.getPerModulesData(this)
+			const data = friend.getPerModulesData(this);
 			if (!data.nextNotificationNotesCount) {
 				data.nextNotificationNotesCount = this.getNextNotification(note.user.notesCount + 1);
 				friend.setPerModulesData(this, data);
@@ -88,10 +88,10 @@ export default class extends Module {
 
 	@autobind
 	private getNextNotification(notesCount: number) {
-		const target = [50, 100, 500, 1000, 5000]
-		const clearTarget = target.filter((x) => x <= notesCount)
+		const target = [50, 100, 500, 1000, 5000];
+		const clearTarget = target.filter((x) => x <= notesCount);
 		if (target.length === clearTarget.length) {
-			return (Math.floor(notesCount / 5000) + 1) * 5000
+			return (Math.floor(notesCount / 5000) + 1) * 5000;
 		} else {
 			return target[clearTarget.length];
 		}

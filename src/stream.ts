@@ -211,7 +211,7 @@ class Pool {
 			channel: this.channel,
 			id: this.id
 		});
-		log(`streamConnect : ` + this.channel + " : " +  this.id);
+		log(`streamConnect : ` + this.channel + " : " + this.id);
 	}
 
 	@autobind
@@ -297,7 +297,7 @@ class NonSharedConnection extends Connection {
 			id: this.id,
 			params: this.params
 		});
-		log(`streamConnectNonShared : ` + this.channel + " : " + this.id + " : " +  this.params);
+		log(`streamConnectNonShared : ` + this.channel + " : " + this.id + " : " + this.params);
 	}
 
 	@autobind

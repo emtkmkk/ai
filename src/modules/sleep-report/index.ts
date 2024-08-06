@@ -21,7 +21,7 @@ export default class extends Module {
 		const sleepHours = sleepTime / 1000 / 60 / 60;
 
 		if (sleepHours < 0.1) return;
-		
+
 		const sleepMinutes = sleepHours * 60;
 
 		if (sleepHours >= 1) {

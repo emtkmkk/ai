@@ -55,14 +55,14 @@ export default class extends Module {
 				// 1文字につき、+0.1~0.2秒
 				// 最大増加時間は 98文字の +6.8 ~ +13.6秒
 				if ((note.text?.length || 0) > 30) {
-					waitTime += Math.min((note.text?.replaceAll(/:\w+:/g,"☆").length || 0) - 30, 68) * 100
+					waitTime += Math.min((note.text?.replaceAll(/:\w+:/g, "☆").length || 0) - 30, 68) * 100;
 				}
 
 				// 対象ユーザの好感度1につき、0.2%短縮
 				// 最大 100 (★7) で 20%
 				const friend = this.ai.lookupFriend(note.user.id);
 				if (friend) {
-					waitTime = Math.round(waitTime * (1 - (0.002 * Math.min(friend.love,100))));
+					waitTime = Math.round(waitTime * (1 - (0.002 * Math.min(friend.love, 100))));
 				}
 
 				waitTime = waitTime * Math.max(0.6 / this.ai.activeFactor, 1);
@@ -75,11 +75,11 @@ export default class extends Module {
 			});
 		};
 
-	  	if (includes(note.text, ['taikin', '退勤', 'たいきん', 'しごおわ'])) return react(':otukaresama:');
+		if (includes(note.text, ['taikin', '退勤', 'たいきん', 'しごおわ'])) return react(':otukaresama:');
 		if (includes(note.text, ['おはよ', 'ohayo', 'pokita', 'おきた', '起きた', 'おっは', 'ぽきた']) && note.text?.length <= 30 && !includes(note.text, ['が起きた', 'がおきた'])) return react(':mk_oha:');
 		if (includes(note.text, ['おやす', 'oyasu', 'poyasimi', '寝る', 'ぽやしみ']) && note.text?.length <= 30 && !includes(note.text, ['ちゃんねる'])) return react(':oyasumi2:');
 
-		if (Math.random() > this.ai.activeFactor * 1.2) return
+		if (Math.random() > this.ai.activeFactor * 1.2) return;
 
 		let customEmojis = note.text.match(/:([^\n:]+?):/g)?.filter((x) => (x.includes("mk") || x.includes("pizza_")) && !x.includes("rank") && !x.includes("kill"));
 		if (customEmojis && customEmojis.length > 0) {
@@ -120,7 +120,7 @@ export default class extends Module {
 
 		// 長い文章には反応しないことがあるようにする
 		// 30-50文字 : スルー率5% / 51文字以降は1文字度にスルー率+2%
-		if (Math.random() < (note.text?.replaceAll(/:\w+:/g,"☆").length < 30 ? 0 : note.text?.replaceAll(/:\w+:/g,"☆").length < 50 ? 0.05 : 0.05 + (note.text?.length - 50) / 50)) return
+		if (Math.random() < (note.text?.replaceAll(/:\w+:/g, "☆").length < 30 ? 0 : note.text?.replaceAll(/:\w+:/g, "☆").length < 50 ? 0.05 : 0.05 + (note.text?.length - 50) / 50)) return;
 
 		if (includes(note.text, ['ぴざ', 'pizza'])) return react(':itspizzatime:');
 		if (includes(note.text, ['かんぴろばくたー', 'campylobacter'])) return react(':campylobacter_mottenaidesu:');
@@ -137,9 +137,9 @@ export default class extends Module {
 			if (rnd < 1) {
 				return react(':mk_chicken_t:');
 			} else if (rnd < 2) {
-				return react(':mk_yukkuriface:')
+				return react(':mk_yukkuriface:');
 			} else {
-				return react(':mk_lowpoly:')
+				return react(':mk_lowpoly:');
 			}
 		}
 	}

@@ -37,7 +37,7 @@ export default class extends Module {
 		if (now.getMonth() === 3 && now.getDate() === 1) mazeSize = 500;
 
 		this.log('Time to maze');
-		const file = await this.genMazeFile(date + "/mkck",mazeSize);
+		const file = await this.genMazeFile(date + "/mkck", mazeSize);
 
 		this.log('Posting...');
 		this.ai.post({
@@ -68,9 +68,9 @@ export default class extends Module {
 		if (msg.includes(['迷路'])) {
 			let size: string | null = null;
 			if (msg.includes(['簡単', 'かんたん', '易しい', 'やさしい', '小さい', 'ちいさい'])) size = 'easy';
-			if (msg.includes(['接待','超かんたん'])) size = 'veryEasy';
-			if (msg.includes(['ふつう','普通'])) size = 'normal';
-			if ((msg.includes(['よっぱらい','酔っぱらい']) && msg.includes(['接待','超かんたん'])) || msg.includes(['超接待','超超かんたん'])) size = 'veryVeryEasy';
+			if (msg.includes(['接待', '超かんたん'])) size = 'veryEasy';
+			if (msg.includes(['ふつう', '普通'])) size = 'normal';
+			if ((msg.includes(['よっぱらい', '酔っぱらい']) && msg.includes(['接待', '超かんたん'])) || msg.includes(['超接待', '超超かんたん'])) size = 'veryVeryEasy';
 			if (msg.includes(['難しい', 'むずかしい', '複雑な', '大きい', 'おおきい'])) size = 'hard';
 			if (msg.includes(['死', '鬼', '地獄', '超むずかしい', 'おに'])) size = 'veryHard';
 			if (msg.includes(['もこ']) && msg.includes(['本気']) || msg.includes(['裏']) && msg.includes(['おに'])) size = 'ai';
@@ -78,7 +78,7 @@ export default class extends Module {
 			setTimeout(async () => {
 				const file = await this.genMazeFile(Date.now(), size);
 				this.log('Replying...');
-				msg.reply(serifs.maze.foryou, { file,visibility: 'public' });
+				msg.reply(serifs.maze.foryou, { file, visibility: 'public' });
 			}, 3000);
 			return {
 				reaction: 'like'

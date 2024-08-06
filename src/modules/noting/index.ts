@@ -22,7 +22,7 @@ export default class extends Module {
 		});
 
 		setInterval(() => {
-			const hours = new Date().getHours()
+			const hours = new Date().getHours();
 			const rnd = ((hours === 12 || (hours > 17 && hours < 24)) ? 0.10 : 0.02) * this.ai.activeFactor;
 			if (Math.random() < rnd) {
 				this.post();
@@ -51,14 +51,14 @@ export default class extends Module {
 				const item = genItem();
 				return serifs.noting.expire(item);
 			},
-		]
+		];
 		const themeNotes = [
 			() => {
 				const words = this.learnedKeywords.find().filter((x) => x.keyword.length >= 3);
 				const word = words ? words[Math.floor(Math.random() * words.length)].keyword : undefined;
 				return serifs.noting.talkTheme(word);
 			},
-		]
+		];
 
 		let note;
 

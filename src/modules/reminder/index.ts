@@ -120,12 +120,12 @@ export default class extends Module {
 			this.reminds.remove(remind);
 			msg.reply(done ? getSerif(serifs.reminder.done(msg.friend.name)) : serifs.reminder.cancel);
 			return {
-				reaction:'love'
+				reaction: 'love'
 			};
 		} else if (isOneself === false) {
 			msg.reply(serifs.reminder.doneFromInvalidUser);
 			return {
-				reaction:'confused'
+				reaction: 'confused'
 			};
 		} else {
 			return false;
@@ -138,7 +138,7 @@ export default class extends Module {
 			id: data.id
 		});
 		if (remind == null) return;
-		
+
 		if (new Date().getHours() < 8) {
 			// タイマーセット
 			this.setTimeoutWithPersistence(1000 * 60 * 60 * 8, {
@@ -172,7 +172,7 @@ export default class extends Module {
 		}
 
 		if (!reply?.id) return;
-		
+
 		this.subscribeReply(remind.id, reply.id, {
 			id: remind.id
 		});

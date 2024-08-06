@@ -43,7 +43,7 @@ export default class extends Module {
 
 			// 親愛度が1以上必要
 			if (friend.love < 1) return;
-			
+
 			// 好感度★6以下で最後の好感度増加から31日以上経過している場合は対象外
 			if (friend.love < 100 && friend.doc?.lastLoveIncrementedAt && Date.now() > new Date(friend.doc.lastLoveIncrementedAt)?.valueOf() + (1000 * 60 * 60 * 24 * 31)) return;
 			// 好感度★7以上で最後の好感度増加から364日以上経過している場合は対象外
@@ -53,7 +53,7 @@ export default class extends Module {
 
 			if (data.lastBirthdayChecked == todaydate) return;
 			// 前回のお祝いから364日以上経過していない場合は対象外
-			if (Date.now() < new Date(data.lastBirthdayChecked)?.valueOf() + (1000 * 60 * 60 * 24 * 364)) return
+			if (Date.now() < new Date(data.lastBirthdayChecked)?.valueOf() + (1000 * 60 * 60 * 24 * 364)) return;
 
 			data.lastBirthdayChecked = todaydate;
 			friend.setPerModulesData(this, data);

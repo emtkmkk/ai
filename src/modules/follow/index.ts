@@ -21,23 +21,23 @@ export default class extends Module {
 		if (msg.text && msg.includes(['フォロー', 'フォロバ', 'follow me'])) {
 			if (msg.user.isRenoteMuted) return {
 				reaction: msg.friend.love >= 0 ? ':mk_hotchicken:' : null
-			}
+			};
 			if (msg.user.host && !msg.user.isFollowed && msg.friend.love >= 0) {
-				msg.reply(serifs.core.followBackErr)
+				msg.reply(serifs.core.followBackErr);
 				return {
 					reaction: ':mk_hotchicken:'
-				}
+				};
 			}
 			if (!msg.user.isFollowing) {
 				this.ai.api('following/create', {
 					userId: msg.userId,
 				});
-				msg.reply(serifs.core.followBack(msg.friend.name))
+				msg.reply(serifs.core.followBack(msg.friend.name));
 				return {
 					reaction: msg.friend.love >= 0 ? ':mk_yurayurachicken:' : null
 				};
 			} else {
-				msg.reply(serifs.core.alreadyFollowBack(msg.friend.name))
+				msg.reply(serifs.core.alreadyFollowBack(msg.friend.name));
 				return {
 					reaction: msg.friend.love >= 0 ? ':mk_hotchicken:' : null
 				};

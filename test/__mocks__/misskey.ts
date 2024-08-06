@@ -17,7 +17,7 @@ export class Misskey {
 
 		ws.on('request', async (request) => {
 			const q = request.resourceURL.query as ParsedUrlQuery;
-	
+
 			this.streaming = request.accept();
 		});
 

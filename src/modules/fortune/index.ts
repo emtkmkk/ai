@@ -143,7 +143,7 @@ export default class extends Module {
 				visibility: 'public'
 			});
 			return {
-				reaction:'love'
+				reaction: 'love'
 			};
 		} else {
 			return false;

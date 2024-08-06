@@ -94,26 +94,26 @@ class Session {
 			case 'ended': this.onEnded(msg.body); break;
 			case 'set': this.onSet(msg.body); break;
 		}
-	}
+	};
 
 	// 親プロセスからデータをもらう
 	private onInit = (msg: any) => {
 		this.game = msg.game;
 		this.form = msg.form;
 		this.account = msg.account;
-	}
+	};
 
 	/**
 	 * フォームが更新されたとき
 	 */
 	private onUpdateForn = (msg: any) => {
 		this.form.find(i => i.id == msg.id).value = msg.value;
-	}
+	};
 
 	/**
 	 * 対局が始まったとき
 	 */
-	private onStarted = (msg: any) =>  {
+	private onStarted = (msg: any) => {
 		this.game = msg;
 
 		// TLに投稿する
@@ -162,7 +162,7 @@ class Session {
 				// -+-
 				//
 				(get(x - 1, y) == 'empty' && get(x + 1, y) == 'empty')
-			)
+			);
 
 			const isSumi = !isNotSumi;
 
@@ -184,14 +184,14 @@ class Session {
 
 			const isSumiNear = (
 				check(x - 1, y - 1) || // 左上
-				check(x    , y - 1) || // 上
+				check(x, y - 1) || // 上
 				check(x + 1, y - 1) || // 右上
-				check(x + 1, y    ) || // 右
+				check(x + 1, y) || // 右
 				check(x + 1, y + 1) || // 右下
-				check(x    , y + 1) || // 下
+				check(x, y + 1) || // 下
 				check(x - 1, y + 1) || // 左下
-				check(x - 1, y    )    // 左
-			)
+				check(x - 1, y)    // 左
+			);
 
 			if (isSumiNear) this.sumiNearIndexes.push(i);
 		});
@@ -204,12 +204,12 @@ class Session {
 		if (this.botColor) {
 			this.think();
 		}
-	}
+	};
 
 	/**
 	 * 対局が終わったとき
 	 */
-	private onEnded = async (msg: any) =>  {
+	private onEnded = async (msg: any) => {
 		// ストリームから切断
 		process.send!({
 			type: 'ended'
@@ -248,19 +248,19 @@ class Session {
 		await this.post(text, this.startedNote);
 
 		process.exit();
-	}
+	};
 
 	/**
 	 * 打たれたとき
 	 */
-	private onSet = (msg: any) =>  {
+	private onSet = (msg: any) => {
 		this.o.put(msg.color, msg.pos);
 		this.currentTurn++;
 
 		if (msg.next === this.botColor) {
 			this.think();
 		}
-	}
+	};
 
 	/**
 	 * Botにとってある局面がどれだけ有利か静的に評価する
@@ -299,7 +299,7 @@ class Session {
 		if (this.isSettai) score = -score;
 
 		return score;
-	}
+	};
 
 	private think = () => {
 		console.log(`(${this.currentTurn}/${this.maxTurn}) Thinking...`);
@@ -403,7 +403,7 @@ class Session {
 				pos
 			});
 		}, 500);
-	}
+	};
 
 	/**
 	 * 対局が始まったことをMisskeyに投稿します
@@ -414,7 +414,7 @@ class Session {
 			: serifs.reversi.started(this.userName, this.strength.toString());
 
 		return await this.post(`${text}\n→[観戦する](${this.url})`);
-	}
+	};
 
 	/**
 	 * Misskeyに投稿します
@@ -445,7 +445,7 @@ class Session {
 		} else {
 			return null;
 		}
-	}
+	};
 }
 
 new Session();

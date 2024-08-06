@@ -7,6 +7,6 @@ export function checkNgWord(text: string): boolean {
 			var chr = match.charCodeAt(0) - 0x60;
 			return String.fromCharCode(chr);
 		})
-		.replaceAll("ぱちんこ", "ぱチんこ")
+		.replaceAll("ぱちんこ", "ぱチんこ");
 	return !ngword.some((x) => checkText.includes(x));
 }

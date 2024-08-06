@@ -19,7 +19,7 @@ export default class extends Module {
 				immediate: true
 			});
 			return {
-				reaction:'love',
+				reaction: 'love',
 				immediate: true
 			};
 		} else {

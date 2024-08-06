@@ -57,7 +57,7 @@ export default class extends Module {
 		});
 
 		return {
-			reaction:'love'
+			reaction: 'love'
 		};
 	}
 

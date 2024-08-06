@@ -32,7 +32,7 @@ export default class extends Module {
 			indices: ['userId']
 		});
 		setInterval(() => {
-			const hours = new Date().getHours()
+			const hours = new Date().getHours();
 			let rnd = ((hours === 12 || (hours > 17 && hours < 24)) ? 0.25 : 0.05) * this.ai.activeFactor;
 			if ((hours > 0 && hours < 7) || (hours > 13 && hours < 17)) return;
 			if (new Date().getMonth() === 11 && new Date().getDate() === 31) {
@@ -60,7 +60,7 @@ export default class extends Module {
 		const nenmatu = new Date().getMonth() === 11 && new Date().getDate() === 31;
 
 		let duration = nenmatu ? 1000 * 60 * 120 : 1000 * 60 * 10;
-		
+
 		// 機嫌が低い場合、受付時間を延長
 		if (!nenmatu && this.ai.activeFactor < 0.75) {
 			duration = Math.floor(1 / (1 - Math.min((0.91 - this.ai.activeFactor) * 1 * (0.5 + Math.random() * 0.5), 0.6)) * duration / 120000) * 120000;
@@ -151,7 +151,7 @@ export default class extends Module {
 		const selectedPolls = key ? polls.filter((x) => x[0].includes(key)) : [];
 
 		const poll = nenmatu ? [`${new Date().getFullYear()}年っぽい響きのもの`, `みなさん、${new Date().getFullYear()}年ももうすぐ終わりですね～ みなさんはこの中でいちばん${new Date().getFullYear()}年っぽい響きのものはどれだと思いますか？`] : selectedPolls.length ? selectedPolls[Math.floor(Math.random() * selectedPolls.length)] : polls[Math.floor(Math.random() * polls.length)];
-		
+
 		const exist = this.pollresult.findOne({
 			key: poll[0]
 		});
@@ -167,7 +167,7 @@ export default class extends Module {
 			genItem(),
 			genItem(),
 			genItem(),
-		 ] : [
+		] : [
 			genItem(),
 			genItem(),
 			genItem(),
@@ -222,7 +222,7 @@ export default class extends Module {
 				['欲しい物を選べ', '欲しい物を選べって言われたら'],
 				['食べたくないもの', 'ギリギリ食べてもいいもの'],
 				['道に落ちてそうなもの', '道端に落ちてそうなもの']
-			]
+			];
 			convertpoll.forEach((x) => {
 				const exist = this.pollresult.findOne({
 					key: x[0]
@@ -236,9 +236,9 @@ export default class extends Module {
 						keyword: exist.keyword,
 						winCount: exist.winCount ?? 1,
 					});
-					this.pollresult.remove(exist)
+					this.pollresult.remove(exist);
 				} else if (exist && exist2) {
-					this.pollresult.remove(exist)
+					this.pollresult.remove(exist);
 				}
 			});
 			const pollresult = this.pollresult.find().sort((a, b) => {
@@ -260,7 +260,7 @@ export default class extends Module {
 					}
 					return 0;
 				} else {
-					return (b.winCount ?? 1) - (a.winCount ?? 1)
+					return (b.winCount ?? 1) - (a.winCount ?? 1);
 				}
 			});
 			const pollresultstr = pollresult.map((x) => x.key + "\n" + x.keyword + (x.winCount && x.winCount > 1 ? "(" + x.winCount + "連勝)" : "")).join('\n\n');
@@ -271,7 +271,7 @@ export default class extends Module {
 				return false;
 			} else {
 			}
-			const key = /\/poll\s(\S+)$/.exec(msg.text)?.[1]
+			const key = /\/poll\s(\S+)$/.exec(msg.text)?.[1];
 			this.log('Manualy poll requested key: ' + (key ?? 'null'));
 			this.post(key);
 
@@ -290,7 +290,7 @@ export default class extends Module {
 
 		for (const choice of choices) {
 
-			totalVoted += choice.votes
+			totalVoted += choice.votes;
 
 			if (mostVotedChoice == null) {
 				mostVotedChoice = choice;

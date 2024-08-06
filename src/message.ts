@@ -37,7 +37,7 @@ export default class Message {
 	public get visibility(): string {
 		return this.note.visibility;
 	}
-	
+
 	public get localOnly(): boolean {
 		return this.note.localOnly ?? false;
 	}
@@ -100,7 +100,7 @@ export default class Message {
 			visibility: opts?.visibility ?? 'home',
 			visibilityForce: opts?.visibilityForce,
 			localOnly: opts?.localOnly || false,
-			...(opts?.visibility === 'specified' ? {visibleUserIds: [this.userId],} : {})
+			...(opts?.visibility === 'specified' ? { visibleUserIds: [this.userId], } : {})
 		});
 	}
 

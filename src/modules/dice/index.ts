@@ -17,23 +17,23 @@ export default class extends Module {
 	private async mentionHook(msg: Message) {
 		if (msg.text == null) return false;
 
-		if  (msg.text.endsWith("ですか？") || msg.text.endsWith("ますか？") || msg.text.endsWith("ですよね？")) {
+		if (msg.text.endsWith("ですか？") || msg.text.endsWith("ますか？") || msg.text.endsWith("ですよね？")) {
 			if (Math.random() < 0.5) {
 				if (Math.random() < 0.25) {
-					msg.reply("多分はい、部分的にはい", {visibility: 'public'});
+					msg.reply("多分はい、部分的にはい", { visibility: 'public' });
 				} else {
-					msg.reply("はい", {visibility: 'public'});
+					msg.reply("はい", { visibility: 'public' });
 				}
-				
+
 			} else {
 				if (Math.random() < 0.25) {
-					msg.reply("多分いいえ、部分的にいいえ", {visibility: 'public'});
+					msg.reply("多分いいえ、部分的にいいえ", { visibility: 'public' });
 				} else {
-					msg.reply("いいえ", {visibility: 'public'});
+					msg.reply("いいえ", { visibility: 'public' });
 				}
 			}
 			return {
-				reaction:'love'
+				reaction: 'love'
 			};
 		}
 
@@ -55,10 +55,10 @@ export default class extends Module {
 			results.push(Math.floor(Math.random() * dice) + 1);
 		}
 
-		msg.reply(serifs.dice.done(results.join(' '),results.length > 1 ? results.reduce((a, c) => a + c).toLocaleString() : null),{visibility: 'public'});
+		msg.reply(serifs.dice.done(results.join(' '), results.length > 1 ? results.reduce((a, c) => a + c).toLocaleString() : null), { visibility: 'public' });
 
 		return {
-			reaction:'love'
+			reaction: 'love'
 		};
 	}
 }
