@@ -275,6 +275,8 @@ export default class extends Module {
 					rankmsg += `（同順位：${sameRankCount - 1}人）`;
 				} else if (rank <= 10 && rank >= 2) {
 					rankmsg += `（1位：${values?.[0].toLocaleString()}）`;
+				} else if (rank == 1 && values?.[1]) {
+					rankmsg += `（2位：${values?.[1].toLocaleString()}）`;
 				}
 			}
 
