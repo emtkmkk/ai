@@ -312,6 +312,15 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
 
 	let playerSkills = data.skills.map((x) => skills.find((y) => x.name === y.name) ?? x);
 
+	if (msg.includes(["ソート"])) {
+		data.skills = data.skills.sort((a, b) => (skills.map((x) => x.name).indexOf(a.name) - skills.map((x) => x.name).indexOf(b.name)));
+		msg.reply(`\n` + serifs.rpg.skills.sort);
+		msg.friend.setPerModulesData(module, data);
+		return {
+			reaction: 'love'
+		};
+	}
+
 	if (msg.includes([serifs.rpg.command.change]) && msg.includes([serifs.rpg.command.duplication])) {
 		if (!data.duplicationOrb || data.duplicationOrb <= 0) return { reaction: 'confused' };
 		for (let i = 0; i < data.skills.length; i++) {
