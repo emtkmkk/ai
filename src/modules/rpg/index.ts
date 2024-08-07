@@ -1405,7 +1405,7 @@ export default class extends Module {
 						playerHp = 1;
 						data.endure = Math.max(data.endure - 1, 0);
 					}
-					if (playerHp <= (30 + lv) && serifs.rpg.nurse && Math.random() < 0.01) {
+					if (playerHp <= (30 + lv) && serifs.rpg.nurse && Math.random() < 0.01 && !data.enemy.notEndure) {
 						message += "\n" + serifs.rpg.nurse + "\n" + ((100 + lv * 3) - playerHp) + "ポイント回復した！\n";
 						playerHp = (100 + lv * 3);
 					}
