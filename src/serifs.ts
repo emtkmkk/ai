@@ -563,6 +563,7 @@ export default {
 			info: (num: number) => `スキルを変更する場合、\`rpg スキル変更 <数字>\`と話しかけてね (変更珠所持数: ${num.toLocaleString()})`,
 			duplicationInfo: (num: number) => `スキルを変更&複製する場合、\`rpg スキル変更複製 <消すスキルの数字>\`と話しかけてね 消えたスキルの枠に既に持っているスキルのどれかが入るよ (複製珠所持数: ${num.toLocaleString()})`,
 			list: "所持スキル一覧",
+			sort: "所持スキルをソートしました！\n次回のスキル変更の際に誤った番号を指定しない様に気を付けてください！"
 		},
 		shop: {
 			welcome: (coin: number) => `:mk_lowpoly:ショップへようこそ！\n欲しい商品の番号を返信してね\n（所持コイン数: ${coin.toLocaleString()}）`,
