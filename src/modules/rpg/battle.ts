@@ -28,7 +28,7 @@ export function fortune(_atk, _def, effect = 1) {
 	if (effect % 1 !== 0) {
 		atk = Math.floor(atk * (1 + ((effect % 1) * 0.1)));
 		def = Math.floor(def * (1 + ((effect % 1) * 0.1)));
-		effect = effect % 1;
+		effect = Math.floor(effect);
 	}
 
 	for (let i = 0; i < effect; i++) {
