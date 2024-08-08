@@ -465,7 +465,7 @@ export default class extends Module {
 		const maxRnd = Math.max(1.6 + (skillEffects.atkRndMax ?? 0), 0);
 
 		if (skillEffects.allForOne) {
-			atk = atk * spd * 1.1;
+			atk = atk * spd * (1 + (skillEffects.allForOne ?? 0) * 0.1);
 			spd = 1;
 		}
 
@@ -1264,8 +1264,8 @@ export default class extends Module {
 			}
 
 			if (skillEffects.allForOne) {
-				atk = atk * spd * 1.1;
-				if (itemBonus?.atk) itemBonus.atk = itemBonus.atk * spd * 1.1;
+				atk = atk * spd * (1 + (skillEffects.allForOne ?? 0) * 0.1);
+				if (itemBonus?.atk) itemBonus.atk = itemBonus.atk * spd * (1 + (skillEffects.allForOne ?? 0) * 0.1);
 				spd = 1;
 			}
 

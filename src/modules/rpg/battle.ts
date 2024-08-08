@@ -25,6 +25,12 @@ export function fortune(_atk, _def, effect = 1) {
 
 	const rnd = Math.random;
 
+	if (effect % 1 !== 0) {
+		atk = Math.floor(atk * (1 + ((effect % 1) * 0.1)));
+		def = Math.floor(def * (1 + ((effect % 1) * 0.1)));
+		effect = effect % 1;
+	}
+
 	for (let i = 0; i < effect; i++) {
 
 		atk = Math.floor(atk * 1.05);
@@ -83,8 +89,8 @@ export function fortune(_atk, _def, effect = 1) {
 	}
 
 
-	const atkDiff = atk - _atk;
-	const defDiff = def - _def;
+	const atkDiff = Math.floor(atk - _atk);
+	const defDiff = Math.floor(def - _def);
 
 	const message = [
 		`${serifs.rpg.status.atk} : ${atk ?? 0}${atkDiff !== 0 ? ` (${atkDiff > 0 ? "+" + atkDiff : atkDiff})` : ""}`,

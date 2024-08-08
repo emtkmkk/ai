@@ -652,8 +652,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		def = def * (1 + (skillEffects.enemyCritDmgDown ?? 0) / 30);
 	}
 	if (skillEffects.enemyBuff) {
-		atk = atk * 1.05;
-		def = def * 1.05;
+		atk = atk * (1 + (skillEffects.enemyBuff ?? 0) / 20);
+		def = def * (1 + (skillEffects.enemyBuff ?? 0) / 20);
 	}
 
 	const _atk = atk;
@@ -1025,8 +1025,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
 		if (skillEffects.allForOne) {
 			const spdx = getSpdX(spd);
-			atk = atk * spdx * 1.1;
-			if (itemBonus?.atk) itemBonus.atk = itemBonus.atk * spd * 1.1;
+			atk = atk * spdx * (1 + (skillEffects.allForOne ?? 0) * 0.1);
+			if (itemBonus?.atk) itemBonus.atk = itemBonus.atk * spd * (1 + (skillEffects.allForOne ?? 0) * 0.1);
 			spd = 1;
 		}
 

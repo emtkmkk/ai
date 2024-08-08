@@ -281,7 +281,6 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 	if (data.lastShopVisited !== getDate() || !data.shopItems?.length) {
 
 		const getShopItems = () => {
-			if (!filteredShopItems?.length) return "";
 			const itemName = filteredShopItems[Math.floor(rnd() * filteredShopItems.length)].name;
 			filteredShopItems = filteredShopItems.filter((x) => x.name !== itemName);
 			return itemName;
@@ -293,7 +292,7 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 			getShopItems(),
 			data.lastBreakItem && Math.random() < 0.95 ? data.lastBreakItem : getShopItems(),
 			determineOutcome(ai, data, getShopItems),
-		].filter(Boolean);
+		];
 		data.lastShopVisited = getDate();
 		data.lastBreakItem = null;
 		module.unsubscribeReply("shopBuy:" + msg.userId);
