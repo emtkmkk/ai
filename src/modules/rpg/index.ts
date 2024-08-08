@@ -656,7 +656,6 @@ export default class extends Module {
 
     msg.reply(`<center>${message}</center>`, {
       cw,
-      visibility: 'public',
     });
 
     return {
@@ -710,14 +709,20 @@ export default class extends Module {
 
     let autoReplayFlg = false;
 
+    const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
+
+    const isMaxLevel = data.lv >= rpgData.maxLv;
+
+    let needCoin = 8;
+    if (rpgData.maxLv - data.lv >= 100) needCoin -= 2;
+    if (rpgData.maxLv - data.lv >= 30) needCoin -= 2;
+
     // プレイ済でないかのチェック
     if (data.lastPlayedAt === nowTimeStr || data.lastPlayedAt === nextTimeStr) {
-      const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
       if (msg.includes([serifs.rpg.command.onemore])) {
         if (data.lastOnemorePlayedAt === getDate()) {
-          const needCoin = 10;
           if (needCoin <= (data.coin ?? 0)) {
-            if (data.lv >= rpgData.maxLv) {
+            if (isMaxLevel) {
               msg.reply(serifs.rpg.oneMore.maxLv);
               return {
                 reaction: 'confused',
@@ -741,13 +746,13 @@ export default class extends Module {
               }
             }
           } else {
-            msg.reply(serifs.rpg.oneMore.tired(data.lv < rpgData.maxLv));
+            msg.reply(serifs.rpg.oneMore.tired(!isMaxLevel));
             return {
               reaction: 'confused',
             };
           }
         }
-        if (data.lv >= rpgData.maxLv) {
+        if (isMaxLevel) {
           msg.reply(serifs.rpg.oneMore.maxLv);
           return {
             reaction: 'confused',
@@ -794,7 +799,7 @@ export default class extends Module {
       if (msg.includes([serifs.rpg.command.onemore])) {
         if (data.lastOnemorePlayedAt === getDate()) {
           const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
-          msg.reply(serifs.rpg.oneMore.tired(data.lv < rpgData.maxLv));
+          msg.reply(serifs.rpg.oneMore.tired(!isMaxLevel));
           return {
             reaction: 'confused',
           };
@@ -2143,6 +2148,13 @@ export default class extends Module {
       addMessage,
       minusDurability ? '\n' + minusDurability : '',
       `\n${serifs.rpg.nextPlay(nextPlay == 24 ? '明日' : nextPlay + '時')}`,
+      data.lv >= rpgData.maxLv
+        ? ''
+        : data.lastOnemorePlayedAt !== getDate()
+          ? '(無料おかわり権あり)'
+          : data.coin >= needCoin
+            ? `(どんぐりでおかわり可能 ${data.coin} / ${needCoin})`
+            : '',
     ]
       .filter(Boolean)
       .join('\n');
@@ -2214,7 +2226,6 @@ export default class extends Module {
 
     msg.reply(`<center>${message}</center>`, {
       cw,
-      visibility: 'public',
     });
 
     return {

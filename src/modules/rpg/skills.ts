@@ -198,14 +198,14 @@ export type Skill = {
 export const skills: Skill[] = [
   {
     name: `${serifs.rpg.status.atk}+10%`,
-    short: `${serifs.rpg.status.atk.slice(0, 1)}`,
+    short: `Ｐ`,
     desc: `常に${serifs.rpg.status.atk}が10%上がります`,
     info: `条件無しで${serifs.rpg.status.atk}+10%`,
     effect: { atkUp: 0.1 },
   },
   {
     name: `${serifs.rpg.status.def}+10%`,
-    short: `${serifs.rpg.status.def.slice(0, 1)}`,
+    short: `Ｄ`,
     desc: `常に${serifs.rpg.status.def}が10%上がります`,
     info: `条件無しで${serifs.rpg.status.def}+10%`,
     effect: { defUp: 0.1 },

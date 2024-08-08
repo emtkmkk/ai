@@ -706,7 +706,6 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     : 0;
   if (sevenFever) {
     const bonus = 7 * (skillEffects.sevenFever ?? 1);
-    sevenFever = 77 * (skillEffects.sevenFever ?? 1);
     buff += 1;
     message += serifs.rpg.skill.sevenFeverRaid + '\n';
     atk = Math.ceil((atk * (1 + bonus / 100)) / 7) * 7;

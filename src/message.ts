@@ -26,7 +26,11 @@ export default class Message {
   }
 
   public get text(): string {
-    return this.note.text;
+    return typeof this.note.text !== 'string'
+      ? this.note.text
+      : this.note.text.replace(/[Ａ-Ｚａ-ｚ０-９]/g, (m) =>
+          String.fromCharCode(m.charCodeAt(0) - 0xfee0),
+        );
   }
 
   public get quoteId(): string | null {
