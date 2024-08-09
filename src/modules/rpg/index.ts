@@ -332,8 +332,8 @@ export default class extends Module {
 				if (friend == null) return { reaction: ":mk_hotchicken:" };
 				friend.doc.perModulesData.rpg.lastPlayedAt = "";
 				friend.doc.perModulesData.rpg.lv = friend.doc.perModulesData.rpg.lv - 1;
-				friend.doc.perModulesData.rpg.atk = friend.doc.perModulesData.rpg.atk - 4;
-				friend.doc.perModulesData.rpg.def = friend.doc.perModulesData.rpg.def - 3;
+				friend.doc.perModulesData.rpg.atk = friend.doc.perModulesData.rpg.atk - 5;
+				friend.doc.perModulesData.rpg.def = friend.doc.perModulesData.rpg.def - 2;
 				friend.save();
 				return { reaction: "love" };
 			}
