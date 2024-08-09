@@ -75,6 +75,7 @@ promiseRetry(retry => {
 		new KazutoriModule(),
 		new ReversiModule(),
 		new TimerModule(),
+		new RpgModule(),
 		new DiceModule(),
 		new TalkModule(),
 		new PingModule(),
@@ -91,7 +92,6 @@ promiseRetry(retry => {
 		new PollModule(),
 		new ReminderModule(),
 		new YoruhoModule(),
-		new RpgModule(),
 	]);
 }).catch(e => {
 	log(chalk.red('Failed to fetch the account'));
