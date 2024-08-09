@@ -155,7 +155,8 @@ export async function start(triggerUserId?: string, flg?: any) {
 
 	/** ランダムに選ばれたレイドボス */
 	const enemy = games.length >= 1 && flg.includes("r") && raidEnemys.find((x) => x.name === games[games.length - 1]?.enemy?.name) ? raidEnemys.find((x) => x.name === games[games.length - 1]?.enemy?.name) : notPlayedBoss.length ? notPlayedBoss[Math.floor(Math.random() * notPlayedBoss.length)] : filteredRaidEnemys[Math.floor(Math.random() * filteredRaidEnemys.length)];
-
+	if (!enemy) return
+	
 	// レイドの制限時間（分）
 	let limitMinutes = 30;
 
