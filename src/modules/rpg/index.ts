@@ -351,7 +351,7 @@ export default class extends Module {
 			}
 		}
 		if (msg.includes(["startRaid"])) {
-			start();
+			start(undefined, msg.includes(["r"]) ? "r" : "");
 			return { reaction: "love" };
 		}
 		if (msg.includes(["dataFix"])) {
