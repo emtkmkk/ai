@@ -138,7 +138,7 @@ export const shopItems: ShopItem[] = [
 	{ name: `しあわせのお守り`, price: 20, desc: `レイド時、ステータスの割合がランダムに一時的に変化する 耐久10 レイドでの使用時耐久減少`, type: "amulet", effect: { fortuneEffect: 1 }, durability: 10, short: "し", isUsed: (data) => data.raid } as AmuletItem,
 	{ name: `全力の一撃のお守り`, price: 20, desc: `レイド時、ターン7で発生する全力の一撃を強化します 耐久10 レイドでの使用時耐久減少`, type: "amulet", effect: { finalAttackUp: 0.3 }, durability: 10, short: "撃", isUsed: (data) => data.raid } as AmuletItem,
 	{ name: `バーサクのお守り`, price: 20, desc: `レイド時、毎ターンダメージを受けますが、パワーがアップします 耐久10 レイドでの使用時耐久減少`, type: "amulet", effect: { berserk: 0.15 }, durability: 10, short: "バ", isUsed: (data) => data.raid } as AmuletItem,
-	{ name: `スロースタートのお守り`, price: 20, desc: `レイド時、1ターン目は弱くなりますが、ターンが進む度にどんどん強くなります 耐久10 レイドでの使用時耐久減少`, type: "amulet", effect: { slowStart: 1 }, durability: 10, short: "ス", isUsed: (data) => data.raid } as AmuletItem,
+	{ name: `スロースタートのお守り`, price: 20, desc: `レイド時、最初は弱くなりますが、ターンが進む度にどんどん強くなります 耐久10 レイドでの使用時耐久減少`, type: "amulet", effect: { slowStart: 1 }, durability: 10, short: "ス", isUsed: (data) => data.raid } as AmuletItem,
 	...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly).map((x): AmuletItem => ({ name: `${x.name}のお守り`, price: (data, rnd, ai) => skillPrice(ai, x.name, rnd), desc: `持っているとスキル「${x.name}」を使用できる 耐久6 使用時耐久減少`, type: "amulet", effect: x.effect, durability: 6, skillName: x.name, short: x.short, isUsed: (data) => true })),
 ];
 
