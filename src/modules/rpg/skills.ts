@@ -156,6 +156,7 @@ export type SkillEffect = {
 	/** 全力の一撃のダメージをn%増加 */
 	finalAttackUp?: number;
 	berserk?: number;
+	slowStart?: number;
 };
 
 export type Skill = {
