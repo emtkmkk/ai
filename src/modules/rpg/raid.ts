@@ -689,6 +689,13 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		enemyDef = _enemyDef;
 		itemBonus = { atk: 0, def: 0 };
 
+		if (skillEffects.slowStart) {
+			const n = (skillEffects.slowStart ?? 0)
+			const increment = (600 + 45 * n - 6 * (57.5 - 7.5 * n)) / 15;
+			atk = atk * (((60 - 10 * n) + (increment * (count - 1))) / 100);
+			def = def * (((60 - 10 * n) + (increment * (count - 1))) / 100);
+		}
+
 		if (skillEffects.berserk) {
 			const berserkDmg = Math.min(Math.floor((100 + lv * 3) * (skillEffects.berserk ?? 0)), playerHp - 1);
 			playerHp -= berserkDmg;
