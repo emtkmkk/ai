@@ -1052,7 +1052,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			let dmg = getAtkDmg(data, atk, tp, 1, crit ? critDmg : false, enemyDef, enemyMaxHp, rng * dmgBonus, getVal(enemy.defx, [count])) + Math.round(trueDmg * turnDmgX);
 			let noItemDmg = getAtkDmg(data, atk - itemBonus.atk, tp, 1, crit, enemyDef, enemyMaxHp, rng * dmgBonus, getVal(enemy.defx, [count])) + Math.round(trueDmg * turnDmgX);
 			if (sevenFever) {
-				const num = 7 * (skillEffects.sevenFever || 1);
+				const num = 7 * Math.max(Math.ceil((skillEffects.sevenFever || 1) * turnDmgX), 1);
 				dmg = Math.ceil(dmg / num) * num;
 				noItemDmg = Math.ceil(noItemDmg / num) * num;
 			}
