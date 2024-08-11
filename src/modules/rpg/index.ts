@@ -50,7 +50,7 @@ export default class extends Module {
 	@autobind
 	private async mentionHook(msg: Message) {
 		if (msg.includes([serifs.rpg.command.rpg]) && msg.visibility !== "specified" && !msg.replyId) {
-			msg.reply("RPG関連のコマンドを使用する際は私の何らかの投稿に返信、またはダイレクトで送信してください！")
+			msg.reply("RPG関連のコマンドを使用する際は私の何らかの投稿への返信で送ってください！")
 			return {
 				reaction: 'hmm'
 			};
