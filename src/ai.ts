@@ -417,7 +417,7 @@ export default class 藍 {
 	 */
 	@autobind
 	public async post(param: any) {
-		if (!param.visibility || param.visibility == "public") param.visibility == "home";
+		if (!param.visibility || param.visibility == "public") param.visibility = "home";
 		const res = await this.api('notes/create', param);
 		return res.createdNote;
 	}
