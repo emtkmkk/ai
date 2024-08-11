@@ -49,11 +49,15 @@ export default class extends Module {
 
 	@autobind
 	private async mentionHook(msg: Message) {
-		if (msg.includes([serifs.rpg.command.rpg]) && msg.visibility !== "specified" && !msg.replyId) {
-			msg.reply("RPG関連のコマンドを使用する際は私の何らかの投稿への返信で送ってください！")
-			return {
-				reaction: 'hmm'
-			};
+		if (msg.visibility !== "specified" && !msg.replyId) {
+			if (msg.includes([serifs.rpg.command.rpg])) {
+				msg.reply("RPG関連のコマンドを使用する際は私の何らかの投稿への返信で送ってください！")
+					return {
+						reaction: 'hmm'
+					};
+			} else {
+				return false;
+			}
 		}
 		if (!msg.user.host && msg.user.username === config.master && msg.includes([serifs.rpg.command.rpg]) && msg.includes(["admin"])) {
 			// 管理者モード
