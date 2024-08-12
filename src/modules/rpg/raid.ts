@@ -190,9 +190,26 @@ export async function start(triggerUserId?: string, flg?: any) {
     (x) => !recentRaidList.includes(x.name),
   );
 
+  const rpgData = ai.moduleData.findOne({ type: 'rpg' });
+  if (rpgData) {
+    if (!rpgData.raidScore) rpgData.raidScore = {};
+  }
+  const notPlayedBoss = raidEnemys.filter(
+    (x) => !rpgData || !rpgData.raidScore[x.name],
+  );
+
   /** ランダムに選ばれたレイドボス */
   const enemy =
-    filteredRaidEnemys[Math.floor(Math.random() * filteredRaidEnemys.length)];
+    games.length >= 2 &&
+    flg?.includes('r') &&
+    raidEnemys.find((x) => x.name === games[games.length - 2]?.enemy?.name)
+      ? raidEnemys.find((x) => x.name === games[games.length - 2]?.enemy?.name)
+      : notPlayedBoss.length
+        ? notPlayedBoss[Math.floor(Math.random() * notPlayedBoss.length)]
+        : filteredRaidEnemys[
+            Math.floor(Math.random() * filteredRaidEnemys.length)
+          ];
+  if (!enemy) return;
 
   // レイドの制限時間（分）
   let limitMinutes = 30;
@@ -362,6 +379,8 @@ function finish(raid: Raid) {
     if (!friend) return;
     const data = friend.getPerModulesData(module_);
     data.coin = Math.max((data.coin ?? 0) + (bonus ?? 1), data.coin);
+    if (!data.maxLucky || data.maxLucky < (bonus ?? 1))
+      data.maxLucky = bonus ?? 1;
     friend.setPerModulesData(module_, data);
   }
 
@@ -706,6 +725,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     : 0;
   if (sevenFever) {
     const bonus = 7 * (skillEffects.sevenFever ?? 1);
+    sevenFever = 77 * (skillEffects.sevenFever ?? 1);
     buff += 1;
     message += serifs.rpg.skill.sevenFeverRaid + '\n';
     atk = Math.ceil((atk * (1 + bonus / 100)) / 7) * 7;
@@ -788,8 +808,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     def = def * (1 + (skillEffects.enemyCritDmgDown ?? 0) / 30);
   }
   if (skillEffects.enemyBuff) {
-    atk = atk * 1.05;
-    def = def * 1.05;
+    atk = atk * (1 + (skillEffects.enemyBuff ?? 0) / 20);
+    def = def * (1 + (skillEffects.enemyBuff ?? 0) / 20);
   }
 
   const _atk = atk;
@@ -826,6 +846,13 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     enemyAtk = _enemyAtk;
     enemyDef = _enemyDef;
     itemBonus = { atk: 0, def: 0 };
+
+    if (skillEffects.slowStart) {
+      const n = skillEffects.slowStart ?? 0;
+      const increment = (600 + 45 * n - 6 * (57.5 - 7.5 * n)) / 15;
+      atk = atk * ((60 - 10 * n + increment * (count - 1)) / 100);
+      def = def * ((60 - 10 * n + increment * (count - 1)) / 100);
+    }
 
     if (skillEffects.berserk) {
       const berserkDmg = Math.min(
@@ -1276,8 +1303,10 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
     if (skillEffects.allForOne) {
       const spdx = getSpdX(spd);
-      atk = atk * spdx * 1.1;
-      if (itemBonus?.atk) itemBonus.atk = itemBonus.atk * spd * 1.1;
+      atk = atk * spdx * (1 + (skillEffects.allForOne ?? 0) * 0.1);
+      if (itemBonus?.atk)
+        itemBonus.atk =
+          itemBonus.atk * spd * (1 + (skillEffects.allForOne ?? 0) * 0.1);
       spd = 1;
     }
 
@@ -1327,7 +1356,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
           getVal(enemy.defx, [count]),
         ) + Math.round(trueDmg * turnDmgX);
       if (sevenFever) {
-        const num = 7 * (skillEffects.sevenFever || 1);
+        const num =
+          7 * Math.max(Math.ceil((skillEffects.sevenFever || 1) * turnDmgX), 1);
         dmg = Math.ceil(dmg / num) * num;
         noItemDmg = Math.ceil(noItemDmg / num) * num;
       }

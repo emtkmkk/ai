@@ -542,6 +542,16 @@ export const shopItems: ShopItem[] = [
     short: 'バ',
     isUsed: (data) => data.raid,
   } as AmuletItem,
+  {
+    name: `スロースタートのお守り`,
+    price: 20,
+    desc: `レイド時、最初は弱くなりますが、ターンが進む度にどんどん強くなります 耐久10 レイドでの使用時耐久減少`,
+    type: 'amulet',
+    effect: { slowStart: 1 },
+    durability: 10,
+    short: 'ス',
+    isUsed: (data) => data.raid,
+  } as AmuletItem,
   ...skills
     .filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly)
     .map(

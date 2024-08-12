@@ -353,6 +353,10 @@ export default class extends Module {
         // 同順位の表記を追加
         if (sameRankCount > 1) {
           rankmsg += `（同順位：${sameRankCount - 1}人）`;
+        } else if (rank <= 10 && rank >= 2) {
+          rankmsg += `（1位：${(values?.[0] + (options?.addValue || 0)).toLocaleString()}）`;
+        } else if (rank == 1 && values?.[1]) {
+          rankmsg += `（2位：${(values?.[1] + (options?.addValue || 0)).toLocaleString()}）`;
         }
       }
 
@@ -443,10 +447,10 @@ export default class extends Module {
         if (friend == null) return { reaction: ':neofox_approve:' };
         friend.doc.perModulesData.rpg.lastPlayedAt = '';
         friend.doc.perModulesData.rpg.lv = friend.doc.perModulesData.rpg.lv - 1;
-        friend.doc.perModulesData.rpg.atk =
-          friend.doc.perModulesData.rpg.atk - 4;
+        friend.doc.perModulesData.rpg.atk = friend.doc.perModulesData.rpg.atk =
+          friend.doc.perModulesData.rpg.atk - 5;
         friend.doc.perModulesData.rpg.def =
-          friend.doc.perModulesData.rpg.def - 3;
+          friend.doc.perModulesData.rpg.def - 2;
         friend.save();
         return { reaction: 'love' };
       }
@@ -466,7 +470,7 @@ export default class extends Module {
       }
     }
     if (msg.includes(['startRaid'])) {
-      start();
+      start(undefined, msg.includes(['recent']) ? 'r' : '');
       return { reaction: 'love' };
     }
     if (msg.includes(['dataFix'])) {
@@ -600,7 +604,7 @@ export default class extends Module {
     const maxRnd = Math.max(1.6 + (skillEffects.atkRndMax ?? 0), 0);
 
     if (skillEffects.allForOne) {
-      atk = atk * spd * 1.1;
+      atk = atk * spd * (1 + (skillEffects.allForOne ?? 0) * 0.1);
       spd = 1;
     }
 
@@ -1690,8 +1694,10 @@ export default class extends Module {
       }
 
       if (skillEffects.allForOne) {
-        atk = atk * spd * 1.1;
-        if (itemBonus?.atk) itemBonus.atk = itemBonus.atk * spd * 1.1;
+        atk = atk * spd * (1 + (skillEffects.allForOne ?? 0) * 0.1);
+        if (itemBonus?.atk)
+          itemBonus.atk =
+            itemBonus.atk * spd * (1 + (skillEffects.allForOne ?? 0) * 0.1);
         spd = 1;
       }
 
@@ -1932,7 +1938,12 @@ export default class extends Module {
             playerHp = 1;
             data.endure = Math.max(data.endure - 1, 0);
           }
-          if (playerHp <= 30 + lv && serifs.rpg.nurse && Math.random() < 0.01) {
+          if (
+            playerHp <= 30 + lv &&
+            serifs.rpg.nurse &&
+            Math.random() < 0.01 &&
+            !data.enemy.notEndure
+          ) {
             message +=
               '\n' +
               serifs.rpg.nurse +
@@ -2151,9 +2162,9 @@ export default class extends Module {
       data.lv >= rpgData.maxLv
         ? ''
         : data.lastOnemorePlayedAt !== getDate()
-          ? '(無料おかわり権あり)'
+          ? '(無料でおかわり可能)'
           : data.coin >= needCoin
-            ? `(どんぐりでおかわり可能 ${data.coin} / ${needCoin})`
+            ? `(どんぐりでおかわり可能 ${data.coin > 99 ? '99+' : data.coin} / ${needCoin})`
             : '',
     ]
       .filter(Boolean)

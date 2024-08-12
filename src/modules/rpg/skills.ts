@@ -172,6 +172,7 @@ export type SkillEffect = {
   /** 全力の一撃のダメージをn%増加 */
   finalAttackUp?: number;
   berserk?: number;
+  slowStart?: number;
 };
 
 export type Skill = {
@@ -675,6 +676,19 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
   let playerSkills = data.skills.map(
     (x) => skills.find((y) => x.name === y.name) ?? x,
   );
+
+  if (msg.includes(['ソート'])) {
+    data.skills = data.skills.sort(
+      (a, b) =>
+        skills.map((x) => x.name).indexOf(a.name) -
+        skills.map((x) => x.name).indexOf(b.name),
+    );
+    msg.reply(`\n` + serifs.rpg.skills.sort);
+    msg.friend.setPerModulesData(module, data);
+    return {
+      reaction: 'love',
+    };
+  }
 
   if (
     msg.includes([serifs.rpg.command.change]) &&
