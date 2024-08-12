@@ -562,7 +562,7 @@ export default class extends Module {
 							};
 						}
 						if (!data.replayOkawari && !aggregateTokensEffects(data).autoReplayOkawari) {
-							const reply = await msg.reply(serifs.rpg.oneMore.buyQuestion(needCoin, data.coin));
+							const reply = await msg.reply(serifs.rpg.oneMore.buyQuestion(needCoin, data.coin), {visibility: "specified"});
 							this.log("replayOkawari SubscribeReply: " + reply.id);
 							this.subscribeReply("replayOkawari:" + msg.userId, reply.id);
 							return { reaction: 'love' };
@@ -1129,6 +1129,13 @@ export default class extends Module {
 			if (typeof data.enemy.atkx === "number") data.enemy.atkx += 1 + (0.2 * statusX);
 			if (typeof data.enemy.defx === "number") data.enemy.defx += 1 + (0.5 * statusX);
 		}
+		
+		if (!skillEffects.enemyBuff && data.superUnlockCount > 5 && data.enemy.name !== endressEnemy(data).name) {
+			if (typeof data.enemy.atk === "number") enemyAtk = lv * 3.5 * Math.max(data.enemy.atk, 3);
+			if (typeof data.enemy.def === "number") enemyDef = lv * 3.5 * Math.max(data.enemy.def, 3);
+			if (typeof data.enemy.atkx === "number") data.enemy.atkx += 1;
+			if (typeof data.enemy.defx === "number") data.enemy.defx += 1;
+		}
 
 		if (skillEffects.enemyStatusBonus) {
 			const enemyStrongs = (enemyAtk / (lv * 3.5)) * (getVal(data.enemy.atkx, [tp]) ?? 3) + (enemyDef / (lv * 3.5)) * (getVal(data.enemy.defx, [tp]) ?? 3);
@@ -1616,7 +1623,7 @@ export default class extends Module {
 
 		msg.reply(`<center>${message}</center>`, {
 			cw,
-			visibility: 'public'
+			visibility: "specified"
 		});
 
 		return {
@@ -1638,7 +1645,7 @@ export default class extends Module {
 			this.unsubscribeReply(key);
 			if (msg.friend.doc?.perModulesData?.rpg) msg.friend.doc.perModulesData.rpg.replayOkawari = true;
 			msg.friend.save();
-			msg.reply(serifs.rpg.oneMore.buyComp);
+			msg.reply(serifs.rpg.oneMore.buyComp, {visibility: "specified"});
 			return { reaction: ':mk_muscleok:' };
 		} else if (msg.text.includes('いいえ')) {
 			this.log("replayOkawari: No");
@@ -1646,7 +1653,7 @@ export default class extends Module {
 			return { reaction: ':mk_muscleok:' };
 		} else {
 			this.log("replayOkawari: ?");
-			msg.reply(serifs.core.yesOrNo).then(reply => {
+			msg.reply(serifs.core.yesOrNo, {visibility: "specified"}).then(reply => {
 				this.subscribeReply("replayOkawari:" + msg.userId, reply.id);
 			});
 			return { reaction: 'hmm' };
