@@ -125,7 +125,7 @@ export const shopItems: ShopItem[] = [
 	{ name: `交通安全のお守り`, price: 30, desc: `持っているとターン1で30%ダメージカット 耐久10 使用時耐久減少`, type: "amulet", effect: { firstTurnResist: 0.3 }, durability: 10, short: "交安", isUsed: (data) => data.raid || data.count === 1 } as AmuletItem,
 	{ name: `高級交通安全のお守り`, price: 99, desc: `持っているとターン1で70%ダメージカット 耐久10 使用時耐久減少`, type: "amulet", effect: { firstTurnResist: 0.7 }, durability: 10, short: "S交安", isUsed: (data) => data.raid || data.count === 1 } as AmuletItem,
 	{ name: `気合のハチマキ`, price: 55, desc: `購入時、気合アップ`, limit: (data) => data.endure <= 6, type: "item", effect: (data) => data.endure = (data.endure ?? 0) + 4 },
-	{ name: `壺`, limit: (data) => data.lv >= 20, price: 200, desc: `なんかいい感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
+	{ name: `壺`, limit: (data) => data.lv >= 20 && (data.jar ?? 0) === 0, price: 200, desc: `なんかいい感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
 	{ name: `きれいな壺`, limit: (data) => (data.jar ?? 0) === 1, price: 400, desc: `なんかきれいな感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
 	{ name: `すごい壺`, limit: (data) => (data.jar ?? 0) === 2, price: 600, desc: `なんかすごい感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
 	{ name: `巨大な壺`, limit: (data) => (data.jar ?? 0) === 3, price: 800, desc: `なんかめっちゃでかい感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1 },
