@@ -731,9 +731,7 @@ export default class extends Module {
 
 		const isMaxLevel = data.lv >= rpgData.maxLv;
 
-		let needCoin = 6;
-		if (rpgData.maxLv - data.lv >= 100) needCoin -= 2;
-		if (rpgData.maxLv - data.lv >= 30) needCoin -= 2;
+		let needCoin = 2;
 
 		// プレイ済でないかのチェック
 		if (data.lastPlayedAt === nowTimeStr || data.lastPlayedAt === nextTimeStr) {
