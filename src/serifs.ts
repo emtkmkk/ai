@@ -592,7 +592,7 @@ export default {
 			rpg: "rpg",
 			color: ["色", "スキン", "color", "skin"],
 			trial: ["木人", "test", "dummy"],
-			journey: ["旅",　"無限", "endress", "journey"],
+			journey: ["旅",　"無限", "endless", "endress", "journey"],
 			change: "変更",
 			onemore: ["おかわり", "+", "onemore", "もう一回"],
 			skill: ["スキル", "skill", "お守り", "amulet"],
