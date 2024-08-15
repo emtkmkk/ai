@@ -590,15 +590,15 @@ export default {
 		},
 		command: {
 			rpg: "rpg",
-			color: "色",
-			trial: "木人",
-			journey: "旅モード",
+			color: ["色", "color"]
+			trial: ["木人", "test", "dummy"]
+			journey: "旅",
 			change: "変更",
 			onemore: "おかわり",
-			skill: "スキル",
-			shop: "ショップ",
+			skill: ["スキル", "skill"],
+			shop: ["ショップ", "shop"],
 			help: ["h", "ヘルプ"],
-			Record: ["殿堂", "記録"],
+			Record: ["殿堂", "記録", "record"],
 			duplication: "複製"
 		}
 	},
