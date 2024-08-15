@@ -51,7 +51,7 @@ export default class extends Module {
 	private async mentionHook(msg: Message) {
 		if (!msg.user.host && msg.visibility !== "specified" && !msg.replyId && msg.replyNote?.userId !== this.ai.account.id) {
 			if (msg.includes([serifs.rpg.command.rpg])) {
-				msg.reply("RPG関連のコマンドを使用する際は私の何らかの投稿への返信で送ってください！")
+				msg.reply("RPG関連のコマンドを使用する際は私の何らかの投稿への返信で送ってください！", {visibility: "specified"})
 					return {
 						reaction: 'hmm'
 					};
