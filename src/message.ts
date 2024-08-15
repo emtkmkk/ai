@@ -53,6 +53,10 @@ export default class Message {
 			.trim();
 	}
 
+	public get replyNote(): string {
+		return this.note.reply;
+	}
+
 	public get replyId(): string {
 		return this.note.replyId;
 	}
