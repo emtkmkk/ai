@@ -607,7 +607,7 @@ export default class extends Module {
 				}
 			}
 		} else {
-			if (msg.includes([serifs.rpg.command.onemore])) {
+			if (msg.includes(Array.isArray(serifs.rpg.command.onemore) ? serifs.rpg.command.onemore : [serifs.rpg.command.onemore])) {
 				if (data.lastOnemorePlayedAt === getDate()) {
 					const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
 					msg.reply(serifs.rpg.oneMore.tired(!isMaxLevel));
@@ -1571,7 +1571,7 @@ export default class extends Module {
 			}
 		}
 
-		if (!msg.includes([serifs.rpg.command.onemore])) data.coinGetCount += 1;
+		if (!msg.includes(Array.isArray(serifs.rpg.command.onemore) ? serifs.rpg.command.onemore : [serifs.rpg.command.onemore])) data.coinGetCount += 1;
 		if (data.coinGetCount >= 5) {
 			data.coin += 5;
 			data.coinGetCount -= 5;
