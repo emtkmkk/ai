@@ -84,19 +84,19 @@ export function showStatus(data, playerHp: number, enemyHp: number, enemyMaxHp: 
  * @param enemyMaxHp 敵の最大HP
  * @param me 自分の姿
  */
-export function showStatusDmg(data, playerHp: number, totalDmg: number, enemyMaxHp: number, me = colors.find((x) => x.default)?.name ?? colors[0].name): string {
+export function showStatusDmg(data, playerHp: number, totalDmg: number, playerMaxHp: number, me = colors.find((x) => x.default)?.name ?? colors[0].name): string {
 
     // プレイヤー
-    const playerHpMarkCount = Math.min(Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 7)), 7);
+    const playerHpMarkCount = Math.min(Math.ceil(playerHp / (playerMaxHp) / (1 / 7)), 7);
     const playerHpMarkStr = false
         ? serifs.rpg.player.mark2.repeat(7 - playerHpMarkCount) + serifs.rpg.player.mark.repeat(playerHpMarkCount)
         : serifs.rpg.player.mark2.repeat(playerHpMarkCount) + serifs.rpg.player.mark.repeat(7 - playerHpMarkCount);
     const PlayerHpInfoStr = false
-        ? (Math.ceil((100 - Math.min(Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 100)), 100)) / 5) * 5) + " " + serifs.rpg.infoPercent
-        : (Math.ceil((Math.min(Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 100)), 100)) / 5) * 5) + " " + serifs.rpg.infoPercent;
+        ? (Math.ceil((100 - Math.min(Math.ceil(playerHp / (playerMaxHp) / (1 / 100)), 100)) / 5) * 5) + " " + serifs.rpg.infoPercent
+        : (Math.ceil((Math.min(Math.ceil(playerHp / (playerMaxHp) / (1 / 100)), 100)) / 5) * 5) + " " + serifs.rpg.infoPercent;
     const playerHpStr = false
         ? PlayerHpInfoStr
-        : `${playerHp} / ${100 + (data.lv ?? 1) * 3}`;
+        : `${playerHp} / ${playerMaxHp}`;
 
     const debuff = [data.enemy?.fire ? serifs.rpg.fire + data.count : ""].filter(Boolean).join(" ");
 

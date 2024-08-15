@@ -156,7 +156,7 @@ export async function start(triggerUserId?: string, flg?: any) {
 	/** ランダムに選ばれたレイドボス */
 	const enemy = games.length >= 2 && flg?.includes("r") && raidEnemys.find((x) => x.name === games[games.length - 2]?.enemy?.name) ? raidEnemys.find((x) => x.name === games[games.length - 2]?.enemy?.name) : notPlayedBoss.length ? notPlayedBoss[Math.floor(Math.random() * notPlayedBoss.length)] : filteredRaidEnemys[Math.floor(Math.random() * filteredRaidEnemys.length)];
 	if (!enemy) return
-	
+
 	// レイドの制限時間（分）
 	let limitMinutes = 30;
 
@@ -528,16 +528,25 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	}
 	atk = Math.round(atk * (1 + bonusX));
 	def = Math.round(def * (1 + bonusX));
+
+	const maxLv = ai.moduleData.findOne({ type: 'rpg' })?.maxLv ?? 1;
+
 	/** 敵の最大HP */
 	let enemyMaxHp = 100000;
 	/** 敵のHP */
 	let enemyHp = 100000;
 	/** 連続攻撃中断の場合の攻撃可能回数 0は最後まで攻撃 */
 	let abort = 0;
+	/** プレイヤーの基礎体力 */
+	let rawMaxHp = 100 + Math.min(lv * 2, 599) + lv * 1;
+	/** プレイヤーのボーナス体力 */
+	let bonusMaxHp = 100 + Math.min(maxLv * 3, 899);
+	/** プレイヤーの最大HP */
+	let playerMaxHp = Math.max(Math.round(bonusMaxHp * Math.random()), rawMaxHp);
 	/** プレイヤーのHP */
-	let playerHp = (100 + lv * 3);
+	let playerHp = (playerMaxHp);
 	/** プレイヤーのHP割合 */
-	let playerHpPercent = playerHp / (100 + lv * 3);
+	let playerHpPercent = playerHp / (playerMaxHp);
 	/** 敵のHP割合 */
 	let enemyHpPercent = 1;
 	/** 使用したアイテム */
@@ -672,7 +681,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		let buff = 0;
 
 		/** プレイヤーのHP割合 */
-		let playerHpPercent = playerHp / (100 + lv * 3);
+		let playerHpPercent = playerHp / (playerMaxHp);
 		/** 敵のHP割合 */
 		let enemyHpPercent = 0.5 + 0.5 * ((6 - (count - 1)) / 6);
 
@@ -697,9 +706,9 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		}
 
 		if (skillEffects.berserk) {
-			const berserkDmg = Math.min(Math.floor((100 + lv * 3) * (skillEffects.berserk ?? 0)), playerHp - 1);
+			const berserkDmg = Math.min(Math.floor((playerMaxHp) * (skillEffects.berserk ?? 0)), playerHp - 1);
 			playerHp -= berserkDmg;
-			playerHpPercent = playerHp / (100 + lv * 3);
+			playerHpPercent = playerHp / (playerMaxHp);
 			if (berserkDmg >= 0) {
 				atk = atk * (1 + (skillEffects.berserk ?? 0));
 				buff += 1;
@@ -874,7 +883,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 							def = def + itemBonus.def;
 							item.effect = 200;
 						}
-						const heal = Math.round(((100 + lv * 3) - playerHp) * (item.effect * 0.005));
+						const heal = Math.round(((playerMaxHp) - playerHp) * (item.effect * 0.005));
 						playerHp += heal;
 						if (heal > 0) {
 							if (item.effect >= 100 && heal >= 50) {
@@ -1152,9 +1161,9 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 					playerHp = 1;
 					endureCount -= 1;
 				}
-				if (skillEffects.escape && actionX + 1 < plusActionX && playerHp <= 0 && playerHp >= (100 + lv * 3) * (skillEffects.escape / -10) && !enemy.notEndure) {
+				if (skillEffects.escape && actionX + 1 < plusActionX && playerHp <= 0 && playerHp >= (playerMaxHp) * (skillEffects.escape / -10) && !enemy.notEndure) {
 					message += "やられそうになったので、\n一旦距離を取り、1ターン分回復に徹した！\n";
-					const heal = Math.ceil((100 + lv * 3) * (skillEffects.escape / 10)) + 1;
+					const heal = Math.ceil((playerMaxHp) * (skillEffects.escape / 10)) + 1;
 					playerHp += heal;
 					if (heal > 0) message += heal + "ポイントの体力を回復！\n";
 					actionX += 1;
@@ -1170,9 +1179,9 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			} else {
 				// 決着がつかない場合
 				if (actionX === plusActionX) {
-					message += showStatusDmg(_data, playerHp, totalDmg, enemyMaxHp, me);
+					message += showStatusDmg(_data, playerHp, totalDmg, playerMaxHp, me);
 				} else {
-					message += showStatusDmg(_data, playerHp, totalDmg, enemyMaxHp, me) + "\n\n";
+					message += showStatusDmg(_data, playerHp, totalDmg, playerMaxHp, me) + "\n\n";
 				}
 				count = count + 1;
 			}
@@ -1183,12 +1192,12 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		const enemySAtk = Math.max((_enemyAtk / (lv * 3.5)) * (getVal(enemy.atkx, [6]) ?? 3), 0.01);
 		let enemyFDef = (typeof enemy.def === "function") ? enemy.def(atk, def, spd) : lv * 3.5 * (enemy.def ?? 1);
 		const enemySDef = Math.max((enemyFDef / (lv * 3.5)) * (getVal(enemy.defx, [6]) ?? 3), enemySAtk / 3000);
-		let dmg = Math.round(playerHp / (100 + lv * 3) * (1000 + (enemySAtk >= 24 ? enemySAtk / 0.048 : 0)) * Math.max(enemySAtk / enemySDef, 1) * (1 + (skillEffects.finalAttackUp ?? 0)));
+		let dmg = Math.round(playerHp / (playerMaxHp) * (1000 + (enemySAtk >= 24 ? enemySAtk / 0.048 : 0)) * Math.max(enemySAtk / enemySDef, 1) * (1 + (skillEffects.finalAttackUp ?? 0)));
 		if (sevenFever) {
 			const num = 7 * (skillEffects.sevenFever || 1);
 			dmg = Math.ceil(dmg / num) * num;
 		}
-		message += "\n\n" + serifs.rpg.finalAttack(dmg) + `\n\n` + serifs.rpg.timeUp(enemy.name, (100 + lv * 3)) + "\n\n" + enemy.losemsg;
+		message += "\n\n" + serifs.rpg.finalAttack(dmg) + `\n\n` + serifs.rpg.timeUp(enemy.name, (playerMaxHp)) + "\n\n" + enemy.losemsg;
 		totalDmg += dmg;
 	}
 
