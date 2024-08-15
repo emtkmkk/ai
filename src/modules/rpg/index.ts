@@ -71,19 +71,19 @@ export default class extends Module {
 			// 殿堂モード
 			return this.handleRecordCommands(msg);
 		}
-		if (msg.includes([serifs.rpg.command.rpg]) && msg.includes([serifs.rpg.command.color])) {
+		if (msg.includes([serifs.rpg.command.rpg]) && msg.includes(Array.isArray(serifs.rpg.command.color) ? serifs.rpg.command.color : [serifs.rpg.command.color]))) {
 			// 色モード
 			return colorReply(this, msg);
 		}
-		if (msg.includes([serifs.rpg.command.skill])) {
+		if (msg.includes(Array.isArray(serifs.rpg.command.skill) ? serifs.rpg.command.skill : [serifs.rpg.command.skill]))) {
 			// スキルモード
 			return skillReply(this, this.ai, msg);
 		}
-		if (msg.includes([serifs.rpg.command.shop])) {
+		if (msg.includes(Array.isArray(serifs.rpg.command.shop) ? serifs.rpg.command.shop : [serifs.rpg.command.shop]))) {
 			// ショップモード
 			return shopReply(this, this.ai, msg);
 		}
-		if (msg.includes([serifs.rpg.command.rpg]) && msg.includes([serifs.rpg.command.trial])) {
+		if (msg.includes([serifs.rpg.command.rpg]) && msg.includes(Array.isArray(serifs.rpg.command.trial) ? serifs.rpg.command.trial : [serifs.rpg.command.trial]))) {
 			// 木人モード
 			return this.handleTrialCommands(msg);
 		}
