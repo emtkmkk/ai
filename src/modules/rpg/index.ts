@@ -63,10 +63,6 @@ export default class extends Module {
 			// 管理者モード
 			return this.handleAdminCommands(msg);
 		}
-		if (msg.includes([serifs.rpg.command.rpg]) && msg.includes(Array.isArray(serifs.rpg.command.help) ? serifs.rpg.command.help : [serifs.rpg.command.help])) {
-			// ヘルプモード
-			return this.handleHelpCommands(msg);
-		}
 		if (msg.includes([serifs.rpg.command.rpg]) && msg.includes(Array.isArray(serifs.rpg.command.Record) ? serifs.rpg.command.Record : [serifs.rpg.command.Record])) {
 			// 殿堂モード
 			return this.handleRecordCommands(msg);
@@ -86,6 +82,10 @@ export default class extends Module {
 		if (msg.includes([serifs.rpg.command.rpg]) && msg.includes(Array.isArray(serifs.rpg.command.trial) ? serifs.rpg.command.trial : [serifs.rpg.command.trial])) {
 			// 木人モード
 			return this.handleTrialCommands(msg);
+		}
+		if (msg.includes([serifs.rpg.command.rpg]) && msg.includes(Array.isArray(serifs.rpg.command.help) ? serifs.rpg.command.help : [serifs.rpg.command.help])) {
+			// ヘルプモード
+			return this.handleHelpCommands(msg);
 		}
 		if (msg.includes([serifs.rpg.command.rpg])) {
 			// 通常モード
