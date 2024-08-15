@@ -220,7 +220,7 @@ const determineOutcome = (ai, data, getShopItems) => {
 	};
 
 	// 確率を計算する関数
-	const calculateProbability = (baseProbability, skillCount, data) => {
+	const calculateProbability = (baseProbability, skillCount, data, requiredCoins) => {
 		const levelCount = ((data.skills?.length ?? 0) - 1) + Math.max(Math.floor(data.lv / 256) - 1, 0);
 		const delta = levelCount - skillCount;
 
@@ -229,6 +229,12 @@ const determineOutcome = (ai, data, getShopItems) => {
 			probability *= Math.pow(0.5, Math.abs(delta)); // 半減処理
 		} else if (delta > 0) {
 			probability *= Math.pow(1.5, delta); // 1.5倍処理
+		}
+
+		// コインの所持数が必要数を上回る場合、確率をさらに上昇させる
+		if (data.coin > requiredCoins) {
+			const extraCoins = data.coin - requiredCoins;
+			probability *= (1 + (extraCoins / requiredCoins) * 0.5); // 余剰コインの倍率を追加
 		}
 
 		return probability;
@@ -243,7 +249,7 @@ const determineOutcome = (ai, data, getShopItems) => {
 
 		while (skillCount <= 10) {
 			const requiredCoins = calculateRequiredCoins(skillCount + 1);
-			const probability = calculateProbability(baseProbability, skillCount, data);
+			const probability = calculateProbability(baseProbability, skillCount, data, requiredCoins);
 
 			// コインの条件と確率を満たす場合、スキルカウントを増やす
 			if (data.coin >= requiredCoins && Math.random() < probability) {
