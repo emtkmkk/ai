@@ -590,15 +590,15 @@ export default {
 		},
 		command: {
 			rpg: "rpg",
-			color: ["色", "color"]
-			trial: ["木人", "test", "dummy"]
-			journey: "旅",
+			color: ["色", "スキン", "color", "skin"],
+			trial: ["木人", "test", "dummy"],
+			journey: ["旅",　"無限", "endress", "journey"],
 			change: "変更",
-			onemore: "おかわり",
-			skill: ["スキル", "skill"],
-			shop: ["ショップ", "shop"],
-			help: ["h", "ヘルプ"],
-			Record: ["殿堂", "記録", "record"],
+			onemore: ["おかわり", "+", "onemore", "もう一回"],
+			skill: ["スキル", "skill", "お守り", "amulet"],
+			shop: ["ショップ", "shop", "お店"],
+			help: ["h", "ヘルプ", "?"],
+			Record: ["殿堂", "記録", "record", "trophy", "achieve", "achievement", "rank"],
 			duplication: "複製"
 		}
 	},
