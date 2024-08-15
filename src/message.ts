@@ -53,7 +53,7 @@ export default class Message {
 			.trim();
 	}
 
-	public get replyNote(): string {
+	public get replyNote(): any {
 		return this.note.reply;
 	}
 
