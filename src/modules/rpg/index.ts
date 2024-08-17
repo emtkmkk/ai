@@ -1120,7 +1120,10 @@ export default class extends Module {
 		/** 敵の防御力 */
 		let enemyDef = (typeof data.enemy.def === "function") ? data.enemy.def(atk, def, spd) : lv * 3.5 * data.enemy.def;
 
+		let hardEnemyFlg = false;
+
 		if (skillEffects.enemyBuff && data.enemy.name !== endressEnemy(data).name) {
+			hardEnemyFlg = true;
 			if (!data.enemy.spd && enemyAtk + enemyDef <= (lv * 10.5)) data.enemy.spd = 3;
 			if (!data.enemy.spd && enemyAtk + enemyDef <= (lv * 15.75)) data.enemy.spd = 2;
 			const statusX = Math.floor(data.streak / 10) + 1;
@@ -1338,6 +1341,7 @@ export default class extends Module {
 					if ((data.endress ?? 0) > (data.maxEndress ?? -1)) data.maxEndress = data.endress;
 					data.endress = (data.endress ?? 0) + 1;
 				}
+				if (hardEnemyFlg) data.hardWinCount = (data.hardWinCount ?? 0) + 1;
 				// 連続勝利数
 				data.streak = (data.streak ?? 0) + 1;
 				// 1ターンで勝利した場合はさらに+1
