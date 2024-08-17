@@ -28,7 +28,7 @@ export function initializeData(module: rpg, msg) {
 
 export function getColor(data) {
     let _color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
-	let color = _color;
+	let color = {..._color};
     if (!color.unlock(data)) {
         data.color === (colors.find((x) => x.default) ?? colors[0]).id;
         color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
@@ -37,7 +37,7 @@ export function getColor(data) {
 		color.alwaysSuper = true;
 		color.name = `$[sparkle ${color.name}]`
 	}
-    return {...color};
+    return color;
 }
 
 
