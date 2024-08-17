@@ -21,6 +21,8 @@ type Color = {
 	alwaysSuper?: boolean;
 	/** 隠し色かどうか */
 	hidden?: boolean;
+	/** 強化 */
+	enhance?: (data?: any) => string;
 };
 
 /** 色一覧 */
@@ -32,6 +34,7 @@ export const colors: Color[] = [
 		unlock: () => true,
 		message: () => serifs.rpg.color.default,
 		default: true,
+		enhance: (data) => enhanceCount(data,[1]) >= 8,
 	},
 	{
 		id: 2,
@@ -39,6 +42,7 @@ export const colors: Color[] = [
 		keyword: "2",
 		unlock: (data) => (data.lv ?? 1) >= 99,
 		message: (data) => (data.lv ?? 1) >= 99 ? `${serifs.rpg.color.unlock} (Lv: **${(data.lv ?? 1)}**)` : `Lv99になると解放されます。(**${(data.lv ?? 1)}** / 99)`,
+		enhance: (data) => (data.atk ?? 0) + (data.def ?? 0) >= (299 * 7.5),
 	},
 	{
 		id: 3,
@@ -46,6 +50,7 @@ export const colors: Color[] = [
 		keyword: "3",
 		unlock: (data) => (data.maxEndress ?? 0) >= 6,
 		message: (data) => (data.maxEndress ?? 0) >= 6 ? `${serifs.rpg.color.unlock} (旅最高ステージ数: **${(data.maxEndress ?? 1) + 1}**)` : `「旅モード」にて、ステージ7の目的地到達で解放されます。(**${(data.maxEndress ?? -1) + 1}** / 7)`,
+		enhance: (data) => (data.maxEndress ?? 0) >= 39,
 	},
 	{
 		id: 4,
@@ -53,6 +58,7 @@ export const colors: Color[] = [
 		keyword: "4",
 		unlock: (data) => data.allClear,
 		message: (data) => data.allClear ? `${serifs.rpg.color.unlock} (クリアLv: **${(data.allClear ?? "?")}**)` : `連勝で全ての敵を倒すと解放されます。${data.clearEnemy?.length ? `(現在 **${data.clearEnemy.length}** 連勝中)` : ""}`,
+		enhance: (data) => (data.hardWinCount ?? 0) >= 30,
 	},
 	{
 		id: 5,
@@ -60,6 +66,7 @@ export const colors: Color[] = [
 		keyword: "5",
 		unlock: (data) => (data.thirdFire ?? 0) >= 3,
 		message: (data) => (data.thirdFire ?? 0) >= 3 ? `${serifs.rpg.color.unlock} (最大🔥: **${(data.thirdFire ?? 0)}**)` : `1戦闘で🔥を3回受けると解放されます。(**${(data.thirdFire ?? 0)}** / 3)`,
+		enhance: (data) => (data.thirdFire ?? 0) >= 6,
 	},
 	{
 		id: 6,
@@ -67,6 +74,7 @@ export const colors: Color[] = [
 		keyword: "6",
 		unlock: (data) => (data.superMuscle ?? 0) >= 300,
 		message: (data) => (data.superMuscle ?? 0) >= 300 ? `${serifs.rpg.color.unlock} (最大耐ダメージ: **${(data.superMuscle ?? 0)}**)` : `一撃で300ダメージ以上受け、倒れなかった場合に解放されます。(**${(data.superMuscle ?? 0)}** / 300)`,
+		enhance: (data) => (data.clearRaidNum ?? 0) >= 14,
 	},
 	{
 		id: 7,
@@ -74,6 +82,7 @@ export const colors: Color[] = [
 		keyword: "7",
 		unlock: (data) => (data.winCount ?? 0) >= 100 || data.maxStatusUp >= 12,
 		message: (data) => (data.winCount ?? 0) >= 100 || data.maxStatusUp >= 12 ? `${serifs.rpg.color.unlock} (勝利数: **${(data.winCount ?? 0)}**) (運: **${(data.maxStatusUp ?? 7)}**)` : `100回勝利する、または運が良いと解放されます。(**${(data.winCount ?? 0)}** / 100) (**${(data.maxStatusUp ?? 7)}** / 12)`,
+		enhance: (data) => (data.winCount ?? 0) + (data.maxStatusUp ?? 0) * 75 >= 1200,
 	},
 	{
 		id: 8,
@@ -82,6 +91,7 @@ export const colors: Color[] = [
 		unlock: (data) => (data.clearHistory ?? []).includes(":mk_hero_8p:"),
 		message: (data) => (data.clearHistory ?? []).includes(":mk_hero_8p:") ? `${serifs.rpg.color.unlock} (クリアLv: **${(data.aHeroLv ?? "?")}**)` : ":mk_hero_8p:を1度でも倒すと解放されます。",
 		reverseStatus: true,
+		enhance: (data) => data.superCount >= 20 || data.superUnlockCount >= 100,
 	},
 	{
 		id: 9,
@@ -98,11 +108,16 @@ export const colors: Color[] = [
 		unlock: (data) => (data.maxEndress ?? 0) >= 29,
 		message: (data) => `${serifs.rpg.color.unlock}`,
 		hidden: true,
+		enhance: (data) => data.jar >= 3 || (data.maxEndress ?? 0) >= 59,
 	}
 ];
 
 export const unlockCount = (data, excludeIds: number[] = [], excludeDefault = false) => {
 	return (excludeDefault ? colors.filter((x) => !excludeIds.includes(x.id)).filter((x) => !x.default) : colors.filter((x) => !excludeIds.includes(x.id))).reduce((acc, value) => acc + (value.unlock(data) ? 1 : 0), 0);
+};
+
+export const enhanceCount = (data, excludeIds: number[] = []) => {
+	return (colors.filter((x) => !excludeIds.includes(x.id))).reduce((acc, value) => acc + (value.enhance && value.enhance(data) ? 1 : 0), 0);
 };
 
 /** 色に関しての情報を返す */
@@ -136,7 +151,7 @@ export const colorReply = (module: Module, msg: Message) => {
 		serifs.rpg.color.info,
 		"",
 		serifs.rpg.color.list,
-		...colors.filter((x) => !x.hidden || x.unlock(data)).map((x) => `${x.keyword}: ${x.name} ${x.message(data)}`)
+		...colors.filter((x) => !x.hidden || x.unlock(data)).map((x) => `${x.keyword}: ${x.name} ${x.enhance && x.enhance(data) ? x.message(data)?.replace(serifs.rpg.color.unlock, "**強化済み**") : x.message(data)}`)
 	].join("\n"));
 
 	return {
