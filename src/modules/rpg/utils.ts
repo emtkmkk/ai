@@ -32,6 +32,10 @@ export function getColor(data) {
         data.color === (colors.find((x) => x.default) ?? colors[0]).id;
         color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
     }
+	if (colors.find((x) => x.alwaysSuper)?.unlock(data) && !color.alwaysSuper && color.enhance && color.enhance(data)) {
+		color.alwaysSuper = true;
+		color.name = `$[sparkle ${color.name}]`
+	}
     return color;
 }
 
