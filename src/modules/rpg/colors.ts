@@ -147,11 +147,13 @@ export const colorReply = (module: Module, msg: Message) => {
 		}
 	}
 
+	const superUnlock = colors.find((x) => x.alwaysSuper)?.unlock(data);
+
 	msg.reply([
 		serifs.rpg.color.info,
 		"",
 		serifs.rpg.color.list,
-		...colors.filter((x) => !x.hidden || x.unlock(data)).map((x) => `${x.keyword}: ${x.name} ${x.enhance && x.enhance(data) ? x.message(data)?.replace(serifs.rpg.color.unlock, "**強化済み**") : x.message(data)}`)
+		...colors.filter((x) => !x.hidden || x.unlock(data)).map((x) => `${x.keyword}: ${x.name} ${superUnlock && x.enhance && x.enhance(data) ? x.message(data)?.replace(serifs.rpg.color.unlock, "**強化済み**") : x.message(data)}`)
 	].join("\n"));
 
 	return {
