@@ -853,6 +853,7 @@ export default class extends Module {
 			if (!color.alwaysSuper) {
 				// バフが1つでも付与された場合、改行を追加する
 				if (buff > 0) message += "\n";
+				const superColor = colors.find((x) => x.alwaysSuper)?.name ?? colors.find((x) => x.default)?.name ?? colors[0]?.name;
 				buff += 1;
 				me = superColor;
 				message += serifs.rpg.super(me) + `\n`;
