@@ -1245,9 +1245,9 @@ export default class extends Module {
       return true;
     } else if (msg.includes(['おみくじ'])) {
       return this.handleFortune(msg);
-    } else if (msg.includes(['タロット'])) {
+    } else if (msg.includes(['タロット', 'ワンオラクル'])) {
       return this.handleTarot(msg);
-    } else if (msg.includes(['スリーオラクル'])) {
+    } else if (msg.includes(['スリーオラクル', 'スリーカード'])) {
       return this.handleThreeOracle(msg);
     } else {
       return false;
@@ -1258,6 +1258,8 @@ export default class extends Module {
   private async handleChoiceReply(msg: Message) {
     if (msg.text.includes('おみくじ')) {
       return this.handleFortune(msg);
+    } else if (msg.text.includes('ワンオラクル')) {
+      return this.handleTarot(msg);
     } else if (msg.text.includes('タロット')) {
       return this.handleTarot(msg);
     } else if (msg.text.includes('スリーオラクル')) {
