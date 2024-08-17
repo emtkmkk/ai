@@ -22,7 +22,7 @@ type Color = {
 	/** 隠し色かどうか */
 	hidden?: boolean;
 	/** 強化 */
-	enhance?: (data?: any) => string;
+	enhance?: (data?: any) => boolean;
 };
 
 /** 色一覧 */
