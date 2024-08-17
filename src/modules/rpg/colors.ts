@@ -153,7 +153,7 @@ export const colorReply = (module: Module, msg: Message) => {
 		serifs.rpg.color.info,
 		"",
 		serifs.rpg.color.list,
-		...colors.filter((x) => !x.hidden || x.unlock(data)).map((x) => `${x.keyword}: ${x.name} ${superUnlock && x.enhance && x.enhance(data) ? x.message(data)?.replace(serifs.rpg.color.unlock, "**強化済み**") : x.message(data)}`)
+		...colors.filter((x) => !x.hidden || x.unlock(data)).map((x) => `${x.keyword}: ${x.name} ${superUnlock && x.enhance && x.enhance(data) ? x.message(data)?.replace(serifs.rpg.color.default, "**強化済み**").replace(serifs.rpg.color.unlock, "**強化済み**") : x.message(data)}`)
 	].join("\n"));
 
 	return {
