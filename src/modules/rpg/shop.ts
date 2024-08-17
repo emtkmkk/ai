@@ -359,6 +359,8 @@ export function shopContextHook(module: Module, key: any, msg: Message, data: an
 		if (msg.includes([String(i + 1)])) {
 			if (data.showShopItems[i].price <= rpgData.coin) {
 				rpgData.coin -= data.showShopItems[i].price;
+				if (!rpgData.shopExp) rpgData.shopExp = 0;
+				rpgData.shopExp += data.showShopItems[i].price;
 
 				let message = "";
 
