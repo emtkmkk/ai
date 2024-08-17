@@ -850,8 +850,7 @@ export default class extends Module {
 		let isTired = data.enemy.defmsg(0).includes("疲");
 
 		if (isSuper) {
-			const superColor = colors.find((x) => x.alwaysSuper)?.name ?? colors.find((x) => x.default)?.name ?? colors[0]?.name;
-			if (me !== superColor) {
+			if (!color.alwaysSuper) {
 				// バフが1つでも付与された場合、改行を追加する
 				if (buff > 0) message += "\n";
 				buff += 1;
