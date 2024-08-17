@@ -32,10 +32,11 @@ export function initializeData(module: rpg, msg) {
 }
 
 export function getColor(data) {
-  let color =
+  let _color =
     colors.find((x) => x.id === (data.color ?? 1)) ??
     colors.find((x) => x.default) ??
     colors[0];
+  let color = _color;
   if (!color.unlock(data)) {
     data.color === (colors.find((x) => x.default) ?? colors[0]).id;
     color =
@@ -43,7 +44,16 @@ export function getColor(data) {
       colors.find((x) => x.default) ??
       colors[0];
   }
-  return color;
+  if (
+    colors.find((x) => x.alwaysSuper)?.unlock(data) &&
+    !color.alwaysSuper &&
+    color.enhance &&
+    color.enhance(data)
+  ) {
+    color.alwaysSuper = true;
+    color.name = `$[sparkle ${color.name}]`;
+  }
+  return { ...color };
 }
 
 /**
@@ -143,12 +153,12 @@ export function showStatusDmg(
   data,
   playerHp: number,
   totalDmg: number,
-  enemyMaxHp: number,
+  playerMaxHp: number,
   me = colors.find((x) => x.default)?.name ?? colors[0].name,
 ): string {
   // プレイヤー
   const playerHpMarkCount = Math.min(
-    Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 7)),
+    Math.ceil(playerHp / playerMaxHp / (1 / 7)),
     7,
   );
   const playerHpMarkStr = false
@@ -158,28 +168,19 @@ export function showStatusDmg(
       serifs.rpg.player.mark.repeat(7 - playerHpMarkCount);
   const PlayerHpInfoStr = false
     ? Math.ceil(
-        (100 -
-          Math.min(
-            Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 100)),
-            100,
-          )) /
+        (100 - Math.min(Math.ceil(playerHp / playerMaxHp / (1 / 100)), 100)) /
           5,
       ) *
         5 +
       ' ' +
       serifs.rpg.infoPercent
     : Math.ceil(
-        Math.min(
-          Math.ceil(playerHp / (100 + (data.lv ?? 1) * 3) / (1 / 100)),
-          100,
-        ) / 5,
+        Math.min(Math.ceil(playerHp / playerMaxHp / (1 / 100)), 100) / 5,
       ) *
         5 +
       ' ' +
       serifs.rpg.infoPercent;
-  const playerHpStr = false
-    ? PlayerHpInfoStr
-    : `${playerHp} / ${100 + (data.lv ?? 1) * 3}`;
+  const playerHpStr = false ? PlayerHpInfoStr : `${playerHp} / ${playerMaxHp}`;
 
   const debuff = [data.enemy?.fire ? serifs.rpg.fire + data.count : '']
     .filter(Boolean)

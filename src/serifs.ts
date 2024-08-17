@@ -399,7 +399,7 @@ export default {
   },
   choice: {
     prompt:
-      '「おみくじ」、「タロット」、「スリーオラクル」から好きな占いを返信してどの占いをするのか決めてほしいのじゃ。',
+      '「おみくじ」、「ワンオラクル」、「スリーオラクル」から好きな占いを返信してどの占いをするのか決めてほしいのじゃ。',
   },
 
   /**
@@ -684,15 +684,31 @@ export default {
     },
     command: {
       rpg: 'rpg',
-      color: '色',
-      trial: '木人',
-      journey: '修行',
+      color: ['色', 'スキン', 'color', 'skin'],
+      trial: ['木人', 'test', 'dummy'],
+      journey: [
+        '修行',
+        '無限',
+        '旅',
+        'training',
+        'endless',
+        'endress',
+        'journey',
+      ],
       change: '変更',
-      onemore: 'おかわり',
-      skill: 'スキル',
-      shop: 'ショップ',
-      help: ['h', 'ヘルプ'],
-      Record: ['殿堂', '記録'],
+      onemore: ['おかわり', '+', 'onemore', 'もう一回'],
+      skill: ['スキル', 'skill', 'お守り', 'amulet'],
+      shop: ['ショップ', 'shop', 'お店'],
+      help: ['h', 'ヘルプ', '?'],
+      Record: [
+        '殿堂',
+        '記録',
+        'record',
+        'trophy',
+        'achieve',
+        'achievement',
+        'rank',
+      ],
       duplication: '複製',
     },
   },
