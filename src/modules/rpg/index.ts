@@ -233,7 +233,7 @@ export default class extends Module {
 
 		let message = ["\nアイテム一覧\n"];
 		const itemType = ["amulet", "token"]
-		message.push(data.items.sort((a,b) => itemType.indexOf(b) - itemType.indexOf(a)).map((x) => x.name).join("\n"))
+		message.push(data.items.sort((a,b) => itemType.indexOf(a.type) - itemType.indexOf(b.type)).map((x) => x.name + (x.durability ? " 残耐久" + x.durability : "")).join("\n"))
 		const jarList = ["壺", "きれいな壺", "すごい壺", "巨大な壺", "うねうねした壺", "ナノサイズ壺"]
 		message.push(jarList.slice(0, data.jar).join("\n"))
 		if (data.jar > jarList.length) {
