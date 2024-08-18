@@ -1237,7 +1237,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	}
 
 	const rpgData = ai.moduleData.findOne({ type: 'rpg' });
-	if (data.exp >= 5 && data.lv - 1 < rpgData.maxLv) {
+	if (data.exp >= 5 && data.lv + 1 < rpgData.maxLv) {
 
 		// レベルアップ処理
 		data.lv = (data.lv ?? 1) + 1;
