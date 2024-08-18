@@ -71,13 +71,13 @@ export default class extends Module {
 			// 色モード
 			return colorReply(this, msg);
 		}
-		if (msg.includes(Array.isArray(serifs.rpg.command.skill) ? serifs.rpg.command.skill : [serifs.rpg.command.skill])) {
-			// スキルモード
-			return skillReply(this, this.ai, msg);
-		}
 		if (msg.includes(Array.isArray(serifs.rpg.command.shop) ? serifs.rpg.command.shop : [serifs.rpg.command.shop])) {
 			// ショップモード
 			return shopReply(this, this.ai, msg);
+		}
+		if (msg.includes(Array.isArray(serifs.rpg.command.skill) ? serifs.rpg.command.skill : [serifs.rpg.command.skill])) {
+			// スキルモード
+			return skillReply(this, this.ai, msg);
 		}
 		if (msg.includes([serifs.rpg.command.rpg]) && msg.includes(Array.isArray(serifs.rpg.command.trial) ? serifs.rpg.command.trial : [serifs.rpg.command.trial])) {
 			// 木人モード
