@@ -149,7 +149,6 @@ export const colors: Color[] = [
             unlockCount(data, [9], true)
           })`,
     alwaysSuper: true,
-    enhance: (data) => data.jar >= 3 || (data.maxEndress ?? 0) >= 59,
   },
   {
     id: 10,
@@ -158,6 +157,7 @@ export const colors: Color[] = [
     unlock: (data) => (data.maxEndress ?? 0) >= 29,
     message: (data) => `${serifs.rpg.color.unlock}`,
     hidden: true,
+    enhance: (data) => data.jar >= 3 || (data.maxEndress ?? 0) >= 59,
   },
 ];
 

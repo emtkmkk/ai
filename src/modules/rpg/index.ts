@@ -140,6 +140,17 @@ export default class extends Module {
     if (
       msg.includes([serifs.rpg.command.rpg]) &&
       msg.includes(
+        Array.isArray(serifs.rpg.command.items)
+          ? serifs.rpg.command.items
+          : [serifs.rpg.command.items],
+      )
+    ) {
+      // アイテムモード
+      return this.handleItemsCommands(msg);
+    }
+    if (
+      msg.includes([serifs.rpg.command.rpg]) &&
+      msg.includes(
         Array.isArray(serifs.rpg.command.help)
           ? serifs.rpg.command.help
           : [serifs.rpg.command.help],
@@ -306,6 +317,37 @@ export default class extends Module {
     helpMessage.push(serifs.rpg.help.help);
 
     msg.reply('\n' + helpMessage.join('\n\n'));
+    return { reaction: 'love' };
+  }
+
+  @autobind
+  private handleItemsCommands(msg: Message) {
+    const data = initializeData(this, msg);
+    if (!data.lv || !data.items) return { reaction: 'confused' };
+
+    let message = ['アイテム一覧\n'];
+    const itemType = ['amulet', 'token'];
+    message.push(
+      data.items
+        .sort((a, b) => itemType.indexOf(a.type) - itemType.indexOf(b.type))
+        .map((x) => x.name + (x.durability ? ' 残耐久' + x.durability : ''))
+        .join('\n'),
+    );
+    const jarList = [
+      '穢根くんのチェキ',
+      '決めポーズの穢根くんのチェキ',
+      'ベストショットの穢根くんのチェキ',
+      '隠し撮り穢根くんのチェキ',
+      '寝顔の穢根くんのチェキ',
+      '女装した穢根くんのチェキ',
+    ];
+    message.push(jarList.slice(0, data.jar).join('\n'));
+    if (data.jar > jarList.length) {
+      message.push(
+        `激レア穢根くんのチェキ${data.jar - jarList.length >= 2 ? ' ×' + (data.jar - jarList.length) : ''}`,
+      );
+    }
+    msg.reply('\n' + message.join('\n'));
     return { reaction: 'love' };
   }
 
@@ -1163,13 +1205,13 @@ export default class extends Module {
     let isTired = data.enemy.defmsg(0).includes('疲');
 
     if (isSuper) {
-      const superColor =
-        colors.find((x) => x.alwaysSuper)?.name ??
-        colors.find((x) => x.default)?.name ??
-        colors[0]?.name;
-      if (me !== superColor) {
+      if (!color.alwaysSuper) {
         // バフが1つでも付与された場合、改行を追加する
         if (buff > 0) message += '\n';
+        const superColor =
+          colors.find((x) => x.alwaysSuper)?.name ??
+          colors.find((x) => x.default)?.name ??
+          colors[0]?.name;
         buff += 1;
         me = superColor;
         message += serifs.rpg.super(me) + `\n`;

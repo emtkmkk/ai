@@ -718,9 +718,13 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
       colors.find((x) => x.default)?.name ??
       colors[0]?.name;
     const up = Math.max(spd + 2, Math.round(getSpd(getSpdX(spd) * 1.2))) - spd;
-    if (me !== superColor) {
+    if (!color.alwaysSuper) {
       // バフが1つでも付与された場合、改行を追加する
       if (buff > 0) message += '\n';
+      const superColor =
+        colors.find((x) => x.alwaysSuper)?.name ??
+        colors.find((x) => x.default)?.name ??
+        colors[0]?.name;
       buff += 1;
       me = superColor;
       message += serifs.rpg.super(me, up) + `\n`;
@@ -1638,14 +1642,16 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     message += '\n\n' + amuletmsg;
   }
 
-  data.exp = (data.exp ?? 0) + 1;
+  const rpgData = ai.moduleData.findOne({ type: 'rpg' });
 
-  if (data.exp >= 3) {
-    message += '\n\n' + serifs.rpg.expPoint(data.exp);
+  if (data.lv + 1 < rpgData.maxLv) {
+    data.exp = (data.exp ?? 0) + 1;
+    if (data.exp >= 3) {
+      message += '\n\n' + serifs.rpg.expPoint(data.exp);
+    }
   }
 
-  const rpgData = ai.moduleData.findOne({ type: 'rpg' });
-  if (data.exp >= 5 && data.lv < rpgData.maxLv) {
+  if (data.exp >= 5 && data.lv + 1 < rpgData.maxLv) {
     // レベルアップ処理
     data.lv = (data.lv ?? 1) + 1;
     let atkUp = 2 + Math.floor(Math.random() * 4);

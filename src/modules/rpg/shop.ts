@@ -568,7 +568,6 @@ export const shopItems: ShopItem[] = [
       }),
     ),
 ];
-
 function getRandomSkills(ai, num) {
   let filteredSkills = skills.filter(
     (x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly,
@@ -609,6 +608,7 @@ function getRandomSkills(ai, num) {
 
   return selectedSkills;
 }
+
 export function mergeSkillAmulet(ai, rnd = Math.random, skills: Skill[]) {
   // スキル名のセットを作成し、同じ名前のスキルを弾く
   const uniqueSkillsMap = new Map<string, Skill>();
@@ -644,9 +644,7 @@ export function mergeSkillAmulet(ai, rnd = Math.random, skills: Skill[]) {
   return {
     name: `${name}のお守り`,
     price,
-    desc: `持っているとスキル${uniqueSkills
-      .map((x) => `「${x.name}」`)
-      .join('と')}を使用できる 耐久${durability} 使用時耐久減少`,
+    desc: `持っているとスキル${uniqueSkills.map((x) => `「${x.name}」`).join('と')}を使用できる 耐久${durability} 使用時耐久減少`,
     type: 'amulet',
     effect,
     durability,
@@ -737,6 +735,12 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 
   let rnd = seedrandom(getDate() + ai.account.id + msg.userId);
 
+  let amuletDelFlg = false;
+  if (msg.includes(['お守り']) && msg.includes(['捨'])) {
+    amuletDelFlg = true;
+    data.items = data.items?.filter((x) => x.type !== 'amulet');
+  }
+
   let filteredShopItems = shopItems.filter(
     (x) =>
       (!x.limit || x.limit(data, rnd)) &&
@@ -817,10 +821,10 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 
   const reply = await msg.reply(
     [
-      '',
+      amuletDelFlg ? '\n所持しているお守りを捨てたのじゃ！' : '',
       serifs.rpg.shop.welcome(data.coin),
       ...showShopItems.map(
-        (x, index) => `[${index + 1}] ${x.name} ${x.price}個\n${x.desc}\n`,
+        (x, index) => `[${index + 1}] ${x.name} ${x.price}枚\n${x.desc}\n`,
       ),
     ].join('\n'),
     { visibility: 'specified' },
@@ -902,19 +906,9 @@ export function shopContextHook(
           if (lvDiff || atkDiff || defDiff) {
             message += [
               `\n\n${serifs.rpg.shop.useItem(item.name)}`,
-              `${serifs.rpg.status.lv} : ${rpgData.lv ?? 1}${
-                lvDiff !== 0 ? ` (${lvDiff > 0 ? '+' + lvDiff : lvDiff})` : ''
-              }`,
-              `${serifs.rpg.status.atk} : ${rpgData.atk ?? 0}${
-                atkDiff !== 0
-                  ? ` (${atkDiff > 0 ? '+' + atkDiff : atkDiff})`
-                  : ''
-              }`,
-              `${serifs.rpg.status.def} : ${rpgData.def ?? 0}${
-                defDiff !== 0
-                  ? ` (${defDiff > 0 ? '+' + defDiff : defDiff})`
-                  : ''
-              }`,
+              `${serifs.rpg.status.lv} : ${rpgData.lv ?? 1}${lvDiff !== 0 ? ` (${lvDiff > 0 ? '+' + lvDiff : lvDiff})` : ''}`,
+              `${serifs.rpg.status.atk} : ${rpgData.atk ?? 0}${atkDiff !== 0 ? ` (${atkDiff > 0 ? '+' + atkDiff : atkDiff})` : ''}`,
+              `${serifs.rpg.status.def} : ${rpgData.def ?? 0}${defDiff !== 0 ? ` (${defDiff > 0 ? '+' + defDiff : defDiff})` : ''}`,
             ]
               .filter(Boolean)
               .join('\n');
