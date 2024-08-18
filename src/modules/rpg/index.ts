@@ -231,7 +231,7 @@ export default class extends Module {
 		const data = initializeData(this, msg);
 		if (!data.lv || !data.items) return { reaction: 'confused' };
 
-		let message = ["\nアイテム一覧\n\n"];
+		let message = ["\nアイテム一覧\n"];
 		const itemType = ["amulet", "token"]
 		message.push(data.items.sort((a,b) => itemType.indexOf(a) - itemType.indexOf(b)).map((x) => x.name).join("\n"))
 		const jarList = ["壺", "きれいな壺", "すごい壺", "巨大な壺", "うねうねした壺", "ナノサイズ壺"]
