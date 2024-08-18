@@ -599,7 +599,8 @@ export default {
 			shop: ["ショップ", "shop", "お店"],
 			help: ["h", "ヘルプ", "?"],
 			Record: ["殿堂", "記録", "record", "trophy", "achieve", "achievement", "rank"],
-			duplication: "複製"
+			duplication: "複製",
+			items:　["インベントリ", "inventory", "アイテム", "item", "持ち物", "belonging", "バッグ", "bag", "所持品", "possession", "道具", "tool", "装備", "equip", "お札", "charm", "壺", "jar", "pot"]
 		}
 	},
 
