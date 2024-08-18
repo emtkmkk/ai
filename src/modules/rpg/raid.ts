@@ -1229,14 +1229,15 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	if (amuletmsg) {
 		message += "\n\n" + amuletmsg;
 	}
-
-	data.exp = (data.exp ?? 0) + 1;
-
-	if (data.exp >= 3) {
-		message += "\n\n" + serifs.rpg.expPoint(data.exp);
-	}
-
+	
 	const rpgData = ai.moduleData.findOne({ type: 'rpg' });
+	if (data.lv + 1 < rpgData.maxLv) {
+		data.exp = (data.exp ?? 0) + 1;
+		if (data.exp >= 3) {
+			message += "\n\n" + serifs.rpg.expPoint(data.exp);
+		}
+	}
+	
 	if (data.exp >= 5 && data.lv + 1 < rpgData.maxLv) {
 
 		// レベルアップ処理
