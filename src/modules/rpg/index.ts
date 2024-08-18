@@ -83,6 +83,10 @@ export default class extends Module {
 			// 木人モード
 			return this.handleTrialCommands(msg);
 		}
+		if (msg.includes([serifs.rpg.command.rpg]) && msg.includes(Array.isArray(serifs.rpg.command.items) ? serifs.rpg.command.items : [serifs.rpg.command.items])) {
+			// アイテムモード
+			return this.handleItemsCommands(msg);
+		}
 		if (msg.includes([serifs.rpg.command.rpg]) && msg.includes(Array.isArray(serifs.rpg.command.help) ? serifs.rpg.command.help : [serifs.rpg.command.help])) {
 			// ヘルプモード
 			return this.handleHelpCommands(msg);
@@ -219,6 +223,23 @@ export default class extends Module {
 		helpMessage.push(serifs.rpg.help.help);
 
 		msg.reply("\n" + helpMessage.join("\n\n"));
+		return { reaction: "love" };
+	}
+
+	@autobind
+	private handleItemsCommands(msg: Message) {
+		const data = initializeData(this, msg);
+		if (!data.lv || !data.items) return { reaction: 'confused' };
+
+		let message = "\nアイテム一覧\n\n";
+		const itemType = ["amulet", "token"]
+		message += data.items.sort((a,b) => itemType.indexOf(a) - itemType.indexOf(b)).map((x) => x.name).join("\n") + "\n"
+		const jarList = ["壺", "きれいな壺", "すごい壺", "巨大な壺", "うねうねした壺", "ナノサイズ壺"]
+		message += jarList.silce(0, data.jar).join("\n")
+		if (data.jar > jarList.length) {
+			message += `\n謎の壺${data.jar - jarList.length >= 2 ? " ×" + data.jar - jarList.length : ""}`
+		}
+		msg.reply("\n" + message.join("\n\n"));
 		return { reaction: "love" };
 	}
 
