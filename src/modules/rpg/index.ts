@@ -239,7 +239,7 @@ export default class extends Module {
 		if (data.jar > jarList.length) {
 			message.push(`謎の壺${data.jar - jarList.length >= 2 ? " ×" + (data.jar - jarList.length) : ""}`)
 		}
-		msg.reply("\n" + message.join("\n"));
+		msg.reply("\n" + message.join("\n") + (message.length === 1 ? "\n\n何も持っていないようです。\n「RPG ショップ」で購入できます。" : ""));
 		return { reaction: "love" };
 	}
 
