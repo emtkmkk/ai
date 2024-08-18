@@ -283,6 +283,11 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 
 	let rnd = seedrandom(getDate() + ai.account.id + msg.userId);
 
+	if (msg.includes(["お守り"]) && msg.includes(["捨"])) {
+		amuletDelFlg = true;
+		data.items = data.items?.filter((x) => x.type !== "amulet")
+	}
+
 	let filteredShopItems = shopItems.filter((x) => (!x.limit || x.limit(data, rnd)) && !(x.type === "amulet" && (data.lv < 20 || data.items?.some((y) => y.type === "amulet"))) && !x.always);
 
 	if (data.lastShopVisited !== getDate() || !data.shopItems?.length) {
@@ -321,7 +326,7 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 		});
 
 	const reply = await msg.reply([
-		"",
+		amuletDelFlg ? "\n所持しているお守りを捨てました！" : ""
 		serifs.rpg.shop.welcome(data.coin),
 		...showShopItems.map((x, index) => `[${index + 1}] ${x.name} ${x.price}枚\n${x.desc}\n`)
 	].join("\n"), { visibility: "specified" });
