@@ -231,15 +231,15 @@ export default class extends Module {
 		const data = initializeData(this, msg);
 		if (!data.lv || !data.items) return { reaction: 'confused' };
 
-		let message = "\nアイテム一覧\n\n";
+		let message = ["\nアイテム一覧\n\n"];
 		const itemType = ["amulet", "token"]
-		message += data.items.sort((a,b) => itemType.indexOf(a) - itemType.indexOf(b)).map((x) => x.name).join("\n") + "\n"
+		message.push(data.items.sort((a,b) => itemType.indexOf(a) - itemType.indexOf(b)).map((x) => x.name).join("\n"))
 		const jarList = ["壺", "きれいな壺", "すごい壺", "巨大な壺", "うねうねした壺", "ナノサイズ壺"]
-		message += jarList.silce(0, data.jar).join("\n")
+		message.push(jarList.slice(0, data.jar).join("\n"))
 		if (data.jar > jarList.length) {
-			message += `\n謎の壺${data.jar - jarList.length >= 2 ? " ×" + data.jar - jarList.length : ""}`
+			message.push(`謎の壺${data.jar - jarList.length >= 2 ? " ×" + (data.jar - jarList.length) : ""}`)
 		}
-		msg.reply("\n" + message.join("\n\n"));
+		msg.reply("\n" + message.join("\n"));
 		return { reaction: "love" };
 	}
 
