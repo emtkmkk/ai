@@ -327,7 +327,7 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 		});
 
 	const reply = await msg.reply([
-		amuletDelFlg ? "\n所持しているお守りを捨てました！" : ""
+		amuletDelFlg ? "\n所持しているお守りを捨てました！" : "",
 		serifs.rpg.shop.welcome(data.coin),
 		...showShopItems.map((x, index) => `[${index + 1}] ${x.name} ${x.price}枚\n${x.desc}\n`)
 	].join("\n"), { visibility: "specified" });
