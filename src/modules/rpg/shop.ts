@@ -283,6 +283,7 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 
 	let rnd = seedrandom(getDate() + ai.account.id + msg.userId);
 
+	let amuletDelFlg = false;
 	if (msg.includes(["お守り"]) && msg.includes(["捨"])) {
 		amuletDelFlg = true;
 		data.items = data.items?.filter((x) => x.type !== "amulet")
