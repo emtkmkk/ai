@@ -196,7 +196,7 @@ export const skills: Skill[] = [
 	{ name: `油断しない`, short: "断", desc: `ターン1に受けるダメージを大きく軽減します`, info: `ターン1にてダメージカット30%を得る\n100%以上になる場合、残りはターン2に持ち越す`, effect: { firstTurnResist: 0.3 }, skillOnly: true },
 	{ name: `粘り強い`, short: "粘", desc: `体力が減るほど受けるダメージを軽減します`, info: `ダメージカット20%×(減少HP割合)を得る 最大90%`, effect: { tenacious: 0.2 } },
 	{ name: `高速RPG`, short: "速", desc: `1回のRPGでお互いに2回行動します`, info: `1回のコマンドで2ターン進行する レイド時は、${serifs.rpg.status.atk}+10%`, effect: { plusActionX: 1 } },
-	{ name: `1時間先取りRPG`, short: "先", desc: `1時間早くRPGをプレイする事が出来ます`, info: `1時間早くRPGプレイ可能 ステータス+5%`, effect: { atkUp: 0.05, defUp: 0.05, rpgTime: -1 } },
+	{ name: `1時間先取りRPG`, short: "先", desc: `1時間早くRPGをプレイする事が出来ます`, info: `1時間早くRPGプレイ可能 ステータス+5%`, effect: { atkUp: 0.05, defUp: 0.05, rpgTime: -1 }, moveTo: "高速RPG" },
 	{ name: `伝説`, short: "★", desc: `パワー・防御が7%上がります`, info: `ステータス+7% 重複しない`, effect: { atkUp: 0.07, defUp: 0.07 }, unique: "legend" },
 	{ name: `脳筋`, short: "筋", desc: `与えるダメージが上がりますが、受けるダメージも上がります`, info: `${serifs.rpg.dmg.give}+18% ${serifs.rpg.dmg.take}+8%`, effect: { atkDmgUp: 0.18, defDmgUp: 0.08 } },
 	{ name: `慎重`, short: "慎", desc: `与えるダメージが下がりますが、受けるダメージも下がります`, info: `${serifs.rpg.dmg.give}-8% ${serifs.rpg.dmg.take}-18%`, effect: { atkDmgUp: -0.08, defDmgUp: -0.18 } },
