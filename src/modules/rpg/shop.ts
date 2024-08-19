@@ -234,7 +234,7 @@ const determineOutcome = (ai, data, getShopItems) => {
 		// コインの所持数が必要数を上回る場合、確率をさらに上昇させる
 		if (data.coin > requiredCoins) {
 			const extraCoins = data.coin - requiredCoins;
-			probability *= (1 + (extraCoins / requiredCoins) * 0.5); // 余剰コインの倍率を追加
+			probability *= Math.min(1 + (extraCoins / requiredCoins) * 0.5, 2); // 余剰コインの倍率を追加
 		}
 
 		return probability;
