@@ -415,7 +415,7 @@ export const skillPower = (ai: 藍, skillName: Skill["name"]) => {
  * @param data - skills配列を含むデータオブジェクト。
  * @returns 集計されたSkillEffect。
  */
-export function aggregateSkillsEffects(data: { items?: ShopItem[], skills: Skill[]; }): SkillEffect {
+export function aggregateSkillsEffects(data: any): SkillEffect {
 	const aggregatedEffect: SkillEffect = {};
 
 	if (!data.skills) return aggregatedEffect;
