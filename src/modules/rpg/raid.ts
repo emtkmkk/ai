@@ -982,10 +982,10 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			(count === 2 && skillEffects.firstTurnResist && skillEffects.firstTurnResist > 1 ? (1 - ((skillEffects.firstTurnResist ?? 0) - 1)) : 1) *
 			(1 - Math.min((skillEffects.tenacious ?? 0) * (1 - playerHpPercent), 0.9)), 0);
 
-		const atkMinRnd = Math.max(0.2 + (isSuper ? 0.3 : 0) + (skillEffects.atkRndMin ?? 0), 0);
-		const atkMaxRnd = Math.max(1.6 + (isSuper ? -0.3 : 0) + (skillEffects.atkRndMax ?? 0), 0);
+		const atkMinRnd = Math.max(0.2 + (skillEffects.atkRndMin ?? 0), 0);
+		const atkMaxRnd = Math.max(1.6 + (skillEffects.atkRndMax ?? 0), 0);
 		const defMinRnd = Math.max(0.2 + (skillEffects.defRndMin ?? 0), 0);
-		const defMaxRnd = Math.max(1.6 + (isSuper ? -0.3 : 0) + (skillEffects.defRndMax ?? 0), 0);
+		const defMaxRnd = Math.max(1.6 + (skillEffects.defRndMax ?? 0), 0);
 
 		/** 予測最大ダメージ */
 		let predictedDmg = Math.round((atk * tp * (atkMinRnd + atkMaxRnd)) * (1 / (((enemyDef * (getVal(enemy.defx, [count]) ?? 3)) + 100) / 100))) * (abort || spd);
