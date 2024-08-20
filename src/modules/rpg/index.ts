@@ -850,8 +850,6 @@ export default class extends Module {
 		let enemyHp = Math.min(data.ehp ?? 100, enemyMaxHp);
 		/** 敗北時のステータスボーナス */
 		let bonus = 0;
-		/** 連続攻撃中断の場合の攻撃可能回数 0は最後まで攻撃 */
-		let abort = 0;
 		/** プレイヤーのHP割合 */
 		let playerHpPercent = playerHp / (100 + lv * 3);
 		/** 敵のHP割合 */
@@ -1198,6 +1196,9 @@ export default class extends Module {
 			let playerHpPercent = playerHp / (100 + lv * 3);
 			/** 敵のHP割合 */
 			let enemyHpPercent = enemyHp / enemyMaxHp;
+
+			/** 連続攻撃中断の場合の攻撃可能回数 0は最後まで攻撃 */
+	  	let abort = 0;
 
 			// 敵に最大ダメージ制限がある場合、ここで計算
 			/** 1ターンに与えられる最大ダメージ量 */
