@@ -497,6 +497,11 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	/** バフを得た数。行数のコントロールに使用 */
 	let buff = 0;
 
+	if (enemy.skillX && lv >= 20) {
+		buff += 1;
+		message += serifs.rpg.skillX(enemy.skillX) + `\n\n`;
+	}
+
 	if (enemy.forcePostCount) {
 		buff += 1;
 		message += serifs.rpg.forcePostCount + `\n`;
@@ -513,11 +518,6 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			}
 			message += serifs.rpg.postBonusInfo.post(postCount, tp > 1 ? "+" + Math.floor((tp - 1) * 100) : (tp != 1 ? "-" : "") + Math.floor((tp - 1) * 100)) + `\n`;
 		}
-	}
-
-	if (enemy.skillX && lv >= 20) {
-		buff += 1;
-		message += serifs.rpg.skillX(enemy.skillX) + `\n`;
 	}
 
 	// ここで残りのステータスを計算しなおす
