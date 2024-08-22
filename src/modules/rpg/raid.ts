@@ -597,7 +597,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	if (!enemy.skillX && (isBattle && isPhysical && !isTired) && Math.random() < 0.02 + (Math.max(Math.floor((Math.min(maxLv, 170) - lv) / 10), 0) * 0.01)) {
 		warriorFlg = true;
 		if (buff > 0) message += "\n";
-		buff += 1;
+		buff = 0;
 		message += serifs.rpg.warrior.get + `\n\n`;
 		mark = ":mk_warrior:";
 	}
