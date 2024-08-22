@@ -425,10 +425,11 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	data.raid = true;
 	const colorData = colors.map((x) => x.unlock(data));
 	// 所持しているスキル効果を読み込み
+	let skillEffects;
 	if (enemy.skillX) {
-		const skillEffects = aggregateSkillsEffectsSkillX(data, enemy.skillX);
+		skillEffects = aggregateSkillsEffectsSkillX(data, enemy.skillX);
 	} else {
-		const skillEffects = aggregateSkillsEffects(data);
+		skillEffects = aggregateSkillsEffects(data);
 	}
 
 	const skillsStr = getSkillsShortName(data);
