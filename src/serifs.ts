@@ -514,8 +514,8 @@ export default {
 		forcePostCount: "周囲に不思議な力が働いている…\n投稿数ボーナスが無効になった！",
 		skillX: (num) => `$[x2 :mk_wizard:]\n\n力をそなたに与えよう……\n\n強化魔法でもこチキのスキルの\n効果が${num}倍になった！`,
 		warrior: {
-			get: "$[x2 :mk_warrior:]\n\nオレも手伝うぜ！\n\n:mk_warrior:が仲間になった！"
-			atk: (dmg) => `:mk_warrior:の攻撃！\n${dmg}ポイントのダメージ！`
+			get: "$[x2 :mk_warrior:]\n\nオレも手伝うぜ！\n\n:mk_warrior:が仲間になった！",
+			atk: (dmg) => `:mk_warrior:の攻撃！\n${dmg}ポイントのダメージ！`,
 			lose: ":mk_warrior:はもこチキを庇った！\n:mk_warrior:「あとは任せたぜ……」",
 		},
 		player: {
