@@ -6,7 +6,7 @@ import rpg from './index';
 import { colors } from './colors';
 import { endressEnemy, Enemy, RaidEnemy, raidEnemys } from './enemys';
 import { rpgItems } from './items';
-import { aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, getSkillsShortName } from './skills';
+import { aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, getSkillsShortName, aggregateSkillsEffectsSkillX } from './skills';
 import { aggregateTokensEffects } from './shop';
 import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatusDmg, getPostCount, getPostX, getVal, random, getRaidPostX } from './utils';
 import { calculateStats, fortune } from './battle';
@@ -514,9 +514,9 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		}
 	}
 
-	if (enemy.skillX) {
+	if (enemy.skillX && lv >= 20) {
 		buff += 1;
-		message += serifs.rpg.skillX + `\n`;
+		message += serifs.rpg.skillX(enemy.skillX) + `\n`;
 	}
 
 	// ここで残りのステータスを計算しなおす
