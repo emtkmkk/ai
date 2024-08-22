@@ -593,6 +593,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
 	let mark = ":blank:";
 	let warriorFlg = false;
+	let warriorTotalDmg = 0;
 
 	if (!enemy.skillX && (isBattle && isPhysical && !isTired) && Math.random() < 0.02 + (Math.max(Math.floor((Math.min(maxLv, 170) - lv) / 10), 0) * 0.01)) {
 		warriorFlg = true;
@@ -1081,6 +1082,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			// メッセージの出力
 			message += (crit ? `**${serifs.rpg.warrior.atk(dmg)}**` : serifs.rpg.warrior.atk(dmg)) + "\n";
 			totalDmg += dmg;
+			warriorTotalDmg += dmg;
 		}
 
 		// 自身攻撃の処理
@@ -1250,6 +1252,10 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	}
 
 	message += "\n\n" + serifs.rpg.totalDmg(totalDmg);
+
+	if (warriorTotalDmg > 0) {
+		message += "\n" + serifs.rpg.warrior.totalDmg(warriorTotalDmg);
+	}
 
 	if (!data.raidScore) data.raidScore = {};
 	if (!data.raidScore[enemy.name] || data.raidScore[enemy.name] < totalDmg) {
