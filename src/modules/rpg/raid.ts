@@ -251,7 +251,7 @@ function finish(raid: Raid) {
 
 	for (let attacker of sortAttackers) {
 		results.push(`${attacker.me} ${acct(attacker.user)}:\n${attacker.mark === ":blank:" && attacker.dmg === 100 ? "💯" : attacker.mark} Lv${String(attacker.lv).padStart(levelSpace, ' ')} ${attacker.count}ターン ${attacker.dmg.toLocaleString()}ダメージ`);
-		if (results.length <= 9) results.push(`:blank:<small>${[
+		if (results.length <= 19) results.push(`:blank:<small>${[
 			attacker.skillsStr?.skills,
 			attacker.skillsStr?.amulet ? `お守り ${attacker.skillsStr.amulet}` : undefined
 		].filter(Boolean).join(" ")}</small>`);
