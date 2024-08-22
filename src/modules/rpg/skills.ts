@@ -519,6 +519,118 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
 	return aggregatedEffect;
 }
 
+export function aggregateSkillsEffectsSkillX(data: any, skillX: number): SkillEffect {
+	const aggregatedEffect: SkillEffect = {};
+
+	if (!data.skills) return aggregatedEffect;
+	let dataSkills = data.skills;
+	if (data.items?.filter((x) => x.type === "amulet").length) {
+		const amulet = data.items?.filter((x) => x.type === "amulet")[0] as AmuletItem;
+		console.log("amulet: " + amulet.name);
+		const item = [...shopItems, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem;
+		if (!item) {
+			data.items.filter((x) => x.type === "amulet").forEach((x) => {
+				data.coin = (data.coin ?? 0) + (x.price || 0);
+			});
+			data.items = data.items.filter((x) => x.type !== "amulet");
+		} else {
+			if (item.isUsed(data)) {
+			const boost = dataSkills.filter((x) => x.effect?.amuletBoost).reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0;
+			const adjustEffect = (effect: any, boost: number): any => {
+				const multiplier = (1 + (boost ?? 0)) * skillX;
+				const adjustedEffect: any = {};
+
+				for (const key in effect) {
+					if (typeof effect[key] === 'number') {
+						if (Number.isInteger(effect[key])) {
+							adjustedEffect[key] = Math.floor(effect[key] * multiplier);
+						} else {
+							adjustedEffect[key] = effect[key] * multiplier;
+						}
+					} else {
+						adjustedEffect[key] = effect[key];
+					}
+				}
+				return { effect: adjustedEffect };
+			};
+				console.log("effect: " + JSON.stringify(adjustEffect(item.effect, boost)));
+				dataSkills = dataSkills.concat([adjustEffect(item.effect, boost)] as any);
+			}
+		}
+	}
+	dataSkills.forEach(_skill => {
+		const skill = _skill.name ? skills.find((x) => x.name === _skill.name) ?? _skill : _skill;
+		const __skill = {...skill};
+		if (__skill.unique) {
+			__skill.effect.atkUp = (__skill.effect.atkUp ?? 0) + 0.05 * skillX;
+			__skill.effect.defUp = (__skill.effect.defUp ?? 0) + 0.05 * skillX;
+		} else {
+			for (const eff in __skill.effect) {
+				__skill.effect[eff] = __skill.effect[eff] * skillX;
+			}
+		}
+		if (__skill.effect) {
+			Object.entries(__skill.effect).forEach(([key, value]) => {
+				let value2 = value;
+				if (aggregatedEffect[key] !== undefined) {
+					aggregatedEffect[key] += value;
+				} else {
+					aggregatedEffect[key] = value;
+				}
+			});
+		} else {
+			console.log(JSON.stringify(_skill));
+		}
+	});
+
+	const day = new Date().getDay();
+
+	//曜日ボーナス
+	if (day == 0 && aggregatedEffect.thunder) {
+		aggregatedEffect.thunder *= 5 / 3;
+	}
+	if (day == 1 && aggregatedEffect.dark) {
+		aggregatedEffect.dark *= 5 / 3;
+	}
+	if (day == 2 && aggregatedEffect.fire) {
+		aggregatedEffect.fire *= 5 / 3;
+	}
+	if (day == 3 && aggregatedEffect.ice) {
+		aggregatedEffect.ice *= 5 / 3;
+	}
+	if (day == 4 && aggregatedEffect.spdUp) {
+		aggregatedEffect.spdUp *= 5 / 3;
+	}
+	if (day == 5 && aggregatedEffect.light) {
+		aggregatedEffect.light *= 5 / 3;
+	}
+	if (day == 6 && aggregatedEffect.dart) {
+		aggregatedEffect.dart *= 5 / 3;
+	}
+
+	if (aggregatedEffect.itemEquip && aggregatedEffect.itemEquip > 1.5) {
+		aggregatedEffect.itemBoost = (aggregatedEffect.itemBoost ?? 0) + (aggregatedEffect.itemEquip - 1.5);
+		aggregatedEffect.itemEquip = 1.5;
+	}
+
+	if (aggregatedEffect.poisonAvoid && aggregatedEffect.poisonAvoid > 1) {
+		aggregatedEffect.mindMinusAvoid = (aggregatedEffect.mindMinusAvoid ?? 0) + (aggregatedEffect.poisonAvoid - 1) * 0.6;
+		aggregatedEffect.poisonAvoid = 1;
+	}
+
+	if (aggregatedEffect.abortDown && aggregatedEffect.abortDown > 1) {
+		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) + (aggregatedEffect.abortDown - 1) * (1 / 3);
+		aggregatedEffect.abortDown = 1;
+	}
+
+	if (aggregatedEffect.enemyCritDown && aggregatedEffect.enemyCritDown > 1) {
+		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) + (aggregatedEffect.enemyCritDown - 1) * (1 / 3);
+		aggregatedEffect.enemyCritDown = 1;
+	}
+
+	return aggregatedEffect;
+}
+
 export function getSkillsShortName(data: { items?: ShopItem[], skills: Skill[]; }): { skills?: string | undefined, amulet?: string | undefined; } {
 	const dataSkills = data.skills?.length ? "[" + data.skills.map((x) => (skills.find((y) => x.name === y.name) ?? x).short).join("") + "]" : undefined;
 	const amulet = data.items?.filter((x) => x.type === "amulet").length ? data.items?.filter((x) => x.type === "amulet")[0] as AmuletItem : undefined;
