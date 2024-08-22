@@ -435,7 +435,7 @@ export default {
 
 	rpg: {
 		remind: (me, hours) => `<center>$[x2 ${me}]\n\n${hours}時です！\nRPGモードの時間ですよ～\n\n毎日3回プレイして、\n私を強くしてください！\n\n「RPG」と話しかけてね\n（ここに返信でも大丈夫ですよ！）</center>`,
-		intro: (enemyName, time) => `<center>$[x3 ${enemyName}]\n\nすごく大きい敵がやってきました！\n\nこのままではもこきーが\n荒らされてしまいます…\nTLのみなさんで倒しましょう！\n\nこの投稿に「参加」と返信して、\nあなたのもこチキと戦いましょう！\n(RPGモードのプレイが1回以上必要です)\n\n$[unixtime.countdown ${time}]</center>`,
+		intro: (enemyName, time) => `<center>$[x3 ${enemyName}]\n\nすごく大きい敵がやってきました！\n\nTLのみなさんで倒しましょう！\n\nこの投稿に「参加」と返信して、\nあなたのもこチキと戦いましょう！\n(RPGモードのプレイが1回以上必要です)\n\n$[unixtime.countdown ${time}]</center>`,
 		onagare: (enemyName) => `${enemyName}は暴れまわったのち、帰っていきました……`,
 		finishCw: (enemyName) => `${enemyName}討伐戦の結果発表です！`,
 		finish: (enemyName, score) => `みなさんのお陰で${enemyName}を撃退できました！\nありがとうございます！\nお礼にみなさんにもこコインを${score}枚プレゼントします！\n「RPG ショップ」で買い物してくださいね！\nまたお願いします！`,
@@ -512,6 +512,7 @@ export default {
 		nextPlay: (str) => `次回は${str}以降に遊べます。`,
 		getRerollOrb: (num) => `\n\nスキル変更珠を${num > 1 ? `${num}個` : ""}拾いました！\n「RPG スキル」と話しかけて確認してみてね！`,
 		forcePostCount: "周囲に不思議な力が働いている…\n投稿数ボーナスが無効になった！",
+		skillX: (num) => `$[x2 :mk_wizard:]\n\n力をそなたに与えよう……\n\n強化魔法でもこチキのスキルの\n効果が${num}倍になった！`,
 		player: {
 			mark: "☆",
 			mark2: "★",
