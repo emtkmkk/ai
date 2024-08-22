@@ -506,15 +506,6 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		message += serifs.rpg.skillX(enemy.skillX) + `\n\n`;
 	}
 
-	let mark = ":blank:";
-	let warriorFlg = false;
-
-	if (!enemy.skillX && Math.random() < 0.02 + (Math.max(Math.floor((Math.min(maxLv, 170) - lv) / 10), 0) * 0.01)) {
-		warriorFlg = true;
-		message += serifs.rpg.warrior.get + `\n\n`;
-		mark = ":mk_warrior:";
-	}
-
 	if (enemy.forcePostCount) {
 		buff += 1;
 		message += serifs.rpg.forcePostCount + `\n`;
@@ -598,6 +589,17 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			data.superCount = (data.superCount ?? 0) + 1;
 		}
 		spd = spd + up;
+	}
+
+	let mark = ":blank:";
+	let warriorFlg = false;
+
+	if (!enemy.skillX && (isBattle && isPhysical && !isTired) && Math.random() < 0.02 + (Math.max(Math.floor((Math.min(maxLv, 170) - lv) / 10), 0) * 0.01)) {
+		warriorFlg = true;
+		if (buff > 0) message += "\n";
+		buff += 1;
+		message += serifs.rpg.warrior.get + `\n\n`;
+		mark = ":mk_warrior:";
 	}
 
 	if (skillEffects.heavenOrHell) {
