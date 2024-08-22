@@ -260,7 +260,7 @@ export function getRaidPostX(postCount) {
  * @returns プレイヤーが与えるダメージ
  */
 export function getAtkDmg(data, atk: number, tp: number, count: number, crit: number | boolean, enemyDef: number, enemyMaxHp: number, rng = (0.2 + Math.random() * 1.6), defx?: number) {
-    let dmg = Math.round((atk * tp * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * rng * (crit ? typeof crit === "number" ? (2 * crit) : 2 : 1)) * (1 / (((enemyDef * (defx ?? getVal(data.enemy.defx, [tp]) ?? 3)) + 100) / 100)));
+    let dmg = Math.round((Math.max(atk, 1) * tp * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * rng * (crit ? typeof crit === "number" ? (2 * crit) : 2 : 1)) * (1 / (((Math.max(enemyDef, 1) * (defx ?? getVal(data.enemy.defx, [tp]) ?? 3)) + 100) / 100)));
     if (data.fireAtk > 0 && enemyMaxHp < 10000) {
         dmg += Math.round((data.fireAtk) * enemyMaxHp * 0.01);
         data.fireAtk = (data.fireAtk ?? 0) - 1;
@@ -283,7 +283,7 @@ export function getAtkDmg(data, atk: number, tp: number, count: number, crit: nu
  * @returns プレイヤーが受けるダメージ
  */
 export function getEnemyDmg(data, def: number, tp: number, count: number, crit: number | boolean, enemyAtk: number, rng = (0.2 + Math.random() * 1.6), atkx?) {
-    let dmg = Math.round((enemyAtk * (atkx ?? getVal(data.enemy.atkx, [tp]) ?? 3) * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * rng * (crit ? typeof crit === "number" ? (2 * crit) : 2 : 1)) * (1 / (((def * tp) + 100) / 100)));
+    let dmg = Math.round((Math.max(enemyAtk, 1) * (atkx ?? getVal(data.enemy.atkx, [tp]) ?? 3) * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * rng * (crit ? typeof crit === "number" ? (2 * crit) : 2 : 1)) * (1 / (((Math.max(def, 1) * tp) + 100) / 100)));
     if (data.enemy?.fire) {
         dmg += Math.round(((data.count ?? count) - 1) * (100 + data.lv * 3) * data.enemy.fire);
     }
