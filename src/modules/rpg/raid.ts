@@ -251,6 +251,7 @@ function finish(raid: Raid) {
 
 	for (let attacker of sortAttackers) {
 		results.push(`${attacker.me} ${acct(attacker.user)}:\n${attacker.mark === ":blank:" && attacker.dmg === 100 ? "💯" : attacker.mark} Lv${String(attacker.lv).padStart(levelSpace, ' ')} ${attacker.count}ターン ${attacker.dmg.toLocaleString()}ダメージ`);
+		if (results.length <= 9) results.push(":blank:$[small ${attacker.skillsStr}]");
 		if (references.length < 100) {
 			if (attacker.replyId) references.push(attacker.replyId);
 		}
@@ -424,7 +425,11 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	data.raid = true;
 	const colorData = colors.map((x) => x.unlock(data));
 	// 所持しているスキル効果を読み込み
-	const skillEffects = aggregateSkillsEffects(data);
+	if (enemy.skillX) {
+		const skillEffects = aggregateSkillsEffectsSkillX(data, enemy.skillX);
+	} else {
+		const skillEffects = aggregateSkillsEffects(data);
+	}
 
 	const skillsStr = getSkillsShortName(data);
 
@@ -509,6 +514,10 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		}
 	}
 
+	if (enemy.skillX) {
+		buff += 1;
+		message += serifs.rpg.skillX + `\n`;
+	}
 
 	// ここで残りのステータスを計算しなおす
 	let { atk, def, spd } = calculateStats(data, msg, skillEffects, color, 0.2);
