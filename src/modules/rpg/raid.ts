@@ -1020,8 +1020,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 				if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`;
 				const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
 				/** ダメージ */
-				let dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [count]));
-				let noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [count]));
+				let dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, enemy.fixRnd ?? (rng * defDmgX), getVal(enemy.atkx, [count]));
+				let noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, enemy.fixRnd ?? (rng * defDmgX), getVal(enemy.atkx, [count]));
 				let addMessage = "";
 				if (sevenFever) {
 					const minusDmg = dmg - Math.max(dmg - sevenFever, 0);
@@ -1145,8 +1145,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 					const crit = Math.random() < (playerHpPercent - enemyHpPercent) * (1 - (skillEffects.enemyCritDown ?? 0));
 					const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
 					/** ダメージ */
-					let dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX, getVal(enemy.atkx, [count]));
-					let noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX, getVal(enemy.atkx, [count]));
+					let dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, enemy.fixRnd ?? (rng * defDmgX * enemyAtkX), getVal(enemy.atkx, [count]));
+					let noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, enemy.fixRnd ?? (rng * defDmgX * enemyAtkX), getVal(enemy.atkx, [count]));
 					let addMessage = "";
 					if (sevenFever) {
 						const minusDmg = dmg - Math.max(dmg - sevenFever, 0);
