@@ -562,8 +562,8 @@ export function aggregateSkillsEffectsSkillX(data: any, skillX: number): SkillEf
 		const skill = _skill.name ? skills.find((x) => x.name === _skill.name) ?? _skill : _skill;
 		const __skill = {...skill};
 		if (__skill.unique) {
-			__skill.effect.atkUp = (__skill.effect.atkUp ?? 0) + 0.05 * skillX;
-			__skill.effect.defUp = (__skill.effect.defUp ?? 0) + 0.05 * skillX;
+			__skill.effect.atkUp = (__skill.effect.atkUp ?? 0) + 0.05 * (skillX - 1);
+			__skill.effect.defUp = (__skill.effect.defUp ?? 0) + 0.05 * (skillX - 1);
 		} else {
 			for (const eff in __skill.effect) {
 				__skill.effect[eff] = __skill.effect[eff] * skillX;
