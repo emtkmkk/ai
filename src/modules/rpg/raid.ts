@@ -1232,6 +1232,15 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		}
 	}
 
+	if (warriorFlg) {
+			//** クリティカルかどうか */
+			let crit = Math.random() < 0.5;
+			const dmg = getAtkDmg(data, lv * 3.5, tp, 1, crit ? 4 : false, enemyDef, enemyMaxHp, 1, getVal(enemy.defx, [count]));
+			// メッセージの出力
+			message += (crit ? `**${serifs.rpg.warrior.atk(dmg)}**` : serifs.rpg.warrior.atk(dmg)) + "\n";
+			totalDmg += dmg;
+			warriorTotalDmg += dmg;
+	}
 	if (playerHp > 0) {
 		const enemySAtk = Math.max((_enemyAtk / (lv * 3.5)) * (getVal(enemy.atkx, [6]) ?? 3), 0.01);
 		let enemyFDef = (typeof enemy.def === "function") ? enemy.def(atk, def, spd) : lv * 3.5 * (enemy.def ?? 1);
