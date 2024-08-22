@@ -517,6 +517,7 @@ export default {
 			get: "$[x2 :mk_warrior:]\n\nオレも手伝うぜ！\n\n:mk_warrior:が仲間になった！",
 			atk: (dmg) => `:mk_warrior:の攻撃！\n${dmg}ポイントのダメージ！`,
 			lose: ":mk_warrior:はもこチキを庇って倒れた！\n:mk_warrior:「あとは任せたぜ……」",
+			totalDmg: (dmg) => `（:mk_warrior:： 合計 ${dmg.toLocaleString()} ダメージ）`
 		},
 		player: {
 			mark: "☆",
