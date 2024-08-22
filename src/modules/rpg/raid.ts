@@ -386,7 +386,7 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
 		me: result.me ?? "",
 		lv: result.lv ?? 1,
 		count: result.count ?? 1,
-		skillsStr: result.skillsStr ?? { skills: undefined, amulets: undefined },
+		skillsStr: result.skillsStr ?? { skills: undefined, amulet: undefined },
 		mark: result.mark ?? ":blank:",
 		replyId: result.reply.id ?? undefined,
 	});
