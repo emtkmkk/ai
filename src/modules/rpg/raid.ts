@@ -1078,7 +1078,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		if (warriorFlg) {
 			//** クリティカルかどうか */
 			let crit = Math.random() < 0.5;
-			const dmg = getAtkDmg(data, lv * 3.5, tp, 1, crit ? 4 : false, enemyDef, enemyMaxHp, 0.5, getVal(enemy.defx, [count]));
+			const dmg = getAtkDmg(data, lv * 3.5, tp, 1, crit ? 2.5 : false, enemyDef, enemyMaxHp, 0.5, getVal(enemy.defx, [count]));
 			// メッセージの出力
 			message += (crit ? `**${serifs.rpg.warrior.atk(dmg)}**` : serifs.rpg.warrior.atk(dmg)) + "\n";
 			totalDmg += dmg;
