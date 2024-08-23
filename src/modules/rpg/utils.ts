@@ -382,13 +382,14 @@ export function getAtkDmg(
   defx?: number,
 ) {
   let dmg = Math.round(
-    atk *
+    Math.max(atk, 1) *
       tp *
       (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) *
       rng *
       (crit ? (typeof crit === 'number' ? 2 * crit : 2) : 1) *
       (1 /
-        ((enemyDef * (defx ?? getVal(data.enemy.defx, [tp]) ?? 3) + 100) /
+        ((Math.max(enemyDef, 1) * (defx ?? getVal(data.enemy.defx, [tp]) ?? 3) +
+          100) /
           100)),
   );
   if (data.fireAtk > 0 && enemyMaxHp < 10000) {
@@ -423,12 +424,12 @@ export function getEnemyDmg(
   atkx?,
 ) {
   let dmg = Math.round(
-    enemyAtk *
+    Math.max(enemyAtk, 1) *
       (atkx ?? getVal(data.enemy.atkx, [tp]) ?? 3) *
       (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) *
       rng *
       (crit ? (typeof crit === 'number' ? 2 * crit : 2) : 1) *
-      (1 / ((def * tp + 100) / 100)),
+      (1 / ((Math.max(def, 1) * tp + 100) / 100)),
   );
   if (data.enemy?.fire) {
     dmg += Math.round(

@@ -91,6 +91,10 @@ export type RaidEnemy = Enemy & {
   power?: number;
   /** 投稿数を固定する */
   forcePostCount?: number;
+  /** 乱数を固定する */
+  fixRnd?: number;
+  /** スキル効果倍率 */
+  skillX?: number;
 };
 
 /** 敵一覧 */
@@ -1047,11 +1051,11 @@ export const enemys: Enemy[] = [
     losemsg: '阨ちゃんは悲しくて逃げ出してしまった…',
     endingmsg:
       'aine_youshou:の大人げない本気の暴言にも負けずに追い返す事が出来た！',
-    atk: 18,
-    def: 18,
+    atk: 20,
+    def: 20,
     maxdmg: 0.8,
-    atkx: 8,
-    defx: 8,
+    atkx: 10,
+    defx: 10,
     abort: 0.08,
   },
   {
@@ -1234,7 +1238,7 @@ export const raidEnemys: RaidEnemy[] = [
     atkx: 3,
     defx: 1,
     abort: 1,
-    power: 20,
+    power: 6,
   },
   {
     name: ':yosomono_seinen:',
@@ -1329,6 +1333,7 @@ export const raidEnemys: RaidEnemy[] = [
     atkx: (count) => Math.min(count * 2 + 1, 12),
     defx: (count) => Math.min(count + 1, 6),
     power: 100,
+    fixRnd: 0.5,
   },
 ];
 
@@ -1362,11 +1367,11 @@ export const summerEnemys: Enemy[] = [
 export const endressEnemy = (data): Enemy => ({
   name: '修行モード',
   msg:
-    data.endress ?? 0
+    (data.endress ?? 0)
       ? `修行の途中 (ステージ${data.endress + 1})`
       : '阨ちゃんは修行に出たいようだ。',
   short:
-    data.endress ?? 0 ? `修行の途中 (ステージ${data.endress + 1})` : '修行中',
+    (data.endress ?? 0) ? `修行の途中 (ステージ${data.endress + 1})` : '修行中',
   hpmsg: '進行度',
   lToR: true,
   mark: '☆',

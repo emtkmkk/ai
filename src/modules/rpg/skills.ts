@@ -203,6 +203,7 @@ export const skills: Skill[] = [
     desc: `常に${serifs.rpg.status.atk}が10%上がります`,
     info: `条件無しで${serifs.rpg.status.atk}+10%`,
     effect: { atkUp: 0.1 },
+    moveTo: `${serifs.rpg.status.atk}アップ`,
   },
   {
     name: `${serifs.rpg.status.def}+10%`,
@@ -210,6 +211,21 @@ export const skills: Skill[] = [
     desc: `常に${serifs.rpg.status.def}が10%上がります`,
     info: `条件無しで${serifs.rpg.status.def}+10%`,
     effect: { defUp: 0.1 },
+    moveTo: `${serifs.rpg.status.def}アップ`,
+  },
+  {
+    name: `${serifs.rpg.status.atk}アップ`,
+    short: `Ｐ`,
+    desc: `常に${serifs.rpg.status.atk}が上がります`,
+    info: `${serifs.rpg.status.atk}+11%`,
+    effect: { atkUp: 0.11 },
+  },
+  {
+    name: `${serifs.rpg.status.def}アップ`,
+    short: `Ｄ`,
+    desc: `常に${serifs.rpg.status.def}が上がります`,
+    info: `${serifs.rpg.status.def}+11%`,
+    effect: { defUp: 0.11 },
   },
   {
     name: `炎属性妖術`,
@@ -264,22 +280,22 @@ export const skills: Skill[] = [
     name: `毒属性妖術`,
     short: '毒',
     desc: `戦闘時、ターン経過ごとに相手が弱体化します`,
-    info: `ターン経過ごとに敵のステータス-5%`,
-    effect: { weak: 0.05 },
+    info: `ターン経過ごとに敵のステータス-6%`,
+    effect: { weak: 0.06 },
   },
   {
     name: `テキパキこなす`,
     short: '効',
     desc: `戦闘以外の事の効率が上がります`,
-    info: `非戦闘時、${serifs.rpg.status.atk}+20%`,
-    effect: { notBattleBonusAtk: 0.2 },
+    info: `非戦闘時、${serifs.rpg.status.atk}+22%`,
+    effect: { notBattleBonusAtk: 0.22 },
   },
   {
     name: `疲れにくい`,
     short: '疲',
     desc: `疲れでダメージを受ける際にそのダメージを軽減します`,
-    info: `ダメージメッセージに疲が入っている場合、${serifs.rpg.status.def}+18%`,
-    effect: { notBattleBonusDef: 0.18 },
+    info: `ダメージメッセージに疲が入っている場合、${serifs.rpg.status.def}+22%`,
+    effect: { notBattleBonusDef: 0.22 },
   },
   {
     name: `油断せず行こう`,
@@ -293,8 +309,8 @@ export const skills: Skill[] = [
     name: `粘り強い`,
     short: '粘',
     desc: `体力が減るほど受けるダメージを軽減します`,
-    info: `ダメージカット20%×(減少HP割合)を得る 最大90%`,
-    effect: { tenacious: 0.2 },
+    info: `ダメージカット25%×(減少HP割合)を得る 最大90%`,
+    effect: { tenacious: 0.25 },
   },
   {
     name: `高速RPG`,
@@ -309,6 +325,7 @@ export const skills: Skill[] = [
     desc: `1時間早くRPGをプレイする事が出来ます`,
     info: `1時間早くRPGプレイ可能 ステータス+5%`,
     effect: { atkUp: 0.05, defUp: 0.05, rpgTime: -1 },
+    moveTo: '高速RPG',
   },
   {
     name: `伝説`,
@@ -350,8 +367,8 @@ export const skills: Skill[] = [
     name: `気合で頑張る`,
     short: '気',
     desc: `パワー・防御が少し上がり、気合耐えの確率が上がります`,
-    info: `ステータス+3% 気合耐え確率+50%`,
-    effect: { atkUp: 0.03, defUp: 0.03, endureUp: 0.5 },
+    info: `ステータス+4% 気合耐え確率+50%`,
+    effect: { atkUp: 0.04, defUp: 0.04, endureUp: 0.5 },
   },
   {
     name: `すぐ決死の覚悟をする`,
@@ -384,7 +401,7 @@ export const skills: Skill[] = [
   {
     name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndM}4`,
     short: '４',
-    desc: `乱数幅が20~180 -> 60~160になります`,
+    desc: `乱数幅が20~180 -> 60~160 (%) になります`,
     info: `乱数幅 20~180 -> 60~160 (%) 期待値 110% 乱数系と重複しない`,
     effect: { atkRndMin: 0.4, atkRndMax: -0.2 },
     unique: 'rnd',
@@ -392,7 +409,7 @@ export const skills: Skill[] = [
   {
     name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndM}5`,
     short: '５',
-    desc: `乱数幅が20~180 -> 90~130になります`,
+    desc: `乱数幅が20~180 -> 90~130 (%) になります`,
     info: `乱数幅 20~180 -> 90~130 (%) 期待値 110% 乱数系と重複しない`,
     effect: { atkRndMin: 0.7, atkRndMax: -0.5 },
     unique: 'rnd',
@@ -425,16 +442,16 @@ export const skills: Skill[] = [
     name: `準備を怠らない`,
     short: '備',
     desc: `ターン1にて、必ず良い効果がある武器か防具を装備します`,
-    info: `ターン1装備率+100% ターン1悪アイテム率-100% アイテム装備率-15% 重複しない`,
-    effect: { firstTurnItem: 1, firstTurnMindMinusAvoid: 1, itemEquip: -0.15 },
+    info: `ターン1装備率+100% ターン1悪アイテム率-100% 重複しない`,
+    effect: { firstTurnItem: 1, firstTurnMindMinusAvoid: 1 },
     unique: 'firstTurnItem',
   },
   {
     name: `道具大好き`,
     short: '道',
     desc: `道具の使用率が上がります`,
-    info: `アイテム装備率+40%`,
-    effect: { itemEquip: 0.4 },
+    info: `アイテム装備率+50%`,
+    effect: { itemEquip: 0.5 },
   },
   {
     name: `道具の扱いが上手い`,
@@ -473,13 +490,14 @@ export const skills: Skill[] = [
     desc: `良くないものを食べなくなることがあります`,
     info: `毒食べ物を50%で捨てる 100%以上になると悪アイテム率減少に変換`,
     effect: { poisonAvoid: 0.5 },
+    moveTo: '道具の選択が上手い',
   },
   {
     name: `道具の選択が上手い`,
     short: '選',
-    desc: `道具の効果量がすこし上がり、悪いアイテムを選びにくくなります`,
-    info: `道具効果量+15% 悪アイテム率-15%`,
-    effect: { itemBoost: 0.15, mindMinusAvoid: 0.15 },
+    desc: `道具の効果量がすこし上がり、悪いアイテムを選びにくくなり、良くないものを食べなくなる事があります`,
+    info: `道具効果量+15% 悪アイテム率-15%　毒食べ物を40%で捨てる 100%以上になると悪アイテム率減少に変換`,
+    effect: { itemBoost: 0.15, mindMinusAvoid: 0.15, poisonAvoid: 0.4 },
   },
   {
     name: `お腹が空いてから食べる`,
@@ -493,8 +511,8 @@ export const skills: Skill[] = [
     name: `たまにたくさん成長`,
     short: '成',
     desc: `たまにステータスが多く増加します ★変更不可`,
-    info: `2Lv毎になにかのステータス+1 ★変更不可（変更してもステータスは残るため）`,
-    effect: { statusBonus: 1 },
+    info: `Lvアップ毎になにかのステータス+1 ★変更不可（変更してもステータスは残るため）`,
+    effect: { statusBonus: 2 },
     unique: 'status',
     cantReroll: true,
   },
@@ -516,8 +534,8 @@ export const skills: Skill[] = [
     name: `敵のクリティカル性能減少`,
     short: '守',
     desc: `相手のクリティカル率とクリティカルダメージが減少します`,
-    info: `敵のクリティカル率-30% 敵のクリティカルダメージ-30% レイド時は、${serifs.rpg.status.def}+10%`,
-    effect: { enemyCritDown: 0.3, enemyCritDmgDown: 0.3 },
+    info: `敵のクリティカル率-40% 敵のクリティカルダメージ-40% レイド時は、${serifs.rpg.status.def}+10%`,
+    effect: { enemyCritDown: 0.4, enemyCritDmgDown: 0.4 },
   },
   {
     name: `負けた時、しっかり反省`,
@@ -527,6 +545,7 @@ export const skills: Skill[] = [
     effect: { loseBonus: 1 },
     unique: 'loseBonus',
     cantReroll: true,
+    moveTo: `負けそうなら逃げる`,
   },
   {
     name: `７フィーバー！`,
@@ -564,6 +583,22 @@ export const skills: Skill[] = [
     desc: `戦闘開始時に強くなるか弱くなるかどちらかが起こります`,
     info: `60%でステータス+20% 40%でステータス-20%`,
     effect: { heavenOrHell: 0.2 },
+  },
+  {
+    name: `気性が荒い`,
+    short: '荒',
+    desc: `戦闘が得意になりますが、戦闘以外の効率が大きく下がります`,
+    info: `${serifs.rpg.status.atk}+25% 非戦闘時、${serifs.rpg.status.atk}-40%`,
+    effect: { atkUp: 0.25, notBattleBonusAtk: -0.4 },
+    unique: 'mind',
+  },
+  {
+    name: `気性穏やか`,
+    short: '穏',
+    desc: `戦闘以外の効率がとても上がりますが、戦闘が苦手になります`,
+    info: `${serifs.rpg.status.atk}-25% 非戦闘時、${serifs.rpg.status.atk}+70%`,
+    effect: { atkUp: -0.25, notBattleBonusAtk: 0.7 },
+    unique: 'mind',
   },
 ];
 
@@ -840,10 +875,7 @@ export const skillPower = (ai: 藍, skillName: Skill['name']) => {
  * @param data - skills配列を含むデータオブジェクト。
  * @returns 集計されたSkillEffect。
  */
-export function aggregateSkillsEffects(data: {
-  items?: ShopItem[];
-  skills: Skill[];
-}): SkillEffect {
+export function aggregateSkillsEffects(data: any): SkillEffect {
   const aggregatedEffect: SkillEffect = {};
 
   if (!data.skills) return aggregatedEffect;
@@ -867,41 +899,199 @@ export function aggregateSkillsEffects(data: {
           ]
         : []),
     ].find((x) => x.name === amulet.name) as AmuletItem;
-    if (item.isUsed(data)) {
-      const boost =
-        dataSkills
-          .filter((x) => x.effect?.amuletBoost)
-          .reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0;
-      const adjustEffect = (effect: any, boost: number): any => {
-        const multiplier = 1 + (boost ?? 0);
-        const adjustedEffect: any = {};
+    if (!item) {
+      data.items
+        .filter((x) => x.type === 'amulet')
+        .forEach((x) => {
+          data.coin = (data.coin ?? 0) + (x.price || 0);
+        });
+      data.items = data.items.filter((x) => x.type !== 'amulet');
+    } else {
+      if (item.isUsed(data)) {
+        const boost =
+          dataSkills
+            .filter((x) => x.effect?.amuletBoost)
+            .reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0;
+        const adjustEffect = (effect: any, boost: number): any => {
+          const multiplier = 1 + (boost ?? 0);
+          const adjustedEffect: any = {};
 
-        for (const key in effect) {
-          if (typeof effect[key] === 'number') {
-            if (Number.isInteger(effect[key])) {
-              adjustedEffect[key] = Math.floor(effect[key] * multiplier);
+          for (const key in effect) {
+            if (typeof effect[key] === 'number') {
+              if (Number.isInteger(effect[key])) {
+                adjustedEffect[key] = Math.floor(effect[key] * multiplier);
+              } else {
+                adjustedEffect[key] = effect[key] * multiplier;
+              }
             } else {
-              adjustedEffect[key] = effect[key] * multiplier;
+              adjustedEffect[key] = effect[key];
             }
-          } else {
-            adjustedEffect[key] = effect[key];
           }
-        }
-
-        return { effect: adjustedEffect };
-      };
-      console.log(
-        'effect: ' + JSON.stringify(adjustEffect(item.effect, boost)),
-      );
-      dataSkills = dataSkills.concat([adjustEffect(item.effect, boost)] as any);
+          return { effect: adjustedEffect };
+        };
+        console.log(
+          'effect: ' + JSON.stringify(adjustEffect(item.effect, boost)),
+        );
+        dataSkills = dataSkills.concat([
+          adjustEffect(item.effect, boost),
+        ] as any);
+      }
     }
   }
   dataSkills.forEach((_skill) => {
     const skill = _skill.name
-      ? skills.find((x) => x.name === _skill.name) ?? _skill
+      ? (skills.find((x) => x.name === _skill.name) ?? _skill)
       : _skill;
     if (skill.effect) {
       Object.entries(skill.effect).forEach(([key, value]) => {
+        if (aggregatedEffect[key] !== undefined) {
+          aggregatedEffect[key] += value;
+        } else {
+          aggregatedEffect[key] = value;
+        }
+      });
+    } else {
+      console.log(JSON.stringify(_skill));
+    }
+  });
+
+  const day = new Date().getDay();
+
+  //曜日ボーナス
+  if (day == 0 && aggregatedEffect.thunder) {
+    aggregatedEffect.thunder *= 5 / 3;
+  }
+  if (day == 1 && aggregatedEffect.dark) {
+    aggregatedEffect.dark *= 5 / 3;
+  }
+  if (day == 2 && aggregatedEffect.fire) {
+    aggregatedEffect.fire *= 5 / 3;
+  }
+  if (day == 3 && aggregatedEffect.ice) {
+    aggregatedEffect.ice *= 5 / 3;
+  }
+  if (day == 4 && aggregatedEffect.spdUp) {
+    aggregatedEffect.spdUp *= 5 / 3;
+  }
+  if (day == 5 && aggregatedEffect.light) {
+    aggregatedEffect.light *= 5 / 3;
+  }
+  if (day == 6 && aggregatedEffect.dart) {
+    aggregatedEffect.dart *= 5 / 3;
+  }
+
+  if (aggregatedEffect.itemEquip && aggregatedEffect.itemEquip > 1.5) {
+    aggregatedEffect.itemBoost =
+      (aggregatedEffect.itemBoost ?? 0) + (aggregatedEffect.itemEquip - 1.5);
+    aggregatedEffect.itemEquip = 1.5;
+  }
+
+  if (aggregatedEffect.poisonAvoid && aggregatedEffect.poisonAvoid > 1) {
+    aggregatedEffect.mindMinusAvoid =
+      (aggregatedEffect.mindMinusAvoid ?? 0) +
+      (aggregatedEffect.poisonAvoid - 1) * 0.6;
+    aggregatedEffect.poisonAvoid = 1;
+  }
+
+  if (aggregatedEffect.abortDown && aggregatedEffect.abortDown > 1) {
+    aggregatedEffect.atkUp =
+      (aggregatedEffect.atkUp ?? 0) +
+      (aggregatedEffect.abortDown - 1) * (1 / 3);
+    aggregatedEffect.abortDown = 1;
+  }
+
+  if (aggregatedEffect.enemyCritDown && aggregatedEffect.enemyCritDown > 1) {
+    aggregatedEffect.defUp =
+      (aggregatedEffect.defUp ?? 0) +
+      (aggregatedEffect.enemyCritDown - 1) * (1 / 3);
+    aggregatedEffect.enemyCritDown = 1;
+  }
+
+  return aggregatedEffect;
+}
+
+export function aggregateSkillsEffectsSkillX(
+  data: any,
+  skillX: number,
+): SkillEffect {
+  const aggregatedEffect: SkillEffect = {};
+
+  if (!data.skills) return aggregatedEffect;
+  let dataSkills = data.skills;
+  if (data.items?.filter((x) => x.type === 'amulet').length) {
+    const amulet = data.items?.filter(
+      (x) => x.type === 'amulet',
+    )[0] as AmuletItem;
+    console.log('amulet: ' + amulet.name);
+    const item = [
+      ...shopItems,
+      ...(Array.isArray(amulet.skillName)
+        ? [
+            mergeSkillAmulet(
+              ai,
+              undefined,
+              amulet.skillName
+                .map((y) => skills.find((z) => y === z.name) ?? undefined)
+                .filter((y) => y != null) as Skill[],
+            ) as AmuletItem,
+          ]
+        : []),
+    ].find((x) => x.name === amulet.name) as AmuletItem;
+    if (!item) {
+      data.items
+        .filter((x) => x.type === 'amulet')
+        .forEach((x) => {
+          data.coin = (data.coin ?? 0) + (x.price || 0);
+        });
+      data.items = data.items.filter((x) => x.type !== 'amulet');
+    } else {
+      if (item.isUsed(data)) {
+        const boost =
+          dataSkills
+            .filter((x) => x.effect?.amuletBoost)
+            .reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0;
+        const adjustEffect = (effect: any, boost: number): any => {
+          const multiplier = (1 + (boost ?? 0)) * skillX;
+          const adjustedEffect: any = {};
+
+          for (const key in effect) {
+            if (typeof effect[key] === 'number') {
+              if (Number.isInteger(effect[key])) {
+                adjustedEffect[key] = Math.floor(effect[key] * multiplier);
+              } else {
+                adjustedEffect[key] = effect[key] * multiplier;
+              }
+            } else {
+              adjustedEffect[key] = effect[key];
+            }
+          }
+          return { effect: adjustedEffect };
+        };
+        console.log(
+          'effect: ' + JSON.stringify(adjustEffect(item.effect, boost)),
+        );
+        dataSkills = dataSkills.concat([
+          adjustEffect(item.effect, boost),
+        ] as any);
+      }
+    }
+  }
+  dataSkills.forEach((_skill) => {
+    const skill = _skill.name
+      ? (skills.find((x) => x.name === _skill.name) ?? _skill)
+      : _skill;
+    const __skill = { ...skill };
+    if (__skill.unique) {
+      __skill.effect.atkUp = (__skill.effect.atkUp ?? 0) + 0.05 * (skillX - 1);
+      __skill.effect.defUp = (__skill.effect.defUp ?? 0) + 0.05 * (skillX - 1);
+    } else {
+      for (const eff in __skill.effect) {
+        __skill.effect[eff] = __skill.effect[eff] * skillX;
+      }
+    }
+    if (__skill.effect) {
+      Object.entries(__skill.effect).forEach(([key, value]) => {
+        let value2 = value;
         if (aggregatedEffect[key] !== undefined) {
           aggregatedEffect[key] += value;
         } else {
@@ -1031,9 +1221,9 @@ export function amuletMinusDurability(data: {
     ].find((x) => x.name === amulet.name) as AmuletItem;
     if ((item.isMinusDurability ?? item.isUsed)(data)) {
       const boost = data.skills
-        ? data.skills
+        ? (data.skills
             ?.filter((x) => x.effect?.amuletBoost)
-            .reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0
+            .reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0)
         : 0;
       data.items.forEach((x) => {
         if (x.type === 'amulet') {

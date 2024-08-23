@@ -569,7 +569,7 @@ export default {
     },
     haisui: '阨ちゃんは決死の覚悟をした！\nパワーが上がり、防御が下がった！',
     nurse:
-      '$[x3 :dead_mijinko:]\n\n通りすがりのミジンコが現れた！\nミジンコは受けた傷を治療してくれた！', //この文を空白にすればナースは来なくなります
+      '$[x3 :semisand_naname:]\n\n 通りすがりの蝉サンドが現れた！\n 蝉サンドが身体を一部食べさせてくれたおかげでHPが全快した！', //この文を空白にすればナースは来なくなります
     endure: '阨ちゃんは気合で耐えた！',
     fireAtk: (enemyName) =>
       `阨ちゃんの追い打ち狐火攻撃！\n${enemyName}が次に受けるダメージが上昇した！`,
@@ -585,6 +585,15 @@ export default {
       `\n\nスキル変更珠を${num > 1 ? `${num}個` : ''}拾ったのじゃ！\n「RPG スキル」と話しかけて確認してみて欲しいのじゃ！`,
     forcePostCount:
       '周囲に不思議な力が働いている…\n投稿数ボーナスが無効になった！',
+    skillX: (num) =>
+      `$[x2 :blobharrypotter:]\n\nきみに魔法をかけてあげるよ！\n\n強化魔法で阨ちゃんのスキルの\n効果が${num}倍になった！`,
+    warrior: {
+      get: '$[x2 :sexy_paradin_dot:]\n\n「助けに参りました！私も手伝います！」\n\n:sexy_paradin_dot:が仲間になった！',
+      atk: (dmg) => `:sexy_paradin_dot:の攻撃！\n${dmg}ポイントのダメージ！`,
+      lose: ':sexy_paradin_dot:は阨ちゃんを庇って倒れた！\n:sexy_paradin_dot:「私はここまでです…！後は任せます…！」',
+      totalDmg: (dmg) =>
+        `（:sexy_paradin_dot:： 合計 ${dmg.toLocaleString()} ダメージ）`,
+    },
     player: {
       mark: '☆',
       mark2: '★',

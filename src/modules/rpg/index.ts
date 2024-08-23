@@ -108,16 +108,6 @@ export default class extends Module {
     }
     if (
       msg.includes(
-        Array.isArray(serifs.rpg.command.skill)
-          ? serifs.rpg.command.skill
-          : [serifs.rpg.command.skill],
-      )
-    ) {
-      // スキルモード
-      return skillReply(this, this.ai, msg);
-    }
-    if (
-      msg.includes(
         Array.isArray(serifs.rpg.command.shop)
           ? serifs.rpg.command.shop
           : [serifs.rpg.command.shop],
@@ -125,6 +115,16 @@ export default class extends Module {
     ) {
       // ショップモード
       return shopReply(this, this.ai, msg);
+    }
+    if (
+      msg.includes(
+        Array.isArray(serifs.rpg.command.skill)
+          ? serifs.rpg.command.skill
+          : [serifs.rpg.command.skill],
+      )
+    ) {
+      // スキルモード
+      return skillReply(this, this.ai, msg);
     }
     if (
       msg.includes([serifs.rpg.command.rpg]) &&
@@ -347,7 +347,13 @@ export default class extends Module {
         `激レア穢根くんのチェキ${data.jar - jarList.length >= 2 ? ' ×' + (data.jar - jarList.length) : ''}`,
       );
     }
-    msg.reply('\n' + message.join('\n'));
+    msg.reply(
+      '\n' +
+        message.join('\n') +
+        (message.length === 1
+          ? '\n\n何も持っていないようじゃ。\n「RPG ショップ」で購入できるのじゃ。'
+          : ''),
+    );
     return { reaction: 'love' };
   }
 
@@ -712,11 +718,7 @@ export default class extends Module {
       message += serifs.rpg.trial.atk(dmg) + '\n';
     }
 
-    message += `\n${serifs.rpg.end}\n\n${serifs.rpg.trial.result(
-      totalDmg,
-    )}\n${serifs.rpg.trial.random(minTotalDmg, maxTotalDmg)}\n${
-      data.bestScore ? serifs.rpg.trial.best(data.bestScore) : ''
-    }`;
+    message += `\n${serifs.rpg.end}\n\n${serifs.rpg.trial.result(totalDmg)}\n${serifs.rpg.trial.random(minTotalDmg, maxTotalDmg)}\n${data.bestScore ? serifs.rpg.trial.best(data.bestScore) : ''}`;
 
     data.bestScore = Math.max(data.bestScore ?? 0, totalDmg);
 
@@ -1184,8 +1186,7 @@ export default class extends Module {
     let enemyHp = Math.min(data.ehp ?? 100, enemyMaxHp);
     /** 敗北時のステータスボーナス */
     let bonus = 0;
-    /** 連続攻撃中断の場合の攻撃可能回数 0は最後まで攻撃 */
-    let abort = 0;
+
     /** プレイヤーのHP割合 */
     let playerHpPercent = playerHp / (100 + lv * 3);
     /** 敵のHP割合 */
@@ -1632,6 +1633,9 @@ export default class extends Module {
       /** 敵のHP割合 */
       let enemyHpPercent = enemyHp / enemyMaxHp;
 
+      /** 連続攻撃中断の場合の攻撃可能回数 0は最後まで攻撃 */
+      let abort = 0;
+
       // 敵に最大ダメージ制限がある場合、ここで計算
       /** 1ターンに与えられる最大ダメージ量 */
       let maxdmg = data.enemy.maxdmg
@@ -1715,19 +1719,10 @@ export default class extends Module {
         0,
       );
 
-      const atkMinRnd = Math.max(
-        0.2 + (isSuper ? 0.3 : 0) + (skillEffects.atkRndMin ?? 0),
-        0,
-      );
-      const atkMaxRnd = Math.max(
-        1.6 + (isSuper ? -0.3 : 0) + (skillEffects.atkRndMax ?? 0),
-        0,
-      );
+      const atkMinRnd = Math.max(0.2 + (skillEffects.atkRndMin ?? 0), 0);
+      const atkMaxRnd = Math.max(1.6 + (skillEffects.atkRndMax ?? 0), 0);
       const defMinRnd = Math.max(0.2 + (skillEffects.defRndMin ?? 0), 0);
-      const defMaxRnd = Math.max(
-        1.6 + (isSuper ? -0.3 : 0) + (skillEffects.defRndMax ?? 0),
-        0,
-      );
+      const defMaxRnd = Math.max(1.6 + (skillEffects.defRndMax ?? 0), 0);
 
       /** 予測最大ダメージ */
       let predictedDmg =

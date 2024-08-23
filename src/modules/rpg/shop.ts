@@ -682,7 +682,7 @@ const determineOutcome = (ai, data, getShopItems) => {
     // コインの所持数が必要数を上回る場合、確率をさらに上昇させる
     if (data.coin > requiredCoins) {
       const extraCoins = data.coin - requiredCoins;
-      probability *= 1 + (extraCoins / requiredCoins) * 0.5; // 余剰コインの倍率を追加
+      probability *= Math.min(1 + (extraCoins / requiredCoins) * 0.5, 2); // 余剰コインの倍率を追加
     }
 
     return probability;
@@ -721,6 +721,29 @@ const determineOutcome = (ai, data, getShopItems) => {
 
   // 条件を満たさない場合は、ショップのアイテムリストを返す
   return getShopItems();
+};
+
+const eventAmulet = () => {
+  // イベント的にショップにアイテムを並ばせることができます
+  const y = new Date().getFullYear();
+  const m = new Date().getMonth() + 1;
+  const d = new Date().getDate();
+  if (y === 2024 && m === 8 && d === 22) {
+    return 'スロースタートのお守り';
+  }
+  if (y === 2024 && m === 8 && d === 23) {
+    return ['７フィーバー！', '天国か地獄か', '炎属性剣攻撃'];
+  }
+  if (y === 2024 && m === 8 && d === 24) {
+    return ['不運チャージ', '気合で頑張る', '連続攻撃完遂率上昇'];
+  }
+  if (y === 2024 && m === 8 && d === 25) {
+    return 'しあわせのお守り';
+  }
+  if (y === 2024 && m === 8 && d === 26) {
+    return '運命不変のお守り';
+  }
+  return undefined;
 };
 
 export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
@@ -762,7 +785,7 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
     data.shopItems = [
       getShopItems(),
       getShopItems(),
-      getShopItems(),
+      eventAmulet() || getShopItems(),
       data.lastBreakItem && Math.random() < 0.95
         ? data.lastBreakItem
         : getShopItems(),
