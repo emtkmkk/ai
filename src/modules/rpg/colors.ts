@@ -152,7 +152,7 @@ export const colors: Color[] = [
   },
   {
     id: 10,
-    name: ':aichan:',
+    name: ':ai_kitune:',
     keyword: '0',
     unlock: (data) => (data.maxEndress ?? 0) >= 29,
     message: (data) => `${serifs.rpg.color.unlock}`,
