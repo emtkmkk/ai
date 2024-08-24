@@ -5,7 +5,7 @@ import { colors } from './colors';
 import * as seedrandom from 'seedrandom';
 import getDate from '@/utils/get-date';
 import { skillNameCountMap, totalSkillCount, skills, SkillEffect, skillCalculate, Skill, skillPower, aggregateSkillsEffects } from './skills';
-import { getVal, initializeData } from './utils';
+import { getVal, initializeData, deepClone } from './utils';
 import 藍 from '@/ai';
 import rpg from './index';
 
@@ -353,7 +353,7 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 
 	const showShopItems = _shopItems.filter((x) => (!x.limit || x.limit(data, () => 0)) && !(x.type === "amulet" && data.items?.some((y) => y.type === "amulet"))).concat(shopItems.filter((x) => (!x.limit || x.limit(data, () => 0)) && !(x.type === "amulet" && data.items?.some((y) => y.type === "amulet")) && x.always)).slice(0, 9)
 		.map((x) => {
-			let _x = x;
+			let _x = deepClone(x);
 			const price = Math.ceil(getVal(x.price, [data, rnd, ai]) * (1 - (skillEffects.priceOff ?? 0)));
 			return { ..._x, price };
 		});
