@@ -389,20 +389,29 @@ export default class extends Module {
 
 			const ai = this.ai;
 			const games = this.raids.find({});
-			const recentGame = games.length == 0 ? null : games[games.length - 1];
-			if (!recentGame || recentGame.isEnded) return { reaction: "hmm" };
-
-			recentGame.attackers.forEach(x => {
-				if (x.user.id !== '9d5ts6in38') return;
-				const friend = this.ai.lookupFriend(x.user.id);
-				if (!friend) return;
-				const data = friend.getPerModulesData(this);
-				data.raidScore[recentGame.enemy.name] = 0;
-				recentGame.attackers = recentGame.attackers.filter(y => y.user.id !== x.user.id);
-				console.log(x.user.id + " : fix");
-				friend.setPerModulesData(this, data);
+			const allData = this.ai.friends.find();
+			
+			allData.forEach(x => {
+				const enemyName = ":blobbacteria_campylobacter:"
+				if (!x?.perModulesData?.rpg?.raidScore?.[enemyName]) continue;
+				x.perModulesData.rpg.raidScore[enemyName] = 0;
 			});
-			this.raids.update(recentGame);
+			allData.forEach(x => {
+				const enemyName = ":mk_giga:"
+				if (!x?.perModulesData?.rpg?.raidScore?.[enemyName]) continue;
+				x.perModulesData.rpg.raidScore[enemyName] = 0;
+			});
+			
+	const rpgData = ai.moduleData.findOne({ type: 'rpg' });
+	if (rpgData) {
+			rpgData.raidScore[":blobbacteria_campylobacter:"] = 0;
+			rpgData.raidScoreDate[":blobbacteria_campylobacter:"] = getDate();
+		rpgData.raidScore[":mk_giga:"] = 0;
+			rpgData.raidScoreDate[":mk_giga:"] = getDate();
+
+		}
+		ai.moduleData.update(rpgData);
+	}
 			return { reaction: "love" };
 		}
 		return { reaction: "hmm" };
