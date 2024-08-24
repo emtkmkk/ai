@@ -473,12 +473,13 @@ export default class extends Module {
 
 		// 敵のステータスを計算
 		let edef = data.lv * 3.5;
+		const enemyMinDef = edef * 0.4
 		edef -= Math.max(atk * (skillEffects.arpen ?? 0), edef * (skillEffects.arpen ?? 0));
-
+		if (edef < enemyMinDef) edef = enemyMinDef;
+		
 		atk = atk * (1 + ((skillEffects.critUpFixed ?? 0) * (1 + (skillEffects.critDmgUp ?? 0))));
 		atk = atk * (1 + (skillEffects.dart ?? 0) * 0.5);
 		atk = atk * (1 + (skillEffects.abortDown ?? 0) * (1 / 3));
-
 
 		let trueDmg = 0;
 
