@@ -401,17 +401,14 @@ export default class extends Module {
 				if (!x?.perModulesData?.rpg?.raidScore?.[enemyName]) continue;
 				x.perModulesData.rpg.raidScore[enemyName] = 0;
 			});
-			
-	const rpgData = ai.moduleData.findOne({ type: 'rpg' });
-	if (rpgData) {
-			rpgData.raidScore[":blobbacteria_campylobacter:"] = 0;
-			rpgData.raidScoreDate[":blobbacteria_campylobacter:"] = getDate();
-		rpgData.raidScore[":mk_giga:"] = 0;
-			rpgData.raidScoreDate[":mk_giga:"] = getDate();
-
-		}
-		ai.moduleData.update(rpgData);
-	}
+			const rpgData = ai.moduleData.findOne({ type: 'rpg' });
+			if (rpgData) {
+				rpgData.raidScore[":blobbacteria_campylobacter:"] = 0;
+				rpgData.raidScoreDate[":blobbacteria_campylobacter:"] = getDate();
+				rpgData.raidScore[":mk_giga:"] = 0;
+				rpgData.raidScoreDate[":mk_giga:"] = getDate();
+				ai.moduleData.update(rpgData);
+			}
 			return { reaction: "love" };
 		}
 		return { reaction: "hmm" };
