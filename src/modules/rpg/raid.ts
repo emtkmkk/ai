@@ -1357,10 +1357,18 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		});
 		totalDmg = 0;
 	} else {
-		reply = await msg.reply(`<center>${message}</center>`, {
+		reply = await msg.reply(`<center>${message.slice(0, 7500)}</center>`, {
 			cw,
 			visibility: "specified",
 		});
+		let msgCount = 1
+		while (message.length > msgCount * 7500) {
+			msgCount += 1;
+			await msg.reply(`<center>${message.slice((msgCount - 1) * 7500,msgCount * 7500)}</center>`, {
+				cw + " " + msgCount,
+				visibility: "specified",
+			});
+		}
 	}
 
 
