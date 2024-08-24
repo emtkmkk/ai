@@ -3,6 +3,7 @@ import Module from "@/module";
 import serifs from "@/serifs";
 import 藍 from '@/ai';
 import { aggregateTokensEffects, AmuletItem, ShopItem, shopItems, mergeSkillAmulet } from './shop';
+import { deepClone } from './utils';
 
 export let skillNameCountMap = new Map();
 export let totalSkillCount = 0;
@@ -560,10 +561,10 @@ export function aggregateSkillsEffectsSkillX(data: any, skillX: number): SkillEf
 	}
 	dataSkills.forEach(_skill => {
 		const skill = _skill.name ? skills.find((x) => x.name === _skill.name) ?? _skill : _skill;
-		const __skill = {...skill};
+		const __skill = deepClone(skill);
 		if (__skill.unique) {
-			__skill.effect.atkUp = (__skill.effect.atkUp ?? 0) + 0.05 * (skillX - 1);
-			__skill.effect.defUp = (__skill.effect.defUp ?? 0) + 0.05 * (skillX - 1);
+			__skill.effect.atkUp = (__skill.effect.atkUp ?? 0) + (0.05 * (skillX - 1));
+			__skill.effect.defUp = (__skill.effect.defUp ?? 0) + (0.05 * (skillX - 1));
 		} else {
 			for (const eff in __skill.effect) {
 				__skill.effect[eff] = __skill.effect[eff] * skillX;
