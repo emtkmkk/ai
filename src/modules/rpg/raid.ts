@@ -671,7 +671,9 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		message += serifs.rpg.skill.firstTurnResist + "\n";
 	}
 
+	const enemyMinDef = enemyDef * 0.1
 	enemyDef -= Math.max(atk * (skillEffects.arpen ?? 0), enemyDef * (skillEffects.arpen ?? 0));
+	if (enemyDef < enemyMinDef) enemyDef = enemyMinDef;
 
 	// バフが1つでも付与された場合、改行を追加する
 	if (buff > 0) message += "\n";
@@ -744,10 +746,11 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 				buff += 1;
 				message += serifs.rpg.skill.weak(enemy.dname ?? enemy.name) + "\n";
 			}
+			const enemyMinDef = enemyDef * 0.1
 			enemyAtk -= Math.max(enemyAtk * (skillEffects.weak * (count - 1)), atk * (skillEffects.weak * (count - 1)));
 			enemyDef -= Math.max(enemyDef * (skillEffects.weak * (count - 1)), atk * (skillEffects.weak * (count - 1)));
 			if (enemyAtk < 0) enemyAtk = 0;
-			if (enemyDef < 0) enemyDef = 0;
+			if (enemyDef < enemyMinDef) enemyDef = enemyMinDef;
 		}
 
 		// spdが低い場合、確率でspdが+1。
