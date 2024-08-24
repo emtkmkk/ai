@@ -393,12 +393,12 @@ export default class extends Module {
 			
 			allData.forEach(x => {
 				const enemyName = ":blobbacteria_campylobacter:"
-				if (!x?.perModulesData?.rpg?.raidScore?.[enemyName]) break;
+				if (!x?.perModulesData?.rpg?.raidScore?.[enemyName]) return;
 				x.perModulesData.rpg.raidScore[enemyName] = 0;
 			});
 			allData.forEach(x => {
 				const enemyName = ":mk_giga:"
-				if (!x?.perModulesData?.rpg?.raidScore?.[enemyName]) break;
+				if (!x?.perModulesData?.rpg?.raidScore?.[enemyName]) return;
 				x.perModulesData.rpg.raidScore[enemyName] = 0;
 			});
 			const rpgData = ai.moduleData.findOne({ type: 'rpg' });
