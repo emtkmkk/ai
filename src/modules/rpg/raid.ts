@@ -1099,7 +1099,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			const turnDmgX = (i < 2 ? 1 : i < 3 ? 0.5 : i < 4 ? 0.25 : 0.125);
 			const dmgBonus = ((1 + (skillEffects.atkDmgUp ?? 0)) * turnDmgX) + (skillEffects.thunder ? (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 0);
 			//** クリティカルかどうか */
-			let crit = Math.random() < ((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0))) + (skillEffects.critUpFixed ?? 0);
+			let crit = Math.random() < Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0)), 0) + (skillEffects.critUpFixed ?? 0);
 			const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
 			/** ダメージ */
 			let dmg = getAtkDmg(data, atk, tp, 1, crit ? critDmg : false, enemyDef, enemyMaxHp, rng * dmgBonus, getVal(enemy.defx, [count])) + Math.round(trueDmg * turnDmgX);
