@@ -552,22 +552,27 @@ export default class extends Module {
     if (msg.includes(['dataFix'])) {
       const ai = this.ai;
       const games = this.raids.find({});
-      const recentGame = games.length == 0 ? null : games[games.length - 1];
-      if (!recentGame || recentGame.isEnded) return { reaction: 'hmm' };
+      const allData = this.ai.friends.find();
 
-      recentGame.attackers.forEach((x) => {
-        if (x.user.id !== '9co6mf1xrv') return;
-        const friend = this.ai.lookupFriend(x.user.id);
-        if (!friend) return;
-        const data = friend.getPerModulesData(this);
-        data.raidScore[recentGame.enemy.name] = 0;
-        recentGame.attackers = recentGame.attackers.filter(
-          (y) => y.user.id !== x.user.id,
-        );
-        console.log(x.user.id + ' : fix');
-        friend.setPerModulesData(this, data);
+      allData.forEach((x) => {
+        const enemyName = ':manbou_lefthand:';
+        if (!x?.perModulesData?.rpg?.raidScore?.[enemyName]) return;
+        x.perModulesData.rpg.raidScore[enemyName] = 0;
       });
-      this.raids.update(recentGame);
+      allData.forEach((x) => {
+        const enemyName = ':refrigerator:';
+        if (!x?.perModulesData?.rpg?.raidScore?.[enemyName]) return;
+        x.perModulesData.rpg.raidScore[enemyName] = 0;
+      });
+
+      const rpgData = ai.moduleData.findOne({ type: 'rpg' });
+      if (rpgData) {
+        rpgData.raidScore[':manbou_lefthand:'] = 0;
+        rpgData.raidScoreDate[':manbou_lefthand:'] = getDate();
+        rpgData.raidScore[':refrigerator:'] = 0;
+        rpgData.raidScoreDate[':refrigerator:'] = getDate();
+        ai.moduleData.update(rpgData);
+      }
 
       return { reaction: 'love' };
     }
@@ -643,10 +648,13 @@ export default class extends Module {
 
     // 敵のステータスを計算
     let edef = data.lv * 3.5;
+    const enemyMinDef = edef * 0.4;
     edef -= Math.max(
       atk * (skillEffects.arpen ?? 0),
       edef * (skillEffects.arpen ?? 0),
     );
+
+    if (edef < enemyMinDef) edef = enemyMinDef;
 
     atk =
       atk *
@@ -1831,8 +1839,11 @@ export default class extends Module {
         /** クリティカルかどうか */
         let crit =
           Math.random() <
-          (enemyHpPercent - playerHpPercent) *
-            (1 + (skillEffects.critUp ?? 0)) +
+          Math.max(
+            (enemyHpPercent - playerHpPercent) *
+              (1 + (skillEffects.critUp ?? 0)),
+            0,
+          ) +
             (skillEffects.critUpFixed ?? 0);
         const critDmg = 1 + (skillEffects.critDmgUp ?? 0);
         /** ダメージ */

@@ -1297,6 +1297,26 @@ export const raidEnemys: RaidEnemy[] = [
     power: 1,
   },
   {
+    name: ':refrigerator:',
+    msg: ':refrigerator:討伐戦！',
+    short: '',
+    mark: '☆',
+    mark2: '★',
+    lToR: false,
+    atkmsg: (dmg) =>
+      `阨ちゃんの攻撃！\n :refrigerator:に${dmg}ポイントのダメージ！`,
+    defmsg: (dmg) =>
+      `$[twitch.speed=0.5s $[x2 :refrigerator:]]\n\n阨ちゃんに${dmg}ポイントのダメージ！`,
+    winmsg: '',
+    losemsg: '阨ちゃんはやられてしまった…',
+    atk: 5,
+    def: 5,
+    atkx: 5,
+    defx: 5,
+    power: 25,
+    skillX: 3,
+  },
+  {
     name: ':aichan:',
     msg: 'もう一人の自分討伐戦！',
     short: '',

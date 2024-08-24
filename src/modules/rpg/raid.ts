@@ -479,6 +479,11 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
     };
   }
 
+  if (!result)
+    return {
+      reaction: 'confused',
+    };
+
   module_.log(`damage ${result.totalDmg} by ${msg.user.id}`);
 
   raid.attackers.push({
@@ -493,7 +498,7 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
     count: result.count ?? 1,
     skillsStr: result.skillsStr ?? { skills: undefined, amulet: undefined },
     mark: result.mark ?? ':blank:',
-    replyId: result.reply.id ?? undefined,
+    replyId: result.reply?.id ?? undefined,
   });
 
   raids.update(raid);
@@ -840,10 +845,12 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     message += serifs.rpg.skill.firstTurnResist + '\n';
   }
 
+  const enemyMinDef = enemyDef * 0.4;
   enemyDef -= Math.max(
     atk * (skillEffects.arpen ?? 0),
     enemyDef * (skillEffects.arpen ?? 0),
   );
+  if (enemyDef < enemyMinDef) enemyDef = enemyMinDef;
 
   // バフが1つでも付与された場合、改行を追加する
   if (buff > 0) message += '\n';
@@ -922,6 +929,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         buff += 1;
         message += serifs.rpg.skill.weak(enemy.dname ?? enemy.name) + '\n';
       }
+      const enemyMinDef = enemyDef * 0.4;
       enemyAtk -= Math.max(
         enemyAtk * (skillEffects.weak * (count - 1)),
         atk * (skillEffects.weak * (count - 1)),
@@ -931,7 +939,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         atk * (skillEffects.weak * (count - 1)),
       );
       if (enemyAtk < 0) enemyAtk = 0;
-      if (enemyDef < 0) enemyDef = 0;
+      if (enemyDef < enemyMinDef) enemyDef = enemyMinDef;
     }
 
     // spdが低い場合、確率でspdが+1。
@@ -1407,7 +1415,10 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
       //** クリティカルかどうか */
       let crit =
         Math.random() <
-        (enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0)) +
+        Math.max(
+          (enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0)),
+          0,
+        ) +
           (skillEffects.critUpFixed ?? 0);
       const critDmg = 1 + (skillEffects.critDmgUp ?? 0);
       /** ダメージ */
@@ -1797,10 +1808,19 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     );
     totalDmg = 0;
   } else {
-    reply = await msg.reply(`<center>${message}</center>`, {
+    reply = await msg.reply(`<center>${message.slice(0, 7500)}</center>`, {
       cw,
-      visibility: 'specified',
     });
+    let msgCount = 1;
+    while (message.length > msgCount * 7500) {
+      msgCount += 1;
+      await msg.reply(
+        `<center>${message.slice((msgCount - 1) * 7500, msgCount * 7500)}</center>`,
+        {
+          cw: cw + ' ' + msgCount,
+        },
+      );
+    }
   }
 
   return {
