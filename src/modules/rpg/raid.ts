@@ -374,6 +374,9 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
 		};
 	}
 
+	if (!result) return {
+			reaction: 'confused'
+		};
 	module_.log(`damage ${result.totalDmg} by ${msg.user.id}`);
 
 	raid.attackers.push({
@@ -1368,7 +1371,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		while (message.length > msgCount * 7500) {
 			msgCount += 1;
 			await msg.reply(`<center>${message.slice((msgCount - 1) * 7500,msgCount * 7500)}</center>`, {
-				cw + " " + msgCount,
+				cw: cw + " " + msgCount,
 				visibility: "specified",
 			});
 		}
