@@ -332,7 +332,7 @@ export function getVal<T>(val: T | ((...args: any[]) => T), props?: any[]): T {
     return val;
 }
 
-function deepClone<T>(obj: T): T {
+export function deepClone<T>(obj: T): T {
   // 基本型、null、関数の場合はそのまま返す
   if (obj === null || typeof obj !== 'object' || typeof obj === 'function') {
     return obj;
