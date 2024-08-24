@@ -674,7 +674,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		message += serifs.rpg.skill.firstTurnResist + "\n";
 	}
 
-	const enemyMinDef = enemyDef * 0.1
+	const enemyMinDef = enemyDef * 0.4
 	enemyDef -= Math.max(atk * (skillEffects.arpen ?? 0), enemyDef * (skillEffects.arpen ?? 0));
 	if (enemyDef < enemyMinDef) enemyDef = enemyMinDef;
 
@@ -749,7 +749,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 				buff += 1;
 				message += serifs.rpg.skill.weak(enemy.dname ?? enemy.name) + "\n";
 			}
-			const enemyMinDef = enemyDef * 0.1
+			const enemyMinDef = enemyDef * 0.4
 			enemyAtk -= Math.max(enemyAtk * (skillEffects.weak * (count - 1)), atk * (skillEffects.weak * (count - 1)));
 			enemyDef -= Math.max(enemyDef * (skillEffects.weak * (count - 1)), atk * (skillEffects.weak * (count - 1)));
 			if (enemyAtk < 0) enemyAtk = 0;
