@@ -36,7 +36,7 @@ export function getColor(data) {
     colors.find((x) => x.id === (data.color ?? 1)) ??
     colors.find((x) => x.default) ??
     colors[0];
-  let color = { ..._color };
+  let color = deepClone(_color);
   if (!color.unlock(data)) {
     data.color === (colors.find((x) => x.default) ?? colors[0]).id;
     color =
@@ -482,4 +482,70 @@ export function getVal<T>(val: T | ((...args: any[]) => T), props?: any[]): T {
     return (val as (...args: any[]) => T)(...(props ?? []));
   }
   return val;
+}
+
+export function deepClone<T>(obj: T): T {
+  // 基本型、null、関数の場合はそのまま返す
+  if (obj === null || typeof obj !== 'object' || typeof obj === 'function') {
+    return obj;
+  }
+
+  // Dateオブジェクトの場合のコピー
+  if (obj instanceof Date) {
+    return new Date(obj.getTime()) as unknown as T;
+  }
+
+  // RegExpオブジェクトの場合のコピー
+  if (obj instanceof RegExp) {
+    return new RegExp(obj.source, obj.flags) as unknown as T;
+  }
+
+  // Mapオブジェクトの場合のコピー
+  if (obj instanceof Map) {
+    return new Map(
+      Array.from(obj.entries()).map(([key, value]) => [
+        deepClone(key),
+        deepClone(value),
+      ]),
+    ) as unknown as T;
+  }
+
+  // Setオブジェクトの場合のコピー
+  if (obj instanceof Set) {
+    return new Set(
+      Array.from(obj.values()).map((value) => deepClone(value)),
+    ) as unknown as T;
+  }
+
+  // 配列の場合のコピー
+  if (Array.isArray(obj)) {
+    return obj.map((item) => deepClone(item)) as unknown as T;
+  }
+
+  // 通常のオブジェクトの場合のコピー
+  const copy = {} as T;
+
+  // オブジェクトのプロパティを再帰的にコピー
+  const descriptors = Object.getOwnPropertyDescriptors(obj);
+  for (const [key, descriptor] of Object.entries(descriptors)) {
+    if (descriptor.value !== undefined) {
+      (copy as any)[key] = deepClone(descriptor.value);
+    } else {
+      Object.defineProperty(copy, key, descriptor);
+    }
+  }
+
+  // Symbolプロパティもコピー
+  const symbols = Object.getOwnPropertySymbols(obj);
+  for (const sym of symbols) {
+    (copy as any)[sym] = deepClone((obj as any)[sym]);
+  }
+
+  // オブジェクトのプロトタイプを設定する
+  const proto = Object.getPrototypeOf(obj);
+  if (proto && proto !== Object.prototype) {
+    Object.setPrototypeOf(copy, proto);
+  }
+
+  return copy;
 }

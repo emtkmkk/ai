@@ -9,6 +9,7 @@ import {
   shopItems,
   mergeSkillAmulet,
 } from './shop';
+import { deepClone } from './utils';
 
 export let skillNameCountMap = new Map();
 export let totalSkillCount = 0;
@@ -1080,7 +1081,7 @@ export function aggregateSkillsEffectsSkillX(
     const skill = _skill.name
       ? (skills.find((x) => x.name === _skill.name) ?? _skill)
       : _skill;
-    const __skill = { ...skill };
+    const __skill = deepClone(skill);
     if (__skill.unique) {
       __skill.effect.atkUp = (__skill.effect.atkUp ?? 0) + 0.05 * (skillX - 1);
       __skill.effect.defUp = (__skill.effect.defUp ?? 0) + 0.05 * (skillX - 1);
