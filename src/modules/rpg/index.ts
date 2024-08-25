@@ -357,7 +357,7 @@ export default class extends Module {
 	@autobind
 	private handleAdminCommands(msg: Message) {
 		if (msg.includes(["revert"])) {
-			const id = /\w{10}/.exec(msg.extractedText)?.[0];
+			const id = /\w{10,}/.exec(msg.extractedText)?.[0];
 			if (id) {
 				const friend = this.ai.lookupFriend(id);
 				if (friend == null) return { reaction: ":mk_hotchicken:" };
@@ -370,7 +370,7 @@ export default class extends Module {
 			}
 		}
 		if (msg.includes(["tReset"])) {
-			const id = /\w{10}/.exec(msg.extractedText)?.[0];
+			const id = /\w{10,}/.exec(msg.extractedText)?.[0];
 			if (id) {
 				const friend = this.ai.lookupFriend(id);
 				if (friend == null) return { reaction: ":mk_hotchicken:" };
@@ -381,7 +381,7 @@ export default class extends Module {
 			}
 		}
 		if (msg.includes(["skilledit"])) {
-			const id = /\w{10}/.exec(msg.extractedText)?.[0];
+			const id = /\w{10,}/.exec(msg.extractedText)?.[0];
 			const skill = /"(\S+)"/.exec(msg.extractedText)?.[1];
 			const num = /\s(\d)\s/.exec(msg.extractedText)?.[1];
 			if (id && skill && num) {
