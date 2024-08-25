@@ -369,7 +369,7 @@ export default class extends Module {
 				return { reaction: "love" };
 			}
 		}
-		if (msg.includes(["trialReset"])) {
+		if (msg.includes(["tReset"])) {
 			const id = /\w{10}/.exec(msg.extractedText)?.[0];
 			if (id) {
 				const friend = this.ai.lookupFriend(id);
