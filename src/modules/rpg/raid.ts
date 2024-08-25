@@ -113,6 +113,7 @@ function crawleGameEnd() {
     finish(raid);
   }
 }
+
 /**
  * レイド開始時間をスケジュール
  */
@@ -123,46 +124,78 @@ function scheduleRaidStart() {
   const day = now.getDay();
   const isWeekend = day === 0 || day === 6; // 0は日曜日、6は土曜日
 
-  // 12:15, 12:50, 18:15, 21:15 にレイドを開始する
+  // 12:10, 12:45, 18:15, 21:15 にレイドを開始する
   if (
-    (hours === 12 && (minutes === 15 || minutes === 50)) ||
-    ((hours === 18 || hours === 21) && minutes === 15)
+    (hours === 12 && (minutes === 10 || minutes === 45)) ||
+    ((hours === 18 || hours === 21) && minutes === 10)
   ) {
     start();
   }
 
   const usedTimes: string[] = []; // 使用済みの時間を記録する配列
+  const activeRaids: { startTime: Date; endTime: Date }[] = []; // 現在進行中のレイドの開始・終了時刻を保持する配列
   const randomHours = [7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 19, 20, 22, 23];
-  const randomMinutes = [0, 15, 30, 45];
-  let rnd = seedrandom(getDate() + ai.account.id);
+  const randomMinutes = [0, 10, 20, 40, 50];
+  const avoidTimes = ['11:40', '11:50', '13:00', '13:10', '17:50', '20:50']; // 既存の固定開始時刻を除外
+  const rng = seedrandom(`${now.getDate()}${hours}${minutes}`); // ランダム生成のシード
 
   // ランダムな時間にレイドを開始する関数
   function scheduleRandomRaid() {
-    let selectedTime: string;
-    do {
-      const selectedHour = randomHours[Math.floor(rnd() * randomHours.length)];
+    let selectedTime: string | null = null;
+    let isValidTime = false;
+
+    while (!isValidTime) {
+      const selectedHour = randomHours[Math.floor(rng() * randomHours.length)];
       const selectedMinute =
-        randomMinutes[Math.floor(rnd() * randomMinutes.length)];
+        randomMinutes[Math.floor(rng() * randomMinutes.length)];
       selectedTime = `${selectedHour}:${selectedMinute}`;
-    } while (usedTimes.includes(selectedTime));
 
-    usedTimes.push(selectedTime); // 使用した時間を記録
+      // 選ばれた時間が使用済みまたは既存の固定時間帯に含まれていないか確認
+      if (
+        usedTimes.includes(selectedTime) ||
+        avoidTimes.includes(selectedTime)
+      ) {
+        continue;
+      }
 
-    const [selectedHours, selectedMinutes] = selectedTime
-      .split(':')
-      .map(Number);
+      // レイドの時間帯を生成
+      const selectedDate = new Date(now);
+      selectedDate.setHours(selectedHour);
+      selectedDate.setMinutes(selectedMinute);
+      const endDate = new Date(selectedDate);
+      endDate.setMinutes(selectedMinute + 35); // レイドの持続時間は35分
 
-    if (hours === selectedHours && minutes === selectedMinutes) {
-      start();
+      // 他のレイドと時間が重ならないか確認
+      isValidTime = activeRaids.every((raid) => {
+        // 新しいレイドが既存のレイドの開始・終了時刻と重ならないことを確認
+        return (
+          selectedDate >= raid.endTime || // 新しいレイドが既存レイドの終了後に始まる
+          endDate <= raid.startTime // 新しいレイドが既存レイドの開始前に終わる
+        );
+      });
+
+      if (isValidTime) {
+        // 使用済みとして記録し、レイドをスケジュール
+        usedTimes.push(selectedTime);
+        activeRaids.push({
+          startTime: selectedDate,
+          endTime: endDate,
+        });
+
+        // 現在時刻と一致する場合はレイドを開始
+        if (hours === selectedHour && minutes === selectedMinute) {
+          start();
+        }
+      }
     }
   }
 
   // 通常のランダムレイド
   scheduleRandomRaid();
 
-  // 土日の場合、さらに2回のランダム開始を追加
+  // 土日の場合、さらに3回のランダム開始を追加
   if (isWeekend) {
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 3; i++) {
       scheduleRandomRaid();
     }
   }
