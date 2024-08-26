@@ -13,6 +13,12 @@ export function initializeData(module: rpg, msg) {
     if (!data.clearHistory) data.clearHistory = data.clearEnemy;
     if (!data.items) data.items = [];
     if (!data.coin) data.coin = 0;
+		if (data.shopExp < 200 && data.jar === 1) data.shopExp = 200;
+		if (data.shopExp < 600 && data.jar === 2) data.shopExp = 600;
+		if (data.shopExp < 1200 && data.jar === 3) data.shopExp = 1200;
+		if (data.shopExp < 2000 && data.jar === 4) data.shopExp = 2000;
+		if (data.shopExp < 3000 && data.jar === 5) data.shopExp = 3000;
+		if (data.shopExp < 4200 && data.jar === 6) data.shopExp = 4200;
     data.clearRaidNum = (Array.from(new Set(data.clearRaid ?? []))?.length) ?? 0;
     data.items?.filter((x) => x.type = (shopItems.find((y) => x.name === y.name)?.type ?? (x.skillName ? "amulet" : "token")));
     if (data.items.filter((x) => x.type === "amulet").length > 1) {
