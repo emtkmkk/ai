@@ -127,7 +127,7 @@ function scheduleRaidStart() {
   // 12:10, 12:45, 18:15, 21:15 にレイドを開始する
   if (
     (hours === 12 && (minutes === 10 || minutes === 45)) ||
-    ((hours === 18 || hours === 21) && minutes === 10)
+    ((hours === 18 || hours === 21) && minutes === 15)
   ) {
     start();
   }
