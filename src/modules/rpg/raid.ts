@@ -250,8 +250,9 @@ function finish(raid: Raid) {
 	let references: string[] = [];
 
 	for (let attacker of sortAttackers) {
-		results.push(`${attacker.me} ${acct(attacker.user)}:\n${attacker.mark === ":blank:" && attacker.dmg === 100 ? "💯" : attacker.mark} Lv${String(attacker.lv).padStart(levelSpace, ' ')} ${attacker.count}ターン ${attacker.dmg.toLocaleString()}ダメージ`);
-		if (results.length <= 19 && (attacker.skillsStr?.skills || attacker.skillsStr?.amulet)) results.push(`:blank:<small>${[
+		results.push(`${attacker.me} ${acct(attacker.user)}:\n${attacker.mark === ":blank:" && attacker.dmg === 100 ? "💯" : attacker.mark} ${attacker.count}ターン ${attacker.dmg.toLocaleString()}ダメージ`);
+		if (results.length <= 19 && (attacker.lv || attacker.skillsStr?.skills || attacker.skillsStr?.amulet)) results.push(`:blank:<small>${[
+			`Lv${String(attacker.lv)}`,
 			attacker.skillsStr?.skills,
 			attacker.skillsStr?.amulet ? `お守り ${attacker.skillsStr.amulet}` : undefined
 		].filter(Boolean).join(" ")}</small>`);
