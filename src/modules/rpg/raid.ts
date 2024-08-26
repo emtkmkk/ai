@@ -597,6 +597,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	let mark = ":blank:";
 	let warriorFlg = false;
 	let warriorTotalDmg = 0;
+	let warriorCritX = 2;
 
 	if (!enemy.skillX && (isBattle && isPhysical && !isTired) && Math.random() < 0.02 + (Math.max(Math.floor((Math.min(maxLv, 170) - lv) / 10), 0) * 0.01)) {
 		warriorFlg = true;
@@ -1084,11 +1085,12 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		if (warriorFlg) {
 			//** クリティカルかどうか */
 			let crit = Math.random() < 0.5;
-			const dmg = getAtkDmg(data, lv * 4, tp, 1, crit ? 2.5 : false, enemyDef, enemyMaxHp, 0.5, getVal(enemy.defx, [count]));
+			const dmg = getAtkDmg(data, lv * 4, tp, 1, crit ? warriorCritX : false, enemyDef, enemyMaxHp, 0.5, getVal(enemy.defx, [count]));
 			// メッセージの出力
 			message += (crit ? `**${serifs.rpg.warrior.atk(dmg)}**` : serifs.rpg.warrior.atk(dmg)) + "\n";
 			totalDmg += dmg;
 			warriorTotalDmg += dmg;
+			if (crit) warriorCritX += 0.5;
 		}
 
 		// 自身攻撃の処理
@@ -1241,7 +1243,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	if (warriorFlg) {
 			//** クリティカルかどうか */
 			let crit = Math.random() < 0.5;
-			const dmg = getAtkDmg(data, lv * 4, tp, 1, crit ? 4 : false, enemyDef, enemyMaxHp, 1, getVal(enemy.defx, [count]));
+			const dmg = getAtkDmg(data, lv * 4, tp, 1, crit ? warriorCritX : false, enemyDef, enemyMaxHp, 1, getVal(enemy.defx, [count]));
 			// メッセージの出力
 			message += "\n\n" + (crit ? `**${serifs.rpg.warrior.atk(dmg)}**` : serifs.rpg.warrior.atk(dmg));
 			totalDmg += dmg;
