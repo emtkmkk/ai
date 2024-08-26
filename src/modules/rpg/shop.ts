@@ -234,7 +234,7 @@ const determineOutcome = (ai, data, getShopItems) => {
 		// コインの所持数が必要数を上回る場合、確率をさらに上昇させる
 		if (data.coin > requiredCoins) {
 			const extraCoins = data.coin - requiredCoins;
-			probability *= Math.min(1 + (extraCoins / requiredCoins) * 0.5, 2); // 余剰コインの倍率を追加
+			probability *= Math.min(1 + (extraCoins / requiredCoins) * 0.5, 3); // 余剰コインの倍率を追加
 		}
 
 		return probability;
@@ -275,28 +275,50 @@ const eventAmulet = () => {
 	const y = new Date().getFullYear();
 	const m = new Date().getMonth() + 1;
 	const d = new Date().getDate()
-	if (y === 2024 && m === 8 && d === 22) {
-		return "スロースタートのお守り"
-	}
-	if (y === 2024 && m === 8 && d === 23) {
-		return [
-			"７フィーバー！",
-			"天国か地獄か",
-			"炎属性剣攻撃"
-		]
-	}
-	if (y === 2024 && m === 8 && d === 24) {
-		return [
-			"不運チャージ",
-			"気合で頑張る",
-			"連続攻撃完遂率上昇"
-		]
-	}
-	if (y === 2024 && m === 8 && d === 25) {
-		return "しあわせのお守り"
-	}
 	if (y === 2024 && m === 8 && d === 26) {
 		return "運命不変のお守り"
+	}
+	if (y === 2024 && m === 8 && d === 27) {
+		return [
+			"氷属性剣攻撃",
+			"光属性剣攻撃",
+			"負けそうなら逃げる"
+		]
+	}
+	if (y === 2024 && m === 8 && d === 28) {
+		return [
+			"慎重",
+			`${serifs.rpg.status.def}アップ`,
+			"粘り強い"
+		]
+	}
+	if (y === 2024 && m === 8 && d === 29) {
+		return [
+			"道具大好き",
+			"道具の扱いが上手い",
+			"道具の選択が上手い"
+		]
+	}
+	if (y === 2024 && m === 8 && d === 30) {
+		return [
+			"テキパキこなす",
+			"高速RPG",
+			"負けそうなら逃げる"
+		]
+	}
+	if (y === 2024 && m === 8 && d === 31) {
+		return [
+			"脳筋",
+			`${serifs.rpg.status.atk}アップ`,
+			"天国か地獄か"
+		]
+	}
+	if (y === 2024 && m === 9 && d === 1) {
+		return [
+			`${serifs.rpg.status.atk}アップ`,
+			`${serifs.rpg.status.def}アップ`,
+			"伝説"
+		]
 	}
 	return undefined;
 }
