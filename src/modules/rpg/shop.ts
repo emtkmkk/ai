@@ -289,7 +289,7 @@ const eventAmulet = () => {
 	if (y === 2024 && m === 8 && d === 28) {
 		return [
 			"慎重",
-			`${serifs.rpg.status.def}アップ`,
+			`油断しない`,
 			"粘り強い"
 		]
 	}
