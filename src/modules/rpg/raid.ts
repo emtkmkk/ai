@@ -9,7 +9,7 @@ import { rpgItems } from './items';
 import { aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, getSkillsShortName, aggregateSkillsEffectsSkillX } from './skills';
 import { aggregateTokensEffects } from './shop';
 import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatusDmg, getPostCount, getPostX, getVal, random, getRaidPostX } from './utils';
-import { calculateStats, fortune } from './battle';
+import { calculateStats, fortune, stockRandom } from './battle';
 import serifs from '@/serifs';
 import getDate from '@/utils/get-date';
 import { acct } from '@/utils/acct';
@@ -438,6 +438,10 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		skillEffects = aggregateSkillsEffects(data);
 	}
 
+	const stockRandomResult = stockRandom(data, skillEffects);
+
+	skillEffects = stockRandomResult.skillEffects;
+
 	const skillsStr = getSkillsShortName(data);
 
 	/** 現在の敵と戦ってるターン数。 敵がいない場合は1 */
@@ -507,6 +511,10 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
 	if (enemy.skillX && lv >= 20) {
 		message += serifs.rpg.skillX(enemy.skillX) + `\n\n`;
+	}
+
+	if (stockRandomResult.activate) {
+		message += serifs.rpg.skill.stockRandom + `\n\n`;
 	}
 
 	if (enemy.forcePostCount) {

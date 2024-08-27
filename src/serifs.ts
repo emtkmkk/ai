@@ -498,6 +498,7 @@ export default {
 			hell: `スキル「天国か地獄か」発動！\nもこチキのステータスがダウン…`,
 			fortune: `「しあわせのお守り」発動！`,
 			berserk: (berserkDmg) => `「バーサクのお守り」発動！\n${berserkDmg}ポイントのダメージを受けた！\nもこチキのパワーがアップ！`,
+			stockRandom: `謎のお守りが光り始めた……\n何かが起こったようだ。`,
 		},
 		nurse: "$[x3 :mkck_nurse:]\n\n通りすがりのナースが現れた！\nナースは受けた傷を治療してくれた！", //この文を空白にすればナースは来なくなります
 		haisui: "もこチキは決死の覚悟をした！\nパワーが上がり、防御が下がった！",
@@ -599,7 +600,7 @@ export default {
 			rpg: "rpg",
 			color: ["色", "スキン", "color", "skin"],
 			trial: ["木人", "test", "dummy"],
-			journey: ["旅",　"無限", "endless", "endress", "journey"],
+			journey: ["旅", "無限", "endless", "endress", "journey"],
 			change: "変更",
 			onemore: ["おかわり", "+", "onemore", "もう一回"],
 			skill: ["スキル", "skill", "お守り", "amulet"],
@@ -607,7 +608,7 @@ export default {
 			help: ["h", "ヘルプ", "?"],
 			Record: ["殿堂", "記録", "record", "trophy", "achieve", "achievement", "rank"],
 			duplication: "複製",
-			items:　["インベントリ", "inventory", "アイテム", "item", "持ち物", "belonging", "バッグ", "bag", "所持品", "possession", "道具", "tool", "装備", "equip", "お札", "charm", "壺", "jar", "pot"]
+			items: ["インベントリ", "inventory", "アイテム", "item", "持ち物", "belonging", "バッグ", "bag", "所持品", "possession", "道具", "tool", "装備", "equip", "お札", "charm", "壺", "jar", "pot"]
 		}
 	},
 
