@@ -415,7 +415,7 @@ export function shopContextHook(module: Module, key: any, msg: Message, data: an
 		reaction: 'hmm'
 	};
 
-	if (rpgData.lastShopVisited !== getDate()) {
+	if (data.shopDate !== getDate()) {
 		return {
 			reaction: 'hmm'
 		};
