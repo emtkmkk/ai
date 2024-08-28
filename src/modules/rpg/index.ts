@@ -1700,6 +1700,10 @@ export default class extends Module {
 
 		msg.friend.setPerModulesData(this, data);
 
+		if (data.lv === 255) {
+			message += serifs.rpg.reachMaxLv;
+		}
+
 		// 色解禁確認
 		const newColorData = colors.map((x) => x.unlock(data));
 		/** 解禁した色 */
