@@ -122,6 +122,8 @@ export const shop2Reply = async (module: rpg, ai: 藍, msg: Message) => {
 	if (!data) return false;
 	if (!data.lv) return false;
 	if (data.jar == null) data.jar = 0;
+	let spd = Math.floor((msg.friend.love ?? 0) / 100) + 1;
+	if (data.maxSpd < spd) data.maxSpd = spd;
 
 	// 所持しているスキル効果を読み込み
 	const skillEffects = aggregateSkillsEffects(data);
