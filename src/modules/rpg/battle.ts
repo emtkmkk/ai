@@ -8,6 +8,12 @@ export function calculateStats(data, msg, skillEffects, color, maxBonus = 100) {
 	let def = Math.max(5 + (data.def ?? 0) + Math.floor(Math.min(stbonus * ((100 + (data.def ?? 0)) / 100), (data.def ?? 0) * maxBonus)), 10);
 	let spd = Math.floor((msg.friend.love ?? 0) / 100) + 1;
 
+	if (data.maxSpd < spd) data.maxSpd = spd;
+
+	if (spd < 5 && aggregateTokensEffects(data).fivespd) {
+		spd = 5;
+	}
+
 	if (color.reverseStatus) {
 		const _atk = atk;
 		atk = def;

@@ -82,12 +82,13 @@ const ultimateEffect: SkillEffect = {
 
 export const shop2Items: ShopItem[] = [
 	{ name: `お守りを捨てる`, limit: (data) => data.items.filter((x) => x.type === "amulet").length, price: 0, desc: `今所持しているお守りを捨てます`, type: "item", effect: (data) => data.items = data.items?.filter((x) => x.type !== "amulet"), always: true },
-    { name: `究極のお守り`, limit: (data) => enhanceCount(data) >= 9, price: 18, desc: `もこチキRPGを極めたあなたに……`, type: "amulet", effect: ultimateEffect, durability: 6, short: "究極", isUsed: (data) => true, always: true } as AmuletItem,
+    { name: `行動加速のお札`, limit: (data) => (data.maxSpd ?? 0) < 5 && !data.items.filter((x) => x.name === "行動加速のお札").length, price: (data) => 370 - (data.maxSpd ?? 0) * 70, desc: `持っているともこチキの懐き度に関係なく最低5回行動できるようになる`, type: "token", effect: { fivespd: true }, always: true } as TokenItem,
+	{ name: `究極のお守り`, limit: (data) => enhanceCount(data) >= 9, price: 18, desc: `もこチキRPGを極めたあなたに……`, type: "amulet", effect: ultimateEffect, durability: 6, short: "究極", isUsed: (data) => true, always: true } as AmuletItem,
 	{ name: "スキル複製珠", desc: "スキルを変更し、既に覚えているスキルのどれかを1つ覚えます", price: 6, orb: true, type: "item", effect: (data) => data.duplicationOrb = (data.duplicationOrb ?? 0) + 1, infinite: true, always: true },
 	{ name: `苦労のお守り`, limit: (data) => data.allClear && data.streak > 0, price: 1, desc: `持っていると通常モードの敵が強くなります 耐久1 敗北時耐久減少`, type: "amulet", effect: { enemyBuff: 1 }, durability: 1, short: "苦", isUsed: (data) => data.enemy && data.clearHistory.includes(data.enemy), isMinusDurability: (data) => data.streak < 1, always: true } as AmuletItem,
-	{ name: `全身全霊のお札`, price: 300, desc: `持っていると常に行動回数が1回になるが、すごく重い一撃を放てる`, type: "token", effect: { allForOne: true }, always: true } as TokenItem,
-	{ name: `運命不変のお札`, price: 300, desc: `持っていると常に与ダメージがランダム変化しなくなる`, type: "token", effect: { notRandom: true }, always: true } as TokenItem,
-	{ name: `しあわせのお札`, price: 300, desc: `レイド時、常にステータスの割合がランダムに一時的に変化する`, type: "token", effect: { fortuneEffect: true }, always: true } as TokenItem,
+	{ name: `全身全霊のお札`, limit: (data) => !data.items.filter((x) => x.name === "全身全霊のお札").length, price: 300, desc: `持っていると常に行動回数が1回になるが、すごく重い一撃を放てる`, type: "token", effect: { allForOne: true }, always: true } as TokenItem,
+	{ name: `運命不変のお札`, limit: (data) => !data.items.filter((x) => x.name === "運命不変のお札").length, price: 300, desc: `持っていると常に与ダメージがランダム変化しなくなる`, type: "token", effect: { notRandom: true }, always: true } as TokenItem,
+	{ name: `しあわせのお札`, limit: (data) => !data.items.filter((x) => x.name === "しあわせのお札").length, price: 300, desc: `レイド時、常にステータスの割合がランダムに一時的に変化する`, type: "token", effect: { fortuneEffect: true }, always: true } as TokenItem,
 	{ name: "全身全霊のお札を捨てる", limit: (data) => data.items.filter((x) => x.name === "全身全霊のお札").length, desc: "複数回行動するようになるが、一撃は軽くなる", price: 0, type: "item", effect: (data) => data.items = data.items.filter((x) => x.name !== "全身全霊のお札"), always: true },
 	{ name: "運命不変のお札を捨てる", limit: (data) => data.items.filter((x) => x.name === "運命不変のお札").length, desc: "与ダメージがランダム変化するようになる", price: 0, type: "item", effect: (data) => data.items = data.items.filter((x) => x.name !== "運命不変のお札"), always: true },
 	{ name: "しあわせのお札を捨てる", limit: (data) => data.items.filter((x) => x.name === "しあわせのお札").length, desc: "ステータスの割合がランダムに一時的に変化しなくなる", price: 0, type: "item", effect: (data) => data.items = data.items.filter((x) => x.name !== "しあわせのお札"), always: true },
