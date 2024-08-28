@@ -800,13 +800,15 @@ export default class extends Module {
 		let playerHp = data.php ?? 100;
 		/** 開始時のチャージ */
 		const startCharge = data.charge;
+		/** プレイヤーの最大HP */
+		let playerMaxHp = 100 + Math.min(lv * 3, 765) + Math.max(Math.floor((lv - 250) / 50), 0);
 
 		// 敵情報
 		if (!data.enemy || count === 1) {
 			// 新しい敵
 			count = 1;
 			data.count = 1;
-			playerHp = 100 + lv * 3;
+			playerHp = playerMaxHp;
 			/** すでにこの回で倒している敵、出現条件を満たしていない敵を除外 */
 			const filteredEnemys = enemys.filter((x) => (skillEffects.enemyBuff || !(data.clearEnemy ?? []).includes(x.name)) && (!x.limit || x.limit(data, msg.friend)));
 			if (filteredEnemys.length && !data.endressFlg) {
@@ -846,7 +848,7 @@ export default class extends Module {
 			// 前ターン時点のステータスを表示
 			let mehp = (typeof data.enemy.maxhp === "function") ? data.enemy.maxhp((100 + lv * 3)) : Math.min((100 + lv * 3) + ((data.winCount ?? 0) * 5), (data.enemy.maxhp ?? 300));
 			let ehp = Math.min(data.ehp ?? mehp, mehp);
-			if (!data.php) data.php = (100 + lv * 3);
+			if (!data.php) data.php = playerMaxHp;
 			data.count -= 1;
 			message += showStatus(data, playerHp, ehp, mehp, me) + "\n\n";
 			data.count += 1;
@@ -903,7 +905,7 @@ export default class extends Module {
 		/** 敗北時のステータスボーナス */
 		let bonus = 0;
 		/** プレイヤーのHP割合 */
-		let playerHpPercent = playerHp / (100 + lv * 3);
+		let playerHpPercent = playerHp / playerMaxHp;
 		/** 敵のHP割合 */
 		let enemyHpPercent = enemyHp / enemyMaxHp;
 		/** 使用したアイテム */
@@ -1134,7 +1136,7 @@ export default class extends Module {
 							def = def + itemBonus.def;
 							item.effect = 200;
 						}
-						const heal = Math.round(((100 + lv * 3) - playerHp) * (item.effect * 0.005));
+						const heal = Math.round((playerMaxHp - playerHp) * (item.effect * 0.005));
 						playerHp += heal;
 						if (heal > 0) {
 							if (item.effect >= 100 && heal >= 50) {
@@ -1245,7 +1247,7 @@ export default class extends Module {
 			let buff = 0;
 
 			/** プレイヤーのHP割合 */
-			let playerHpPercent = playerHp / (100 + lv * 3);
+			let playerHpPercent = playerHp / playerMaxHp;
 			/** 敵のHP割合 */
 			let enemyHpPercent = enemyHp / enemyMaxHp;
 
@@ -1435,7 +1437,7 @@ export default class extends Module {
 				// 次の試合に向けてのパラメータセット
 				data.enemy = null;
 				data.count = 1;
-				data.php = 103 + lv * 3;
+				data.php = playerMaxHp + 3;
 				data.ehp = 103 + lv * 3 + (data.winCount ?? 0) * 5;
 				data.maxTp = 0;
 				data.fireAtk = 0;
@@ -1501,8 +1503,8 @@ export default class extends Module {
 						data.endure = Math.max(data.endure - 1, 0);
 					}
 					if (playerHp <= (30 + lv) && serifs.rpg.nurse && Math.random() < 0.01 && !data.enemy.notEndure) {
-						message += "\n" + serifs.rpg.nurse + "\n" + ((100 + lv * 3) - playerHp) + "ポイント回復した！\n";
-						playerHp = (100 + lv * 3);
+						message += "\n" + serifs.rpg.nurse + "\n" + (playerMaxHp - playerHp) + "ポイント回復した！\n";
+						playerHp = playerMaxHp;
 					}
 					if (maxDmg > (data.superMuscle ?? 0) && playerHp > 0) data.superMuscle = maxDmg;
 				}
@@ -1541,7 +1543,7 @@ export default class extends Module {
 					// 次の試合に向けてのパラメータセット
 					data.enemy = null;
 					data.count = 1;
-					data.php = 113 + lv * 3;
+					data.php = playerMaxHp + 13;
 					data.ehp = 103 + lv * 3 + (data.winCount ?? 0) * 5;
 					data.maxTp = 0;
 					data.fireAtk = 0;

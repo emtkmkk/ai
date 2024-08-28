@@ -291,7 +291,7 @@ export function getAtkDmg(data, atk: number, tp: number, count: number, crit: nu
 export function getEnemyDmg(data, def: number, tp: number, count: number, crit: number | boolean, enemyAtk: number, rng = (0.2 + Math.random() * 1.6), atkx?) {
     let dmg = Math.round((Math.max(enemyAtk, 1) * (atkx ?? getVal(data.enemy.atkx, [tp]) ?? 3) * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * rng * (crit ? typeof crit === "number" ? (2 * crit) : 2 : 1)) * (1 / (((Math.max(def, 1) * tp) + 100) / 100)));
     if (data.enemy?.fire) {
-        dmg += Math.round(((data.count ?? count) - 1) * (100 + data.lv * 3) * data.enemy.fire);
+        dmg += Math.round(((data.count ?? count) - 1) * Math.min(100 + data.lv * 3, 865) * data.enemy.fire);
     }
     if (Number.isNaN(dmg)) {
         throw new Error();

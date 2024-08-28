@@ -191,6 +191,8 @@ export const ending = (module: rpg, msg: Message, _data: any): any => {
 	const data = _data;
 	/** 使用中の色情報 */
 	const color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
+	/** プレイヤーの最大HP */
+	let playerMaxHp = 100 + Math.min(data.lv * 3, 765) + Math.max(Math.floor((data.lv - 250) / 50), 0);
 	/** プレイヤーの見た目 */
 	let me = color.name;
 
@@ -208,7 +210,7 @@ export const ending = (module: rpg, msg: Message, _data: any): any => {
 
 	message += [
 		`${serifs.rpg.status.lv} : ${data.lv ?? 1}`,
-		`最大体力 : ${100 + data.lv * 3}`,
+		`最大体力 : ${playerMaxHp}`,
 		`${serifs.rpg.status.atk} : ${data.atk ?? 0}`,
 		`${serifs.rpg.status.def} : ${data.def ?? 0}`,
 		`${serifs.rpg.status.spd} : ${Math.floor((msg.friend.love ?? 0) / 100) + 1}`,
