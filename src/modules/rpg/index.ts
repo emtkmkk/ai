@@ -140,7 +140,8 @@ export default class extends Module {
 
 	@autobind
 	private getMaxLevel() {
-		return this.ai.friends.find().filter(x => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1).reduce((acc, cur) => acc > cur.perModulesData.rpg.lv ? acc : cur.perModulesData.rpg.lv, 0);
+		const maxLv = this.ai.friends.find().filter(x => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1).reduce((acc, cur) => acc > cur.perModulesData.rpg.lv ? acc : cur.perModulesData.rpg.lv, 0);
+		return maxLv > 255 ? 255 : maxLv;
 	}
 
 	@autobind
@@ -151,7 +152,7 @@ export default class extends Module {
 			this.rpgAccountListAdd();
 			const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
 			if (rpgData) {
-				rpgData.maxLv += 1;
+				if (rpgData.maxLv < 255) rpgData.maxLv += 1;
 				this.ai.moduleData.update(rpgData);
 			} else {
 				const maxLv = this.getMaxLevel();
