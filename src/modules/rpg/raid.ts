@@ -537,11 +537,15 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
 	// ここで残りのステータスを計算しなおす
 	let { atk, def, spd } = calculateStats(data, msg, skillEffects, color, 0.2);
-	if (skillEffects.fortuneEffect) {
+	if (skillEffects.fortuneEffect || aggregateTokensEffects(data).fortuneEffect) {
 		const result = fortune(atk, def, skillEffects.fortuneEffect);
 		atk = result.atk;
 		def = result.def;
-		message += serifs.rpg.skill.fortune + `\n`;
+		if (skillEffects.fortuneEffect) {
+			message += serifs.rpg.skill.fortune + `\n`;
+		} else {
+			message += serifs.rpg.skill.fortuneToken + `\n`;
+		}
 		message += result.message + `\n`;
 	}
 	// 数取りボーナスに上限がついたため、その分の補填を全員に付与
@@ -1083,7 +1087,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			}
 		}
 
-		if (skillEffects.allForOne) {
+		if (skillEffects.allForOne || aggregateTokensEffects(data).allForOne) {
 			const spdx = getSpdX(spd);
 			atk = atk * spdx * (1 + (skillEffects.allForOne ?? 0) * 0.1);
 			if (itemBonus?.atk) itemBonus.atk = itemBonus.atk * spd * (1 + (skillEffects.allForOne ?? 0) * 0.1);

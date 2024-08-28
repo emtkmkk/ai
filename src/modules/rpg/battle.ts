@@ -1,5 +1,6 @@
 import serifs from "@/serifs";
 import { SkillEffect } from "./skills";
+import { aggregateTokensEffects } from "./shop";
 
 export function calculateStats(data, msg, skillEffects, color, maxBonus = 100) {
 	const stbonus = (((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) + ((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0))) / 2;
@@ -15,6 +16,9 @@ export function calculateStats(data, msg, skillEffects, color, maxBonus = 100) {
 
 	atk *= (1 + (skillEffects.atkUp ?? 0));
 	def *= (1 + (skillEffects.defUp ?? 0));
+	
+	atk *= (1 + (data.atkMedal ?? 0) * 0.01);
+	def *= (1 + (data.defMedal ?? 0) * 0.01);
 
 	return { atk, def, spd };
 }
@@ -23,6 +27,10 @@ export function fortune(_atk, _def, effect = 1) {
 
 	let atk = _atk;
 	let def = _def;
+
+	const zeroEffect = effect === 0;
+
+	if (zeroEffect) effect = 1;
 
 	const rnd = Math.random;
 
@@ -34,19 +42,25 @@ export function fortune(_atk, _def, effect = 1) {
 
 	for (let i = 0; i < effect; i++) {
 
-		atk = Math.floor(atk * 1.05);
-		def = Math.floor(def * 1.05);
+		if (!zeroEffect) {
+			atk = Math.floor(atk * 1.05);
+			def = Math.floor(def * 1.05);
+		}
 
 		let targetAllStatus = rnd() < 0.2;
 
 		if (rnd() < 0.5) {
 			if (rnd() < 0.5) {
-				atk = Math.floor(atk * 1.01);
-				def = Math.floor(def * 1.01);
+				if (!zeroEffect) {
+					atk = Math.floor(atk * 1.01);
+					def = Math.floor(def * 1.01);
+				}
 			} else {
 				if (targetAllStatus) {
-					atk = Math.floor(atk * 1.02);
-					def = Math.floor(def * 1.02);
+					if (!zeroEffect) {
+						atk = Math.floor(atk * 1.02);
+						def = Math.floor(def * 1.02);
+					}
 					const a = Math.floor(atk);
 					const d = Math.floor(def);
 					atk = Math.floor((a + d) / 2);
@@ -61,8 +75,10 @@ export function fortune(_atk, _def, effect = 1) {
 		} else {
 			if (rnd() < 0.5) {
 				if (targetAllStatus) {
-					atk = Math.floor(atk * 1.02);
-					def = Math.floor(def * 1.02);
+					if (!zeroEffect) {
+						atk = Math.floor(atk * 1.02);
+						def = Math.floor(def * 1.02);
+					}
 					if (rnd() < 0.5) {
 						def = def + atk - 1;
 						atk = 1;
@@ -228,7 +244,7 @@ export function stockRandom(data, skillEffects) {
 					},
 				},
 				{
-					limit: !skillEffects.notRandom && effectPoint >= 10,
+					limit: !skillEffects.notRandom && !aggregateTokensEffects(data).notRandom && effectPoint >= 10,
 					effect: () => {
 						skillEffects.notRandom = 1;
 						effectPoint -= Math.min(effectPoint, 10)

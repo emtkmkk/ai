@@ -8,6 +8,7 @@ import { colorReply, colors } from './colors';
 import { endressEnemy, enemys, Enemy, raidEnemys } from './enemys';
 import { rpgItems } from './items';
 import { aggregateTokensEffects, shopContextHook, shopReply } from './shop';
+import { shop2Reply } from './shop2';
 import { skills, Skill, SkillEffect, getSkill, skillReply, skillCalculate, aggregateSkillsEffects, calcSevenFever, amuletMinusDurability } from './skills';
 import { start, Raid, raidInstall, raidContextHook, raidTimeoutCallback } from './raid';
 import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatus, getPostCount, getPostX, getVal, random } from './utils';
@@ -70,6 +71,14 @@ export default class extends Module {
 		if (msg.includes([serifs.rpg.command.rpg]) && msg.includes(Array.isArray(serifs.rpg.command.color) ? serifs.rpg.command.color : [serifs.rpg.command.color])) {
 			// 色モード
 			return colorReply(this, msg);
+		}
+		if (msg.includes(Array.isArray(serifs.rpg.command.shop) ? serifs.rpg.command.shop : [serifs.rpg.command.shop]) && msg.includes(Array.isArray(serifs.rpg.command.shop2) ? serifs.rpg.command.shop2 : [serifs.rpg.command.shop2])) {	
+			// データを読み込み
+			const data = initializeData(this, msg);
+			if ((!msg.user.host && msg.user.username === config.master) || data.items.filter((x) => x.name === "裏ショップ入場の札").length) {
+				// 裏ショップモード
+				return shop2Reply(this, this.ai, msg);
+			}
 		}
 		if (msg.includes(Array.isArray(serifs.rpg.command.shop) ? serifs.rpg.command.shop : [serifs.rpg.command.shop])) {
 			// ショップモード
@@ -217,9 +226,19 @@ export default class extends Module {
 		if (data.coin > 0) {
 			helpMessage.push(serifs.rpg.help.shop(data.coin));
 		}
-		helpMessage.push(serifs.rpg.help.record);
-		helpMessage.push(serifs.rpg.help.status);
-		helpMessage.push(serifs.rpg.help.link);
+		if (data.items) {
+			if (data.items.filter((x) => x.name === "裏ショップ入場の札").length) {
+				helpMessage.push(serifs.rpg.help.shop2);
+			}
+			helpMessage.push(serifs.rpg.help.item);
+		}
+		if ((data.lv ?? 0) > 2) {
+			helpMessage.push(serifs.rpg.help.status);
+		}
+		if ((data.lv ?? 0) > 7) {
+			helpMessage.push(serifs.rpg.help.record);
+			helpMessage.push(serifs.rpg.help.link);
+		}
 		helpMessage.push(serifs.rpg.help.help);
 
 		msg.reply("\n" + helpMessage.join("\n\n"));
@@ -238,6 +257,27 @@ export default class extends Module {
 		message.push(jarList.slice(0, data.jar).join("\n"))
 		if (data.jar > jarList.length) {
 			message.push(`謎の壺${data.jar - jarList.length >= 2 ? " ×" + (data.jar - jarList.length) : ""}`)
+		}
+		if (data.nextSkill) {
+			message.push(data.nextSkill + "の教本")
+		}
+		if (data.atkMedal) {
+			message.push("赤の勲章: " + data.atkMedal + "個")
+		}
+		if (data.defMedal) {
+			message.push("青の勲章: " + data.defMedal + "個")
+		}
+		if (data.itemMedal) {
+			message.push("緑の勲章: " + data.itemMedal + "個")
+		}
+		if (data.rerollOrb) {
+			message.push("スキル変更珠: " + data.rerollOrb + "個")
+		}
+		if (data.duplicationOrb) {
+			message.push("スキル複製珠: " + data.duplicationOrb + "個")
+		}
+		if (message.length !== 1 && data.coin) {
+			message.push("もこコイン: " + data.coin + "枚")
 		}
 		msg.reply("\n" + message.join("\n") + (message.length === 1 ? "\n\n何も持っていないようです。\n「RPG ショップ」で購入できます。" : ""));
 		return { reaction: "love" };
@@ -506,7 +546,7 @@ export default class extends Module {
 		const minRnd = Math.max(0.2 + (isSuper ? 0.3 : 0) + (skillEffects.atkRndMin ?? 0), 0);
 		const maxRnd = Math.max(1.6 + (skillEffects.atkRndMax ?? 0), 0);
 
-		if (skillEffects.allForOne) {
+		if (skillEffects.allForOne || aggregateTokensEffects(data).allForOne) {
 			atk = atk * spd * (1 + (skillEffects.allForOne ?? 0) * 0.1);
 			spd = 1;
 		}
@@ -1316,7 +1356,7 @@ export default class extends Module {
 				}
 			}
 
-			if (skillEffects.allForOne) {
+			if (skillEffects.allForOne || aggregateTokensEffects(data).allForOne) {
 				atk = atk * spd * (1 + (skillEffects.allForOne ?? 0) * 0.1);
 				if (itemBonus?.atk) itemBonus.atk = itemBonus.atk * spd * (1 + (skillEffects.allForOne ?? 0) * 0.1);
 				spd = 1;

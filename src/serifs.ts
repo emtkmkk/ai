@@ -497,6 +497,7 @@ export default {
 			heaven: `スキル「天国か地獄か」発動！\nもこチキのステータスがアップ！`,
 			hell: `スキル「天国か地獄か」発動！\nもこチキのステータスがダウン…`,
 			fortune: `「しあわせのお守り」発動！`,
+			fortuneToken: `「しあわせのお札」発動！`,
 			berserk: (berserkDmg) => `「バーサクのお守り」発動！\n${berserkDmg}ポイントのダメージを受けた！\nもこチキのパワーがアップ！`,
 			stockRandom: `謎のお守りが光り始めた……\n何かが起こったようだ。`,
 		},
@@ -574,10 +575,13 @@ export default {
 			sort: "所持スキルをソートしました！\n次回のスキル変更の際に誤った番号を指定しない様に気を付けてください！"
 		},
 		shop: {
-			welcome: (coin: number) => `:mk_lowpoly:ショップへようこそ！\n欲しい商品の番号を返信してね\n（所持コイン数: ${coin.toLocaleString()}）`,
+			welcome: (coin: number) => `:mk_lowpoly:ショップへようこそ！\n欲しい商品の数値またはアルファベットを返信してね\n（所持コイン数: ${coin.toLocaleString()}）`,
+			welcome2: (coin: number, orb: number) => `$[spin.y,speed=5s :mk_lowpoly:]ようこそ、裏ショップへ……\n欲しい商品の数値またはアルファベットを返信してくれ……\n（所持コイン数: ${coin.toLocaleString()}）\n（所持変更珠数: ${orb.toLocaleString()}）`,
 			buyItem: (itemName, coin: number) => `:mk_lowpoly:まいどあり！\n${itemName}を購入しました！\n（残りコイン数: ${coin.toLocaleString()}）`,
+			buyItemOrb: (itemName, orb: number) => `:mk_lowpoly:まいどあり！\n${itemName}を購入しました！\n（残り変更珠数: ${orb.toLocaleString()}）`,
 			useItem: (itemName) => `${itemName}を使用しました！`,
-			notEnoughCoin: `:mk_lowpoly:お金が足りません！`
+			notEnoughCoin: `:mk_lowpoly:コインが足りません！`,
+			notEnoughOrb: `:mk_lowpoly:変更珠が足りません！`
 		},
 		help: {
 			title: "RPG コマンド一覧",
@@ -591,6 +595,8 @@ export default {
 			skills1: "[ RPG スキル ]\n私の今持っているスキルについての情報がここで確認できるみたいです！",
 			skills2: "[ RPG スキル ]\n私の今持っているスキルについての情報がここで確認できるみたいです！\n変更珠があれば、スキルの入替もここで行えるみたいです！",
 			shop: (coin: number) => `[ RPG ショップ ]\nもこコインを使って、ショップでお買い物が楽しめるみたいです！\n1つしか持てないし壊れるけど効果が強いお守りや、捨てるまで効果が発動するお札など色々買えるみたいです！\n1日1回並んでいる商品が変わるらしいです！\n（もこコイン: ${coin.toLocaleString()}枚）`,
+			shop2: `[ RPG 裏ショップ ]\n購入した裏ショップ入場の札を使って、裏ショップに入ります！\nもこコインとスキル変更珠を使って、珍しいアイテムを買えるみたいです！\n1日1回並んでいる商品が変わるらしいです！`,
+			item: "[ RPG アイテム ]\n私の今持っている全てのアイテムの一覧がここで確認できるみたいです！",
 			status: `[ ステータス ]\n今の私の強さや私のなつき度、あなたの数取りの戦績がここで確認できるみたいです！`,
 			record: `[ RPG 殿堂 ]\nRPGモードで打ち立てた記録とその全体の順位をここで確認できますよ！`,
 			link: `[ リンク ]\nあなたがサブアカウントを持っているなら、アカウントをリンクさせておくとRPGで有利になります！`,
@@ -605,6 +611,7 @@ export default {
 			onemore: ["おかわり", "+", "onemore", "もう一回"],
 			skill: ["スキル", "skill", "お守り", "amulet"],
 			shop: ["ショップ", "shop", "お店"],
+			shop2: ["裏", "ura", "2", "another"],
 			help: ["h", "ヘルプ", "?"],
 			Record: ["殿堂", "記録", "record", "trophy", "achieve", "achievement", "rank"],
 			duplication: "複製",

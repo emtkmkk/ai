@@ -365,7 +365,12 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
 			if (msg.includes([String(i + 1)])) {
 				if (!playerSkills[i].cantReroll) {
 					const oldSkillName = playerSkills[i].name;
-					data.skills[i] = getRerollSkill(data, oldSkillName);
+					if (data.nextSkill && skills.find((x) => x.name === data.nextSkill)) {
+						data.skills[i] = skills.find((x) => x.name === data.nextSkill);
+						data.nextSkill = null;
+					} else {
+						data.skills[i] = getRerollSkill(data, oldSkillName);
+					}
 					msg.reply(`\n` + serifs.rpg.moveToSkill(oldSkillName, data.skills[i].name) + `\n効果: ${data.skills[i].desc}` + (aggregateTokensEffects(data).showSkillBonus && data.skills[i].info ? `\n詳細効果: ${data.skills[i].info}` : ""));
 					data.rerollOrb -= 1;
 					msg.friend.setPerModulesData(module, data);
@@ -474,6 +479,13 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
 	});
 
 	const day = new Date().getDay();
+
+	if (data.itemMedal) {
+		aggregatedEffect.itemEquip = (aggregatedEffect.itemEquip ?? 0) + data.itemMedal * 0.01;
+		aggregatedEffect.itemBoost = (aggregatedEffect.itemBoost ?? 0) + data.itemMedal * 0.01;
+		aggregatedEffect.mindMinusAvoid = (aggregatedEffect.mindMinusAvoid ?? 0) + data.itemMedal * 0.01;
+		aggregatedEffect.poisonAvoid = (aggregatedEffect.poisonAvoid ?? 0) + data.itemMedal * 0.01;
+	}
 
 	//曜日ボーナス
 	if (day == 0 && aggregatedEffect.thunder) {

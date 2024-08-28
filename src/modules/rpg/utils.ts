@@ -5,7 +5,7 @@ import Module from '@/module';
 import serifs from '@/serifs';
 import rpg from './index';
 import { colorReply, colors } from './colors';
-import { shopItems } from './shop';
+import { aggregateTokensEffects, shopItems } from './shop';
 
 export function initializeData(module: rpg, msg) {
     const data = msg.friend.getPerModulesData(module);
@@ -300,7 +300,7 @@ export function getEnemyDmg(data, def: number, tp: number, count: number, crit: 
 }
 
 export function random(data, startCharge = 0, skillEffects, reverse = false) {
-    let rnd = skillEffects.notRandom && !reverse ? 0.5 + (skillEffects.notRandom ?? 0) * 0.05 : Math.random();
+    let rnd = (skillEffects.notRandom || aggregateTokensEffects(data).notRandom) && !reverse ? 0.5 + (skillEffects.notRandom ?? 0) * 0.05 : Math.random();
     if (skillEffects.charge) {
         const charge = Math.min(startCharge, data.charge);
         if (charge > 0) {
@@ -395,4 +395,20 @@ export function deepClone<T>(obj: T): T {
   }
 
   return copy;
+}
+
+export function numberCharConvert(input: number): string | null {
+    if (typeof input !== "number") {
+        return null; // 無効な入力の場合
+    }
+
+    if (input >= 0 && input <= 9) {
+        return input.toString(); // 0~9の数値を文字列として返す
+    } else if (input >= 10 && input <= 35) {
+        // 10以上35以下の数値をアルファベットに変換 (10 => 'a', 11 => 'b', ..., 35 => 'z')
+        const char = String.fromCharCode('a'.charCodeAt(0) + input - 10);
+        return char;
+    } else {
+        return null; // 無効な入力の場合（負の数や36以上の数値など）
+    }
 }
