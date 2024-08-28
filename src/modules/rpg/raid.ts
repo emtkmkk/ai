@@ -1315,7 +1315,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		}
 	}
 	
-	if (data.exp >= 5 && data.lv + 1 < rpgData.maxLv) {
+	if (data.exp >= 5 && (data.lv > 255 || data.lv + 1 < rpgData.maxLv)) {
 
 		// レベルアップ処理
 		data.lv = (data.lv ?? 1) + 1;

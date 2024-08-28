@@ -196,10 +196,14 @@ export default class extends Module {
 		let helpMessage = [serifs.rpg.help.title];
 		if ((data.lv ?? 0) < 7) {
 			helpMessage.push(serifs.rpg.help.normal1);
-			if (data.coin > 0) {
-				helpMessage.push(serifs.rpg.help.okawari2(rpgData.maxLv - data.lv));
+			if (rpgData.maxLv >= 255) {
+				msg.reply(serifs.rpg.help.okawari3(rpgData.maxLv - data.lv));
 			} else {
-				helpMessage.push(serifs.rpg.help.okawari1(rpgData.maxLv - data.lv));
+				if (data.coin > 0) {
+					helpMessage.push(serifs.rpg.help.okawari2(rpgData.maxLv - data.lv));
+				} else {
+					helpMessage.push(serifs.rpg.help.okawari1(rpgData.maxLv - data.lv));
+				}
 			}
 		} else {
 			helpMessage.push(serifs.rpg.help.normal2);
@@ -654,7 +658,11 @@ export default class extends Module {
 					}
 				}
 				if (isMaxLevel) {
-					msg.reply(serifs.rpg.oneMore.maxLv);
+					if (rpgData.maxLv >= 255) {
+						msg.reply(serifs.rpg.oneMore.maxLv2);
+					} else {
+						msg.reply(serifs.rpg.oneMore.maxLv);
+					}
 					return {
 						reaction: 'confused'
 					};
