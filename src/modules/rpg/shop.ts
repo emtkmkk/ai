@@ -6,6 +6,7 @@ import * as seedrandom from 'seedrandom';
 import getDate from '@/utils/get-date';
 import { skillNameCountMap, totalSkillCount, skills, SkillEffect, skillCalculate, Skill, skillPower, aggregateSkillsEffects } from './skills';
 import { getVal, initializeData, deepClone, numberCharConvert } from './utils';
+import { shop2Items } from './shop2';
 import 藍 from '@/ai';
 import rpg from './index';
 
@@ -436,7 +437,7 @@ export function shopContextHook(module: Module, key: any, msg: Message, data: an
 				let message = "";
 
 				if (data.showShopItems[i].type === "item") {
-					const item = shopItems.find((x) => x.name === data.showShopItems[i].name) as Item;
+					const item = [...shopItems, ...shop2Items].find((x) => x.name === data.showShopItems[i].name) as Item;
 					if (!item) return { reaction: 'hmm' };
 					const [_lv, _atk, _def] = [rpgData.lv, rpgData.atk, rpgData.def];
 					item.effect(rpgData);
