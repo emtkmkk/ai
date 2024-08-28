@@ -1218,7 +1218,7 @@ export default class extends Module {
 			if (typeof data.enemy.defx === "number") data.enemy.defx += 1 + (0.5 * statusX);
 		}
 		
-		if (!skillEffects.enemyBuff && data.superUnlockCount > 5 && data.enemy.name !== endressEnemy(data).name) {
+		if (!skillEffects.enemyBuff && data.superUnlockCount > 5 && data.enemy.name !== endressEnemy(data).name && data.clearHistory.includes(data.enemy.name)) {
 			if (typeof data.enemy.atk === "number") enemyAtk = lv * 3.5 * Math.max(data.enemy.atk, 3);
 			if (typeof data.enemy.def === "number") enemyDef = lv * 3.5 * Math.max(data.enemy.def, 3);
 			if (typeof data.enemy.atkx === "number") data.enemy.atkx += 1;
