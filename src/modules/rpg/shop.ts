@@ -500,7 +500,7 @@ export function aggregateTokensEffects(data: { items: ShopItem[]; }): any {
 	if (!data.items) return aggregatedEffect;
 	data.items.forEach(_items => {
 		if (_items.type !== "token") return;
-		const item = shopItems.find((x) => x.name === _items.name && x.type === "token");
+		const item = [...shopItems, ...shop2Items].find((x) => x.name === _items.name && x.type === "token");
 		if (!item) return;
 		Object.entries(item.effect).forEach(([key, value]) => {
 			if (typeof aggregatedEffect[key] === "number" && typeof value === "number" && aggregatedEffect[key] !== undefined) {
