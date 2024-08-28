@@ -70,7 +70,7 @@ export default class extends Module {
 		// ゲーム開始条件判定
 		const h = new Date().getHours();
 
-		// 前回がお流れの場合はランダム発生のクールダウンを120分にする
+		// 前回がお流れの場合はランダム発生のクールダウンを240分にする
 		if (
 			recentGame && (
 				!recentGame.isEnded ||
@@ -79,7 +79,7 @@ export default class extends Module {
 					(
 						Date.now() - recentGame.startedAt < 1000 * 60 *
 						(
-							(recentGame?.votes?.length ?? 2) <= 1 && !triggerUserId ? 120 : 60
+							(recentGame?.votes?.length ?? 2) <= 1 && !triggerUserId ? 240 : 120
 						)
 					) && !triggerUserId
 				)
@@ -186,7 +186,7 @@ export default class extends Module {
 
 			// 懐き度が高いほどトリガーのクールタイムを短く
 			// トリガーの公開範囲がフォロワー以下ならクールタイム２倍
-			const cth = Math.max((msg.friend.love >= 200 ? 0.5 : msg.friend.love >= 100 ? 1 : msg.friend.love >= 20 ? 2 : msg.friend.love >= 5 ? 3 : 4) * (["public", "home"].includes(msg.visibility) ? 1 : 2), 1);
+			const cth = Math.max((msg.friend.love >= 200 ? 2 : msg.friend.love >= 100 ? 4 : msg.friend.love >= 20 ? 8 : msg.friend.love >= 5 ? 12 : 16) * (["public", "home"].includes(msg.visibility) ? 1 : 2), 1);
 
 			// トリガー者が管理人でない かつ クールタイムが開けていない場合
 			if ((msg.user.host || msg.user.username !== config.master) && Date.now() - recentGame.startedAt < 1000 * 60 * 60 * cth) {
