@@ -27,8 +27,10 @@ export default class extends Module {
       const keywords = ['wiki', 'ウィキ', 'うぃき'];
       const manyKeywords = ['いっぱい', '沢山', 'たくさん'];
 
+      const lowerCaseText = msg.text.toLowerCase();
+
       const containsKeyword = keywords.some((keyword) =>
-        msg.text.includes(keyword),
+        lowerCaseText.includes(keyword),
       );
       const containsManyKeyword = manyKeywords.some((keyword) =>
         msg.text.includes(keyword),
