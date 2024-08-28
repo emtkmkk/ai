@@ -633,7 +633,11 @@ export default class extends Module {
 				if (data.lastOnemorePlayedAt === getDate()) {
 					if (needCoin <= (data.coin ?? 0)) {
 						if (isMaxLevel) {
-							msg.reply(serifs.rpg.oneMore.maxLv);
+							if (rpgData.maxLv >= 255) {
+								msg.reply(serifs.rpg.oneMore.maxLv2);
+							} else {
+								msg.reply(serifs.rpg.oneMore.maxLv);
+							}
 							return {
 								reaction: 'confused'
 							};
