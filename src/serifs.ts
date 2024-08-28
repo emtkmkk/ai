@@ -575,8 +575,8 @@ export default {
 			sort: "所持スキルをソートしました！\n次回のスキル変更の際に誤った番号を指定しない様に気を付けてください！"
 		},
 		shop: {
-			welcome: (coin: number) => `:mk_lowpoly:ショップへようこそ！\n欲しい商品の数値またはアルファベットを返信してね\n（所持コイン数: ${coin.toLocaleString()}）`,
-			welcome2: (coin: number, orb: number) => `$[spin.y,speed=5s :mk_lowpoly:]ようこそ、裏ショップへ……\n欲しい商品の数値またはアルファベットを返信してくれ……\n（所持コイン数: ${coin.toLocaleString()}）\n（所持変更珠数: ${orb.toLocaleString()}）`,
+			welcome: (coin: number) => `:mk_lowpoly:ショップへようこそ！\n欲しい商品の数値またはアルファベットを返信してね\n（所持コイン数: ${coin.toLocaleString()}）\n`,
+			welcome2: (coin: number, orb: number) => `$[spin.y,speed=5s :mk_lowpoly:]ようこそ、裏ショップへ……\n欲しい商品の数値またはアルファベットを返信してくれ……\n（所持コイン数: ${coin.toLocaleString()}）\n（所持変更珠数: ${orb.toLocaleString()}）\n`,
 			buyItem: (itemName, coin: number) => `:mk_lowpoly:まいどあり！\n${itemName}を購入しました！\n（残りコイン数: ${coin.toLocaleString()}）`,
 			buyItemOrb: (itemName, orb: number) => `:mk_lowpoly:まいどあり！\n${itemName}を購入しました！\n（残り変更珠数: ${orb.toLocaleString()}）`,
 			useItem: (itemName) => `${itemName}を使用しました！`,

@@ -20,7 +20,7 @@ export const skillPrice = (_ai: 藍, skillName: Skill["name"], rnd: () => number
 	const price = Math.max(
 		Math.floor(
 			(12 * (Math.max(isNaN(skillP.skillNameCount) ? 0 : skillP.skillNameCount, 0.5) / (totalSkillCount / filteredSkills.length))) ** 2
-		), 6
+		), 10
 	);
 
 	const rand = rnd();
@@ -91,26 +91,26 @@ export const shop2Items: ShopItem[] = [
 	{ name: "全身全霊のお札を捨てる", limit: (data) => data.items.filter((x) => x.name === "全身全霊のお札").length, desc: "複数回行動するようになるが、一撃は軽くなる", price: 0, type: "item", effect: (data) => data.items = data.items.filter((x) => x.name !== "全身全霊のお札"), always: true },
 	{ name: "運命不変のお札を捨てる", limit: (data) => data.items.filter((x) => x.name === "運命不変のお札").length, desc: "与ダメージがランダム変化するようになる", price: 0, type: "item", effect: (data) => data.items = data.items.filter((x) => x.name !== "運命不変のお札"), always: true },
 	{ name: "しあわせのお札を捨てる", limit: (data) => data.items.filter((x) => x.name === "しあわせのお札").length, desc: "ステータスの割合がランダムに一時的に変化しなくなる", price: 0, type: "item", effect: (data) => data.items = data.items.filter((x) => x.name !== "しあわせのお札"), always: true },
-	{ name: `壺`, limit: (data) => data.lv >= 20 && (data.jar ?? 0) === 0, price: 200, desc: `なんかいい感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1, always: true },
+	{ name: "力の種", desc: "購入時、パワー+1 防御-1", price: 1, type: "item", effect: (data) => { data.atk = (data.atk ?? 0) + 1; data.def = (data.def ?? 0) - 1; }, infinite: true, always: true },
+	{ name: "幸運の力の種", limit: (data) => ((10 - (data.atk % 10) + 7) % 10) !== 0, desc: "購入時、パワーの下1桁が7になるように防御から移動", price: (data) => ((10 - (data.atk % 10) + 7) % 10), type: "item", effect: (data) => { data.def = (data.def ?? 0) - ((10 - (data.atk % 10) + 7) % 10); data.atk = (data.atk ?? 0) + ((10 - (data.atk % 10) + 7) % 10); }, infinite: true, always: true },
+	{ name: "高級力の種", desc: "購入時、防御2%をパワーに移動", price: 5, type: "item", effect: (data) => { data.atk = Math.round((data.atk ?? 0) + Math.round((data.def ?? 0) / 50)); data.def = Math.round((data.def ?? 0) - Math.round((data.def ?? 0) / 50)); }, infinite: true, always: true },
+	{ name: "超・力の種",desc: "購入時、防御10%をパワーに移動", price: 25, type: "item", effect: (data) => { data.atk = Math.round((data.atk ?? 0) + Math.round((data.def ?? 0) / 10)); data.def = Math.round((data.def ?? 0) - Math.round((data.def ?? 0) / 10)); }, infinite: true, always: true },
+    { name: "極・力の種",desc: "購入時、防御30%をパワーに移動", price: 75, type: "item", effect: (data) => { data.atk = Math.round((data.atk ?? 0) + Math.round((data.def ?? 0) * 0.3)); data.def = Math.round((data.def ?? 0) - Math.round((data.def ?? 0) * 0.3)); }, infinite: true, always: true },
+    { name: "守りの種", desc: "購入時、防御+1 パワー-1", price: 1, type: "item", effect: (data) => { data.atk = (data.atk ?? 0) - 1; data.def = (data.def ?? 0) + 1; }, infinite: true, always: true },
+	{ name: "幸運の守りの種", limit: (data) => ((10 - (data.def % 10) + 7) % 10) !== 0, desc: "購入時、防御の下1桁が7になるようにパワーから移動", price: (data) => ((10 - (data.def % 10) + 7) % 10), type: "item", effect: (data) => { data.atk = (data.atk ?? 0) - ((10 - (data.def % 10) + 7) % 10); data.def = (data.def ?? 0) + ((10 - (data.def % 10) + 7) % 10); }, infinite: true, always: true },
+	{ name: "高級守りの種", desc: "購入時、パワー2%を防御に移動", price: 5, type: "item", effect: (data) => { data.def = Math.round((data.def ?? 0) + Math.round((data.atk ?? 0) / 50)); data.atk = Math.round((data.atk ?? 0) - Math.round((data.atk ?? 0) / 50)); }, infinite: true, always: true },
+	{ name: "超・守りの種",desc: "購入時、パワー10%を防御に移動", price: 25, type: "item", effect: (data) => { data.def = Math.round((data.def ?? 0) + Math.round((data.atk ?? 0) / 10)); data.atk = Math.round((data.atk ?? 0) - Math.round((data.atk ?? 0) / 10)); }, infinite: true, always: true },
+    { name: "極・守りの種", desc: "購入時、パワー30%を防御に移動", price: 75, type: "item", effect: (data) => { data.def = Math.round((data.def ?? 0) + Math.round((data.atk ?? 0) * 0.3)); data.atk = Math.round((data.atk ?? 0) - Math.round((data.atk ?? 0) * 0.3)); }, infinite: true, always: true },
+	{ name: "赤の勲章", limit: (data) => (data.atkMedal ?? 0) < 10, desc: "1つ購入する度に恒久的にパワーが+1%されます 10個まで購入できます", price: (data) => 20 * (1 + Math.floor((data.atkMedal ?? 0) / 2)), orb: true, type: "item", effect: (data) => data.atkMedal = (data.atkMedal ?? 0) + 1, infinite: true, always: true },
+	{ name: "青の勲章", limit: (data) => (data.defMedal ?? 0) < 10, desc: "1つ購入する度に恒久的に防御が+1%されます 10個まで購入できます", price: (data) => 20 * (1 + Math.floor((data.defMedal ?? 0) / 2)), orb: true, type: "item", effect: (data) => data.defMedal = (data.defMedal ?? 0) + 1, infinite: true, always: true },
+	{ name: "緑の勲章", limit: (data) => (data.itemMedal ?? 0) < 10, desc: "1つ購入する度に恒久的に全ての道具効果（装備率、効果量、悪・毒アイテム回避）が+1%されます 10個まで購入できます", price: (data) => 20 * (1 + Math.floor((data.itemMedal ?? 0) / 2)), orb: true, type: "item", effect: (data) => data.itemMedal = (data.itemMedal ?? 0) + 1, infinite: true, always: true },
+    { name: `壺`, limit: (data) => data.lv >= 20 && (data.jar ?? 0) === 0, price: 200, desc: `なんかいい感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1, always: true },
 	{ name: `きれいな壺`, limit: (data) => (data.jar ?? 0) === 1 && data.shopExp > 400, price: 400, desc: `なんかきれいな感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1, always: true },
 	{ name: `すごい壺`, limit: (data) => (data.jar ?? 0) === 2 && data.shopExp > 1000, price: 600, desc: `なんかすごい感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1, always: true },
 	{ name: `巨大な壺`, limit: (data) => (data.jar ?? 0) === 3 && data.shopExp > 1800, price: 800, desc: `なんかめっちゃでかい感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1, always: true },
 	{ name: `うねうねした壺`, limit: (data) => (data.jar ?? 0) === 4 && data.shopExp > 2800, price: 1000, desc: `なんかうねうねした感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1, always: true },
 	{ name: `ナノサイズ壺`, limit: (data) => (data.jar ?? 0) === 5 && data.shopExp > 4000, price: 1200, desc: `小さくて見えない感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1, always: true },
 	{ name: `謎の壺`, limit: (data) => (data.jar ?? 0) >= 6 && data.shopExp > 5400, price: (data) => (data.jar ?? 0) * 200, desc: `なんか謎な感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1, always: true },
-	{ name: "赤の勲章", limit: (data) => (data.atkMedal ?? 0) < 10, desc: "1つ購入する度に恒久的に与ダメージが+1%されます 10個まで購入できます", price: (data) => 20 * (1 + Math.floor((data.atkMedal ?? 0) / 2)), orb: true, type: "item", effect: (data) => data.atkMedal = (data.atkMedal ?? 0) + 1, infinite: true, always: true },
-	{ name: "青の勲章", limit: (data) => (data.defMedal ?? 0) < 10, desc: "1つ購入する度に恒久的に被ダメージが-1%されます 10個まで購入できます", price: (data) => 20 * (1 + Math.floor((data.defMedal ?? 0) / 2)), orb: true, type: "item", effect: (data) => data.defMedal = (data.defMedal ?? 0) + 1, infinite: true, always: true },
-	{ name: "緑の勲章", limit: (data) => (data.itemMedal ?? 0) < 10, desc: "1つ購入する度に恒久的に全ての道具効果（装備率、効果量、悪・毒アイテム回避）が+1%されます 10個まで購入できます", price: (data) => 20 * (1 + Math.floor((data.itemMedal ?? 0) / 2)), orb: true, type: "item", effect: (data) => data.itemMedal = (data.itemMedal ?? 0) + 1, infinite: true, always: true },
-    { name: "力の種", desc: "購入時、パワー+1 防御-1", price: 1, type: "item", effect: (data) => { data.atk = (data.atk ?? 0) + 1; data.def = (data.def ?? 0) - 1; }, infinite: true, always: true },
-	{ name: "幸運の力の種", limit: (data) => ((10 - (data.atk % 10) + 7) % 10) === 0, desc: "購入時、パワーの下1桁が7になるように防御から移動", price: (data) => ((10 - (data.atk % 10) + 7) % 10), type: "item", effect: (data) => { data.def = (data.def ?? 0) - ((10 - (data.atk % 10) + 7) % 10); data.atk = (data.atk ?? 0) + ((10 - (data.atk % 10) + 7) % 10); }, infinite: true, always: true },
-	{ name: "高級力の種", desc: "購入時、防御2%をパワーに移動", price: 5, type: "item", effect: (data) => { data.atk = Math.round((data.atk ?? 0) + Math.round((data.def ?? 0) / 50)); data.def = Math.round((data.def ?? 0) - Math.round((data.def ?? 0) / 50)); }, infinite: true, always: true },
-	{ name: "超・力の種",desc: "購入時、防御10%をパワーに移動", price: 25, type: "item", effect: (data) => { data.atk = Math.round((data.atk ?? 0) + Math.round((data.def ?? 0) / 10)); data.def = Math.round((data.def ?? 0) - Math.round((data.def ?? 0) / 10)); }, infinite: true, always: true },
-    { name: "極・力の種",desc: "購入時、防御30%をパワーに移動", price: 75, type: "item", effect: (data) => { data.atk = Math.round((data.atk ?? 0) + Math.round((data.def ?? 0) * 0.3)); data.def = Math.round((data.def ?? 0) - Math.round((data.def ?? 0) * 0.3)); }, infinite: true, always: true },
-    { name: "守りの種", desc: "購入時、防御+1 パワー-1", price: 1, type: "item", effect: (data) => { data.atk = (data.atk ?? 0) - 1; data.def = (data.def ?? 0) + 1; }, infinite: true, always: true },
-	{ name: "幸運の守りの種", limit: (data) => ((10 - (data.def % 10) + 7) % 10) === 0, desc: "購入時、防御の下1桁が7になるようにパワーから移動", price: (data) => ((10 - (data.def % 10) + 7) % 10), type: "item", effect: (data) => { data.atk = (data.atk ?? 0) - ((10 - (data.def % 10) + 7) % 10); data.def = (data.def ?? 0) + ((10 - (data.def % 10) + 7) % 10); }, infinite: true, always: true },
-	{ name: "高級守りの種", desc: "購入時、パワー2%を防御に移動", price: 5, type: "item", effect: (data) => { data.def = Math.round((data.def ?? 0) + Math.round((data.atk ?? 0) / 50)); data.atk = Math.round((data.atk ?? 0) - Math.round((data.atk ?? 0) / 50)); }, infinite: true, always: true },
-	{ name: "超・守りの種",desc: "購入時、パワー10%を防御に移動", price: 25, type: "item", effect: (data) => { data.def = Math.round((data.def ?? 0) + Math.round((data.atk ?? 0) / 10)); data.atk = Math.round((data.atk ?? 0) - Math.round((data.atk ?? 0) / 10)); }, infinite: true, always: true },
-    { name: "極・守りの種", desc: "購入時、パワー30%を防御に移動", price: 75, type: "item", effect: (data) => { data.def = Math.round((data.def ?? 0) + Math.round((data.atk ?? 0) * 0.3)); data.atk = Math.round((data.atk ?? 0) - Math.round((data.atk ?? 0) * 0.3)); }, infinite: true, always: true },
 	...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique).map((x): Item => ({ name: `${x.name}の教本`, limit: (data) => !data.nextSkill, price: (data, rnd, ai) => skillPrice(ai, x.name, rnd), desc: `購入すると次のスキル変更時に必ず「${x.name}」を習得できる（複製時は対象外）`, type: "item", effect: (data) => { data.nextSkill = x.name } })),
 ];
 
@@ -173,7 +173,7 @@ export const shop2Reply = async (module: rpg, ai: 藍, msg: Message) => {
 	const reply = await msg.reply([
 		amuletDelFlg ? "\n所持しているお守りを捨てました！" : "",
 		serifs.rpg.shop.welcome2(data.coin, data.rerollOrb),
-		...showShopItems.map((x, index) => `[${numberCharConvert(index + 1)}] ${x.name} ${x.orb ? "**珠**" : ""}${x.price}${x.orb ? "個" : "枚"}\n${x.desc}\n`)
+		...showShopItems.map((x, index) => `[${numberCharConvert(index + 1)}] ${x.name} ${x.orb ? "**変更珠**" : ""}${x.price}${x.orb ? "個" : "枚"}\n${x.desc}\n`)
 	].join("\n"), { visibility: "specified" });
 
 	msg.friend.setPerModulesData(module, data);
