@@ -20,7 +20,7 @@ export const skillPrice = (_ai: 藍, skillName: Skill["name"], rnd: () => number
 	const price = Math.max(
 		Math.floor(
 			(12 * (Math.max(isNaN(skillP.skillNameCount) ? 0 : skillP.skillNameCount, 0.5) / (totalSkillCount / filteredSkills.length))) ** 2
-		), 10
+		), 100
 	);
 
 	const rand = rnd();
