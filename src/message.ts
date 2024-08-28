@@ -110,11 +110,11 @@ export default class Message {
 
 	@autobind
 	public includes(words: string[]): boolean {
-		return includes(this.text, words);
+		return includes(this.extractedText, words);
 	}
 
 	@autobind
 	public or(words: (string | RegExp)[]): boolean {
-		return or(this.text, words);
+		return or(this.extractedText, words);
 	}
 }
