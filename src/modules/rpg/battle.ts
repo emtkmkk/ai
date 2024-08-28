@@ -18,7 +18,6 @@ export function calculateStats(data, msg, skillEffects, color, maxBonus = 100) {
 	def *= (1 + (skillEffects.defUp ?? 0));
 	
 	atk *= (1 + (data.atkMedal ?? 0) * 0.01);
-	def *= (1 + (data.defMedal ?? 0) * 0.01);
 
 	return { atk, def, spd };
 }

@@ -813,7 +813,7 @@ export default class extends Module {
 		/** 開始時のチャージ */
 		const startCharge = data.charge;
 		/** プレイヤーの最大HP */
-		let playerMaxHp = 100 + Math.min(lv * 3, 765) + Math.max(Math.floor((lv - 250) / 50), 0);
+		let playerMaxHp = 100 + Math.min(lv * 3, 765) + Math.floor((data.defMedal ?? 0) * 13.4);
 
 		// 敵情報
 		if (!data.enemy || count === 1) {

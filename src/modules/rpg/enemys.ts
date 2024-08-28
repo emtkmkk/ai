@@ -192,7 +192,7 @@ export const ending = (module: rpg, msg: Message, _data: any): any => {
 	/** 使用中の色情報 */
 	const color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
 	/** プレイヤーの最大HP */
-	let playerMaxHp = 100 + Math.min(data.lv * 3, 765) + Math.max(Math.floor((data.lv - 250) / 50), 0);
+	let playerMaxHp = 100 + Math.min(data.lv * 3, 765) + Math.floor((data.defMedal ?? 0) * 13.4);
 	/** プレイヤーの見た目 */
 	let me = color.name;
 
