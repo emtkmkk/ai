@@ -565,9 +565,9 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	/** 連続攻撃中断の場合の攻撃可能回数 0は最後まで攻撃 */
 	let abort = 0;
 	/** プレイヤーの基礎体力 */
-	let rawMaxHp = 100 + Math.min(lv * 2, 599) + lv * 1;
+	let rawMaxHp = 100 + Math.min(lv * 3, 765) + Math.max(Math.floor((lv - 250) / 50), 0);
 	/** プレイヤーのボーナス体力 */
-	let bonusMaxHp = 100 + Math.min(maxLv * 3, 899);
+	let bonusMaxHp = 100 + Math.min(maxLv * 3, 765);
 	/** プレイヤーの最大HP */
 	let playerMaxHp = Math.max(Math.round(bonusMaxHp * Math.random()), rawMaxHp);
 	/** プレイヤーのHP */
@@ -995,7 +995,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		if (skillEffects.fire && (isBattle && isPhysical)) {
 			buff += 1;
 			message += serifs.rpg.skill.fire + "\n";
-			trueDmg = Math.ceil(lv * skillEffects.fire);
+			trueDmg = Math.ceil(Math.min(lv, 255) * skillEffects.fire);
 		} else if (skillEffects.fire && !(isBattle && isPhysical)) {
 			// 非戦闘時は、パワーに還元される
 			atk = atk + lv * 3.75 * skillEffects.fire;
