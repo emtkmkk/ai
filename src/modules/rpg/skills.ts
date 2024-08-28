@@ -174,6 +174,7 @@ export type SkillEffect = {
   finalAttackUp?: number;
   berserk?: number;
   slowStart?: number;
+  stockRandomEffect?: number;
 };
 
 export type Skill = {
@@ -361,7 +362,7 @@ export const skills: Skill[] = [
     name: `負けそうなら逃げる`,
     short: '逃',
     desc: `逃げると負けた事になりません 連続で発動しにくい`,
-    info: `スキルの数まで100%逃走 以降失敗まで発動度に確率半減し続ける\nレイド時は、${serifs.rpg.status.def}+10%`,
+    info: `スキルの数まで100%逃走 以降失敗まで発動度に確率半減し続ける\nレイド時は、1ターン距離を取って回復する`,
     effect: { escape: 1 },
   },
   {
@@ -740,7 +741,7 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
             (x) => x.name !== oldSkillName && !x.unique && !x.cantReroll,
           );
           if (!list.length) {
-            msg.reply(`\n複製可能なスキルがありません！`);
+            msg.reply(`\n複製可能なスキルがないようじゃ！`);
             return { reaction: 'confused' };
           }
           data.skills[i] = list[Math.floor(Math.random() * list.length)];
@@ -777,7 +778,12 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
       if (msg.includes([String(i + 1)])) {
         if (!playerSkills[i].cantReroll) {
           const oldSkillName = playerSkills[i].name;
-          data.skills[i] = getRerollSkill(data, oldSkillName);
+          if (data.nextSkill && skills.find((x) => x.name === data.nextSkill)) {
+            data.skills[i] = skills.find((x) => x.name === data.nextSkill);
+            data.nextSkill = null;
+          } else {
+            data.skills[i] = getRerollSkill(data, oldSkillName);
+          }
           msg.reply(
             `\n` +
               serifs.rpg.moveToSkill(oldSkillName, data.skills[i].name) +
@@ -957,6 +963,17 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
   });
 
   const day = new Date().getDay();
+
+  if (data.itemMedal) {
+    aggregatedEffect.itemEquip =
+      (aggregatedEffect.itemEquip ?? 0) + data.itemMedal * 0.01;
+    aggregatedEffect.itemBoost =
+      (aggregatedEffect.itemBoost ?? 0) + data.itemMedal * 0.01;
+    aggregatedEffect.mindMinusAvoid =
+      (aggregatedEffect.mindMinusAvoid ?? 0) + data.itemMedal * 0.01;
+    aggregatedEffect.poisonAvoid =
+      (aggregatedEffect.poisonAvoid ?? 0) + data.itemMedal * 0.01;
+  }
 
   //曜日ボーナス
   if (day == 0 && aggregatedEffect.thunder) {

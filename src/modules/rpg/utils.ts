@@ -4,7 +4,7 @@ import Module from '@/module';
 import serifs from '@/serifs';
 import rpg from './index';
 import { colorReply, colors } from './colors';
-import { shopItems } from './shop';
+import { aggregateTokensEffects, shopItems } from './shop';
 
 export function initializeData(module: rpg, msg) {
   const data = msg.friend.getPerModulesData(module);
@@ -12,6 +12,12 @@ export function initializeData(module: rpg, msg) {
   if (!data.clearHistory) data.clearHistory = data.clearEnemy;
   if (!data.items) data.items = [];
   if (!data.coin) data.coin = 0;
+  if (data.shopExp < 200 && data.jar === 1) data.shopExp = 200;
+  if (data.shopExp < 600 && data.jar === 2) data.shopExp = 600;
+  if (data.shopExp < 1200 && data.jar === 3) data.shopExp = 1200;
+  if (data.shopExp < 2000 && data.jar === 4) data.shopExp = 2000;
+  if (data.shopExp < 3000 && data.jar === 5) data.shopExp = 3000;
+  if (data.shopExp < 4200 && data.jar === 6) data.shopExp = 4200;
   data.clearRaidNum = Array.from(new Set(data.clearRaid ?? []))?.length ?? 0;
   data.items?.filter(
     (x) =>
@@ -433,7 +439,9 @@ export function getEnemyDmg(
   );
   if (data.enemy?.fire) {
     dmg += Math.round(
-      ((data.count ?? count) - 1) * (100 + data.lv * 3) * data.enemy.fire,
+      ((data.count ?? count) - 1) *
+        Math.min(100 + data.lv * 3, 865) *
+        data.enemy.fire,
     );
   }
   if (Number.isNaN(dmg)) {
@@ -444,7 +452,8 @@ export function getEnemyDmg(
 
 export function random(data, startCharge = 0, skillEffects, reverse = false) {
   let rnd =
-    skillEffects.notRandom && !reverse
+    (skillEffects.notRandom || aggregateTokensEffects(data).notRandom) &&
+    !reverse
       ? 0.5 + (skillEffects.notRandom ?? 0) * 0.05
       : Math.random();
   if (skillEffects.charge) {
@@ -548,4 +557,20 @@ export function deepClone<T>(obj: T): T {
   }
 
   return copy;
+}
+
+export function numberCharConvert(input: number): string | null {
+  if (typeof input !== 'number') {
+    return null; // 無効な入力の場合
+  }
+
+  if (input >= 0 && input <= 9) {
+    return input.toString(); // 0~9の数値を文字列として返す
+  } else if (input >= 10 && input <= 35) {
+    // 10以上35以下の数値をアルファベットに変換 (10 => 'a', 11 => 'b', ..., 35 => 'z')
+    const char = String.fromCharCode('a'.charCodeAt(0) + input - 10);
+    return char;
+  } else {
+    return null; // 無効な入力の場合（負の数や36以上の数値など）
+  }
 }

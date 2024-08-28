@@ -8,6 +8,7 @@ import { colorReply, colors } from './colors';
 import { endressEnemy, enemys, Enemy, raidEnemys } from './enemys';
 import { rpgItems } from './items';
 import { aggregateTokensEffects, shopContextHook, shopReply } from './shop';
+import { shop2Reply } from './shop2';
 import {
   skills,
   Skill,
@@ -111,6 +112,28 @@ export default class extends Module {
         Array.isArray(serifs.rpg.command.shop)
           ? serifs.rpg.command.shop
           : [serifs.rpg.command.shop],
+      ) &&
+      msg.includes(
+        Array.isArray(serifs.rpg.command.shop2)
+          ? serifs.rpg.command.shop2
+          : [serifs.rpg.command.shop2],
+      )
+    ) {
+      // データを読み込み
+      const data = initializeData(this, msg);
+      if (
+        (!msg.user.host && msg.user.username === config.master) ||
+        data.items.filter((x) => x.name === '裏ショップ入場の札').length
+      ) {
+        // 裏ショップモード
+        return shop2Reply(this, this.ai, msg);
+      }
+    }
+    if (
+      msg.includes(
+        Array.isArray(serifs.rpg.command.shop)
+          ? serifs.rpg.command.shop
+          : [serifs.rpg.command.shop],
       )
     ) {
       // ショップモード
@@ -197,7 +220,7 @@ export default class extends Module {
 
   @autobind
   private getMaxLevel() {
-    return this.ai.friends
+    const maxLv = this.ai.friends
       .find()
       .filter((x) => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1)
       .reduce(
@@ -205,6 +228,7 @@ export default class extends Module {
           acc > cur.perModulesData.rpg.lv ? acc : cur.perModulesData.rpg.lv,
         0,
       );
+    return maxLv > 255 ? 255 : maxLv;
   }
 
   @autobind
@@ -218,7 +242,7 @@ export default class extends Module {
       this.rpgAccountListAdd();
       const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
       if (rpgData) {
-        rpgData.maxLv += 1;
+        if (rpgData.maxLv < 255) rpgData.maxLv += 1;
         this.ai.moduleData.update(rpgData);
       } else {
         const maxLv = this.getMaxLevel();
@@ -281,10 +305,14 @@ export default class extends Module {
     let helpMessage = [serifs.rpg.help.title];
     if ((data.lv ?? 0) < 7) {
       helpMessage.push(serifs.rpg.help.normal1);
-      if (data.coin > 0) {
-        helpMessage.push(serifs.rpg.help.okawari2(rpgData.maxLv - data.lv));
+      if (rpgData.maxLv >= 255) {
+        msg.reply(serifs.rpg.help.okawari3(rpgData.maxLv - data.lv));
       } else {
-        helpMessage.push(serifs.rpg.help.okawari1(rpgData.maxLv - data.lv));
+        if (data.coin > 0) {
+          helpMessage.push(serifs.rpg.help.okawari2(rpgData.maxLv - data.lv));
+        } else {
+          helpMessage.push(serifs.rpg.help.okawari1(rpgData.maxLv - data.lv));
+        }
       }
     } else {
       helpMessage.push(serifs.rpg.help.normal2);
@@ -311,9 +339,19 @@ export default class extends Module {
     if (data.coin > 0) {
       helpMessage.push(serifs.rpg.help.shop(data.coin));
     }
-    helpMessage.push(serifs.rpg.help.record);
-    helpMessage.push(serifs.rpg.help.status);
-    helpMessage.push(serifs.rpg.help.link);
+    if (data.items) {
+      if (data.items.filter((x) => x.name === '裏ショップ入場の札').length) {
+        helpMessage.push(serifs.rpg.help.shop2);
+      }
+      helpMessage.push(serifs.rpg.help.item);
+    }
+    if ((data.lv ?? 0) > 2) {
+      helpMessage.push(serifs.rpg.help.status);
+    }
+    if ((data.lv ?? 0) > 7) {
+      helpMessage.push(serifs.rpg.help.record);
+      helpMessage.push(serifs.rpg.help.link);
+    }
     helpMessage.push(serifs.rpg.help.help);
 
     msg.reply('\n' + helpMessage.join('\n\n'));
@@ -347,11 +385,32 @@ export default class extends Module {
         `激レア穢根くんのチェキ${data.jar - jarList.length >= 2 ? ' ×' + (data.jar - jarList.length) : ''}`,
       );
     }
+    if (data.nextSkill) {
+      message.push(data.nextSkill + 'の教本');
+    }
+    if (data.atkMedal) {
+      message.push('赤の勲章: ' + data.atkMedal + '個');
+    }
+    if (data.defMedal) {
+      message.push('青の勲章: ' + data.defMedal + '個');
+    }
+    if (data.itemMedal) {
+      message.push('緑の勲章: ' + data.itemMedal + '個');
+    }
+    if (data.rerollOrb) {
+      message.push('スキル変更珠: ' + data.rerollOrb + '個');
+    }
+    if (data.duplicationOrb) {
+      message.push('スキル複製珠: ' + data.duplicationOrb + '個');
+    }
+    if (message.length !== 1 && data.coin) {
+      message.push('キレイなどんぐり: ' + data.coin + '個');
+    }
     msg.reply(
       '\n' +
         message.join('\n') +
         (message.length === 1
-          ? '\n\n何も持っていないようじゃ。\n「RPG ショップ」で購入できるのじゃ。'
+          ? '\n\n何も持っていないようです。\n「RPG ショップ」で購入できます。'
           : ''),
     );
     return { reaction: 'love' };
@@ -407,9 +466,7 @@ export default class extends Module {
           const percentage = (rank / total) * 100;
 
           if (percentage < 50) {
-            rankmsg = `${
-              percentage < 10 ? '🥈' : percentage < 35 ? '🥉' : ''
-            }上位${percentage.toFixed(1)}%`;
+            rankmsg = `${percentage < 10 ? '🥈' : percentage < 35 ? '🥉' : ''}上位${percentage.toFixed(1)}%`;
           } else {
             const surpassedCount = total - rank - (sameRankCount - 1); // 同順位の人数を考慮
             if (surpassedCount > 0 || sameRankCount > 1) {
@@ -424,20 +481,14 @@ export default class extends Module {
         if (sameRankCount > 1) {
           rankmsg += `（同順位：${sameRankCount - 1}人）`;
         } else if (rank <= 10 && rank >= 2) {
-          rankmsg += `（1位：${(
-            values?.[0] + (options?.addValue || 0)
-          ).toLocaleString()}）`;
+          rankmsg += `（1位：${(values?.[0] + (options?.addValue || 0)).toLocaleString()}）`;
         } else if (rank == 1 && values?.[1]) {
-          rankmsg += `（2位：${(
-            values?.[1] + (options?.addValue || 0)
-          ).toLocaleString()}）`;
+          rankmsg += `（2位：${(values?.[1] + (options?.addValue || 0)).toLocaleString()}）`;
         }
       }
 
       // 表示するスコアにだけaddValueを適用
-      const finalScoreDisplay = `${options?.prefix || ''}${(
-        score + (options?.addValue || 0)
-      ).toLocaleString()}${options?.suffix || ''}`;
+      const finalScoreDisplay = `${options?.prefix || ''}${(score + (options?.addValue || 0)).toLocaleString()}${options?.suffix || ''}`;
 
       return `${label}\n${finalScoreDisplay} ${rankmsg}`;
     };
@@ -523,7 +574,7 @@ export default class extends Module {
         if (friend == null) return { reaction: ':neofox_approve:' };
         friend.doc.perModulesData.rpg.lastPlayedAt = '';
         friend.doc.perModulesData.rpg.lv = friend.doc.perModulesData.rpg.lv - 1;
-        friend.doc.perModulesData.rpg.atk = friend.doc.perModulesData.rpg.atk =
+        friend.doc.perModulesData.rpg.atk =
           friend.doc.perModulesData.rpg.atk - 5;
         friend.doc.perModulesData.rpg.def =
           friend.doc.perModulesData.rpg.def - 2;
@@ -535,7 +586,7 @@ export default class extends Module {
       const id = /\w{10,}/.exec(msg.extractedText)?.[0];
       if (id) {
         const friend = this.ai.lookupFriend(id);
-        if (friend == null) return { reaction: ':mk_hotchicken:' };
+        if (friend == null) return { reaction: ':neofox_approve:' };
         friend.doc.perModulesData.rpg.lastPlayedLv = 0;
         friend.doc.perModulesData.rpg.bestScore = 0;
         friend.save();
@@ -566,25 +617,16 @@ export default class extends Module {
       const allData = this.ai.friends.find();
 
       allData.forEach((x) => {
-        const enemyName = ':manbou_lefthand:';
-        if (!x?.perModulesData?.rpg?.raidScore?.[enemyName]) return;
-        x.perModulesData.rpg.raidScore[enemyName] = 0;
-      });
-      allData.forEach((x) => {
         const enemyName = ':refrigerator:';
         if (!x?.perModulesData?.rpg?.raidScore?.[enemyName]) return;
         x.perModulesData.rpg.raidScore[enemyName] = 0;
       });
-
       const rpgData = ai.moduleData.findOne({ type: 'rpg' });
       if (rpgData) {
-        rpgData.raidScore[':manbou_lefthand:'] = 0;
-        rpgData.raidScoreDate[':manbou_lefthand:'] = getDate();
         rpgData.raidScore[':refrigerator:'] = 0;
         rpgData.raidScoreDate[':refrigerator:'] = getDate();
         ai.moduleData.update(rpgData);
       }
-
       return { reaction: 'love' };
     }
     return { reaction: 'hmm' };
@@ -644,9 +686,7 @@ export default class extends Module {
     message += [
       `${serifs.rpg.nowStatus}`,
       `${serifs.rpg.status.atk} : ${Math.round(atk)}`,
-      `${serifs.rpg.status.post} : ${Math.round(
-        postCount - (isSuper ? 200 : 0),
-      )}`,
+      `${serifs.rpg.status.post} : ${Math.round(postCount - (isSuper ? 200 : 0))}`,
       '★'.repeat(Math.floor(tp)) +
         '☆'.repeat(Math.max(5 - Math.floor(tp), 0)) +
         '\n\n',
@@ -664,7 +704,6 @@ export default class extends Module {
       atk * (skillEffects.arpen ?? 0),
       edef * (skillEffects.arpen ?? 0),
     );
-
     if (edef < enemyMinDef) edef = enemyMinDef;
 
     atk =
@@ -700,7 +739,7 @@ export default class extends Module {
     );
     const maxRnd = Math.max(1.6 + (skillEffects.atkRndMax ?? 0), 0);
 
-    if (skillEffects.allForOne) {
+    if (skillEffects.allForOne || aggregateTokensEffects(data).allForOne) {
       atk = atk * spd * (1 + (skillEffects.allForOne ?? 0) * 0.1);
       spd = 1;
     }
@@ -814,7 +853,11 @@ export default class extends Module {
 
     const isMaxLevel = data.lv >= rpgData.maxLv;
 
-    let needCoin = 2;
+    let needCoin = 10;
+    if (rpgData.maxLv - data.lv >= 200) needCoin -= 1;
+    if (rpgData.maxLv - data.lv >= 150) needCoin -= 2;
+    if (rpgData.maxLv - data.lv >= 100) needCoin -= 2;
+    if (rpgData.maxLv - data.lv >= 50) needCoin -= 2;
 
     // プレイ済でないかのチェック
     if (data.lastPlayedAt === nowTimeStr || data.lastPlayedAt === nextTimeStr) {
@@ -828,7 +871,11 @@ export default class extends Module {
         if (data.lastOnemorePlayedAt === getDate()) {
           if (needCoin <= (data.coin ?? 0)) {
             if (isMaxLevel) {
-              msg.reply(serifs.rpg.oneMore.maxLv);
+              if (rpgData.maxLv >= 255) {
+                msg.reply(serifs.rpg.oneMore.maxLv2);
+              } else {
+                msg.reply(serifs.rpg.oneMore.maxLv);
+              }
               return {
                 reaction: 'confused',
               };
@@ -859,7 +906,11 @@ export default class extends Module {
           }
         }
         if (isMaxLevel) {
-          msg.reply(serifs.rpg.oneMore.maxLv);
+          if (rpgData.maxLv >= 255) {
+            msg.reply(serifs.rpg.oneMore.maxLv2);
+          } else {
+            msg.reply(serifs.rpg.oneMore.maxLv);
+          }
           return {
             reaction: 'confused',
           };
@@ -1054,13 +1105,16 @@ export default class extends Module {
     let playerHp = data.php ?? 100;
     /** 開始時のチャージ */
     const startCharge = data.charge;
+    /** プレイヤーの最大HP */
+    let playerMaxHp =
+      100 + Math.min(lv * 3, 765) + Math.floor((data.defMedal ?? 0) * 13.4);
 
     // 敵情報
     if (!data.enemy || count === 1) {
       // 新しい敵
       count = 1;
       data.count = 1;
-      playerHp = 100 + lv * 3;
+      playerHp = playerMaxHp;
       /** すでにこの回で倒している敵、出現条件を満たしていない敵を除外 */
       const filteredEnemys = enemys.filter(
         (x) =>
@@ -1125,7 +1179,7 @@ export default class extends Module {
               data.enemy.maxhp ?? 300,
             );
       let ehp = Math.min(data.ehp ?? mehp, mehp);
-      if (!data.php) data.php = 100 + lv * 3;
+      if (!data.php) data.php = playerMaxHp;
       data.count -= 1;
       message += showStatus(data, playerHp, ehp, mehp, me) + '\n\n';
       data.count += 1;
@@ -1205,9 +1259,8 @@ export default class extends Module {
     let enemyHp = Math.min(data.ehp ?? 100, enemyMaxHp);
     /** 敗北時のステータスボーナス */
     let bonus = 0;
-
     /** プレイヤーのHP割合 */
-    let playerHpPercent = playerHp / (100 + lv * 3);
+    let playerHpPercent = playerHp / playerMaxHp;
     /** 敵のHP割合 */
     let enemyHpPercent = enemyHp / enemyMaxHp;
     /** 使用したアイテム */
@@ -1486,7 +1539,7 @@ export default class extends Module {
               item.effect = 200;
             }
             const heal = Math.round(
-              (100 + lv * 3 - playerHp) * (item.effect * 0.005),
+              (playerMaxHp - playerHp) * (item.effect * 0.005),
             );
             playerHp += heal;
             if (heal > 0) {
@@ -1524,9 +1577,7 @@ export default class extends Module {
               } else if (item.effect > 30 && dmg > 0) {
                 message += `阨ちゃんは調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`;
               } else {
-                message += `あまり美味しくなかったようだ…${
-                  dmg > 0 ? `\n${dmg}ポイントのダメージを受けた！` : ''
-                }\n`;
+                message += `あまり美味しくなかったようだ…${dmg > 0 ? `\n${dmg}ポイントのダメージを受けた！` : ''}\n`;
               }
             }
           }
@@ -1536,16 +1587,8 @@ export default class extends Module {
       }
       if (aggregateTokensEffects(data).showItemBonus) {
         const itemMessage = [
-          `${
-            itemBonus.atk > 0
-              ? `${serifs.rpg.status.atk}+${itemBonus.atk.toFixed(0)}`
-              : ''
-          }`,
-          `${
-            itemBonus.def > 0
-              ? `${serifs.rpg.status.def}+${itemBonus.def.toFixed(0)}`
-              : ''
-          }`,
+          `${itemBonus.atk > 0 ? `${serifs.rpg.status.atk}+${itemBonus.atk.toFixed(0)}` : ''}`,
+          `${itemBonus.def > 0 ? `${serifs.rpg.status.def}+${itemBonus.def.toFixed(0)}` : ''}`,
         ]
           .filter(Boolean)
           .join(' / ');
@@ -1593,7 +1636,8 @@ export default class extends Module {
     if (
       !skillEffects.enemyBuff &&
       data.superUnlockCount > 5 &&
-      data.enemy.name !== endressEnemy(data).name
+      data.enemy.name !== endressEnemy(data).name &&
+      data.clearHistory.includes(data.enemy.name)
     ) {
       if (typeof data.enemy.atk === 'number')
         enemyAtk = lv * 3.5 * Math.max(data.enemy.atk, 3);
@@ -1648,7 +1692,7 @@ export default class extends Module {
       let buff = 0;
 
       /** プレイヤーのHP割合 */
-      let playerHpPercent = playerHp / (100 + lv * 3);
+      let playerHpPercent = playerHp / playerMaxHp;
       /** 敵のHP割合 */
       let enemyHpPercent = enemyHp / enemyMaxHp;
 
@@ -1738,10 +1782,19 @@ export default class extends Module {
         0,
       );
 
-      const atkMinRnd = Math.max(0.2 + (skillEffects.atkRndMin ?? 0), 0);
-      const atkMaxRnd = Math.max(1.6 + (skillEffects.atkRndMax ?? 0), 0);
+      const atkMinRnd = Math.max(
+        0.2 + (isSuper ? 0.3 : 0) + (skillEffects.atkRndMin ?? 0),
+        0,
+      );
+      const atkMaxRnd = Math.max(
+        1.6 + (isSuper ? -0.3 : 0) + (skillEffects.atkRndMax ?? 0),
+        0,
+      );
       const defMinRnd = Math.max(0.2 + (skillEffects.defRndMin ?? 0), 0);
-      const defMaxRnd = Math.max(1.6 + (skillEffects.defRndMax ?? 0), 0);
+      const defMaxRnd = Math.max(
+        1.6 + (isSuper ? -0.3 : 0) + (skillEffects.defRndMax ?? 0),
+        0,
+      );
 
       /** 予測最大ダメージ */
       let predictedDmg =
@@ -1824,7 +1877,7 @@ export default class extends Module {
         }
       }
 
-      if (skillEffects.allForOne) {
+      if (skillEffects.allForOne || aggregateTokensEffects(data).allForOne) {
         atk = atk * spd * (1 + (skillEffects.allForOne ?? 0) * 0.1);
         if (itemBonus?.atk)
           itemBonus.atk =
@@ -1953,7 +2006,7 @@ export default class extends Module {
         // 次の試合に向けてのパラメータセット
         data.enemy = null;
         data.count = 1;
-        data.php = 103 + lv * 3;
+        data.php = playerMaxHp + 3;
         data.ehp = 103 + lv * 3 + (data.winCount ?? 0) * 5;
         data.maxTp = 0;
         data.fireAtk = 0;
@@ -2083,9 +2136,9 @@ export default class extends Module {
               '\n' +
               serifs.rpg.nurse +
               '\n' +
-              (100 + lv * 3 - playerHp) +
+              (playerMaxHp - playerHp) +
               'ポイント回復した！\n';
-            playerHp = 100 + lv * 3;
+            playerHp = playerMaxHp;
           }
           if (maxDmg > (data.superMuscle ?? 0) && playerHp > 0)
             data.superMuscle = maxDmg;
@@ -2145,7 +2198,7 @@ export default class extends Module {
           // 次の試合に向けてのパラメータセット
           data.enemy = null;
           data.count = 1;
-          data.php = 113 + lv * 3;
+          data.php = playerMaxHp + 13;
           data.ehp = 103 + lv * 3 + (data.winCount ?? 0) * 5;
           data.maxTp = 0;
           data.fireAtk = 0;
@@ -2255,7 +2308,7 @@ export default class extends Module {
       }
     }
 
-    const skillBorders = [1, 20, 50, 70, 100];
+    const skillBorders = [20, 50, 100, 170, 255];
     const skillCounts = skillBorders.filter((x) => data.lv >= x).length;
 
     if ((data.skills ?? []).length < skillCounts) {
@@ -2297,9 +2350,7 @@ export default class extends Module {
       `\n\n${serifs.rpg.lvUp}`,
       `  ${serifs.rpg.status.lv} : ${data.lv ?? 1} (+1)`,
       `  ${serifs.rpg.status.atk} : ${data.atk ?? 0} (+${atkUp + bonus})`,
-      `  ${serifs.rpg.status.def} : ${data.def ?? 0} (+${
-        totalUp - atkUp + bonus
-      })`,
+      `  ${serifs.rpg.status.def} : ${data.def ?? 0} (+${totalUp - atkUp + bonus})`,
       addMessage,
       minusDurability ? '\n' + minusDurability : '',
       `\n${serifs.rpg.nextPlay(nextPlay == 24 ? '明日' : nextPlay + '時')}`,
@@ -2308,9 +2359,7 @@ export default class extends Module {
         : data.lastOnemorePlayedAt !== getDate()
           ? '(無料でおかわり可能)'
           : data.coin >= needCoin
-            ? `(どんぐりでおかわり可能 ${
-                data.coin > 99 ? '99+' : data.coin
-              } / ${needCoin})`
+            ? `(コインでおかわり可能 ${data.coin > 99 ? '99+' : data.coin} / ${needCoin})`
             : '',
     ]
       .filter(Boolean)
@@ -2368,6 +2417,10 @@ export default class extends Module {
 
     msg.friend.setPerModulesData(this, data);
 
+    if (data.lv === 255) {
+      message += serifs.rpg.reachMaxLv;
+    }
+
     // 色解禁確認
     const newColorData = colors.map((x) => x.unlock(data));
     /** 解禁した色 */
@@ -2413,9 +2466,11 @@ export default class extends Module {
       return { reaction: ':neofox_thumbsup:' };
     } else {
       this.log('replayOkawari: ?');
-      msg.reply(serifs.core.yesOrNo).then((reply) => {
-        this.subscribeReply('replayOkawari:' + msg.userId, reply.id);
-      });
+      msg
+        .reply(serifs.core.yesOrNo, { visibility: 'specified' })
+        .then((reply) => {
+          this.subscribeReply('replayOkawari:' + msg.userId, reply.id);
+        });
       return { reaction: 'hmm' };
     }
   }

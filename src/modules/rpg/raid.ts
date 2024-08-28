@@ -26,7 +26,7 @@ import {
   random,
   getRaidPostX,
 } from './utils';
-import { calculateStats, fortune } from './battle';
+import { calculateStats, fortune, stockRandom } from './battle';
 import serifs from '@/serifs';
 import getDate from '@/utils/get-date';
 import { acct } from '@/utils/acct';
@@ -124,7 +124,7 @@ function scheduleRaidStart() {
   const day = now.getDay();
   const isWeekend = day === 0 || day === 6; // 0は日曜日、6は土曜日
 
-  // 12:10, 12:45, 18:15, 21:15 にレイドを開始する
+  // 固定のレイドスケジュール
   if (
     (hours === 12 && (minutes === 10 || minutes === 45)) ||
     ((hours === 18 || hours === 21) && minutes === 15)
@@ -132,60 +132,92 @@ function scheduleRaidStart() {
     start();
   }
 
-  const usedTimes: string[] = []; // 使用済みの時間を記録する配列
+  const usedTimes: Set<string> = new Set(); // 使用済みの時間を記録するセット
   const activeRaids: { startTime: Date; endTime: Date }[] = []; // 現在進行中のレイドの開始・終了時刻を保持する配列
-  const randomHours = [7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 19, 20, 22, 23];
+  const randomHours = [6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 19, 20, 22, 23];
   const randomMinutes = [0, 10, 20, 40, 50];
-  const avoidTimes = ['11:40', '11:50', '13:00', '13:10', '17:50', '20:50']; // 既存の固定開始時刻を除外
-  const rng = seedrandom(`${now.getDate()}${hours}${minutes}`); // ランダム生成のシード
+  const avoidTimes = new Set([
+    '11:40',
+    '11:50',
+    '13:00',
+    '13:10',
+    '17:50',
+    '20:50',
+  ]); // 既存の固定開始時刻を除外
+  const rng = seedrandom(
+    `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`,
+  ); // 日付をシードに利用
 
   // ランダムな時間にレイドを開始する関数
   function scheduleRandomRaid() {
-    let selectedTime: string | null = null;
+    let attempts = 0; // 試行回数
+    const maxAttempts = 50; // 最大試行回数
     let isValidTime = false;
+    let selectedTime: string | null = null;
 
-    while (!isValidTime) {
+    while (!isValidTime && attempts < maxAttempts) {
       const selectedHour = randomHours[Math.floor(rng() * randomHours.length)];
       const selectedMinute =
         randomMinutes[Math.floor(rng() * randomMinutes.length)];
       selectedTime = `${selectedHour}:${selectedMinute}`;
 
-      // 選ばれた時間が使用済みまたは既存の固定時間帯に含まれていないか確認
-      if (
-        usedTimes.includes(selectedTime) ||
-        avoidTimes.includes(selectedTime)
-      ) {
+      if (usedTimes.has(selectedTime) || avoidTimes.has(selectedTime)) {
+        attempts++;
         continue;
       }
 
-      // レイドの時間帯を生成
       const selectedDate = new Date(now);
       selectedDate.setHours(selectedHour);
       selectedDate.setMinutes(selectedMinute);
       const endDate = new Date(selectedDate);
       endDate.setMinutes(selectedMinute + 35); // レイドの持続時間は35分
 
-      // 他のレイドと時間が重ならないか確認
       isValidTime = activeRaids.every((raid) => {
-        // 新しいレイドが既存のレイドの開始・終了時刻と重ならないことを確認
-        return (
-          selectedDate >= raid.endTime || // 新しいレイドが既存レイドの終了後に始まる
-          endDate <= raid.startTime // 新しいレイドが既存レイドの開始前に終わる
-        );
+        return selectedDate >= raid.endTime || endDate <= raid.startTime;
       });
 
       if (isValidTime) {
-        // 使用済みとして記録し、レイドをスケジュール
-        usedTimes.push(selectedTime);
+        // レイド時間が確定した場合
+        usedTimes.add(selectedTime);
         activeRaids.push({
           startTime: selectedDate,
           endTime: endDate,
         });
 
-        // 現在時刻と一致する場合はレイドを開始
+        // 現在時刻と一致する場合にレイドを開始
         if (hours === selectedHour && minutes === selectedMinute) {
           start();
         }
+      } else {
+        attempts++;
+      }
+    }
+
+    // 最大試行回数を超えた場合でも、最初の有効な時間を使ってレイドをスケジュール
+    if (!isValidTime && selectedTime) {
+      console.warn(
+        'レイド時間が被らない適切な時間が見つかりませんでしたが、スケジュールします。',
+      );
+      const fallbackHour = randomHours[0];
+      const fallbackMinute = randomMinutes[0];
+      const fallbackTime = `${fallbackHour}:${fallbackMinute}`;
+
+      // Fallback時間にレイドを設定
+      const fallbackDate = new Date(now);
+      fallbackDate.setHours(fallbackHour);
+      fallbackDate.setMinutes(fallbackMinute);
+      const fallbackEndDate = new Date(fallbackDate);
+      fallbackEndDate.setMinutes(fallbackMinute + 35);
+
+      usedTimes.add(fallbackTime);
+      activeRaids.push({
+        startTime: fallbackDate,
+        endTime: fallbackEndDate,
+      });
+
+      // 現在時刻と一致する場合にレイドを開始
+      if (hours === fallbackHour && minutes === fallbackMinute) {
+        start();
       }
     }
   }
@@ -354,14 +386,14 @@ function finish(raid: Raid) {
 
   for (let attacker of sortAttackers) {
     results.push(
-      `${attacker.me} ${acct(attacker.user)}:\n${attacker.mark === ':blank:' && attacker.dmg === 100 ? '💯' : attacker.mark} Lv${String(attacker.lv).padStart(levelSpace, ' ')} ${attacker.count}ターン ${attacker.dmg.toLocaleString()}ダメージ`,
+      `${attacker.me} ${acct(attacker.user)}:\n${attacker.mark === ':blank:' && attacker.dmg === 100 ? '💯' : attacker.mark} ${attacker.count}ターン ${attacker.dmg.toLocaleString()}ダメージ`,
     );
     if (
       results.length <= 19 &&
       (attacker.skillsStr?.skills || attacker.skillsStr?.amulet)
     )
       results.push(
-        `:blank:<small>${[
+        `:blank: <small>${[
           attacker.skillsStr?.skills,
           attacker.skillsStr?.amulet
             ? `お守り ${attacker.skillsStr.amulet}`
@@ -452,7 +484,6 @@ function finish(raid: Raid) {
   module_.unsubscribeReply(raid.postId);
   raid.replyKey.forEach((x) => module_.unsubscribeReply(x));
 }
-
 /**
  * レイドのコンテキストフック
  * @param key レイドのキー
@@ -468,7 +499,7 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
 
   const _data = msg.friend.getPerModulesData(module_);
   if (!_data.lv) {
-    msg.reply('RPGモードを先に1回プレイしてください！');
+    msg.reply('RPGモードを先に1回プレイしてほしいのじゃ');
     return {
       reaction: 'hmm',
     };
@@ -483,7 +514,7 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
   if (raid == null) return;
 
   if (raid.attackers.some((x) => x.user.id == msg.userId)) {
-    msg.reply('すでに参加済みの様です！').then((reply) => {
+    msg.reply('すでに参加済みのようじゃ！').then((reply) => {
       raid.replyKey.push(raid.postId + ':' + reply.id);
       module_.subscribeReply(raid.postId + ':' + reply.id, reply.id);
       raids.update(raid);
@@ -502,7 +533,7 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
   const result = await getTotalDmg(msg, enemy);
 
   if (raid.attackers.some((x) => x.user.id == msg.userId)) {
-    msg.reply('すでに参加済みの様です！').then((reply) => {
+    msg.reply('すでに参加済みのようじゃ！').then((reply) => {
       raid.replyKey.push(raid.postId + ':' + reply.id);
       module_.subscribeReply(raid.postId + ':' + reply.id, reply.id);
       raids.update(raid);
@@ -516,7 +547,6 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
     return {
       reaction: 'confused',
     };
-
   module_.log(`damage ${result.totalDmg} by ${msg.user.id}`);
 
   raid.attackers.push({
@@ -578,6 +608,10 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
   } else {
     skillEffects = aggregateSkillsEffects(data);
   }
+
+  const stockRandomResult = stockRandom(data, skillEffects);
+
+  skillEffects = stockRandomResult.skillEffects;
 
   const skillsStr = getSkillsShortName(data);
 
@@ -655,6 +689,10 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     message += serifs.rpg.skillX(enemy.skillX) + `\n\n`;
   }
 
+  if (stockRandomResult.activate) {
+    message += serifs.rpg.skill.stockRandom + `\n\n`;
+  }
+
   if (enemy.forcePostCount) {
     buff += 1;
     message += serifs.rpg.forcePostCount + `\n`;
@@ -691,11 +729,18 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
   // ここで残りのステータスを計算しなおす
   let { atk, def, spd } = calculateStats(data, msg, skillEffects, color, 0.2);
-  if (skillEffects.fortuneEffect) {
+  if (
+    skillEffects.fortuneEffect ||
+    aggregateTokensEffects(data).fortuneEffect
+  ) {
     const result = fortune(atk, def, skillEffects.fortuneEffect);
     atk = result.atk;
     def = result.def;
-    message += serifs.rpg.skill.fortune + `\n`;
+    if (skillEffects.fortuneEffect) {
+      message += serifs.rpg.skill.fortune + `\n`;
+    } else {
+      message += serifs.rpg.skill.fortuneToken + `\n`;
+    }
     message += result.message + `\n`;
   }
   // 数取りボーナスに上限がついたため、その分の補填を全員に付与
@@ -731,9 +776,10 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
   /** 連続攻撃中断の場合の攻撃可能回数 0は最後まで攻撃 */
   let abort = 0;
   /** プレイヤーの基礎体力 */
-  let rawMaxHp = 100 + Math.min(lv * 2, 599) + lv * 1;
+  let rawMaxHp =
+    100 + Math.min(lv * 3, 765) + Math.floor((data.defMedal ?? 0) * 13.4);
   /** プレイヤーのボーナス体力 */
-  let bonusMaxHp = 100 + Math.min(maxLv * 3, 899);
+  let bonusMaxHp = 100 + Math.min(maxLv * 3, 765);
   /** プレイヤーの最大HP */
   let playerMaxHp = Math.max(Math.round(bonusMaxHp * Math.random()), rawMaxHp);
   /** プレイヤーのHP */
@@ -778,6 +824,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
   let mark = ':blank:';
   let warriorFlg = false;
   let warriorTotalDmg = 0;
+  let warriorCritX = 2;
 
   if (
     !enemy.skillX &&
@@ -956,7 +1003,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
       }
     }
 
-    // 毒属性剣攻撃
+    // 毒属性妖術
     if (skillEffects.weak && count > 1) {
       if (isBattle && isPhysical) {
         buff += 1;
@@ -1238,7 +1285,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     /** 1ターンに与えられる最大ダメージ量 */
     let maxdmg = enemy.maxdmg ? enemyMaxHp * enemy.maxdmg : undefined;
 
-    // 土属性剣攻撃
+    // 土属性妖術
     if (skillEffects.dart && isBattle && isPhysical && maxdmg) {
       buff += 1;
       message += serifs.rpg.skill.dart + '\n';
@@ -1250,11 +1297,11 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
     let trueDmg = 0;
 
-    // 炎属性剣攻撃
+    // 炎属性妖術
     if (skillEffects.fire && isBattle && isPhysical) {
       buff += 1;
       message += serifs.rpg.skill.fire + '\n';
-      trueDmg = Math.ceil(lv * skillEffects.fire);
+      trueDmg = Math.ceil(Math.min(lv, 255) * skillEffects.fire);
     } else if (skillEffects.fire && !(isBattle && isPhysical)) {
       // 非戦闘時は、パワーに還元される
       atk = atk + lv * 3.75 * skillEffects.fire;
@@ -1399,7 +1446,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
       }
     }
 
-    if (skillEffects.allForOne) {
+    if (skillEffects.allForOne || aggregateTokensEffects(data).allForOne) {
       const spdx = getSpdX(spd);
       atk = atk * spdx * (1 + (skillEffects.allForOne ?? 0) * 0.1);
       if (itemBonus?.atk)
@@ -1416,7 +1463,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         lv * 4,
         tp,
         1,
-        crit ? 2.5 : false,
+        crit ? warriorCritX : false,
         enemyDef,
         enemyMaxHp,
         0.5,
@@ -1429,6 +1476,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
           : serifs.rpg.warrior.atk(dmg)) + '\n';
       totalDmg += dmg;
       warriorTotalDmg += dmg;
+      if (crit) warriorCritX += 0.5;
     }
 
     // 自身攻撃の処理
@@ -1520,7 +1568,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     } else {
       let enemyAtkX = 1;
       // 攻撃後発動スキル効果
-      // 氷属性剣攻撃
+      // 氷属性妖術
       if (
         isBattle &&
         isPhysical &&
@@ -1533,7 +1581,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         // 非戦闘時は氷の効果はないが、防御に還元される
         def = def * (1 + (skillEffects.ice ?? 0));
       }
-      // 光属性剣攻撃
+      // 光属性妖術
       if (
         isBattle &&
         isPhysical &&
@@ -1546,7 +1594,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         // 非戦闘時は光の効果はないが、防御に還元される
         def = def * (1 + (skillEffects.light ?? 0) * 0.5);
       }
-      // 闇属性剣攻撃
+      // 闇属性妖術
       if (
         enemy.spd &&
         enemy.spd >= 2 &&
@@ -1678,13 +1726,13 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     let crit = Math.random() < 0.5;
     const dmg = getAtkDmg(
       data,
-      lv * 3.5,
+      lv * 4,
       tp,
       1,
-      crit ? 4 : false,
+      crit ? warriorCritX : false,
       enemyDef,
       enemyMaxHp,
-      0.5,
+      1,
       getVal(enemy.defx, [count]),
     );
     // メッセージの出力
@@ -1772,7 +1820,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     }
   }
 
-  if (data.exp >= 5 && data.lv + 1 < rpgData.maxLv) {
+  if (data.exp >= 5 && (data.lv > 255 || data.lv + 1 < rpgData.maxLv)) {
     // レベルアップ処理
     data.lv = (data.lv ?? 1) + 1;
     let atkUp = 2 + Math.floor(Math.random() * 4);
