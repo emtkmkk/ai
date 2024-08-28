@@ -178,7 +178,7 @@ export const shop2Reply = async (module: rpg, ai: 藍, msg: Message) => {
 
 	msg.friend.setPerModulesData(module, data);
 
-	module.subscribeReply("shopBuy:" + msg.userId, reply.id, { showShopItems: showShopItems.map((x) => ({ name: x.name, type: x.type, price: x.price, orb: x.orb || false, ...(x.type === "amulet" ? { durability: x.durability ?? undefined, skillName: x.skillName ?? undefined } : {}) })) });
+	module.subscribeReply("shopBuy:" + msg.userId, reply.id, { shopDate: getDate(), showShopItems: showShopItems.map((x) => ({ name: x.name, type: x.type, price: x.price, orb: x.orb || false, ...(x.type === "amulet" ? { durability: x.durability ?? undefined, skillName: x.skillName ?? undefined } : {}) })) });
 
 	return {
 		reaction: 'love'
