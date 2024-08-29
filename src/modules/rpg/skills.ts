@@ -283,7 +283,7 @@ export const skills: Skill[] = [
     short: '毒',
     desc: `戦闘時、ターン経過ごとに相手が弱体化します`,
     info: `ターン経過ごとに敵のステータス-6%`,
-    effect: { weak: 0.06 },
+    effect: { weak: 0.05 },
   },
   {
     name: `テキパキこなす`,
