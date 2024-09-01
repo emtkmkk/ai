@@ -20,7 +20,7 @@ export function calculateStats(data, msg, skillEffects, color, maxBonus = 100) {
 		def = _atk;
 	}
 
-	atk *= (1 + (skillEffects.atkUp ?? 0));
+	atk *= (1 + (skillEffects.atkUp ?? 0) + (data.items?.some((y) => y.type === "amulet") ? 0 : (skillEffects.noAmuletAtkUp ?? 0)));
 	def *= (1 + (skillEffects.defUp ?? 0));
 	
 	atk *= (1 + (data.atkMedal ?? 0) * 0.01);
