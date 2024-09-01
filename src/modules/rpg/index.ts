@@ -753,7 +753,7 @@ export default class extends Module {
 		data.lastPlayedAt = nowTimeStr;
 
 		/** 使用中の色情報 */
-		let color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
+		let color = getColor(data);
 
 		if (!color.unlock(data)) {
 			data.color === (colors.find((x) => x.default) ?? colors[0]).id;
