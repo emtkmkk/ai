@@ -208,10 +208,14 @@ export default class extends Module {
 		} else {
 			helpMessage.push(serifs.rpg.help.normal2);
 			if (data.lv < rpgData.maxLv) {
-				if (data.coin > 0) {
-					helpMessage.push(serifs.rpg.help.okawari2(rpgData.maxLv - data.lv));
+				if (rpgData.maxLv >= 255) {
+					msg.reply(serifs.rpg.help.okawari3(rpgData.maxLv - data.lv));
 				} else {
-					helpMessage.push(serifs.rpg.help.okawari1(rpgData.maxLv - data.lv));
+					if (data.coin > 0) {
+						helpMessage.push(serifs.rpg.help.okawari2(rpgData.maxLv - data.lv));
+					} else {
+						helpMessage.push(serifs.rpg.help.okawari1(rpgData.maxLv - data.lv));
+					}
 				}
 			}
 			helpMessage.push(serifs.rpg.help.trial(data.bestScore));
