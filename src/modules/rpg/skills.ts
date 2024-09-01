@@ -159,7 +159,7 @@ export type SkillEffect = {
 	berserk?: number;
 	slowStart?: number;
 	stockRandomEffect?: number;
-	noAmuletAtkUp: number;
+	noAmuletAtkUp?: number;
 };
 
 export type Skill = {
