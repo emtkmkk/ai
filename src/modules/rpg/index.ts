@@ -197,7 +197,7 @@ export default class extends Module {
 		if ((data.lv ?? 0) < 7) {
 			helpMessage.push(serifs.rpg.help.normal1);
 			if (rpgData.maxLv >= 255) {
-				msg.reply(serifs.rpg.help.okawari3(rpgData.maxLv - data.lv));
+				helpMessage.push(serifs.rpg.help.okawari3(rpgData.maxLv - data.lv));
 			} else {
 				if (data.coin > 0) {
 					helpMessage.push(serifs.rpg.help.okawari2(rpgData.maxLv - data.lv));
@@ -209,7 +209,7 @@ export default class extends Module {
 			helpMessage.push(serifs.rpg.help.normal2);
 			if (data.lv < rpgData.maxLv) {
 				if (rpgData.maxLv >= 255) {
-					msg.reply(serifs.rpg.help.okawari3(rpgData.maxLv - data.lv));
+					helpMessage.push(serifs.rpg.help.okawari3(rpgData.maxLv - data.lv));
 				} else {
 					if (data.coin > 0) {
 						helpMessage.push(serifs.rpg.help.okawari2(rpgData.maxLv - data.lv));
