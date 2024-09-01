@@ -159,6 +159,7 @@ export type SkillEffect = {
 	berserk?: number;
 	slowStart?: number;
 	stockRandomEffect?: number;
+	noAmuletAtkUp: number;
 };
 
 export type Skill = {
@@ -237,6 +238,7 @@ export const skills: Skill[] = [
 	{ name: `天国か地獄か`, short: "天", desc: `戦闘開始時に強くなるか弱くなるかどちらかが起こります`, info: `60%でステータス+20% 40%でステータス-20%`, effect: { heavenOrHell: 0.2 } },
 	{ name: `気性が荒い`, short: "荒", desc: `戦闘が得意になりますが、戦闘以外の効率が大きく下がります`, info: `${serifs.rpg.status.atk}+25% 非戦闘時、${serifs.rpg.status.atk}-40%`, effect: { atkUp: 0.25, notBattleBonusAtk: -0.4 }, unique: "mind" },
 	{ name: `気性穏やか`, short: "穏", desc: `戦闘以外の効率がとても上がりますが、戦闘が苦手になります`, info: `${serifs.rpg.status.atk}-25% 非戦闘時、${serifs.rpg.status.atk}+70%`, effect: { atkUp: -0.25, notBattleBonusAtk: 0.7 }, unique: "mind" },
+	{ name: `かるわざ`, short: "軽", desc: `ステータスが上がり、お守りを持っていない時、追加で${serifs.rpg.status.atk}がさらに上がります`, info: `ステータス+5% お守りを持っていない時、追加で${serifs.rpg.status.atk}+4%`, effect: { atkUp: 0.05, defUp: 0.05, noAmuletAtkUp: 0.04 }, skillOnly: true },
 ];
 
 export const getSkill = (data) => {
