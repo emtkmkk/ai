@@ -80,6 +80,20 @@ const ultimateEffect: SkillEffect = {
 	"heavenOrHell": 0.02
 }
 
+const resetCantRerollSkill = (data) => {
+	const totalStatus = data.lv * 7.6;
+	const atkPercent = data.atk / (data.atk + data.def);
+
+	data.atk = Math.round(totalStatus * atkPercent);
+	data.def = Math.round(totalStatus * (1 - atkPercent));
+
+	for (let i = 0; i < data.skills.length; i++) {
+		if (skills[i].cantReroll) {
+			data.skills[i] = skills.find((x) => x.name === "伝説");
+		}
+	}
+}
+
 export const shop2Items: ShopItem[] = [
 	{ name: `お守りを捨てる`, limit: (data) => data.items.filter((x) => x.type === "amulet").length, price: 0, desc: `今所持しているお守りを捨てます`, type: "item", effect: (data) => data.items = data.items?.filter((x) => x.type !== "amulet"), always: true },
 	{ name: `行動加速のお札`, limit: (data) => (data.maxSpd ?? 0) < 5 && !data.items.filter((x) => x.name === "行動加速のお札").length, price: (data) => 370 - (data.maxSpd ?? 0) * 70, desc: `持っているともこチキの懐き度に関係なく最低5回行動できるようになる`, type: "token", effect: { fivespd: true }, always: true } as TokenItem,
@@ -100,6 +114,7 @@ export const shop2Items: ShopItem[] = [
 	{ name: "運命不変のお札を預ける", limit: (data) => data.items.filter((x) => x.name === "運命不変のお札").length, desc: "与ダメージがランダム変化するようになる", price: 0, type: "item", effect: (data) => { data.bankItems = Array.from(new Set([...(data.bankItems ?? []), "運命不変のお札"])); data.items = data.items.filter((x) => x.name !== "運命不変のお札") }, always: true },
 	{ name: "しあわせのお札を預ける", limit: (data) => data.items.filter((x) => x.name === "しあわせのお札").length, desc: "ステータスの割合がランダムに一時的に変化しなくなる", price: 0, type: "item", effect: (data) => { data.bankItems = Array.from(new Set([...(data.bankItems ?? []), "しあわせのお札"])); data.items = data.items.filter((x) => x.name !== "しあわせのお札") }, always: true },
 	{ name: "乱数透視の札を預ける", limit: (data) => data.items.filter((x) => x.name === "乱数透視の札").length, desc: "ダメージの乱数が表示されなくなります", price: 0, type: "item", effect: (data) => { data.bankItems = Array.from(new Set([...(data.bankItems ?? []), "乱数透視の札"])); data.items = data.items.filter((x) => x.name !== "乱数透視の札") }, always: true },
+	{ name: `浄化の水晶`, limit: (data) => data.skills.filter((x) => x.cantReroll).length, price: 50, desc: `もこチキが持っている変更不可のスキルを変更可能なスキルに置き換えます ただしステータスが変動する可能性があります`, type: "item", effect: resetCantRerollSkill, always: true },
 	{ name: "力の種", desc: "購入時、パワー+1 防御-1", price: 1, type: "item", effect: (data) => { data.atk = (data.atk ?? 0) + 1; data.def = (data.def ?? 0) - 1; }, infinite: true, always: true },
 	{ name: "幸運の力の種", limit: (data) => ((10 - (data.atk % 10) + 7) % 10) !== 0, desc: "購入時、パワーの下1桁が7になるように防御から移動", price: (data) => ((10 - (data.atk % 10) + 7) % 10), type: "item", effect: (data) => { data.def = (data.def ?? 0) - ((10 - (data.atk % 10) + 7) % 10); data.atk = (data.atk ?? 0) + ((10 - (data.atk % 10) + 7) % 10); }, infinite: true, always: true },
 	{ name: "高級力の種", desc: "購入時、防御2%をパワーに移動", price: 5, type: "item", effect: (data) => { data.atk = Math.round((data.atk ?? 0) + Math.round((data.def ?? 0) / 50)); data.def = Math.round((data.def ?? 0) - Math.round((data.def ?? 0) / 50)); }, infinite: true, always: true },
