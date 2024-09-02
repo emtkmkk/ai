@@ -146,6 +146,7 @@ export const shopItems: ShopItem[] = [
 	{ name: `バーサクのお守り`, price: 20, desc: `レイド時、毎ターンダメージを受けますが、パワーがアップします 耐久10 レイドでの使用時耐久減少`, type: "amulet", effect: { berserk: 0.15 }, durability: 10, short: "バ", isUsed: (data) => data.raid } as AmuletItem,
 	{ name: `スロースタートのお守り`, price: 20, desc: `レイド時、最初は弱くなりますが、ターンが進む度にどんどん強くなります 耐久10 レイドでの使用時耐久減少`, type: "amulet", effect: { slowStart: 1 }, durability: 10, short: "ス", isUsed: (data) => data.raid } as AmuletItem,
 	{ name: `謎のお守り`, price: 20, desc: `すこし不思議な力を感じる……`, type: "amulet", effect: { stockRandomEffect: 1 }, durability: 1, short: "？", isUsed: (data) => data.raid, isMinusDurability: (data) => !data.stockRandomCount } as AmuletItem,
+	{ name: `⚠時間圧縮ボタン`, limit: (data) => data.lv < 254 && data.maxLv > 254 && data.info === 3 && data.clearHistory.includes(":mk_chickenda_gtgt:"), price: lvBoostPrice, desc: `購入時、周囲の時間を圧縮！もこチキがLv254に急成長します（⚠注意！戦闘を行う事なくレベルを上げる為、戦闘勝利数などの統計は一切増加しません！さらに、RPGおかわりの権利があと1回まで減少します！一度購入すると元には戻せません！）`, type: "item", effect: lvBoostEffect, always: true },
 	...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly).map((x): AmuletItem => ({ name: `${x.name}のお守り`, price: (data, rnd, ai) => skillPrice(ai, x.name, rnd), desc: `持っているとスキル「${x.name}」を使用できる${x.desc ? `（${x.desc}）` : ""} 耐久6 使用時耐久減少`, type: "amulet", effect: x.effect, durability: 6, skillName: x.name, short: x.short, isUsed: (data) => true })),
 ];
 
@@ -349,6 +350,9 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 		data.items = data.items?.filter((x) => x.type !== "amulet")
 	}
 
+	const maxLv = ai.moduleData.findOne({ type: 'rpg' })?.maxLv ?? 1;
+	data.maxLv = maxLv;
+
 	let filteredShopItems = shopItems.filter((x) => (!x.limit || x.limit(data, rnd)) && !(x.type === "amulet" && (data.lv < 20 || data.items?.some((y) => y.type === "amulet"))) && !x.always);
 
 	if (data.lastShopVisited !== getDate() || !data.shopItems?.length) {
@@ -514,4 +518,19 @@ export function aggregateTokensEffects(data: { items: ShopItem[]; }): any {
 	});
 
 	return aggregatedEffect;
+}
+
+function lvBoostPrice(data) {
+	const lvUpNum = 254 - data.lv;
+	if (lvUpNum > 150) return (lvUpNum - 150) * 2 + 50 * 3 + 50 * 4 + 50 * 5;
+	if (lvUpNum > 100) return (lvUpNum - 100) * 3 + 50 * 4 + 50 * 5;
+	if (lvUpNum > 50) return (lvUpNum - 50) * 4 + 50 * 5;
+	return lvUpNum * 5;
+}
+
+function lvBoostEffect(data) {
+	const lvUpNum = 254 - data.lv;
+	data.atk = data.atk + Math.round(lvUpNum * 3.75);
+	data.def = data.def + Math.round(lvUpNum * 3.75);
+	data.lv = 254;
 }
