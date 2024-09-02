@@ -52,10 +52,10 @@ export default class extends Module {
 	private async mentionHook(msg: Message) {
 		if (!msg.user.host && msg.visibility !== "specified" && (!msg.replyId || msg.replyNote?.userId !== this.ai.account.id)) {
 			if (msg.includes([serifs.rpg.command.rpg])) {
-				msg.reply("RPG関連のコマンドを使用する際は私の何らかの投稿への返信で送ってください！", {visibility: "specified"})
-					return {
-						reaction: 'hmm'
-					};
+				msg.reply("RPG関連のコマンドを使用する際は私の何らかの投稿への返信で送ってください！", { visibility: "specified" })
+				return {
+					reaction: 'hmm'
+				};
 			} else {
 				return false;
 			}
@@ -72,7 +72,7 @@ export default class extends Module {
 			// 色モード
 			return colorReply(this, msg);
 		}
-		if (msg.includes(Array.isArray(serifs.rpg.command.shop) ? serifs.rpg.command.shop : [serifs.rpg.command.shop]) && msg.includes(Array.isArray(serifs.rpg.command.shop2) ? serifs.rpg.command.shop2 : [serifs.rpg.command.shop2])) {	
+		if (msg.includes(Array.isArray(serifs.rpg.command.shop) ? serifs.rpg.command.shop : [serifs.rpg.command.shop]) && msg.includes(Array.isArray(serifs.rpg.command.shop2) ? serifs.rpg.command.shop2 : [serifs.rpg.command.shop2])) {
 			// データを読み込み
 			const data = initializeData(this, msg);
 			if ((!msg.user.host && msg.user.username === config.master) || data.items.filter((x) => x.name === "裏ショップ入場の札").length) {
@@ -261,7 +261,7 @@ export default class extends Module {
 
 		let message = ["アイテム一覧\n"];
 		const itemType = ["amulet", "token"]
-		message.push(data.items.sort((a,b) => itemType.indexOf(a.type) - itemType.indexOf(b.type)).map((x) => x.name + (x.durability ? " 残耐久" + x.durability : "")).join("\n"))
+		message.push(data.items.sort((a, b) => itemType.indexOf(a.type) - itemType.indexOf(b.type)).map((x) => x.name + (x.durability ? " 残耐久" + x.durability : "")).join("\n"))
 		const jarList = ["壺", "きれいな壺", "すごい壺", "巨大な壺", "うねうねした壺", "ナノサイズ壺"]
 		message.push(jarList.slice(0, data.jar).join("\n"))
 		if (data.jar > jarList.length) {
@@ -450,7 +450,7 @@ export default class extends Module {
 			const ai = this.ai;
 			const games = this.raids.find({});
 			const allData = this.ai.friends.find();
-			
+
 			allData.forEach(x => {
 				const enemyName = ":mk_giga:"
 				if (!x?.perModulesData?.rpg?.raidScore?.[enemyName]) return;
@@ -529,7 +529,7 @@ export default class extends Module {
 		const enemyMinDef = edef * 0.4
 		edef -= Math.max(atk * (skillEffects.arpen ?? 0), edef * (skillEffects.arpen ?? 0));
 		if (edef < enemyMinDef) edef = enemyMinDef;
-		
+
 		atk = atk * (1 + ((skillEffects.critUpFixed ?? 0) * (1 + (skillEffects.critDmgUp ?? 0))));
 		atk = atk * (1 + (skillEffects.dart ?? 0) * 0.5);
 		atk = atk * (1 + (skillEffects.abortDown ?? 0) * (1 / 3));
@@ -647,7 +647,7 @@ export default class extends Module {
 							};
 						}
 						if (!data.replayOkawari && !aggregateTokensEffects(data).autoReplayOkawari) {
-							const reply = await msg.reply(serifs.rpg.oneMore.buyQuestion(needCoin, data.coin), {visibility: "specified"});
+							const reply = await msg.reply(serifs.rpg.oneMore.buyQuestion(needCoin, data.coin), { visibility: "specified" });
 							this.log("replayOkawari SubscribeReply: " + reply.id);
 							this.subscribeReply("replayOkawari:" + msg.userId, reply.id);
 							return { reaction: 'love' };
@@ -1049,6 +1049,9 @@ export default class extends Module {
 					if (playerHpPercent < 0.5) message += serifs.rpg.skill.lowHpFood;
 					types = ["medicine", "poison"];
 				}
+				if (types.includes("poison") && Math.random() < (skillEffects.poisonAvoid ?? 0)) {
+					types = types.filter((x) => x !== "poison");
+				}
 				const type = types[Math.floor(Math.random() * types.length)];
 				if ((type === "weapon" && !(isBattle && isPhysical)) || (type === "armor" && isTired) || data.enemy.pLToR) {
 					let isPlus = Math.random() < (0.5 + (skillEffects.mindMinusAvoid ?? 0) + (count === 1 ? skillEffects.firstTurnMindMinusAvoid ?? 0 : 0));
@@ -1170,27 +1173,23 @@ export default class extends Module {
 					}
 					break;
 				case "poison":
-					if (Math.random() < (skillEffects.poisonAvoid ?? 0)) {
-						message += `${item.name}を取り出したが、美味しそうでなかったので捨てた！\n`;
+					message += `${item.name}を取り出し、食べた！\n`;
+					if (data.enemy.pLToR) {
+						mindMsg(item.mind);
+						if (item.mind < 0 && isSuper) item.mind = item.mind / 2;
+						itemBonus.atk = atk * (item.mind * 0.0025);
+						itemBonus.def = def * (item.mind * 0.0025);
+						atk = atk + itemBonus.atk;
+						def = def + itemBonus.def;
 					} else {
-						message += `${item.name}を取り出し、食べた！\n`;
-						if (data.enemy.pLToR) {
-							mindMsg(item.mind);
-							if (item.mind < 0 && isSuper) item.mind = item.mind / 2;
-							itemBonus.atk = atk * (item.mind * 0.0025);
-							itemBonus.def = def * (item.mind * 0.0025);
-							atk = atk + itemBonus.atk;
-							def = def + itemBonus.def;
+						const dmg = Math.round(playerHp * (item.effect * 0.003) * (isSuper ? 0.5 : 1));
+						playerHp -= dmg;
+						if (item.effect >= 70 && dmg > 0) {
+							message += `もこチキはかなり調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`;
+						} else if (item.effect > 30 && dmg > 0) {
+							message += `もこチキは調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`;
 						} else {
-							const dmg = Math.round(playerHp * (item.effect * 0.003) * (isSuper ? 0.5 : 1));
-							playerHp -= dmg;
-							if (item.effect >= 70 && dmg > 0) {
-								message += `もこチキはかなり調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`;
-							} else if (item.effect > 30 && dmg > 0) {
-								message += `もこチキは調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`;
-							} else {
-								message += `あまり美味しくなかったようだ…${dmg > 0 ? `\n${dmg}ポイントのダメージを受けた！` : ""}\n`;
-							}
+							message += `あまり美味しくなかったようだ…${dmg > 0 ? `\n${dmg}ポイントのダメージを受けた！` : ""}\n`;
 						}
 					}
 					break;
@@ -1223,7 +1222,7 @@ export default class extends Module {
 			if (typeof data.enemy.atkx === "number") data.enemy.atkx += 1 + (0.2 * statusX);
 			if (typeof data.enemy.defx === "number") data.enemy.defx += 1 + (0.5 * statusX);
 		}
-		
+
 		if (!skillEffects.enemyBuff && data.superUnlockCount > 5 && data.enemy.name !== endressEnemy(data).name && data.clearHistory.includes(data.enemy.name)) {
 			if (typeof data.enemy.atk === "number") enemyAtk = lv * 3.5 * Math.max(data.enemy.atk, 3);
 			if (typeof data.enemy.def === "number") enemyDef = lv * 3.5 * Math.max(data.enemy.def, 3);
@@ -1270,7 +1269,7 @@ export default class extends Module {
 			let enemyHpPercent = enemyHp / enemyMaxHp;
 
 			/** 連続攻撃中断の場合の攻撃可能回数 0は最後まで攻撃 */
-	  	let abort = 0;
+			let abort = 0;
 
 			// 敵に最大ダメージ制限がある場合、ここで計算
 			/** 1ターンに与えられる最大ダメージ量 */
@@ -1747,7 +1746,7 @@ export default class extends Module {
 			this.unsubscribeReply(key);
 			if (msg.friend.doc?.perModulesData?.rpg) msg.friend.doc.perModulesData.rpg.replayOkawari = true;
 			msg.friend.save();
-			msg.reply(serifs.rpg.oneMore.buyComp, {visibility: "specified"});
+			msg.reply(serifs.rpg.oneMore.buyComp, { visibility: "specified" });
 			return { reaction: ':mk_muscleok:' };
 		} else if (msg.text.includes('いいえ')) {
 			this.log("replayOkawari: No");
@@ -1755,7 +1754,7 @@ export default class extends Module {
 			return { reaction: ':mk_muscleok:' };
 		} else {
 			this.log("replayOkawari: ?");
-			msg.reply(serifs.core.yesOrNo, {visibility: "specified"}).then(reply => {
+			msg.reply(serifs.core.yesOrNo, { visibility: "specified" }).then(reply => {
 				this.subscribeReply("replayOkawari:" + msg.userId, reply.id);
 			});
 			return { reaction: 'hmm' };

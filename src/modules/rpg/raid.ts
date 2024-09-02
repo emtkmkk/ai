@@ -375,8 +375,8 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
 	}
 
 	if (!result) return {
-			reaction: 'confused'
-		};
+		reaction: 'confused'
+	};
 	module_.log(`damage ${result.totalDmg} by ${msg.user.id}`);
 
 	raid.attackers.push({
@@ -821,6 +821,9 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 					if (skillEffects.lowHpFood && playerHpPercent < 0.5) message += serifs.rpg.skill.lowHpFood;
 					types = ["medicine", "poison"];
 				}
+				if (types.includes("poison") && Math.random() < (skillEffects.poisonAvoid ?? 0)) {
+          types = types.filter((x) => x!== "poison");
+				}
 				const type = types[Math.floor(Math.random() * types.length)];
 				if ((type === "weapon" && !(isBattle && isPhysical)) || (type === "armor" && isTired) || enemy.pLToR) {
 					let isPlus = Math.random() < (0.5 + (skillEffects.mindMinusAvoid ?? 0) + (count === 1 ? skillEffects.firstTurnMindMinusAvoid ?? 0 : 0));
@@ -942,27 +945,23 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 					}
 					break;
 				case "poison":
-					if (Math.random() < (skillEffects.poisonAvoid ?? 0)) {
-						message += `${item.name}を取り出したが、美味しそうでなかったので捨てた！\n`;
+					message += `${item.name}を取り出し、食べた！\n`;
+					if (enemy.pLToR) {
+						mindMsg(item.mind);
+						if (item.mind < 0 && isSuper) item.mind = item.mind / 2;
+						itemBonus.atk = atk * (item.mind * 0.0025);
+						itemBonus.def = def * (item.mind * 0.0025);
+						atk = atk + itemBonus.atk;
+						def = def + itemBonus.def;
 					} else {
-						message += `${item.name}を取り出し、食べた！\n`;
-						if (enemy.pLToR) {
-							mindMsg(item.mind);
-							if (item.mind < 0 && isSuper) item.mind = item.mind / 2;
-							itemBonus.atk = atk * (item.mind * 0.0025);
-							itemBonus.def = def * (item.mind * 0.0025);
-							atk = atk + itemBonus.atk;
-							def = def + itemBonus.def;
+						const dmg = Math.round(playerHp * (item.effect * 0.003) * (isSuper ? 0.5 : 1));
+						playerHp -= dmg;
+						if (item.effect >= 70 && dmg > 0) {
+							message += `もこチキはかなり調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`;
+						} else if (item.effect > 30 && dmg > 0) {
+							message += `もこチキは調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`;
 						} else {
-							const dmg = Math.round(playerHp * (item.effect * 0.003) * (isSuper ? 0.5 : 1));
-							playerHp -= dmg;
-							if (item.effect >= 70 && dmg > 0) {
-								message += `もこチキはかなり調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`;
-							} else if (item.effect > 30 && dmg > 0) {
-								message += `もこチキは調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`;
-							} else {
-								message += `あまり美味しくなかったようだ…${dmg > 0 ? `\n${dmg}ポイントのダメージを受けた！` : ""}\n`;
-							}
+							message += `あまり美味しくなかったようだ…${dmg > 0 ? `\n${dmg}ポイントのダメージを受けた！` : ""}\n`;
 						}
 					}
 					break;
@@ -1255,13 +1254,13 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	}
 
 	if (warriorFlg) {
-			//** クリティカルかどうか */
-			let crit = Math.random() < 0.5;
-			const dmg = getAtkDmg(data, lv * 4, tp, 1, crit ? warriorCritX : false, enemyDef, enemyMaxHp, 1, getVal(enemy.defx, [count]));
-			// メッセージの出力
-			message += "\n\n" + (crit ? `**${serifs.rpg.warrior.atk(dmg)}**` : serifs.rpg.warrior.atk(dmg));
-			totalDmg += dmg;
-			warriorTotalDmg += dmg;
+		//** クリティカルかどうか */
+		let crit = Math.random() < 0.5;
+		const dmg = getAtkDmg(data, lv * 4, tp, 1, crit ? warriorCritX : false, enemyDef, enemyMaxHp, 1, getVal(enemy.defx, [count]));
+		// メッセージの出力
+		message += "\n\n" + (crit ? `**${serifs.rpg.warrior.atk(dmg)}**` : serifs.rpg.warrior.atk(dmg));
+		totalDmg += dmg;
+		warriorTotalDmg += dmg;
 	}
 	if (playerHp > 0) {
 		const enemySAtk = Math.max((_enemyAtk / (lv * 3.5)) * (getVal(enemy.atkx, [6]) ?? 3), 0.01);
@@ -1308,7 +1307,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	if (amuletmsg) {
 		message += "\n\n" + amuletmsg;
 	}
-	
+
 	const rpgData = ai.moduleData.findOne({ type: 'rpg' });
 	if (data.lv + 1 < rpgData.maxLv) {
 		data.exp = (data.exp ?? 0) + 1;
@@ -1316,7 +1315,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			message += "\n\n" + serifs.rpg.expPoint(data.exp);
 		}
 	}
-	
+
 	if (data.exp >= 5 && (data.lv > 255 || data.lv + 1 < rpgData.maxLv)) {
 
 		// レベルアップ処理
@@ -1386,7 +1385,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		let msgCount = 1
 		while (message.length > msgCount * 7500) {
 			msgCount += 1;
-			await msg.reply(`<center>${message.slice((msgCount - 1) * 7500,msgCount * 7500)}</center>`, {
+			await msg.reply(`<center>${message.slice((msgCount - 1) * 7500, msgCount * 7500)}</center>`, {
 				cw: cw + " " + msgCount,
 				visibility: "specified",
 			});
