@@ -443,7 +443,7 @@ export function shopContextHook(module: Module, key: any, msg: Message, data: an
 					item.effect(rpgData);
 					const [lvDiff, atkDiff, defDiff] = [rpgData.lv - _lv, rpgData.atk - _atk, rpgData.def - _def];
 					if (data.showShopItems[i].price === 0) {
-						message += data.showShopItems[i].name.replace("捨てる", "捨てました！");
+						message += data.showShopItems[i].name.replace("捨てる", "捨てました！").replace("預ける", "店員に預けました！");
 					}
 					if (lvDiff || atkDiff || defDiff) {
 						message += [
@@ -455,11 +455,13 @@ export function shopContextHook(module: Module, key: any, msg: Message, data: an
 					}
 					if (!item.infinite) {
 						rpgData.shopItems = rpgData.shopItems?.filter((x) => data.showShopItems[i].name !== x);
+						rpgData.shop2Items = rpgData.shop2Items?.filter((x) => data.showShopItems[i].name !== x);
 						module.unsubscribeReply(key);
 					}
 				} else {
 					rpgData.items.push(data.showShopItems[i]);
 					rpgData.shopItems = rpgData.shopItems?.filter((x) => data.showShopItems[i].name !== x);
+					rpgData.shop2Items = rpgData.shop2Items?.filter((x) => data.showShopItems[i].name !== x);
 					module.unsubscribeReply(key);
 				}
 

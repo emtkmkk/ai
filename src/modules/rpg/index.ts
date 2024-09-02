@@ -1010,12 +1010,14 @@ export default class extends Module {
 		}
 
 		// HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
-		if (playerHpPercent <= (1 / 7) * (1 + (skillEffects.haisuiUp ?? 0)) && (enemyHpPercent - playerHpPercent) >= 0.5 / (1 + (skillEffects.haisuiUp ?? 0))) {
-			buff += 1;
-			message += serifs.rpg.haisui + "\n";
-			const effect = Math.min((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.haisuiUp ?? 0)), 1);
-			atk = atk + Math.round(def * effect);
-			def = Math.round(def * (1 - effect));
+		if (!aggregateTokensEffects(data).notLastPower) {
+			if (playerHpPercent <= (1 / 7) * (1 + (skillEffects.haisuiUp ?? 0)) && (enemyHpPercent - playerHpPercent) >= 0.5 / (1 + (skillEffects.haisuiUp ?? 0))) {
+				buff += 1;
+				message += serifs.rpg.haisui + "\n";
+				const effect = Math.min((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.haisuiUp ?? 0)), 1);
+				atk = atk + Math.round(def * effect);
+				def = Math.round(def * (1 - effect));
+			}
 		}
 
 		const itemEquip = 0.4 + ((1 - playerHpPercent) * 0.6);
