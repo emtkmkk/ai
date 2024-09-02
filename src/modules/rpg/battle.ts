@@ -22,7 +22,7 @@ export function calculateStats(data, msg, skillEffects, color, maxBonus = 100) {
 
 	atk *= (1 + (skillEffects.atkUp ?? 0) + (data.items?.some((y) => y.type === "amulet") ? 0 : (skillEffects.noAmuletAtkUp ?? 0)));
 	def *= (1 + (skillEffects.defUp ?? 0));
-	
+
 	atk *= (1 + (data.atkMedal ?? 0) * 0.01);
 
 	return { atk, def, spd };
@@ -129,13 +129,14 @@ export function stockRandom(data, skillEffects) {
 	if (skillEffects?.stockRandomEffect) {
 
 		const probability = Math.min(data.stockRandomCount * 0.012, 0.12);
-		activate = true;
-		let effectPoint = data.stockRandomCount > 5 ? 20 + (data.stockRandomCount - 5) * 2 : data.stockRandomCount * 4;
-		let attackUpFlg = false;
-		data.stockRandomCount = 0;
 
 		if (Math.random() < probability) {
-			const effects: ({limit: boolean; effect: () => void})[] = [
+			activate = true;
+			let effectPoint = data.stockRandomCount > 5 ? 20 + (data.stockRandomCount - 5) * 2 : data.stockRandomCount * 4;
+			let attackUpFlg = false;
+			if (!data.maxStock || data.maxStock < data.stockRandomCount) data.maxStock = data.stockRandomCount;
+			data.stockRandomCount = 0;
+			const effects: ({ limit: boolean; effect: () => void })[] = [
 				{
 					limit: !attackUpFlg,
 					effect: () => {
@@ -277,7 +278,7 @@ export function stockRandom(data, skillEffects) {
 		} else {
 			data.stockRandomCount = (data.stockRandomCount ?? 0) + 1;
 		}
-	
+
 	}
 
 	return {

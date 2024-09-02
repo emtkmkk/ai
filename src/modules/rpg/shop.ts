@@ -107,7 +107,7 @@ export const shopItems: ShopItem[] = [
 	{ name: "おかわり2RPG自動支払いの札を捨てる", limit: (data) => data.items.filter((x) => x.name === "おかわり2RPG自動支払いの札").length, desc: "おかわりおかわりRPGをプレイする際に毎回確認を表示します", price: 0, type: "item", effect: (data) => data.items = data.items.filter((x) => x.name !== "おかわり2RPG自動支払いの札"), always: true },
 	{ name: "自動旅モードの札を捨てる", limit: (data) => data.items.filter((x) => x.name === "自動旅モードの札").length, desc: "旅モードに自動で突入しなくなります", price: 0, type: "item", effect: (data) => data.items = data.items.filter((x) => x.name !== "自動旅モードの札"), always: true },
 	{ name: "†の札を捨てる", limit: (data) => data.items.filter((x) => x.name === "†の札").length && !data.clearHistory.includes(":mk_chickenda_gtgt:"), desc: "本気の†が出現しなくなります", price: 0, type: "item", effect: (data) => data.items = data.items.filter((x) => x.name !== "†の札"), always: true },
-	{ name: "乱数透視の札", limit: (data) => data.lv >= 7 && !data.items.filter((x) => x.name === "乱数透視の札").length, desc: "所持している間、ダメージの乱数が表示されるようになります", price: 50, type: "token", effect: { showRandom: true } },
+	{ name: "乱数透視の札", limit: (data) => data.lv >= 7 && !data.items.filter((x) => x.name === "乱数透視の札").length && !data.bankItems?.filter((x) => x.name === "乱数透視の札").length, desc: "所持している間、ダメージの乱数が表示されるようになります", price: 50, type: "token", effect: { showRandom: true } },
 	{ name: "投稿数ボーナス表示の札", limit: (data) => data.lv >= 20 && !data.items.filter((x) => x.name === "投稿数ボーナス表示の札").length, desc: "所持している間、投稿数ボーナスの詳細情報が表示されるようになります", price: 50, type: "token", effect: { showPostBonus: true } },
 	{ name: "スキル詳細表示の札", limit: (data) => data.lv >= 20 && !data.items.filter((x) => x.name === "スキル詳細表示の札").length, desc: "所持している間、スキルの詳細情報が表示されるようになります", price: 50, type: "token", effect: { showSkillBonus: true } },
 	{ name: "装備詳細表示の札", limit: (data) => data.lv >= 7 && !data.items.filter((x) => x.name === "装備詳細表示の札").length, desc: "所持している間、武器・防具の詳細な効果が表示されます", price: 50, type: "token", effect: { showItemBonus: true } },
@@ -146,7 +146,7 @@ export const shopItems: ShopItem[] = [
 	{ name: `バーサクのお守り`, price: 20, desc: `レイド時、毎ターンダメージを受けますが、パワーがアップします 耐久10 レイドでの使用時耐久減少`, type: "amulet", effect: { berserk: 0.15 }, durability: 10, short: "バ", isUsed: (data) => data.raid } as AmuletItem,
 	{ name: `スロースタートのお守り`, price: 20, desc: `レイド時、最初は弱くなりますが、ターンが進む度にどんどん強くなります 耐久10 レイドでの使用時耐久減少`, type: "amulet", effect: { slowStart: 1 }, durability: 10, short: "ス", isUsed: (data) => data.raid } as AmuletItem,
 	{ name: `謎のお守り`, price: 20, desc: `すこし不思議な力を感じる……`, type: "amulet", effect: { stockRandomEffect: 1 }, durability: 1, short: "？", isUsed: (data) => data.raid, isMinusDurability: (data) => !data.stockRandomCount } as AmuletItem,
-	...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly).map((x): AmuletItem => ({ name: `${x.name}のお守り`, price: (data, rnd, ai) => skillPrice(ai, x.name, rnd), desc: `持っているとスキル「${x.name}」を使用できる 耐久6 使用時耐久減少`, type: "amulet", effect: x.effect, durability: 6, skillName: x.name, short: x.short, isUsed: (data) => true })),
+	...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly).map((x): AmuletItem => ({ name: `${x.name}のお守り`, price: (data, rnd, ai) => skillPrice(ai, x.name, rnd), desc: `持っているとスキル「${x.name}」を使用できる${x.desc ? `（${x.desc}）` : ""} 耐久6 使用時耐久減少`, type: "amulet", effect: x.effect, durability: 6, skillName: x.name, short: x.short, isUsed: (data) => true })),
 ];
 
 function getRandomSkills(ai, num) {
@@ -423,16 +423,16 @@ export function shopContextHook(module: Module, key: any, msg: Message, data: an
 	}
 
 	for (let i = 0; i < data.showShopItems.length; i++) {
-        const str = numberCharConvert(i + 1);
+		const str = numberCharConvert(i + 1);
 		if (str && msg.includes([str])) {
 			if (data.showShopItems[i].orb ? data.showShopItems[i].price <= rpgData.rerollOrb : data.showShopItems[i].price <= rpgData.coin) {
-                if (data.showShopItems[i].orb) {
-                    rpgData.rerollOrb -= data.showShopItems[i].price;
-                } else {
-                    rpgData.coin -= data.showShopItems[i].price;
-                    if (!rpgData.shopExp) rpgData.shopExp = 0;
-                    rpgData.shopExp += data.showShopItems[i].price;
-                }
+				if (data.showShopItems[i].orb) {
+					rpgData.rerollOrb -= data.showShopItems[i].price;
+				} else {
+					rpgData.coin -= data.showShopItems[i].price;
+					if (!rpgData.shopExp) rpgData.shopExp = 0;
+					rpgData.shopExp += data.showShopItems[i].price;
+				}
 
 				let message = "";
 
@@ -463,11 +463,11 @@ export function shopContextHook(module: Module, key: any, msg: Message, data: an
 					module.unsubscribeReply(key);
 				}
 
-                if (data.showShopItems[i].orb) {
-                    msg.reply((data.showShopItems[i].price ? serifs.rpg.shop.buyItemOrb(data.showShopItems[i].name, rpgData.rerollOrb) : "") + message);
-                } else {
-				    msg.reply((data.showShopItems[i].price ? serifs.rpg.shop.buyItem(data.showShopItems[i].name, rpgData.coin) : "") + message);
-                }
+				if (data.showShopItems[i].orb) {
+					msg.reply((data.showShopItems[i].price ? serifs.rpg.shop.buyItemOrb(data.showShopItems[i].name, rpgData.rerollOrb) : "") + message);
+				} else {
+					msg.reply((data.showShopItems[i].price ? serifs.rpg.shop.buyItem(data.showShopItems[i].name, rpgData.coin) : "") + message);
+				}
 				msg.friend.setPerModulesData(module, rpgData);
 
 				return {
@@ -475,11 +475,11 @@ export function shopContextHook(module: Module, key: any, msg: Message, data: an
 				};
 
 			} else {
-                if (data.showShopItems[i].orb) {
-                    msg.reply(serifs.rpg.shop.notEnoughOrb);
-                } else {
-				    msg.reply(serifs.rpg.shop.notEnoughCoin);
-                }
+				if (data.showShopItems[i].orb) {
+					msg.reply(serifs.rpg.shop.notEnoughOrb);
+				} else {
+					msg.reply(serifs.rpg.shop.notEnoughCoin);
+				}
 			}
 		}
 	}
