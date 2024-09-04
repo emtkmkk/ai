@@ -306,7 +306,7 @@ export default class extends Module {
     if ((data.lv ?? 0) < 7) {
       helpMessage.push(serifs.rpg.help.normal1);
       if (rpgData.maxLv >= 255) {
-        msg.reply(serifs.rpg.help.okawari3(rpgData.maxLv - data.lv));
+        helpMessage.push(serifs.rpg.help.okawari3(rpgData.maxLv - data.lv));
       } else {
         if (data.coin > 0) {
           helpMessage.push(serifs.rpg.help.okawari2(rpgData.maxLv - data.lv));
@@ -316,11 +316,16 @@ export default class extends Module {
       }
     } else {
       helpMessage.push(serifs.rpg.help.normal2);
+      helpMessage.push(serifs.rpg.help.normal2);
       if (data.lv < rpgData.maxLv) {
-        if (data.coin > 0) {
-          helpMessage.push(serifs.rpg.help.okawari2(rpgData.maxLv - data.lv));
+        if (rpgData.maxLv >= 255) {
+          helpMessage.push(serifs.rpg.help.okawari3(rpgData.maxLv - data.lv));
         } else {
-          helpMessage.push(serifs.rpg.help.okawari1(rpgData.maxLv - data.lv));
+          if (data.coin > 0) {
+            helpMessage.push(serifs.rpg.help.okawari2(rpgData.maxLv - data.lv));
+          } else {
+            helpMessage.push(serifs.rpg.help.okawari1(rpgData.maxLv - data.lv));
+          }
         }
       }
       helpMessage.push(serifs.rpg.help.trial(data.bestScore));
@@ -853,11 +858,7 @@ export default class extends Module {
 
     const isMaxLevel = data.lv >= rpgData.maxLv;
 
-    let needCoin = 10;
-    if (rpgData.maxLv - data.lv >= 200) needCoin -= 1;
-    if (rpgData.maxLv - data.lv >= 150) needCoin -= 2;
-    if (rpgData.maxLv - data.lv >= 100) needCoin -= 2;
-    if (rpgData.maxLv - data.lv >= 50) needCoin -= 2;
+    let needCoin = 2;
 
     // プレイ済でないかのチェック
     if (data.lastPlayedAt === nowTimeStr || data.lastPlayedAt === nextTimeStr) {
@@ -1031,10 +1032,7 @@ export default class extends Module {
     data.lastPlayedAt = nowTimeStr;
 
     /** 使用中の色情報 */
-    let color =
-      colors.find((x) => x.id === (data.color ?? 1)) ??
-      colors.find((x) => x.default) ??
-      colors[0];
+    let color = getColor(data);
 
     if (!color.unlock(data)) {
       data.color === (colors.find((x) => x.default) ?? colors[0]).id;
@@ -1353,21 +1351,23 @@ export default class extends Module {
     }
 
     // HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
-    if (
-      playerHpPercent <= (1 / 7) * (1 + (skillEffects.haisuiUp ?? 0)) &&
-      enemyHpPercent - playerHpPercent >=
-        0.5 / (1 + (skillEffects.haisuiUp ?? 0))
-    ) {
-      buff += 1;
-      message += serifs.rpg.haisui + '\n';
-      const effect = Math.min(
-        (enemyHpPercent - playerHpPercent) * (1 + (skillEffects.haisuiUp ?? 0)),
-        1,
-      );
-      atk = atk + Math.round(def * effect);
-      def = Math.round(def * (1 - effect));
+    if (!aggregateTokensEffects(data).notLastPower) {
+      if (
+        playerHpPercent <= (1 / 7) * (1 + (skillEffects.haisuiUp ?? 0)) &&
+        enemyHpPercent - playerHpPercent >=
+          0.5 / (1 + (skillEffects.haisuiUp ?? 0))
+      ) {
+        buff += 1;
+        message += serifs.rpg.haisui + '\n';
+        const effect = Math.min(
+          (enemyHpPercent - playerHpPercent) *
+            (1 + (skillEffects.haisuiUp ?? 0)),
+          1,
+        );
+        atk = atk + Math.round(def * effect);
+        def = Math.round(def * (1 - effect));
+      }
     }
-
     const itemEquip = 0.4 + (1 - playerHpPercent) * 0.6;
     if (
       rpgItems.length &&
@@ -1407,6 +1407,12 @@ export default class extends Module {
         ) {
           if (playerHpPercent < 0.5) message += serifs.rpg.skill.lowHpFood;
           types = ['medicine', 'poison'];
+        }
+        if (
+          types.includes('poison') &&
+          Math.random() < (skillEffects.poisonAvoid ?? 0)
+        ) {
+          types = types.filter((x) => x !== 'poison');
         }
         const type = types[Math.floor(Math.random() * types.length)];
         if (
@@ -1556,29 +1562,25 @@ export default class extends Module {
           }
           break;
         case 'poison':
-          if (Math.random() < (skillEffects.poisonAvoid ?? 0)) {
-            message += `${item.name}を取り出したが、美味しそうでなかったので捨てた！\n`;
+          message += `${item.name}を取り出し、食べた！\n`;
+          if (data.enemy.pLToR) {
+            mindMsg(item.mind);
+            if (item.mind < 0 && isSuper) item.mind = item.mind / 2;
+            itemBonus.atk = atk * (item.mind * 0.0025);
+            itemBonus.def = def * (item.mind * 0.0025);
+            atk = atk + itemBonus.atk;
+            def = def + itemBonus.def;
           } else {
-            message += `${item.name}を取り出し、食べた！\n`;
-            if (data.enemy.pLToR) {
-              mindMsg(item.mind);
-              if (item.mind < 0 && isSuper) item.mind = item.mind / 2;
-              itemBonus.atk = atk * (item.mind * 0.0025);
-              itemBonus.def = def * (item.mind * 0.0025);
-              atk = atk + itemBonus.atk;
-              def = def + itemBonus.def;
+            const dmg = Math.round(
+              playerHp * (item.effect * 0.003) * (isSuper ? 0.5 : 1),
+            );
+            playerHp -= dmg;
+            if (item.effect >= 70 && dmg > 0) {
+              message += `阨ちゃんはかなり調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`;
+            } else if (item.effect > 30 && dmg > 0) {
+              message += `阨ちゃんは調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`;
             } else {
-              const dmg = Math.round(
-                playerHp * (item.effect * 0.003) * (isSuper ? 0.5 : 1),
-              );
-              playerHp -= dmg;
-              if (item.effect >= 70 && dmg > 0) {
-                message += `阨ちゃんはかなり調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`;
-              } else if (item.effect > 30 && dmg > 0) {
-                message += `阨ちゃんは調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`;
-              } else {
-                message += `あまり美味しくなかったようだ…${dmg > 0 ? `\n${dmg}ポイントのダメージを受けた！` : ''}\n`;
-              }
+              message += `あまり美味しくなかったようだ…${dmg > 0 ? `\n${dmg}ポイントのダメージを受けた！` : ''}\n`;
             }
           }
           break;

@@ -216,7 +216,8 @@ export const shopItems: ShopItem[] = [
     name: '乱数透視の札',
     limit: (data) =>
       data.lv >= 7 &&
-      !data.items.filter((x) => x.name === '乱数透視の札').length,
+      !data.items.filter((x) => x.name === '乱数透視の札').length &&
+      !data.bankItems?.filter((x) => x === '乱数透視の札').length,
     desc: '所持している間、ダメージの乱数が表示されるようになります',
     price: 50,
     type: 'token',
@@ -645,15 +646,28 @@ export const shopItems: ShopItem[] = [
     durability: 1,
     short: '？',
     isUsed: (data) => data.raid,
-    isMinusDurability: (data) => !data.stockRandomCount,
+    isMinusDurability: (data) => data.stockRandomCount <= 0,
   } as AmuletItem,
+  {
+    name: `⚠時間圧縮ボタン`,
+    limit: (data) =>
+      data.lv < 254 &&
+      data.maxLv > 254 &&
+      data.info === 3 &&
+      data.clearHistory.includes(':aine_youshou:'),
+    price: lvBoostPrice,
+    desc: `購入時、周囲の時間を圧縮！阨ちゃんがLv254に急成長します（⚠注意！戦闘を行う事なくレベルを上げる為、戦闘勝利数などの統計は一切増加しません！さらに、RPGおかわりの権利があと1回まで減少します！一度購入すると元には戻せません！）`,
+    type: 'item',
+    effect: lvBoostEffect,
+    always: true,
+  },
   ...skills
     .filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly)
     .map(
       (x): AmuletItem => ({
         name: `${x.name}のお守り`,
         price: (data, rnd, ai) => skillPrice(ai, x.name, rnd),
-        desc: `持っているとスキル「${x.name}」を使用できる 耐久6 使用時耐久減少`,
+        desc: `持っているとスキル「${x.name}」を使用できる${x.desc ? `（${x.desc}）` : ''} 耐久6 使用時耐久減少`,
         type: 'amulet',
         effect: x.effect,
         durability: 6,
@@ -869,6 +883,9 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
     data.items = data.items?.filter((x) => x.type !== 'amulet');
   }
 
+  const maxLv = ai.moduleData.findOne({ type: 'rpg' })?.maxLv ?? 1;
+  data.maxLv = maxLv;
+
   let filteredShopItems = shopItems.filter(
     (x) =>
       (!x.limit || x.limit(data, rnd)) &&
@@ -1038,10 +1055,9 @@ export function shopContextHook(
             rpgData.def - _def,
           ];
           if (data.showShopItems[i].price === 0) {
-            message += data.showShopItems[i].name.replace(
-              '捨てる',
-              '捨てました！',
-            );
+            message += data.showShopItems[i].name
+              .replace('捨てる', '捨てました！')
+              .replace('預ける', '店員に預けました！');
           }
           if (lvDiff || atkDiff || defDiff) {
             message += [
@@ -1057,11 +1073,17 @@ export function shopContextHook(
             rpgData.shopItems = rpgData.shopItems?.filter(
               (x) => data.showShopItems[i].name !== x,
             );
+            rpgData.shop2Items = rpgData.shop2Items?.filter(
+              (x) => data.showShopItems[i].name !== x,
+            );
             module.unsubscribeReply(key);
           }
         } else {
           rpgData.items.push(data.showShopItems[i]);
           rpgData.shopItems = rpgData.shopItems?.filter(
+            (x) => data.showShopItems[i].name !== x,
+          );
+          rpgData.shop2Items = rpgData.shop2Items?.filter(
             (x) => data.showShopItems[i].name !== x,
           );
           module.unsubscribeReply(key);
@@ -1135,4 +1157,19 @@ export function aggregateTokensEffects(data: { items: ShopItem[] }): any {
   });
 
   return aggregatedEffect;
+}
+
+function lvBoostPrice(data) {
+  const lvUpNum = 254 - data.lv;
+  if (lvUpNum > 150) return (lvUpNum - 150) * 2 + 50 * 3 + 50 * 4 + 50 * 5;
+  if (lvUpNum > 100) return (lvUpNum - 100) * 3 + 50 * 4 + 50 * 5;
+  if (lvUpNum > 50) return (lvUpNum - 50) * 4 + 50 * 5;
+  return lvUpNum * 5;
+}
+
+function lvBoostEffect(data) {
+  const lvUpNum = 254 - data.lv;
+  data.atk = data.atk + Math.round(lvUpNum * 3.75);
+  data.def = data.def + Math.round(lvUpNum * 3.75);
+  data.lv = 254;
 }

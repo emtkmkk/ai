@@ -175,6 +175,7 @@ export type SkillEffect = {
   berserk?: number;
   slowStart?: number;
   stockRandomEffect?: number;
+  noAmuletAtkUp?: number;
 };
 
 export type Skill = {
@@ -601,6 +602,14 @@ export const skills: Skill[] = [
     info: `${serifs.rpg.status.atk}-25% 非戦闘時、${serifs.rpg.status.atk}+70%`,
     effect: { atkUp: -0.25, notBattleBonusAtk: 0.7 },
     unique: 'mind',
+  },
+  {
+    name: `かるわざ`,
+    short: '軽',
+    desc: `ステータスが上がり、お守りを持っていない時、追加で${serifs.rpg.status.atk}がさらに上がります`,
+    info: `ステータス+5% お守りを持っていない時、追加で${serifs.rpg.status.atk}+4%`,
+    effect: { atkUp: 0.05, defUp: 0.05, noAmuletAtkUp: 0.04 },
+    skillOnly: true,
   },
 ];
 

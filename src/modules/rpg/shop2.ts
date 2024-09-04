@@ -117,6 +117,20 @@ const ultimateEffect: SkillEffect = {
   heavenOrHell: 0.02,
 };
 
+const resetCantRerollSkill = (data) => {
+  const totalStatus = data.lv * 7.6;
+  const atkPercent = data.atk / (data.atk + data.def);
+
+  data.atk = Math.round(totalStatus * atkPercent);
+  data.def = Math.round(totalStatus * (1 - atkPercent));
+
+  for (let i = 0; i < data.skills.length; i++) {
+    if (skills[i].cantReroll) {
+      data.skills[i] = skills.find((x) => x.name === '伝説');
+    }
+  }
+};
+
 export const shop2Items: ShopItem[] = [
   {
     name: `お守りを捨てる`,
@@ -175,9 +189,21 @@ export const shop2Items: ShopItem[] = [
     always: true,
   } as AmuletItem,
   {
+    name: `平常心のお札`,
+    limit: (data) =>
+      !data.items.filter((x) => x.name === '平常心のお札').length &&
+      !data.bankItems?.filter((x) => x === '平常心のお札').length,
+    price: 50,
+    desc: `どれだけ体力が低くても決死の覚悟をしなくなる`,
+    type: 'token',
+    effect: { notLastPower: true },
+    always: true,
+  } as TokenItem,
+  {
     name: `全身全霊のお札`,
     limit: (data) =>
-      !data.items.filter((x) => x.name === '全身全霊のお札').length,
+      !data.items.filter((x) => x.name === '全身全霊のお札').length &&
+      !data.bankItems?.filter((x) => x === '全身全霊のお札').length,
     price: 300,
     desc: `持っていると常に行動回数が1回になるが、すごく重い一撃を放てる`,
     type: 'token',
@@ -187,7 +213,8 @@ export const shop2Items: ShopItem[] = [
   {
     name: `運命不変のお札`,
     limit: (data) =>
-      !data.items.filter((x) => x.name === '運命不変のお札').length,
+      !data.items.filter((x) => x.name === '運命不変のお札').length &&
+      !data.bankItems?.filter((x) => x === '運命不変のお札').length,
     price: 300,
     desc: `持っていると常に与ダメージがランダム変化しなくなる`,
     type: 'token',
@@ -197,7 +224,8 @@ export const shop2Items: ShopItem[] = [
   {
     name: `しあわせのお札`,
     limit: (data) =>
-      !data.items.filter((x) => x.name === 'しあわせのお札').length,
+      !data.items.filter((x) => x.name === 'しあわせのお札').length &&
+      !data.bankItems?.filter((x) => x === 'しあわせのお札').length,
     price: 300,
     desc: `レイド時、常にステータスの割合がランダムに一時的に変化する`,
     type: 'token',
@@ -205,36 +233,140 @@ export const shop2Items: ShopItem[] = [
     always: true,
   } as TokenItem,
   {
-    name: '全身全霊のお札を捨てる',
+    name: `平常心のお札`,
+    limit: (data) =>
+      !data.items.filter((x) => x.name === '平常心のお札').length &&
+      data.bankItems?.filter((x) => x === '平常心のお札').length,
+    price: 1,
+    desc: `どれだけ体力が低くても決死の覚悟をしなくなる`,
+    type: 'token',
+    effect: { notLastPower: true },
+    always: true,
+  } as TokenItem,
+  {
+    name: `全身全霊のお札`,
+    limit: (data) =>
+      !data.items.filter((x) => x.name === '全身全霊のお札').length &&
+      data.bankItems?.filter((x) => x === '全身全霊のお札').length,
+    price: 1,
+    desc: `持っていると常に行動回数が1回になるが、すごく重い一撃を放てる`,
+    type: 'token',
+    effect: { allForOne: true },
+    always: true,
+  } as TokenItem,
+  {
+    name: `運命不変のお札`,
+    limit: (data) =>
+      !data.items.filter((x) => x.name === '運命不変のお札').length &&
+      data.bankItems?.filter((x) => x === '運命不変のお札').length,
+    price: 1,
+    desc: `持っていると常に与ダメージがランダム変化しなくなる`,
+    type: 'token',
+    effect: { notRandom: true },
+    always: true,
+  } as TokenItem,
+  {
+    name: `しあわせのお札`,
+    limit: (data) =>
+      !data.items.filter((x) => x.name === 'しあわせのお札').length &&
+      data.bankItems?.filter((x) => x === 'しあわせのお札').length,
+    price: 1,
+    desc: `レイド時、常にステータスの割合がランダムに一時的に変化する`,
+    type: 'token',
+    effect: { fortuneEffect: true },
+    always: true,
+  } as TokenItem,
+  {
+    name: `乱数透視の札`,
+    limit: (data) =>
+      !data.items.filter((x) => x.name === '乱数透視の札').length &&
+      data.bankItems?.filter((x) => x === '乱数透視の札').length,
+    price: 1,
+    desc: `所持している間、ダメージの乱数が表示されるようになります`,
+    type: 'token',
+    effect: { showRandom: true },
+    always: true,
+  } as TokenItem,
+  {
+    name: '平常心のお札を預ける',
+    limit: (data) => data.items.filter((x) => x.name === '平常心のお札').length,
+    desc: '体力が低くなると決死の覚悟をするようになる',
+    price: 0,
+    type: 'item',
+    effect: (data) => {
+      data.bankItems = Array.from(
+        new Set([...(data.bankItems ?? []), '平常心のお札']),
+      );
+      data.items = data.items.filter((x) => x.name !== '平常心のお札');
+    },
+    always: true,
+  },
+  {
+    name: '全身全霊のお札を預ける',
     limit: (data) =>
       data.items.filter((x) => x.name === '全身全霊のお札').length,
     desc: '複数回行動するようになるが、一撃は軽くなる',
     price: 0,
     type: 'item',
-    effect: (data) =>
-      (data.items = data.items.filter((x) => x.name !== '全身全霊のお札')),
+    effect: (data) => {
+      data.bankItems = Array.from(
+        new Set([...(data.bankItems ?? []), '全身全霊のお札']),
+      );
+      data.items = data.items.filter((x) => x.name !== '全身全霊のお札');
+    },
     always: true,
   },
   {
-    name: '運命不変のお札を捨てる',
+    name: '運命不変のお札を預ける',
     limit: (data) =>
       data.items.filter((x) => x.name === '運命不変のお札').length,
     desc: '与ダメージがランダム変化するようになる',
     price: 0,
     type: 'item',
-    effect: (data) =>
-      (data.items = data.items.filter((x) => x.name !== '運命不変のお札')),
+    effect: (data) => {
+      data.bankItems = Array.from(
+        new Set([...(data.bankItems ?? []), '運命不変のお札']),
+      );
+      data.items = data.items.filter((x) => x.name !== '運命不変のお札');
+    },
     always: true,
   },
   {
-    name: 'しあわせのお札を捨てる',
+    name: 'しあわせのお札を預ける',
     limit: (data) =>
       data.items.filter((x) => x.name === 'しあわせのお札').length,
     desc: 'ステータスの割合がランダムに一時的に変化しなくなる',
     price: 0,
     type: 'item',
-    effect: (data) =>
-      (data.items = data.items.filter((x) => x.name !== 'しあわせのお札')),
+    effect: (data) => {
+      data.bankItems = Array.from(
+        new Set([...(data.bankItems ?? []), 'しあわせのお札']),
+      );
+      data.items = data.items.filter((x) => x.name !== 'しあわせのお札');
+    },
+    always: true,
+  },
+  {
+    name: '乱数透視の札を預ける',
+    limit: (data) => data.items.filter((x) => x.name === '乱数透視の札').length,
+    desc: 'ダメージの乱数が表示されなくなります',
+    price: 0,
+    type: 'item',
+    effect: (data) => {
+      data.bankItems = Array.from(
+        new Set([...(data.bankItems ?? []), '乱数透視の札']),
+      );
+      data.items = data.items.filter((x) => x.name !== '乱数透視の札');
+    },
+    always: true,
+  },
+  {
+    name: `浄化の水晶`,
+    limit: (data) => data.skills.filter((x) => x.cantReroll).length,
+    price: 50,
+    desc: `阨ちゃんが持っている変更不可のスキルを変更可能なスキルに置き換えます ただしステータスが変動する可能性があります`,
+    type: 'item',
+    effect: resetCantRerollSkill,
     always: true,
   },
   {
@@ -270,6 +402,18 @@ export const shop2Items: ShopItem[] = [
     effect: (data) => {
       data.atk = Math.round((data.atk ?? 0) + Math.round((data.def ?? 0) / 50));
       data.def = Math.round((data.def ?? 0) - Math.round((data.def ?? 0) / 50));
+    },
+    infinite: true,
+    always: true,
+  },
+  {
+    name: '超・力の種',
+    desc: '購入時、防御10%をパワーに移動',
+    price: 25,
+    type: 'item',
+    effect: (data) => {
+      data.atk = Math.round((data.atk ?? 0) + Math.round((data.def ?? 0) / 10));
+      data.def = Math.round((data.def ?? 0) - Math.round((data.def ?? 0) / 10));
     },
     infinite: true,
     always: true,
@@ -390,6 +534,18 @@ export const shop2Items: ShopItem[] = [
     always: true,
   },
   {
+    name: 'キレイなどんぐり(80枚)',
+    limit: (data) =>
+      (data.atkMedal ?? 0) + (data.defMedal ?? 0) + (data.itemMedal ?? 0) >= 30,
+    desc: 'ショップでのアイテム購入などに使用できる通貨です',
+    price: 20,
+    orb: true,
+    type: 'item',
+    effect: (data) => (data.coin = (data.coin ?? 0) + 80),
+    infinite: true,
+    always: true,
+  },
+  {
     name: '緑の勲章',
     limit: (data) => (data.itemMedal ?? 0) < 10,
     desc: '1つ購入する度に恒久的に全ての道具効果（装備率、効果量、悪・毒アイテム回避）が+1% 10個まで購入できます',
@@ -471,7 +627,7 @@ export const shop2Items: ShopItem[] = [
         name: `${x.name}の教本`,
         limit: (data) => !data.nextSkill,
         price: (data, rnd, ai) => skillPrice(ai, x.name, rnd),
-        desc: `購入すると次のスキル変更時に必ず「${x.name}」を習得できる（複製時は対象外）`,
+        desc: `購入すると次のスキル変更時に必ず「${x.name}」${x.desc ? `（${x.desc}）` : ''}を習得できる（複製時は対象外）`,
         type: 'item',
         effect: (data) => {
           data.nextSkill = x.name;

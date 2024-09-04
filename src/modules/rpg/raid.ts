@@ -669,7 +669,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
   // 敵の開始メッセージなどを設定
   cw += [
     me,
-    `Lv${data.lv}`,
+    data.lv >= 255 ? '' : `Lv${data.lv}`,
     (Math.max(data.atk, data.def) / (data.atk + data.def)) * 100 <= 53
       ? ''
       : `${data.atk > data.def ? serifs.rpg.status.atk.slice(0, 1) : serifs.rpg.status.def.slice(0, 1)}${((Math.max(data.atk, data.def) / (data.atk + data.def)) * 100).toFixed(0)}%`,
@@ -1035,19 +1035,22 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     }
 
     // HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
-    if (
-      playerHpPercent <= (1 / 7) * (1 + (skillEffects.haisuiUp ?? 0)) &&
-      enemyHpPercent - playerHpPercent >=
-        0.5 / (1 + (skillEffects.haisuiUp ?? 0))
-    ) {
-      buff += 1;
-      message += serifs.rpg.haisui + '\n';
-      const effect = Math.min(
-        (enemyHpPercent - playerHpPercent) * (1 + (skillEffects.haisuiUp ?? 0)),
-        1,
-      );
-      atk = atk + Math.round(def * effect);
-      def = Math.round(def * (1 - effect));
+    if (!aggregateTokensEffects(data).notLastPower) {
+      if (
+        playerHpPercent <= (1 / 7) * (1 + (skillEffects.haisuiUp ?? 0)) &&
+        enemyHpPercent - playerHpPercent >=
+          0.5 / (1 + (skillEffects.haisuiUp ?? 0))
+      ) {
+        buff += 1;
+        message += serifs.rpg.haisui + '\n';
+        const effect = Math.min(
+          (enemyHpPercent - playerHpPercent) *
+            (1 + (skillEffects.haisuiUp ?? 0)),
+          1,
+        );
+        atk = atk + Math.round(def * effect);
+        def = Math.round(def * (1 - effect));
+      }
     }
 
     const itemEquip = 0.4 + (1 - playerHpPercent) * 0.6;
@@ -1090,6 +1093,12 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
           if (skillEffects.lowHpFood && playerHpPercent < 0.5)
             message += serifs.rpg.skill.lowHpFood;
           types = ['medicine', 'poison'];
+        }
+        if (
+          types.includes('poison') &&
+          Math.random() < (skillEffects.poisonAvoid ?? 0)
+        ) {
+          types = types.filter((x) => x !== 'poison');
         }
         const type = types[Math.floor(Math.random() * types.length)];
         if (
@@ -1239,33 +1248,27 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
           }
           break;
         case 'poison':
-          if (Math.random() < (skillEffects.poisonAvoid ?? 0)) {
-            message += `${item.name}を取り出したが、美味しそうでなかったので捨てた！\n`;
+          message += `${item.name}を取り出し、食べた！\n`;
+          if (enemy.pLToR) {
+            mindMsg(item.mind);
+            if (item.mind < 0 && isSuper) item.mind = item.mind / 2;
+            itemBonus.atk = atk * (item.mind * 0.0025);
+            itemBonus.def = def * (item.mind * 0.0025);
+            atk = atk + itemBonus.atk;
+            def = def + itemBonus.def;
           } else {
-            message += `${item.name}を取り出し、食べた！\n`;
-            if (enemy.pLToR) {
-              mindMsg(item.mind);
-              if (item.mind < 0 && isSuper) item.mind = item.mind / 2;
-              itemBonus.atk = atk * (item.mind * 0.0025);
-              itemBonus.def = def * (item.mind * 0.0025);
-              atk = atk + itemBonus.atk;
-              def = def + itemBonus.def;
+            const dmg = Math.round(
+              playerHp * (item.effect * 0.003) * (isSuper ? 0.5 : 1),
+            );
+            playerHp -= dmg;
+            if (item.effect >= 70 && dmg > 0) {
+              message += `阨ちゃんはかなり調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`;
+            } else if (item.effect > 30 && dmg > 0) {
+              message += `阨ちゃんは調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`;
             } else {
-              const dmg = Math.round(
-                playerHp * (item.effect * 0.003) * (isSuper ? 0.5 : 1),
-              );
-              playerHp -= dmg;
-              if (item.effect >= 70 && dmg > 0) {
-                message += `阨ちゃんはかなり調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`;
-              } else if (item.effect > 30 && dmg > 0) {
-                message += `阨ちゃんは調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`;
-              } else {
-                message += `あまり美味しくなかったようだ…${dmg > 0 ? `\n${dmg}ポイントのダメージを受けた！` : ''}\n`;
-              }
+              message += `あまり美味しくなかったようだ…${dmg > 0 ? `\n${dmg}ポイントのダメージを受けた！` : ''}\n`;
             }
           }
-          break;
-        default:
           break;
       }
       if (aggregateTokensEffects(data).showItemBonus) {
@@ -1488,7 +1491,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         message += `⚂ ${Math.floor(rng * 100)}%\n`;
       const turnDmgX = i < 2 ? 1 : i < 3 ? 0.5 : i < 4 ? 0.25 : 0.125;
       const dmgBonus =
-        (1 + (skillEffects.atkDmgUp ?? 0)) * turnDmgX +
+        (1 + Math.max(skillEffects.atkDmgUp ?? 0, -0.4)) * turnDmgX +
         (skillEffects.thunder
           ? (skillEffects.thunder * ((i + 1) / spd)) /
             (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)
