@@ -497,7 +497,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	// 敵の開始メッセージなどを設定
 	cw += [
 		me,
-		`Lv${data.lv}`,
+		data.lv >= 255 ? "" : `Lv${data.lv}`,
 		Math.max(data.atk, data.def) / (data.atk + data.def) * 100 <= 53 ? "" : `${data.atk > data.def ? serifs.rpg.status.atk.slice(0, 1) : serifs.rpg.status.def.slice(0, 1)}${(Math.max(data.atk, data.def) / (data.atk + data.def) * 100).toFixed(0)}%`,
 		skillsStr.skills,
 		skillsStr.amulet ? `お守り ${skillsStr.amulet}` : undefined
