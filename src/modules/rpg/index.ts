@@ -748,7 +748,7 @@ export default class extends Module {
 		}
 
 		if (aggregateTokensEffects(data).autoJournal) {
-			if (!data.enemy || count === 1 || data.endressFlg) {
+			if ((!data.enemy || count === 1 || data.endressFlg) && !(aggregateTokensEffects(data).appearStrongBoss && !data.clearHistory.includes(":mk_chickenda_gtgt:"))) {
 				data.endressFlg = true;
 			}
 		}
