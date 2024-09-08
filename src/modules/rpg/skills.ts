@@ -18,7 +18,7 @@ export function skillCalculate(_ai: 藍 = ai) {
 		const skills = friend.perModulesData.rpg.skills;
 		if (skills && Array.isArray(skills)) {
 			skills.forEach(skill => {
-				const skillName = skill.name;
+				const skillName = skill?.name;
 				if (skillName) {
 					totalSkillCount += 1;
 					if (skillNameCountMap.has(skillName)) {
