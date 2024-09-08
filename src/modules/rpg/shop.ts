@@ -21,6 +21,7 @@ export type BaseItem = {
 	type: ItemType;
 	effect: (data: any) => void;
 	always?: boolean;
+	noDiscount?: boolean;
 };
 
 export type TokenItem = Omit<BaseItem, 'type' | 'effect'> & {
@@ -112,11 +113,11 @@ export const shopItems: ShopItem[] = [
 	{ name: "スキル詳細表示の札", limit: (data) => data.lv >= 20 && !data.items.filter((x) => x.name === "スキル詳細表示の札").length, desc: "所持している間、スキルの詳細情報が表示されるようになります", price: 50, type: "token", effect: { showSkillBonus: true } },
 	{ name: "装備詳細表示の札", limit: (data) => data.lv >= 7 && !data.items.filter((x) => x.name === "装備詳細表示の札").length, desc: "所持している間、武器・防具の詳細な効果が表示されます", price: 50, type: "token", effect: { showItemBonus: true } },
 	{ name: "裏ショップ入場の札", limit: (data) => data.skills?.length >= 5 && !data.items.filter((x) => x.name === "裏ショップ入場の札").length && data.clearHistory.includes(":mk_chickenda_gtgt:"), desc: "所持していると、裏ショップに入店できます （コマンド:「RPG 裏ショップ」）", price: 99, type: "token", effect: { shop2: true }, always: true },
-	{ name: "スキル変更珠", desc: "スキルを変更するのに必要なアイテムです", limit: (data) => (data.skills?.length >= 2 && data.skills?.length <= 4) || (data.skills?.length >= 5 && data.coin < 70), price: (data) => data.skills.length >= 5 ? 7 : data.skills.length >= 4 ? 25 : data.skills.length >= 3 ? 35 : 50, type: "item", effect: (data) => data.rerollOrb = (data.rerollOrb ?? 0) + 1, infinite: true },
-	{ name: "スキル変更珠(5個)", desc: "スキルを変更するのに必要なアイテムの5個セットです", limit: (data) => data.skills?.length >= 5 && data.coin >= 70 && data.coin < 140, price: 35, type: "item", effect: (data) => data.rerollOrb = (data.rerollOrb ?? 0) + 5, infinite: true },
-	{ name: "スキル変更珠(10個)", desc: "スキルを変更するのに必要なアイテムの10個セットです", limit: (data) => data.skills?.length >= 5 && data.coin >= 140 && data.coin < 280, price: 70, type: "item", effect: (data) => data.rerollOrb = (data.rerollOrb ?? 0) + 10, infinite: true },
-	{ name: "スキル変更珠(20個)", desc: "スキルを変更するのに必要なアイテムの20個セットです", limit: (data) => data.skills?.length >= 5 && data.coin >= 280, price: 140, type: "item", effect: (data) => data.rerollOrb = (data.rerollOrb ?? 0) + 20, infinite: true },
-	{ name: "スキル複製珠", desc: "スキルを変更し、既に覚えているスキルのどれかを1つ覚えます", limit: (data, rnd) => data.skills?.length >= 3 && rnd() < 0.2, price: (data) => data.skills.length >= 5 ? 30 : data.skills.length >= 4 ? 100 : 140, type: "item", effect: (data) => data.duplicationOrb = (data.duplicationOrb ?? 0) + 1, infinite: true },
+	{ name: "スキル変更珠", desc: "スキルを変更するのに必要なアイテムです", limit: (data) => (data.skills?.length >= 2 && data.skills?.length <= 4) || (data.skills?.length >= 5 && data.coin < 70), noDiscount: true, noDiscount: true, price: (data) => data.skills.length >= 5 ? 7 : data.skills.length >= 4 ? 25 : data.skills.length >= 3 ? 35 : 50, type: "item", effect: (data) => data.rerollOrb = (data.rerollOrb ?? 0) + 1, infinite: true },
+	{ name: "スキル変更珠(5個)", desc: "スキルを変更するのに必要なアイテムの5個セットです", limit: (data) => data.skills?.length >= 5 && data.coin >= 70 && data.coin < 140, noDiscount: true, price: 35, type: "item", effect: (data) => data.rerollOrb = (data.rerollOrb ?? 0) + 5, infinite: true },
+	{ name: "スキル変更珠(10個)", desc: "スキルを変更するのに必要なアイテムの10個セットです", limit: (data) => data.skills?.length >= 5 && data.coin >= 140 && data.coin < 280, noDiscount: true, price: 70, type: "item", effect: (data) => data.rerollOrb = (data.rerollOrb ?? 0) + 10, infinite: true },
+	{ name: "スキル変更珠(20個)", desc: "スキルを変更するのに必要なアイテムの20個セットです", limit: (data) => data.skills?.length >= 5 && data.coin >= 280, noDiscount: true, price: 140, type: "item", effect: (data) => data.rerollOrb = (data.rerollOrb ?? 0) + 20, infinite: true },
+	{ name: "スキル複製珠", desc: "スキルを変更し、既に覚えているスキルのどれかを1つ覚えます", limit: (data, rnd) => data.skills?.length >= 3 && rnd() < 0.2, noDiscount: true, price: (data) => data.skills.length >= 5 ? 30 : data.skills.length >= 4 ? 100 : 140, type: "item", effect: (data) => data.duplicationOrb = (data.duplicationOrb ?? 0) + 1, infinite: true },
 	{ name: "力の種", limit: (data) => !data.items.filter((x) => x.name === "裏ショップ入場の札").length, desc: "購入時、パワー+1 防御-1", price: (data) => data.lv > 60 ? 1 : data.lv > 30 ? 2 : 3, type: "item", effect: (data) => { data.atk = (data.atk ?? 0) + 1; data.def = (data.def ?? 0) - 1; }, infinite: true },
 	{ name: "高級力の種", desc: "購入時、防御2%をパワーに移動", limit: (data) => data.lv > 30 && !data.items.filter((x) => x.name === "裏ショップ入場の札").length, price: 5, type: "item", effect: (data) => { data.atk = Math.round((data.atk ?? 0) + Math.round((data.def ?? 0) / 50)); data.def = Math.round((data.def ?? 0) - Math.round((data.def ?? 0) / 50)); }, infinite: true },
 	{ name: "きらめく力の種", desc: "購入時、パワー+1", limit: (data, rnd) => rnd() < 0.5, price: (data, rnd) => rnd() < 0.5 ? 10 : rnd() < 0.5 ? 5 : 20, type: "item", effect: (data) => { data.atk = (data.atk ?? 0) + 1; } },
@@ -387,7 +388,7 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 	const showShopItems = _shopItems.filter((x) => (!x.limit || x.limit(data, () => 0)) && !(x.type === "amulet" && data.items?.some((y) => y.type === "amulet"))).concat(shopItems.filter((x) => (!x.limit || x.limit(data, () => 0)) && !(x.type === "amulet" && data.items?.some((y) => y.type === "amulet")) && x.always)).slice(0, 35)
 		.map((x) => {
 			let _x = deepClone(x);
-			const price = Math.ceil(getVal(x.price, [data, rnd, ai]) * (1 - (skillEffects.priceOff ?? 0)));
+			const price = Math.ceil(getVal(x.price, [data, rnd, ai]) * (x.noDiscount ? 1 : (1 - (skillEffects.priceOff ?? 0))));
 			return { ..._x, price };
 		});
 
