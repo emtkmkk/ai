@@ -1544,6 +1544,11 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 		attackCount += 1;
 		/** ダメージ */
 		let dmg = 500 * attackCount;
+		if (attackCount >= 7) {
+			while (Math.random() < (1/3)) {
+				dmg += 1000;
+			}
+		}
 		//** クリティカルかどうか */
 		let crit = attackCount >= 4;
 		// メッセージの出力
