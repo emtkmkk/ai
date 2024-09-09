@@ -360,8 +360,18 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
 
 	if (!enemy) return;
 
-	/** 総ダメージの計算結果 */
-	const result = await getTotalDmg(msg, enemy);
+	let result;
+	if (enemy.pattern && enemy.pattern > 1) {
+		switch (enemy.pattern) {
+			case 2:
+			default:
+			result = await getTotalDmg2(msg, enemy);
+			break;
+		}
+	} else {
+		/** 総ダメージの計算結果 */
+		result = await getTotalDmg(msg, enemy);
+	}
 
 	if (raid.attackers.some(x => x.user.id == msg.userId)) {
 		msg.reply('すでに参加済みの様です！').then(reply => {
@@ -1412,4 +1422,204 @@ function getSpd(spdX: number) {
 	if (spdX <= 2.5) return 2 + (spdX - 2) * 2;
 	if (spdX <= 2.75) return 3 + (spdX - 2.5) * 4;
 	return 4 + (spdX - 2.75) * 8;
+}
+
+export async function getTotalDmg2(msg, enemy: RaidEnemy) {
+	// データを読み込み
+	const data = initializeData(module_, msg);
+	if (!data.lv) return {
+		reaction: 'confused'
+	};
+	data.raid = true;
+	const colorData = colors.map((x) => x.unlock(data));
+
+	const skillsStr = {skills: "", amulet: ""};
+
+	/** 現在の敵と戦ってるターン数。 敵がいない場合は1 */
+	let count = 1;
+
+	/** 使用中の色情報 */
+	let color = getColor(data);
+
+	/** 画面に出力するメッセージ:CW */
+	let cw = acct(msg.user) + " ";
+	/** 画面に出力するメッセージ:Text */
+	let message = "";
+
+	/** プレイヤーの見た目 */
+	let me = color.name;
+
+	// ステータスを計算
+	/** プレイヤーのLv */
+	const lv = data.lv ?? 1;
+
+	// 敵の開始メッセージなどを設定
+	cw += [
+		me,
+		data.lv >= 255 ? "" : `Lv${data.lv}`,
+		Math.max(data.atk, data.def) / (data.atk + data.def) * 100 <= 53 ? "" : `${data.atk > data.def ? serifs.rpg.status.atk.slice(0, 1) : serifs.rpg.status.def.slice(0, 1)}${(Math.max(data.atk, data.def) / (data.atk + data.def) * 100).toFixed(0)}%`,
+		skillsStr.skills,
+		skillsStr.amulet ? `お守り ${skillsStr.amulet}` : undefined
+	].filter(Boolean).join(" ");
+	message += `$[x2 ${me}]\n\n${serifs.rpg.start}\n\n`;
+
+	const maxLv = ai.moduleData.findOne({ type: 'rpg' })?.maxLv ?? 1;
+
+	/** バフを得た数。行数のコントロールに使用 */
+	let buff = 0;
+
+	/** プレイヤーの基礎体力 */
+	let rawMaxHp = 100 + Math.min(lv * 3, 765) + Math.floor((data.defMedal ?? 0) * 13.4);
+	/** プレイヤーのボーナス体力 */
+	let bonusMaxHp = 100 + Math.min(maxLv * 3, 765);
+	/** プレイヤーの最大HP */
+	let playerMaxHp = Math.max(Math.round(bonusMaxHp * Math.random()), rawMaxHp);
+	/** プレイヤーのHP */
+	let playerHp = (playerMaxHp);
+
+	let totalDmg = 0;
+
+	let mark = ":blank:";
+
+	// バフが1つでも付与された場合、改行を追加する
+	if (buff > 0) message += "\n";
+
+	const plusActionX = 5;
+
+	let attackCount = 0;
+
+	for (let actionX = 0; actionX < plusActionX + 1; actionX++) {
+
+		/** バフを得た数。行数のコントロールに使用 */
+		let buff = 0;
+
+		// バフが1つでも付与された場合、改行を追加する
+		if (buff > 0) message += "\n";
+
+		let endureCount = 1;
+
+		const _data = { ...data, enemy, count };
+
+		// 自身攻撃の処理
+
+		if (Math.random() < (1/3)) {
+			attackCount += 1;
+			/** ダメージ */
+			let dmg = 500 * attackCount;
+			//** クリティカルかどうか */
+			let crit = attackCount >= 4;
+			// メッセージの出力
+			message += (crit ? `**${enemy.atkmsg(dmg)}**` : enemy.atkmsg(dmg)) + "\n";
+			totalDmg += dmg;
+		} else if (Math.random() < (1/2)) {
+			// メッセージの出力
+			message += serifs.rpg.draw + "\n";
+		} else {
+			message += "\n";
+			/** ダメージ */
+			let dmg = Math.min(Math.floor(playerMaxHp * 0.95), 420);
+			playerHp -= dmg;
+			message += enemy.defmsg(dmg) + "\n";
+		}
+
+		// HPが0で食いしばりが可能な場合、食いしばる
+		const endure = (0.1 + (endureCount * 0.1)) - (count * 0.05);
+		if (playerHp <= 0 && !enemy.notEndure && Math.random() < endure) {
+			message += serifs.rpg.endure + "\n";
+			playerHp = 1;
+			endureCount -= 1;
+		}
+
+		// 敗北処理
+		if (playerHp <= 0) {
+			message += "\n" + enemy.losemsg;
+			break;
+		} else {
+			// 決着がつかない場合
+			if (actionX === plusActionX) {
+				message += showStatusDmg(_data, playerHp, totalDmg, playerMaxHp, me);
+			} else {
+				message += showStatusDmg(_data, playerHp, totalDmg, playerMaxHp, me) + "\n\n";
+			}
+			count = count + 1;
+		}
+	}
+
+	if (playerHp > 0) {
+		attackCount += 1;
+		/** ダメージ */
+		let dmg = 500 * attackCount;
+		//** クリティカルかどうか */
+		let crit = attackCount >= 4;
+		// メッセージの出力
+		message += "\n\n" + (crit ? `**${enemy.atkmsg(dmg)}**` : enemy.atkmsg(dmg));
+		totalDmg += dmg;
+		message += "\n\n" + enemy.winmsg;
+	}
+
+	message += "\n\n" + serifs.rpg.totalDmg(totalDmg);
+
+	if (!data.raidScore) data.raidScore = {};
+	if (!data.raidScore[enemy.name] || data.raidScore[enemy.name] < totalDmg) {
+		if (data.raidScore[enemy.name]) {
+			message += "\n" + serifs.rpg.hiScore(data.raidScore[enemy.name], totalDmg);
+			if (mark === ":blank:") mark = "🆙";
+		}
+		data.raidScore[enemy.name] = totalDmg;
+	} else {
+		if (data.raidScore[enemy.name]) message += `\n（これまでのベスト: ${data.raidScore[enemy.name].toLocaleString()}）`;
+	}
+	if (!data.clearRaid) data.clearRaid = [];
+	if (count === 7 && !data.clearRaid.includes(enemy.name)) {
+		data.clearRaid.push(enemy.name);
+	}
+
+	data.raid = false;
+	msg.friend.setPerModulesData(module_, data);
+
+	// 色解禁確認
+	const newColorData = colors.map((x) => x.unlock(data));
+	/** 解禁した色 */
+	let unlockColors = "";
+	for (let i = 0; i < newColorData.length; i++) {
+		if (!colorData[i] && newColorData[i]) {
+			unlockColors += colors[i].name;
+		}
+	}
+	if (unlockColors) {
+		message += serifs.rpg.newColor(unlockColors);
+	}
+
+	let reply;
+
+	if (Number.isNaN(totalDmg) || totalDmg < 0) {
+		reply = await msg.reply(`エラーが発生しました。もう一度試してみてください。`, {
+			visibility: "specified"
+		});
+		totalDmg = 0;
+	} else {
+		reply = await msg.reply(`<center>${message.slice(0, 7500)}</center>`, {
+			cw,
+			visibility: "specified",
+		});
+		let msgCount = 1
+		while (message.length > msgCount * 7500) {
+			msgCount += 1;
+			await msg.reply(`<center>${message.slice((msgCount - 1) * 7500, msgCount * 7500)}</center>`, {
+				cw: cw + " " + msgCount,
+				visibility: "specified",
+			});
+		}
+	}
+
+
+	return {
+		totalDmg,
+		me,
+		lv,
+		count,
+		mark,
+		skillsStr,
+		reply,
+	};
 }
