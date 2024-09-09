@@ -217,7 +217,7 @@ function finish(raid: Raid) {
 
 	/** 攻撃者のリストをフィルタリングしてダメージ順にソート */
 	let sortAttackers = raid.attackers.filter((attacker) => {
-		if (attacker.dmg <= 0) return false;
+		if (attacker.dmg < 0) return false;
 		if (seenIds.has(attacker.user.id)) {
 			return false;
 		} else {
