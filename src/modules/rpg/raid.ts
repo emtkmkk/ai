@@ -1515,7 +1515,6 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 			// メッセージの出力
 			message += serifs.rpg.draw + "\n";
 		} else {
-			message += "\n";
 			/** ダメージ */
 			let dmg = Math.min(Math.floor(playerMaxHp * 0.95), 420);
 			playerHp -= dmg;
