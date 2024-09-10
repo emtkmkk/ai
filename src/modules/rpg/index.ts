@@ -386,12 +386,17 @@ export default class extends Module {
 			message.push(createRankMessage(data.jar, "壺購入数", "jar", { suffix: "個" }));
 		}
 
+		let totalScore = 0;
+
 		if (data.raidScore) {
 			for (const [key, value] of Object.entries(data.raidScore)) {
 				if (value && typeof value === "number") {
-					message.push(createRankMessage(value, key + " 最大ダメージ", `raidScore.${key}`, { suffix: data.clearRaid?.includes(key) ? "ダメージ ⭐️" : "ダメージ" }));
+					const enemy = raidEnemys.find((x) => x.name === key);
+					const score = enemy ? Math.max(Math.log2((value * 20) / (1024 / ((enemy.power ?? 30) / 30))) + 1, 1) : undefined;
+					message.push(`${createRankMessage(value, key + " 最大ダメージ", `raidScore.${key}`, { suffix: data.clearRaid?.includes(key) ? "ダメージ ⭐️" : "ダメージ" })}${score ? `\n★${Math.floor(score)} ${Math.floor((score % 1) * 8) !== 0 ? `$[bg.color=ffff90 ${":blank:".repeat(Math.floor((score % 1) * 8))}]` : ""}$[bg.color=ff9090 ${":blank:".repeat(8 - Math.floor((score % 1) * 8))}] ★${Math.floor(score) + 1}` : ""}`);
 				}
 			}
+			if (totalScore > 0 && Object.entries(data.raidScore).length >= 2) message.push(`合計レイドボス評価値\n★${totalScore.toFixed(2)}`);
 		}
 
 		if (data.clearRaidNum) {
