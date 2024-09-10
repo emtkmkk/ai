@@ -458,14 +458,14 @@ export default class extends Module {
 			const allData = this.ai.friends.find();
 
 			allData.forEach(x => {
-				const enemyName = ":mk_giga:"
+				const enemyName = ":mk_crystal:"
 				if (!x?.perModulesData?.rpg?.raidScore?.[enemyName]) return;
 				x.perModulesData.rpg.raidScore[enemyName] = 0;
 			});
 			const rpgData = ai.moduleData.findOne({ type: 'rpg' });
 			if (rpgData) {
-				rpgData.raidScore[":mk_giga:"] = 0;
-				rpgData.raidScoreDate[":mk_giga:"] = getDate();
+				rpgData.raidScore[":mk_crystal:"] = 0;
+				rpgData.raidScoreDate[":mk_crystal:"] = getDate();
 				ai.moduleData.update(rpgData);
 			}
 			return { reaction: "love" };
