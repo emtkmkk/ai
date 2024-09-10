@@ -590,6 +590,7 @@ export default {
       '周囲に不思議な力が働いている…\n投稿数ボーナスが無効になった！',
     skillX: (num) =>
       `$[x2 :blobharrypotter:]\n\nきみに魔法をかけてあげるよ！\n\n強化魔法で阨ちゃんのスキルの\n効果が${num}倍になった！`,
+    draw: 'あいこになった！\nお互いにダメージなし！',
     warrior: {
       get: '$[x2 :sexy_paradin_dot:]\n\n「助けに参りました！私も手伝います！」\n\n:sexy_paradin_dot:が仲間になった！',
       atk: (dmg) => `:sexy_paradin_dot:の攻撃！\n${dmg}ポイントのダメージ！`,

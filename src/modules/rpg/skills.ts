@@ -31,7 +31,7 @@ export function skillCalculate(_ai: 藍 = ai) {
     const skills = friend.perModulesData.rpg.skills;
     if (skills && Array.isArray(skills)) {
       skills.forEach((skill) => {
-        const skillName = skill.name;
+        const skillName = skill?.name;
         if (skillName) {
           totalSkillCount += 1;
           if (skillNameCountMap.has(skillName)) {
@@ -112,6 +112,8 @@ export type SkillEffect = {
   firstTurnItem?: number;
   /** 最初のターンに気合が下がるアイテムをn%で回避 */
   firstTurnMindMinusAvoid?: number;
+  /** 最初のターンの道具の最低効果量をn*100以上にする */
+  firstTurnItemChoice?: number;
   /** アイテム使用率がn%上昇 */
   itemEquip?: number;
   /** アイテム効果がn%上昇 デメリットがn%減少 */
@@ -176,6 +178,9 @@ export type SkillEffect = {
   slowStart?: number;
   stockRandomEffect?: number;
   noAmuletAtkUp?: number;
+  haisuiAtkUp?: number;
+  haisuiCritUp?: number;
+  rainbow?: number;
 };
 
 export type Skill = {
@@ -198,7 +203,6 @@ export type Skill = {
   /** お守りとして出ない場合 */
   skillOnly?: boolean;
 };
-
 export const skills: Skill[] = [
   {
     name: `${serifs.rpg.status.atk}+10%`,
@@ -276,14 +280,14 @@ export const skills: Skill[] = [
     name: `闇属性妖術`,
     short: '闇',
     desc: `戦闘時、たまに敵の周辺に高重力領域を発生させます`,
-    info: `戦闘時、9%で敵の現在HPの半分のダメージを与える\n行動回数が2回以上の敵に18%で行動回数を1にする\nそれ以外の場合、${serifs.rpg.status.def}+6.3%\n月曜日に全ての効果量が66%アップ`,
+    info: `戦闘時、9%で敵の現在HPの半分のダメージ（レイドでは150ダメージ）を与える\n行動回数が2回以上の敵に18%で行動回数を1にする\nそれ以外の場合、${serifs.rpg.status.def}+6.3%\n月曜日に全ての効果量が66%アップ`,
     effect: { dark: 0.09 },
   },
   {
     name: `毒属性妖術`,
     short: '毒',
     desc: `戦闘時、ターン経過ごとに相手が弱体化します`,
-    info: `ターン経過ごとに敵のステータス-6%`,
+    info: `ターン経過ごとに敵のステータス-5%\nレイドでは特殊な倍率でステータス減少を付与`,
     effect: { weak: 0.05 },
   },
   {
@@ -342,22 +346,22 @@ export const skills: Skill[] = [
     name: `脳筋`,
     short: '筋',
     desc: `与えるダメージが上がりますが、受けるダメージも上がります`,
-    info: `${serifs.rpg.dmg.give}+18% ${serifs.rpg.dmg.take}+8%`,
-    effect: { atkDmgUp: 0.18, defDmgUp: 0.08 },
+    info: `${serifs.rpg.dmg.give}+20% ${serifs.rpg.dmg.take}+10%`,
+    effect: { atkDmgUp: 0.2, defDmgUp: 0.1 },
   },
   {
     name: `慎重`,
     short: '慎',
     desc: `与えるダメージが下がりますが、受けるダメージも下がります`,
-    info: `${serifs.rpg.dmg.give}-8% ${serifs.rpg.dmg.take}-18%`,
-    effect: { atkDmgUp: -0.08, defDmgUp: -0.18 },
+    info: `${serifs.rpg.dmg.give}-8% ${serifs.rpg.dmg.take}-20%`,
+    effect: { atkDmgUp: -0.08, defDmgUp: -0.2 },
   },
   {
     name: `連続・毎日ボーナス強化`,
     short: '連',
     desc: `連続・毎日ボーナスの上昇量が上がります`,
-    info: `毎日ボーナスの増加量+50% (5 ~ 12.5投稿↑)`,
-    effect: { continuousBonusUp: 0.5 },
+    info: `毎日ボーナスの増加量+100% (10 ~ 25投稿↑)`,
+    effect: { continuousBonusUp: 1 },
   },
   {
     name: `負けそうなら逃げる`,
@@ -376,16 +380,21 @@ export const skills: Skill[] = [
   {
     name: `すぐ決死の覚悟をする`,
     short: '決',
-    desc: `決死の覚悟の発動条件が緩くなり、効果量が上がります`,
-    info: `${serifs.rpg.status.atk}+8% 覚悟発動条件効果量+50%`,
-    effect: { atkUp: 0.08, haisuiUp: 0.5 },
+    desc: `決死の覚悟の発動条件が緩くなり、効果量が上がります さらに決死の覚悟発動時、追加でパワーとクリティカル率が上がります`,
+    info: `${serifs.rpg.status.atk}+8% 覚悟発動条件効果量+50% 覚悟発動時${serifs.rpg.status.atk}+4% クリティカル率1.2倍`,
+    effect: {
+      atkUp: 0.08,
+      haisuiUp: 0.5,
+      haisuiAtkUp: 0.04,
+      haisuiCritUp: 0.2,
+    },
   },
   {
     name: `投稿数ボーナス量アップ`,
     short: '投',
-    desc: `投稿数によるステータスボーナスが上昇します`,
-    info: `投稿数ボーナス+5%`,
-    effect: { postXUp: 0.05 },
+    desc: `投稿数が高ければ高いほどステータスが上昇します`,
+    info: `20投稿につき、ステータス+1% (最大10%)`,
+    effect: { postXUp: 0.01 },
   },
   {
     name: `強敵と戦うのが好き`,
@@ -445,8 +454,12 @@ export const skills: Skill[] = [
     name: `準備を怠らない`,
     short: '備',
     desc: `ターン1にて、必ず良い効果がある武器か防具を装備します`,
-    info: `ターン1装備率+100% ターン1悪アイテム率-100% 重複しない`,
-    effect: { firstTurnItem: 1, firstTurnMindMinusAvoid: 1 },
+    info: `ターン1装備率+100% ターン1悪アイテム率-100% レイド限定で、ターン1道具最低効果量上昇 重複しない`,
+    effect: {
+      firstTurnItem: 1,
+      firstTurnMindMinusAvoid: 1,
+      firstTurnItemChoice: 0.5,
+    },
     unique: 'firstTurnItem',
   },
   {
@@ -467,24 +480,24 @@ export const skills: Skill[] = [
     name: `武器が大好き`,
     short: '武',
     desc: `武器を装備しやすくなり、武器の効果量が上がります`,
-    info: `武器装備率2倍 武器効果量+60% 種類大好き系と重複しない`,
-    effect: { weaponSelect: 1, weaponBoost: 0.6 },
+    info: `武器装備率3倍 武器効果量+60% 種類大好き系と重複しない`,
+    effect: { weaponSelect: 2, weaponBoost: 0.6 },
     unique: 'itemSelect',
   },
   {
     name: `防具が大好き`,
     short: '防',
     desc: `防具を装備しやすくなり、防具の効果量が上がります`,
-    info: `防具装備率2倍 防具効果量+60% 種類大好き系と重複しない`,
-    effect: { armorSelect: 1, armorBoost: 0.6 },
+    info: `防具装備率3倍 防具効果量+60% 種類大好き系と重複しない`,
+    effect: { armorSelect: 2, armorBoost: 0.6 },
     unique: 'itemSelect',
   },
   {
     name: `食いしんぼう`,
     short: '食',
     desc: `食べ物を食べやすくなり、食べ物の効果量が上がります`,
-    info: `食べ物使用率2倍 食べ物効果量+60% 毒食べ物ダメージ-60% 種類大好き系と重複しない`,
-    effect: { foodSelect: 1, foodBoost: 0.6, poisonResist: 0.6 },
+    info: `食べ物使用率3倍 食べ物効果量+60% 毒食べ物ダメージ-60% 種類大好き系と重複しない`,
+    effect: { foodSelect: 2, foodBoost: 0.6, poisonResist: 0.6 },
     unique: 'itemSelect',
   },
   {
@@ -499,14 +512,14 @@ export const skills: Skill[] = [
     name: `道具の選択が上手い`,
     short: '選',
     desc: `道具の効果量がすこし上がり、悪いアイテムを選びにくくなり、良くないものを食べなくなる事があります`,
-    info: `道具効果量+15% 悪アイテム率-15%　毒食べ物を40%で捨てる 100%以上になると悪アイテム率減少に変換`,
+    info: `道具効果量+15% 悪アイテム率-15% 毒食べ物を40%で捨てる 100%以上になると悪アイテム率減少に変換`,
     effect: { itemBoost: 0.15, mindMinusAvoid: 0.15, poisonAvoid: 0.4 },
   },
   {
     name: `お腹が空いてから食べる`,
     short: '空',
     desc: `体力が減ったら食べ物を食べやすくなり、食べ物の効果量が少し上がります`,
-    info: `残HP%で食べ物を食べるようになる 食べ物効果量+20% 毒食べ物ダメージ-20%`,
+    info: `体力が減少すれば食べ物を食べるようになり、毒食べ物の確率が下がる 食べ物効果量+20% 毒食べ物ダメージ-20%`,
     effect: { lowHpFood: 1, foodBoost: 0.2, poisonResist: 0.2 },
     unique: 'lowHpFood',
   },
@@ -523,8 +536,8 @@ export const skills: Skill[] = [
     name: `連続攻撃完遂率上昇`,
     short: '遂',
     desc: `連続攻撃を相手に止められにくくなります`,
-    info: `連続攻撃中断率-30% 効果がない場合、${serifs.rpg.status.atk}+10%`,
-    effect: { abortDown: 0.3 },
+    info: `連続攻撃中断率-32% 効果がない場合、${serifs.rpg.status.atk}+10%`,
+    effect: { abortDown: 0.32 },
   },
   {
     name: `クリティカル性能上昇`,
@@ -537,7 +550,7 @@ export const skills: Skill[] = [
     name: `敵のクリティカル性能減少`,
     short: '守',
     desc: `相手のクリティカル率とクリティカルダメージが減少します`,
-    info: `敵のクリティカル率-40% 敵のクリティカルダメージ-40% レイド時は、${serifs.rpg.status.def}+10%`,
+    info: `敵のクリティカル率-40% 敵のクリティカルダメージ-40% レイド時は、追加で${serifs.rpg.status.def}+10%`,
     effect: { enemyCritDown: 0.4, enemyCritDmgDown: 0.4 },
   },
   {
@@ -750,7 +763,7 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
             (x) => x.name !== oldSkillName && !x.unique && !x.cantReroll,
           );
           if (!list.length) {
-            msg.reply(`\n複製可能なスキルがないようじゃ！`);
+            msg.reply(`\n複製可能なスキルがありません！`);
             return { reaction: 'confused' };
           }
           data.skills[i] = list[Math.floor(Math.random() * list.length)];
@@ -923,7 +936,10 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
         });
       data.items = data.items.filter((x) => x.type !== 'amulet');
     } else {
-      if (item.isUsed(data)) {
+      if (
+        item.isUsed(data) &&
+        (!aggregateTokensEffects(data).normalModeNotUseAmulet || data.raid)
+      ) {
         const boost =
           dataSkills
             .filter((x) => x.effect?.amuletBoost)
@@ -1072,7 +1088,10 @@ export function aggregateSkillsEffectsSkillX(
         });
       data.items = data.items.filter((x) => x.type !== 'amulet');
     } else {
-      if (item.isUsed(data)) {
+      if (
+        item.isUsed(data) &&
+        (!aggregateTokensEffects(data).normalModeNotUseAmulet || data.raid)
+      ) {
         const boost =
           dataSkills
             .filter((x) => x.effect?.amuletBoost)
@@ -1132,26 +1151,34 @@ export function aggregateSkillsEffectsSkillX(
 
   const day = new Date().getDay();
 
+  if (aggregatedEffect.rainbow && aggregatedEffect.rainbow > 1) {
+    aggregatedEffect.atkUp =
+      (aggregatedEffect.atkUp ?? 0) + (aggregatedEffect.rainbow - 1) * 0.05;
+    aggregatedEffect.defUp =
+      (aggregatedEffect.defUp ?? 0) + (aggregatedEffect.rainbow - 1) * 0.05;
+    aggregatedEffect.rainbow = 1;
+  }
+
   //曜日ボーナス
-  if (day == 0 && aggregatedEffect.thunder) {
+  if ((day == 0 || aggregatedEffect.rainbow) && aggregatedEffect.thunder) {
     aggregatedEffect.thunder *= 5 / 3;
   }
-  if (day == 1 && aggregatedEffect.dark) {
+  if ((day == 1 || aggregatedEffect.rainbow) && aggregatedEffect.dark) {
     aggregatedEffect.dark *= 5 / 3;
   }
-  if (day == 2 && aggregatedEffect.fire) {
+  if ((day == 2 || aggregatedEffect.rainbow) && aggregatedEffect.fire) {
     aggregatedEffect.fire *= 5 / 3;
   }
-  if (day == 3 && aggregatedEffect.ice) {
+  if ((day == 3 || aggregatedEffect.rainbow) && aggregatedEffect.ice) {
     aggregatedEffect.ice *= 5 / 3;
   }
-  if (day == 4 && aggregatedEffect.spdUp) {
+  if ((day == 4 || aggregatedEffect.rainbow) && aggregatedEffect.spdUp) {
     aggregatedEffect.spdUp *= 5 / 3;
   }
-  if (day == 5 && aggregatedEffect.light) {
+  if ((day == 5 || aggregatedEffect.rainbow) && aggregatedEffect.light) {
     aggregatedEffect.light *= 5 / 3;
   }
-  if (day == 6 && aggregatedEffect.dart) {
+  if ((day == 6 || aggregatedEffect.rainbow) && aggregatedEffect.dart) {
     aggregatedEffect.dart *= 5 / 3;
   }
 
@@ -1222,11 +1249,7 @@ export function getSkillsShortName(data: {
   return { skills: dataSkills, amulet: amuletShort };
 }
 
-export function amuletMinusDurability(data: {
-  items?: ShopItem[];
-  skills: Skill[];
-  lastBreakItem?: string;
-}): string {
+export function amuletMinusDurability(data: any): string {
   let ret = '';
   if (data.items?.filter((x) => x.type === 'amulet').length) {
     const amulet = data.items?.filter(
@@ -1246,7 +1269,10 @@ export function amuletMinusDurability(data: {
           ]
         : []),
     ].find((x) => x.name === amulet.name) as AmuletItem;
-    if ((item.isMinusDurability ?? item.isUsed)(data)) {
+    if (
+      (item.isMinusDurability ?? item.isUsed)(data) &&
+      (!aggregateTokensEffects(data).normalModeNotUseAmulet || data.raid)
+    ) {
       const boost = data.skills
         ? (data.skills
             ?.filter((x) => x.effect?.amuletBoost)

@@ -134,7 +134,7 @@ export function showStatus(
       serifs.rpg.infoPercent;
   const playerHpStr = data.enemy.pLToR
     ? PlayerHpInfoStr
-    : `${playerHp} / ${100 + (data.lv ?? 1) * 3}`;
+    : `${playerHp} / ${100 + Math.min(data.lv * 3, 765) + Math.floor((data.defMedal ?? 0) * 13.4)}`;
 
   const debuff = [data.enemy.fire ? serifs.rpg.fire + data.count : '']
     .filter(Boolean)
@@ -463,17 +463,17 @@ export function random(data, startCharge = 0, skillEffects, reverse = false) {
     }
     if (reverse) {
       if (rnd < 0.5) {
-        data.charge -= 0.5 - rnd;
+        data.charge -= (0.5 - rnd) * 2;
       }
       if (rnd > 0.5) {
-        data.charge += rnd - 0.5;
+        data.charge += (rnd - 0.5) * 2;
       }
     } else {
       if (rnd < 0.5) {
-        data.charge += 0.5 - rnd;
+        data.charge += (0.5 - rnd) * 2;
       }
       if (rnd > 0.5) {
-        data.charge -= rnd - 0.5;
+        data.charge -= (rnd - 0.5) * 2;
       }
     }
   }

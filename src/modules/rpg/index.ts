@@ -316,7 +316,6 @@ export default class extends Module {
       }
     } else {
       helpMessage.push(serifs.rpg.help.normal2);
-      helpMessage.push(serifs.rpg.help.normal2);
       if (data.lv < rpgData.maxLv) {
         if (rpgData.maxLv >= 255) {
           helpMessage.push(serifs.rpg.help.okawari3(rpgData.maxLv - data.lv));
@@ -387,7 +386,7 @@ export default class extends Module {
     message.push(jarList.slice(0, data.jar).join('\n'));
     if (data.jar > jarList.length) {
       message.push(
-        `激レア穢根くんのチェキ${data.jar - jarList.length >= 2 ? ' ×' + (data.jar - jarList.length) : ''}`,
+        `謎の壺${data.jar - jarList.length >= 2 ? ' ×' + (data.jar - jarList.length) : ''}`,
       );
     }
     if (data.nextSkill) {
@@ -415,7 +414,7 @@ export default class extends Module {
       '\n' +
         message.join('\n') +
         (message.length === 1
-          ? '\n\n何も持っていないようです。\n「RPG ショップ」で購入できます。'
+          ? '\n\n何も持っていないようじゃ \n「RPG ショップ」で購入できるのじゃ'
           : ''),
     );
     return { reaction: 'love' };
@@ -535,23 +534,27 @@ export default class extends Module {
       );
     }
 
+    let totalScore = 0;
+
     if (data.raidScore) {
       for (const [key, value] of Object.entries(data.raidScore)) {
         if (value && typeof value === 'number') {
+          const enemy = raidEnemys.find((x) => x.name === key);
+          const score = enemy
+            ? Math.max(
+                Math.log2((value * 20) / (1024 / ((enemy.power ?? 30) / 30))) +
+                  1,
+                1,
+              )
+            : undefined;
+          if (score) totalScore += score;
           message.push(
-            createRankMessage(
-              value,
-              key + ' 最大ダメージ',
-              `raidScore.${key}`,
-              {
-                suffix: data.clearRaid?.includes(key)
-                  ? 'ダメージ ⭐️'
-                  : 'ダメージ',
-              },
-            ),
+            `${createRankMessage(value, key + ' 最大ダメージ', `raidScore.${key}`, { suffix: data.clearRaid?.includes(key) ? 'ダメージ ⭐️' : 'ダメージ' })}${score ? `\n★${Math.floor(score)} ${Math.floor((score % 1) * 8) !== 0 ? `$[bg.color=ffff90 ${':blank:'.repeat(Math.floor((score % 1) * 8))}]` : ''}$[bg.color=ff9090 ${':blank:'.repeat(8 - Math.floor((score % 1) * 8))}] ★${Math.floor(score) + 1}` : ''}`,
           );
         }
       }
+      if (totalScore > 0 && Object.entries(data.raidScore).length >= 2)
+        message.push(`合計レイドボス評価値\n★${totalScore.toFixed(2)}`);
     }
 
     if (data.clearRaidNum) {
@@ -621,15 +624,16 @@ export default class extends Module {
       const games = this.raids.find({});
       const allData = this.ai.friends.find();
 
-      allData.forEach((x) => {
-        const enemyName = ':refrigerator:';
-        if (!x?.perModulesData?.rpg?.raidScore?.[enemyName]) return;
-        x.perModulesData.rpg.raidScore[enemyName] = 0;
+      games[games.length - 1].attackers.forEach((x) => {
+        const doc = this.ai.lookupFriend(x.user.id)?.doc;
+        const enemyName = ':dog_chair:';
+        if (!doc?.perModulesData?.rpg?.raidScore?.[enemyName]) return;
+        doc.perModulesData.rpg.raidScore[enemyName] = 0;
       });
       const rpgData = ai.moduleData.findOne({ type: 'rpg' });
       if (rpgData) {
-        rpgData.raidScore[':refrigerator:'] = 0;
-        rpgData.raidScoreDate[':refrigerator:'] = getDate();
+        rpgData.raidScore[':dog_chair:'] = 0;
+        rpgData.raidScoreDate[':dog_chair:'] = getDate();
         ai.moduleData.update(rpgData);
       }
       return { reaction: 'love' };
@@ -672,7 +676,11 @@ export default class extends Module {
 
     // 投稿数に応じてステータス倍率を得る
     // 連続プレイの場合は倍率アップ
-    let tp = getPostX(postCount) * (1 + (skillEffects.postXUp ?? 0));
+    let tp =
+      getPostX(postCount) *
+      (1 +
+        (skillEffects.postXUp ?? 0) *
+          Math.min((postCount - (isSuper ? 200 : 0)) / 20, 10));
 
     // 自分のカラー
     let me = color.name;
@@ -705,10 +713,8 @@ export default class extends Module {
     // 敵のステータスを計算
     let edef = data.lv * 3.5;
     const enemyMinDef = edef * 0.4;
-    edef -= Math.max(
-      atk * (skillEffects.arpen ?? 0),
-      edef * (skillEffects.arpen ?? 0),
-    );
+    const arpenX = 1 - 1 / (1 + (skillEffects.arpen ?? 0));
+    edef -= Math.max(atk * arpenX, edef * arpenX);
     if (edef < enemyMinDef) edef = enemyMinDef;
 
     atk =
@@ -720,7 +726,7 @@ export default class extends Module {
 
     let trueDmg = 0;
 
-    // 炎属性妖術
+    // 炎属性剣攻撃
     if (skillEffects.fire) {
       trueDmg = Math.ceil(data.lv * skillEffects.fire);
     }
@@ -801,6 +807,7 @@ export default class extends Module {
 
     msg.reply(`<center>${message}</center>`, {
       cw,
+      visibility: 'public',
     });
 
     return {
@@ -858,7 +865,11 @@ export default class extends Module {
 
     const isMaxLevel = data.lv >= rpgData.maxLv;
 
-    let needCoin = 2;
+    let needCoin = 10;
+    if (rpgData.maxLv - data.lv >= 200) needCoin -= 1;
+    if (rpgData.maxLv - data.lv >= 150) needCoin -= 2;
+    if (rpgData.maxLv - data.lv >= 100) needCoin -= 2;
+    if (rpgData.maxLv - data.lv >= 50) needCoin -= 2;
 
     // プレイ済でないかのチェック
     if (data.lastPlayedAt === nowTimeStr || data.lastPlayedAt === nextTimeStr) {
@@ -1023,7 +1034,13 @@ export default class extends Module {
     }
 
     if (aggregateTokensEffects(data).autoJournal) {
-      if (!data.enemy || count === 1 || data.endressFlg) {
+      if (
+        (!data.enemy || count === 1 || data.endressFlg) &&
+        !(
+          aggregateTokensEffects(data).appearStrongBoss &&
+          !data.clearHistory.includes(':aine_youshou:')
+        )
+      ) {
         data.endressFlg = true;
       }
     }
@@ -1072,7 +1089,11 @@ export default class extends Module {
     // 投稿数に応じてステータス倍率を得る
     // 連続プレイの場合は倍率アップ
     /** ステータス倍率（投稿数） */
-    let tp = getPostX(postCount) * (1 + (skillEffects.postXUp ?? 0));
+    let tp =
+      getPostX(postCount) *
+      (1 +
+        (skillEffects.postXUp ?? 0) *
+          Math.min((postCount - (isSuper ? 200 : 0)) / 20, 10));
 
     // これが2ターン目以降の場合、戦闘中に計算された最大倍率の50%の倍率が保証される
     data.maxTp = Math.max(tp, data.maxTp ?? 0);
@@ -1350,6 +1371,8 @@ export default class extends Module {
       def = def * (1 + (skillEffects.notBattleBonusDef ?? 0));
     }
 
+    let critUp = 0;
+
     // HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
     if (!aggregateTokensEffects(data).notLastPower) {
       if (
@@ -1359,6 +1382,8 @@ export default class extends Module {
       ) {
         buff += 1;
         message += serifs.rpg.haisui + '\n';
+        atk = Math.round(atk * (1 + (skillEffects.haisuiAtkUp ?? 0)));
+        critUp += skillEffects.haisuiCritUp ?? 0;
         const effect = Math.min(
           (enemyHpPercent - playerHpPercent) *
             (1 + (skillEffects.haisuiUp ?? 0)),
@@ -1368,6 +1393,7 @@ export default class extends Module {
         def = Math.round(def * (1 - effect));
       }
     }
+
     const itemEquip = 0.4 + (1 - playerHpPercent) * 0.6;
     if (
       rpgItems.length &&
@@ -1407,6 +1433,8 @@ export default class extends Module {
         ) {
           if (playerHpPercent < 0.5) message += serifs.rpg.skill.lowHpFood;
           types = ['medicine', 'poison'];
+          if (Math.random() < skillEffects.lowHpFood * playerHpPercent)
+            types = ['medicine'];
         }
         if (
           types.includes('poison') &&
@@ -1664,10 +1692,8 @@ export default class extends Module {
       }
     }
 
-    enemyDef -= Math.max(
-      atk * (skillEffects.arpen ?? 0),
-      enemyDef * (skillEffects.arpen ?? 0),
-    );
+    const arpenX = 1 - 1 / (1 + (skillEffects.arpen ?? 0));
+    enemyDef -= Math.max(atk * arpenX, enemyDef * arpenX);
 
     if (skillEffects.firstTurnResist && count === 1 && isBattle && isPhysical) {
       buff += 1;
@@ -1707,7 +1733,7 @@ export default class extends Module {
         ? enemyMaxHp * data.enemy.maxdmg
         : undefined;
 
-      // 土属性妖術
+      // 土属性剣攻撃
       if (skillEffects.dart && isBattle && isPhysical && maxdmg) {
         buff += 1;
         message += serifs.rpg.skill.dart + '\n';
@@ -1719,31 +1745,29 @@ export default class extends Module {
 
       let trueDmg = 0;
 
-      // 炎属性妖術
+      // 炎属性剣攻撃
       if (skillEffects.fire && isBattle && isPhysical) {
         buff += 1;
         message += serifs.rpg.skill.fire + '\n';
         trueDmg = Math.ceil(lv * skillEffects.fire);
       } else if (skillEffects.fire && !(isBattle && isPhysical)) {
         // 非戦闘時は、パワーに還元される
-        atk = atk + lv * 3.75 * skillEffects.fire;
+        atk = atk + Math.min(lv, 255) * 3.75 * skillEffects.fire;
       }
 
-      // 毒属性妖術
+      // 毒属性剣攻撃
       if (skillEffects.weak && count > 1) {
         if (isBattle && isPhysical) {
           buff += 1;
           message +=
             serifs.rpg.skill.weak(data.enemy.dname ?? data.enemy.name) + '\n';
         }
-        enemyAtk = Math.max(
-          enemyAtk * (1 - skillEffects.weak * (count - 1)),
-          0,
-        );
-        enemyDef = Math.max(
-          enemyDef * (1 - skillEffects.weak * (count - 1)),
-          0,
-        );
+        const enemyMinDef = enemyDef * 0.4;
+        const weakX = 1 - 1 / (1 + skillEffects.weak * (count - 1));
+        enemyAtk -= Math.max(enemyAtk * weakX, atk * weakX);
+        enemyDef -= Math.max(enemyDef * weakX, atk * weakX);
+        if (enemyAtk < 0) enemyAtk = 0;
+        if (enemyDef < enemyMinDef) enemyDef = enemyMinDef;
       }
 
       // バフが1つでも付与された場合、改行を追加する
@@ -1765,9 +1789,14 @@ export default class extends Module {
         atk = atk * (1 + skillEffects.abortDown * (1 / 3));
       }
 
+      const defMinusMin =
+        skillEffects.defDmgUp && skillEffects.defDmgUp < 0
+          ? (1 / (-1 + (skillEffects.defDmgUp ?? 0))) * -1
+          : 1;
+
       const defDmgX = Math.max(
         1 *
-          (1 + Math.max(skillEffects.defDmgUp ?? 0, -0.9)) *
+          Math.max(1 + (skillEffects.defDmgUp ?? 0), defMinusMin) *
           (count === 1 && skillEffects.firstTurnResist
             ? 1 - (skillEffects.firstTurnResist ?? 0)
             : 1) *
@@ -1907,7 +1936,7 @@ export default class extends Module {
           Math.random() <
           Math.max(
             (enemyHpPercent - playerHpPercent) *
-              (1 + (skillEffects.critUp ?? 0)),
+              (1 + (skillEffects.critUp ?? 0) + critUp),
             0,
           ) +
             (skillEffects.critUpFixed ?? 0);
@@ -2016,7 +2045,7 @@ export default class extends Module {
       } else {
         let enemyAtkX = 1;
         // 攻撃後発動スキル効果
-        // 氷属性妖術
+        // 氷属性剣攻撃
         if (
           isBattle &&
           isPhysical &&
@@ -2030,7 +2059,7 @@ export default class extends Module {
           // 非戦闘時は氷の効果はないが、防御に還元される
           def = def * (1 + (skillEffects.ice ?? 0));
         }
-        // 光属性妖術
+        // 光属性剣攻撃
         if (
           isBattle &&
           isPhysical &&
@@ -2044,7 +2073,7 @@ export default class extends Module {
           // 非戦闘時は光の効果はないが、防御に還元される
           def = def * (1 + (skillEffects.light ?? 0) * 0.5);
         }
-        // 闇属性妖術
+        // 闇属性剣攻撃
         if (
           data.enemy.spd &&
           data.enemy.spd >= 2 &&
@@ -2361,7 +2390,7 @@ export default class extends Module {
         : data.lastOnemorePlayedAt !== getDate()
           ? '(無料でおかわり可能)'
           : data.coin >= needCoin
-            ? `(コインでおかわり可能 ${data.coin > 99 ? '99+' : data.coin} / ${needCoin})`
+            ? `(どんぐりでおかわり可能 ${data.coin > 99 ? '99+' : data.coin} / ${needCoin})`
             : '',
     ]
       .filter(Boolean)
@@ -2438,6 +2467,7 @@ export default class extends Module {
 
     msg.reply(`<center>${message}</center>`, {
       cw,
+      visibility: 'specified',
     });
 
     return {

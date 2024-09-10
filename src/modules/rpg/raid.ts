@@ -267,8 +267,8 @@ export async function start(triggerUserId?: string, flg?: any) {
   const enemy =
     games.length >= 2 &&
     flg?.includes('r') &&
-    raidEnemys.find((x) => x.name === games[games.length - 2]?.enemy?.name)
-      ? raidEnemys.find((x) => x.name === games[games.length - 2]?.enemy?.name)
+    raidEnemys.find((x) => x.name === games[games.length - 1]?.enemy?.name)
+      ? raidEnemys.find((x) => x.name === games[games.length - 1]?.enemy?.name)
       : notPlayedBoss.length
         ? notPlayedBoss[Math.floor(Math.random() * notPlayedBoss.length)]
         : filteredRaidEnemys[
@@ -343,7 +343,7 @@ function finish(raid: Raid) {
   /** 攻撃者のリストをフィルタリングしてダメージ順にソート */
   let sortAttackers = raid.attackers
     .filter((attacker) => {
-      if (attacker.dmg <= 0) return false;
+      if (attacker.dmg < 0) return false;
       if (seenIds.has(attacker.user.id)) {
         return false;
       } else {
@@ -409,10 +409,12 @@ function finish(raid: Raid) {
 
   if (sortAttackers.length > 1) {
     results.push(
-      `\n合計: ${sortAttackers.length}人 ${total.toLocaleString()}ダメージ\n評価: ${'★'.repeat(score)}`,
+      `\n合計: ${sortAttackers.length}人 ${total.toLocaleString()}ダメージ\n評価: ${'★'.repeat(score)}\n★${Math.floor(scoreRaw)} ${Math.floor((scoreRaw % 1) * 8) !== 0 ? `$[bg.color=ffff90 ${':blank:'.repeat(Math.floor((scoreRaw % 1) * 8))}]` : ''}$[bg.color=ff9090 ${':blank:'.repeat(8 - Math.floor((scoreRaw % 1) * 8))}] ★${Math.floor(scoreRaw) + 1}`,
     );
   } else {
-    results.push(`\n評価: ${'★'.repeat(score)}`);
+    results.push(
+      `\n評価: ${'★'.repeat(score)}\n★${Math.floor(scoreRaw)} ${Math.floor((scoreRaw % 1) * 8) !== 0 ? `$[bg.color=ffff90 ${':blank:'.repeat(Math.floor((scoreRaw % 1) * 8))}]` : ''}$[bg.color=ff9090 ${':blank:'.repeat(8 - Math.floor((scoreRaw % 1) * 8))}] ★${Math.floor(scoreRaw) + 1}`,
+    );
   }
 
   /** RPGモジュールのデータ */
@@ -452,7 +454,7 @@ function finish(raid: Raid) {
       sortAttackers[Math.floor(Math.random() * sortAttackers.length)].user;
     const bonus = Math.ceil((sortAttackers.length / 5) * scoreRaw);
     results.push(
-      '\nラッキー！: ' + acct(luckyUser) + '\nキレイなどんぐり+' + bonus + '個',
+      '\nラッキー！: ' + acct(luckyUser) + '\nもこコイン+' + bonus + '枚',
     );
     const friend = ai.lookupFriend(luckyUser.id);
     if (!friend) return;
@@ -484,6 +486,7 @@ function finish(raid: Raid) {
   module_.unsubscribeReply(raid.postId);
   raid.replyKey.forEach((x) => module_.unsubscribeReply(x));
 }
+
 /**
  * レイドのコンテキストフック
  * @param key レイドのキー
@@ -499,7 +502,7 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
 
   const _data = msg.friend.getPerModulesData(module_);
   if (!_data.lv) {
-    msg.reply('RPGモードを先に1回プレイしてほしいのじゃ');
+    msg.reply('RPGモードを先に1回プレイしてください！');
     return {
       reaction: 'hmm',
     };
@@ -514,7 +517,7 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
   if (raid == null) return;
 
   if (raid.attackers.some((x) => x.user.id == msg.userId)) {
-    msg.reply('すでに参加済みのようじゃ！').then((reply) => {
+    msg.reply('すでに参加済みの様じゃ！').then((reply) => {
       raid.replyKey.push(raid.postId + ':' + reply.id);
       module_.subscribeReply(raid.postId + ':' + reply.id, reply.id);
       raids.update(raid);
@@ -529,11 +532,21 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
 
   if (!enemy) return;
 
-  /** 総ダメージの計算結果 */
-  const result = await getTotalDmg(msg, enemy);
+  let result;
+  if (enemy.pattern && enemy.pattern > 1) {
+    switch (enemy.pattern) {
+      case 2:
+      default:
+        result = await getTotalDmg2(msg, enemy);
+        break;
+    }
+  } else {
+    /** 総ダメージの計算結果 */
+    result = await getTotalDmg(msg, enemy);
+  }
 
   if (raid.attackers.some((x) => x.user.id == msg.userId)) {
-    msg.reply('すでに参加済みのようじゃ！').then((reply) => {
+    msg.reply('すでに参加済みの様じゃ！').then((reply) => {
       raid.replyKey.push(raid.postId + ':' + reply.id);
       module_.subscribeReply(raid.postId + ':' + reply.id, reply.id);
       raids.update(raid);
@@ -632,7 +645,11 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
   let tp;
   if (enemy.forcePostCount) {
     postCount = enemy.forcePostCount;
-    tp = getPostX(postCount) * (1 + (skillEffects.postXUp ?? 0));
+    tp =
+      getPostX(postCount) *
+      (1 +
+        (skillEffects.postXUp ?? 0) *
+          Math.min((postCount - (isSuper ? 200 : 0)) / 20, 10));
   } else {
     postCount = await getPostCount(ai, module_, data, msg, isSuper ? 200 : 0);
 
@@ -640,7 +657,11 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
     postCount = postCount + continuousBonusNum;
 
-    tp = getRaidPostX(postCount) * (1 + (skillEffects.postXUp ?? 0));
+    tp =
+      getRaidPostX(postCount) *
+      (1 +
+        (skillEffects.postXUp ?? 0) *
+          Math.min((postCount - (isSuper ? 200 : 0)) / 20, 10));
   }
 
   if (!isSuper) {
@@ -744,11 +765,11 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     message += result.message + `\n`;
   }
   // 数取りボーナスに上限がついたため、その分の補填を全員に付与
-  // ID毎に決められた得意曜日に従って最大50%分のステータスバフ
+  // ID毎に決められた得意曜日に従って最大100%分のステータスバフ
   const day = new Date().getDay();
   let bonusX =
     (day === 6 || day === 0
-      ? 0.5
+      ? 1
       : (Math.floor(
           seedrandom(
             '' +
@@ -760,14 +781,14 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
             day,
         ) %
           5) *
-        0.125) +
+        0.25) +
     (Math.random() < 0.01 ? 0.3 : 0) +
     (Math.random() < 0.01 ? 0.3 : 0);
   while (Math.random() < 0.01) {
     bonusX += 0.3;
   }
-  atk = Math.round(atk * (1 + bonusX));
-  def = Math.round(def * (1 + bonusX));
+  atk = Math.round(atk * (0.5 + bonusX));
+  def = Math.round(def * (0.5 + bonusX));
 
   /** 敵の最大HP */
   let enemyMaxHp = 100000;
@@ -838,7 +859,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     if (buff > 0) message += '\n';
     buff = 0;
     message += serifs.rpg.warrior.get + `\n\n`;
-    mark = ':sexy_paradin_dot:';
+    mark = ':sexy_paradin:';
   }
 
   if (skillEffects.heavenOrHell) {
@@ -926,10 +947,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
   }
 
   const enemyMinDef = enemyDef * 0.4;
-  enemyDef -= Math.max(
-    atk * (skillEffects.arpen ?? 0),
-    enemyDef * (skillEffects.arpen ?? 0),
-  );
+  const arpenX = 1 - 1 / (1 + (skillEffects.arpen ?? 0));
+  enemyDef -= Math.max(atk * arpenX, enemyDef * arpenX);
   if (enemyDef < enemyMinDef) enemyDef = enemyMinDef;
 
   // バフが1つでも付与された場合、改行を追加する
@@ -1003,21 +1022,17 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
       }
     }
 
-    // 毒属性妖術
+    // 毒属性剣攻撃
     if (skillEffects.weak && count > 1) {
       if (isBattle && isPhysical) {
         buff += 1;
         message += serifs.rpg.skill.weak(enemy.dname ?? enemy.name) + '\n';
       }
       const enemyMinDef = enemyDef * 0.4;
-      enemyAtk -= Math.max(
-        enemyAtk * (skillEffects.weak * (count - 1)),
-        atk * (skillEffects.weak * (count - 1)),
-      );
-      enemyDef -= Math.max(
-        enemyDef * (skillEffects.weak * (count - 1)),
-        atk * (skillEffects.weak * (count - 1)),
-      );
+      const weakXList = [0, 0.25, 0.5, 1, 1.5, 3.5, 4, 4.5, 5];
+      const weakX = 1 - 1 / (1 + skillEffects.weak * weakXList[count - 1]);
+      enemyAtk -= Math.max(enemyAtk * weakX, atk * weakX);
+      enemyDef -= Math.max(enemyDef * weakX, atk * weakX);
       if (enemyAtk < 0) enemyAtk = 0;
       if (enemyDef < enemyMinDef) enemyDef = enemyMinDef;
     }
@@ -1034,6 +1049,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
       spd = 2;
     }
 
+    let critUp = 0;
+
     // HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
     if (!aggregateTokensEffects(data).notLastPower) {
       if (
@@ -1043,6 +1060,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
       ) {
         buff += 1;
         message += serifs.rpg.haisui + '\n';
+        atk = Math.round(atk * (1 + (skillEffects.haisuiAtkUp ?? 0)));
+        critUp += skillEffects.haisuiCritUp ?? 0;
         const effect = Math.min(
           (enemyHpPercent - playerHpPercent) *
             (1 + (skillEffects.haisuiUp ?? 0)),
@@ -1093,6 +1112,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
           if (skillEffects.lowHpFood && playerHpPercent < 0.5)
             message += serifs.rpg.skill.lowHpFood;
           types = ['medicine', 'poison'];
+          if (Math.random() < skillEffects.lowHpFood * playerHpPercent)
+            types = ['medicine'];
         }
         if (
           types.includes('poison') &&
@@ -1112,11 +1133,23 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
               (skillEffects.mindMinusAvoid ?? 0) +
               (count === 1 ? (skillEffects.firstTurnMindMinusAvoid ?? 0) : 0);
           const items = rpgItems.filter(
-            (x) => x.type === type && (isPlus ? x.mind > 0 : x.mind < 0),
+            (x) =>
+              x.type === type &&
+              (isPlus ? x.mind > 0 : x.mind < 0) &&
+              (count !== 1 ||
+                !skillEffects.firstTurnItemChoice ||
+                x.mind >= skillEffects.firstTurnItemChoice * 100),
           );
           item = items[Math.floor(Math.random() * items.length)];
         } else {
-          const items = rpgItems.filter((x) => x.type === type && x.effect > 0);
+          const items = rpgItems.filter(
+            (x) =>
+              x.type === type &&
+              x.effect > 0 &&
+              (count !== 1 ||
+                !skillEffects.firstTurnItemChoice ||
+                x.effect >= skillEffects.firstTurnItemChoice * 100),
+          );
           item = items[Math.floor(Math.random() * items.length)];
         }
       }
@@ -1270,6 +1303,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
             }
           }
           break;
+        default:
+          break;
       }
       if (aggregateTokensEffects(data).showItemBonus) {
         const itemMessage = [
@@ -1288,7 +1323,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     /** 1ターンに与えられる最大ダメージ量 */
     let maxdmg = enemy.maxdmg ? enemyMaxHp * enemy.maxdmg : undefined;
 
-    // 土属性妖術
+    // 土属性剣攻撃
     if (skillEffects.dart && isBattle && isPhysical && maxdmg) {
       buff += 1;
       message += serifs.rpg.skill.dart + '\n';
@@ -1300,7 +1335,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
     let trueDmg = 0;
 
-    // 炎属性妖術
+    // 炎属性剣攻撃
     if (skillEffects.fire && isBattle && isPhysical) {
       buff += 1;
       message += serifs.rpg.skill.fire + '\n';
@@ -1329,9 +1364,14 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
       atk = atk * (1 + skillEffects.abortDown * (1 / 3));
     }
 
+    const defMinusMin =
+      skillEffects.defDmgUp && skillEffects.defDmgUp < 0
+        ? (1 / (-1 + (skillEffects.defDmgUp ?? 0))) * -1
+        : 1;
+
     const defDmgX = Math.max(
       1 *
-        (1 + Math.max(skillEffects.defDmgUp ?? 0, -0.9)) *
+        Math.max(1 + (skillEffects.defDmgUp ?? 0), defMinusMin) *
         (count === 1 && skillEffects.firstTurnResist
           ? 1 - (skillEffects.firstTurnResist ?? 0)
           : 1) *
@@ -1375,8 +1415,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
       /** クリティカルかどうか */
       const crit =
         Math.random() <
-        (playerHpPercent - enemyHpPercent) *
-          (1 - (skillEffects.enemyCritDown ?? 0));
+        (enemy.alwaysCrit ? 1 : 0) * (1 - (skillEffects.enemyCritDown ?? 0));
       // 予測最大ダメージが相手のHPの何割かで先制攻撃の確率が判定される
       if (
         Math.random() < predictedDmg / enemyHp ||
@@ -1482,6 +1521,11 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
       if (crit) warriorCritX += 0.5;
     }
 
+    const atkMinusMin =
+      skillEffects.atkDmgUp && skillEffects.atkDmgUp < 0
+        ? (1 / (-1 + (skillEffects.atkDmgUp ?? 0))) * -1
+        : 1;
+
     // 自身攻撃の処理
     // spdの回数分、以下の処理を繰り返す
     for (let i = 0; i < spd; i++) {
@@ -1491,7 +1535,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         message += `⚂ ${Math.floor(rng * 100)}%\n`;
       const turnDmgX = i < 2 ? 1 : i < 3 ? 0.5 : i < 4 ? 0.25 : 0.125;
       const dmgBonus =
-        (1 + Math.max(skillEffects.atkDmgUp ?? 0, -0.4)) * turnDmgX +
+        Math.max(1 + (skillEffects.atkDmgUp ?? 0), atkMinusMin) * turnDmgX +
         (skillEffects.thunder
           ? (skillEffects.thunder * ((i + 1) / spd)) /
             (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)
@@ -1500,7 +1544,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
       let crit =
         Math.random() <
         Math.max(
-          (enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0)),
+          (enemyHpPercent - playerHpPercent) *
+            (1 + (skillEffects.critUp ?? 0) + critUp),
           0,
         ) +
           (skillEffects.critUpFixed ?? 0);
@@ -1571,7 +1616,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     } else {
       let enemyAtkX = 1;
       // 攻撃後発動スキル効果
-      // 氷属性妖術
+      // 氷属性剣攻撃
       if (
         isBattle &&
         isPhysical &&
@@ -1584,7 +1629,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         // 非戦闘時は氷の効果はないが、防御に還元される
         def = def * (1 + (skillEffects.ice ?? 0));
       }
-      // 光属性妖術
+      // 光属性剣攻撃
       if (
         isBattle &&
         isPhysical &&
@@ -1597,7 +1642,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         // 非戦闘時は光の効果はないが、防御に還元される
         def = def * (1 + (skillEffects.light ?? 0) * 0.5);
       }
-      // 闇属性妖術
+      // 闇属性剣攻撃
       if (
         enemy.spd &&
         enemy.spd >= 2 &&
@@ -1633,7 +1678,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
           /** クリティカルかどうか */
           const crit =
             Math.random() <
-            (playerHpPercent - enemyHpPercent) *
+            (enemy.alwaysCrit ? 1 : 0) *
               (1 - (skillEffects.enemyCritDown ?? 0));
           const critDmg = 1 + (skillEffects.enemyCritDmgDown ?? 0) * -1;
           /** ダメージ */
@@ -1692,7 +1737,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
           skillEffects.escape &&
           actionX + 1 < plusActionX &&
           playerHp <= 0 &&
-          playerHp >= playerMaxHp * (skillEffects.escape / -10) &&
+          playerHp >= playerMaxHp * (skillEffects.escape / -16) &&
           !enemy.notEndure
         ) {
           message +=
@@ -1932,4 +1977,209 @@ function getSpd(spdX: number) {
   if (spdX <= 2.5) return 2 + (spdX - 2) * 2;
   if (spdX <= 2.75) return 3 + (spdX - 2.5) * 4;
   return 4 + (spdX - 2.75) * 8;
+}
+
+export async function getTotalDmg2(msg, enemy: RaidEnemy) {
+  // データを読み込み
+  const data = initializeData(module_, msg);
+  if (!data.lv)
+    return {
+      reaction: 'confused',
+    };
+  data.raid = true;
+  const colorData = colors.map((x) => x.unlock(data));
+
+  const skillsStr = { skills: '', amulet: '' };
+
+  /** 現在の敵と戦ってるターン数。 敵がいない場合は1 */
+  let count = 1;
+
+  /** 使用中の色情報 */
+  let color = getColor(data);
+
+  /** 画面に出力するメッセージ:CW */
+  let cw = acct(msg.user) + ' ';
+  /** 画面に出力するメッセージ:Text */
+  let message = '';
+
+  /** プレイヤーの見た目 */
+  let me = color.name;
+
+  // ステータスを計算
+  /** プレイヤーのLv */
+  const lv = data.lv ?? 1;
+
+  // 敵の開始メッセージなどを設定
+  cw += [enemy.msg].filter(Boolean).join(' ');
+  message += `$[x2 ${me}]\n\n${serifs.rpg.start}\n\n`;
+
+  const maxLv = ai.moduleData.findOne({ type: 'rpg' })?.maxLv ?? 1;
+
+  /** バフを得た数。行数のコントロールに使用 */
+  let buff = 0;
+
+  /** プレイヤーの基礎体力 */
+  let rawMaxHp =
+    100 + Math.min(lv * 3, 765) + Math.floor((data.defMedal ?? 0) * 13.4);
+  /** プレイヤーのボーナス体力 */
+  let bonusMaxHp = 100 + Math.min(maxLv * 3, 765);
+  /** プレイヤーの最大HP */
+  let playerMaxHp = Math.max(Math.round(bonusMaxHp * Math.random()), rawMaxHp);
+  /** プレイヤーのHP */
+  let playerHp = playerMaxHp;
+
+  let totalDmg = 0;
+
+  let mark = ':blank:';
+
+  // バフが1つでも付与された場合、改行を追加する
+  if (buff > 0) message += '\n';
+
+  const plusActionX = 5;
+
+  let attackCount = 0;
+
+  for (let actionX = 0; actionX < plusActionX + 1; actionX++) {
+    /** バフを得た数。行数のコントロールに使用 */
+    let buff = 0;
+
+    // バフが1つでも付与された場合、改行を追加する
+    if (buff > 0) message += '\n';
+
+    let endureCount = 1;
+
+    const _data = { ...data, enemy, count };
+
+    // 自身攻撃の処理
+
+    if (Math.random() < 1 / 3) {
+      attackCount += 1;
+      /** ダメージ */
+      let dmg = 500 * attackCount;
+      //** クリティカルかどうか */
+      let crit = attackCount >= 4;
+      // メッセージの出力
+      message += (crit ? `**${enemy.atkmsg(dmg)}**` : enemy.atkmsg(dmg)) + '\n';
+      totalDmg += dmg;
+    } else if (Math.random() < 1 / 2) {
+      // メッセージの出力
+      message += serifs.rpg.draw + '\n';
+    } else {
+      /** ダメージ */
+      let dmg = Math.min(Math.floor(playerMaxHp * 0.95), 440);
+      playerHp -= dmg;
+      message += enemy.defmsg(dmg) + '\n';
+    }
+
+    // HPが0で食いしばりが可能な場合、食いしばる
+    const endure = 0.1 + endureCount * 0.1 - count * 0.05;
+    if (playerHp <= 0 && !enemy.notEndure && Math.random() < endure) {
+      message += serifs.rpg.endure + '\n';
+      playerHp = 1;
+      endureCount -= 1;
+    }
+
+    // 敗北処理
+    if (playerHp <= 0) {
+      message += '\n' + enemy.losemsg;
+      break;
+    } else {
+      // 決着がつかない場合
+      if (actionX === plusActionX) {
+        message += showStatusDmg(_data, playerHp, totalDmg, playerMaxHp, me);
+      } else {
+        message +=
+          showStatusDmg(_data, playerHp, totalDmg, playerMaxHp, me) + '\n\n';
+      }
+      count = count + 1;
+    }
+  }
+
+  if (playerHp > 0) {
+    attackCount += 1;
+    /** ダメージ */
+    let dmg = 500 * attackCount;
+    if (attackCount >= 7) {
+      while (Math.random() < 1 / 3) {
+        dmg += 1000;
+      }
+    }
+    //** クリティカルかどうか */
+    let crit = attackCount >= 4;
+    // メッセージの出力
+    message += '\n\n' + (crit ? `**${enemy.atkmsg(dmg)}**` : enemy.atkmsg(dmg));
+    totalDmg += dmg;
+    message += '\n\n' + enemy.winmsg;
+  }
+
+  message += '\n\n' + serifs.rpg.totalDmg(totalDmg);
+
+  if (!data.raidScore) data.raidScore = {};
+  if (!data.raidScore[enemy.name] || data.raidScore[enemy.name] < totalDmg) {
+    if (data.raidScore[enemy.name]) {
+      message +=
+        '\n' + serifs.rpg.hiScore(data.raidScore[enemy.name], totalDmg);
+      if (mark === ':blank:') mark = '🆙';
+    }
+    data.raidScore[enemy.name] = totalDmg;
+  } else {
+    if (data.raidScore[enemy.name])
+      message += `\n（これまでのベスト: ${data.raidScore[enemy.name].toLocaleString()}）`;
+  }
+  if (!data.clearRaid) data.clearRaid = [];
+  if (count === 7 && !data.clearRaid.includes(enemy.name)) {
+    data.clearRaid.push(enemy.name);
+  }
+
+  data.raid = false;
+  msg.friend.setPerModulesData(module_, data);
+
+  // 色解禁確認
+  const newColorData = colors.map((x) => x.unlock(data));
+  /** 解禁した色 */
+  let unlockColors = '';
+  for (let i = 0; i < newColorData.length; i++) {
+    if (!colorData[i] && newColorData[i]) {
+      unlockColors += colors[i].name;
+    }
+  }
+  if (unlockColors) {
+    message += serifs.rpg.newColor(unlockColors);
+  }
+
+  let reply;
+
+  if (Number.isNaN(totalDmg) || totalDmg < 0) {
+    reply = await msg.reply(
+      `エラーが発生しました。もう一度試してみてください。`,
+      {
+        visibility: 'specified',
+      },
+    );
+    totalDmg = 0;
+  } else {
+    reply = await msg.reply(`<center>${message.slice(0, 7500)}</center>`, {
+      cw,
+    });
+    let msgCount = 1;
+    while (message.length > msgCount * 7500) {
+      msgCount += 1;
+      await msg.reply(
+        `<center>${message.slice((msgCount - 1) * 7500, msgCount * 7500)}</center>`,
+        {
+          cw: cw + ' ' + msgCount,
+        },
+      );
+    }
+  }
+
+  return {
+    totalDmg,
+    me,
+    lv,
+    count,
+    mark,
+    skillsStr,
+    reply,
+  };
 }

@@ -95,6 +95,10 @@ export type RaidEnemy = Enemy & {
   fixRnd?: number;
   /** スキル効果倍率 */
   skillX?: number;
+  /** ダメージは常にクリティカル？ */
+  alwaysCrit?: boolean;
+  /** 処理に使用するパターンを指定 */
+  pattern?: number;
 };
 
 /** 敵一覧 */
@@ -1087,7 +1091,7 @@ export const raidEnemys: RaidEnemy[] = [
     def: 2,
     atkx: 6,
     defx: 4,
-    power: 32,
+    power: 46,
   },
   {
     name: ':ddquino:',
@@ -1107,7 +1111,7 @@ export const raidEnemys: RaidEnemy[] = [
     def: 4,
     atkx: 4,
     defx: 6,
-    power: 32,
+    power: 46,
   },
   {
     name: ':zucchini_iikoe:',
@@ -1143,7 +1147,7 @@ export const raidEnemys: RaidEnemy[] = [
     def: 1,
     atkx: 7,
     defx: 2,
-    power: 15,
+    power: 4,
   },
   {
     name: ':role_capsaishin:',
@@ -1162,7 +1166,7 @@ export const raidEnemys: RaidEnemy[] = [
     atkx: 2,
     defx: 4,
     fire: 0.15,
-    power: 15,
+    power: 22,
   },
   {
     name: ':ainekun_dot:',
@@ -1181,7 +1185,7 @@ export const raidEnemys: RaidEnemy[] = [
     def: 5,
     atkx: 5,
     defx: 5,
-    power: 50,
+    power: 55,
   },
   {
     name: ':syokusyu:',
@@ -1217,7 +1221,7 @@ export const raidEnemys: RaidEnemy[] = [
     def: 2,
     atkx: 5,
     defx: 5,
-    power: 35,
+    power: 40,
   },
   {
     name: ':katsuo:',
@@ -1238,7 +1242,7 @@ export const raidEnemys: RaidEnemy[] = [
     atkx: 3,
     defx: 1,
     abort: 1,
-    power: 6,
+    power: 8,
   },
   {
     name: ':yosomono_seinen:',
@@ -1257,7 +1261,7 @@ export const raidEnemys: RaidEnemy[] = [
     def: 2,
     atkx: 2,
     defx: 2,
-    power: 33,
+    power: 28,
     forcePostCount: 3,
   },
   {
@@ -1276,7 +1280,7 @@ export const raidEnemys: RaidEnemy[] = [
     def: 8,
     atkx: 3,
     defx: 8,
-    power: 30,
+    power: 40,
   },
   {
     name: ':manbou_lefthand:',
@@ -1313,7 +1317,7 @@ export const raidEnemys: RaidEnemy[] = [
     def: 5,
     atkx: 5,
     defx: 5,
-    power: 25,
+    power: 23,
     skillX: 3,
   },
   {
@@ -1334,7 +1338,7 @@ export const raidEnemys: RaidEnemy[] = [
       atk * (spd <= 2 ? spd : spd === 3 ? 2.5 : 2.75 + spd * 0.125),
     atkx: 4.25,
     defx: 4.25,
-    power: 25,
+    power: 50,
   },
   {
     name: ':ainekun_dot_oko:',
@@ -1350,10 +1354,31 @@ export const raidEnemys: RaidEnemy[] = [
     losemsg: '阨ちゃんは目の前が真っ暗になった…',
     atk: 10,
     def: 10,
-    atkx: (count) => Math.min(count * 2 + 1, 12),
+    atkx: (count) => Math.min(count * 1 + 0.5, 6),
     defx: (count) => Math.min(count + 1, 6),
     power: 100,
     fixRnd: 0.5,
+    alwaysCrit: true,
+  },
+  {
+    name: ':punch_up_fast:',
+    msg: ':punch_up_fast:がじゃんけんをしたいようだ。',
+    short: '',
+    mark: '☆',
+    mark2: '★',
+    lToR: false,
+    atkmsg: (dmg) =>
+      `阨ちゃんはじゃんけんに勝った！\n:punch_up_fast:に${dmg}ダメージ！`,
+    defmsg: (dmg) =>
+      `阨ちゃんはじゃんけんに負けた！\n阨ちゃんに${dmg}ダメージ！`,
+    winmsg: 'じゃんけんバトルに勝利した！',
+    losemsg: 'じゃんけんバトルに敗北した……',
+    atk: 1,
+    def: 1,
+    atkx: 1,
+    defx: 1,
+    power: 15,
+    pattern: 2,
   },
 ];
 

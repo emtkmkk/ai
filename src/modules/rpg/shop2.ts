@@ -200,6 +200,17 @@ export const shop2Items: ShopItem[] = [
     always: true,
   } as TokenItem,
   {
+    name: `温存のお札`,
+    limit: (data) =>
+      !data.items.filter((x) => x.name === '温存のお札').length &&
+      !data.bankItems?.filter((x) => x === '温存のお札').length,
+    price: 50,
+    desc: `レイドボス以外でお守りを使わないようになる`,
+    type: 'token',
+    effect: { normalModeNotUseAmulet: true },
+    always: true,
+  } as TokenItem,
+  {
     name: `全身全霊のお札`,
     limit: (data) =>
       !data.items.filter((x) => x.name === '全身全霊のお札').length &&
@@ -298,6 +309,20 @@ export const shop2Items: ShopItem[] = [
         new Set([...(data.bankItems ?? []), '平常心のお札']),
       );
       data.items = data.items.filter((x) => x.name !== '平常心のお札');
+    },
+    always: true,
+  },
+  {
+    name: '温存のお札を預ける',
+    limit: (data) => data.items.filter((x) => x.name === '温存のお札').length,
+    desc: 'レイドボス以外でもお守りを使う',
+    price: 0,
+    type: 'item',
+    effect: (data) => {
+      data.bankItems = Array.from(
+        new Set([...(data.bankItems ?? []), '温存のお札']),
+      );
+      data.items = data.items.filter((x) => x.name !== '温存のお札');
     },
     always: true,
   },
@@ -534,14 +559,14 @@ export const shop2Items: ShopItem[] = [
     always: true,
   },
   {
-    name: 'キレイなどんぐり(80枚)',
+    name: 'キレイなどんぐり(70枚)',
     limit: (data) =>
       (data.atkMedal ?? 0) + (data.defMedal ?? 0) + (data.itemMedal ?? 0) >= 30,
     desc: 'ショップでのアイテム購入などに使用できる通貨です',
     price: 20,
     orb: true,
     type: 'item',
-    effect: (data) => (data.coin = (data.coin ?? 0) + 80),
+    effect: (data) => (data.coin = (data.coin ?? 0) + 70),
     infinite: true,
     always: true,
   },

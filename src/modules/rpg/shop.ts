@@ -30,6 +30,7 @@ export type BaseItem = {
   type: ItemType;
   effect: (data: any) => void;
   always?: boolean;
+  noDiscount?: boolean;
 };
 
 export type TokenItem = Omit<BaseItem, 'type' | 'effect'> & {
@@ -142,8 +143,10 @@ export const shopItems: ShopItem[] = [
   {
     name: 'おかわり2RPG自動支払いの札',
     limit: (data) =>
+      data.lv < 255 &&
       !data.items.filter((x) => x.name === 'おかわり2RPG自動支払いの札')
-        .length && data.replayOkawari != null,
+        .length &&
+      data.replayOkawari != null,
     desc: '所持している間、おかわりおかわりRPGをプレイする際に確認をスキップして自動でコインを消費します',
     price: 1,
     type: 'token',
@@ -271,6 +274,7 @@ export const shopItems: ShopItem[] = [
     limit: (data) =>
       (data.skills?.length >= 2 && data.skills?.length <= 4) ||
       (data.skills?.length >= 5 && data.coin < 70),
+    noDiscount: true,
     price: (data) =>
       data.skills.length >= 5
         ? 7
@@ -288,6 +292,7 @@ export const shopItems: ShopItem[] = [
     desc: 'スキルを変更するのに必要なアイテムの5個セットです',
     limit: (data) =>
       data.skills?.length >= 5 && data.coin >= 70 && data.coin < 140,
+    noDiscount: true,
     price: 35,
     type: 'item',
     effect: (data) => (data.rerollOrb = (data.rerollOrb ?? 0) + 5),
@@ -298,6 +303,7 @@ export const shopItems: ShopItem[] = [
     desc: 'スキルを変更するのに必要なアイテムの10個セットです',
     limit: (data) =>
       data.skills?.length >= 5 && data.coin >= 140 && data.coin < 280,
+    noDiscount: true,
     price: 70,
     type: 'item',
     effect: (data) => (data.rerollOrb = (data.rerollOrb ?? 0) + 10),
@@ -307,6 +313,7 @@ export const shopItems: ShopItem[] = [
     name: 'スキル変更珠(20個)',
     desc: 'スキルを変更するのに必要なアイテムの20個セットです',
     limit: (data) => data.skills?.length >= 5 && data.coin >= 280,
+    noDiscount: true,
     price: 140,
     type: 'item',
     effect: (data) => (data.rerollOrb = (data.rerollOrb ?? 0) + 20),
@@ -316,6 +323,7 @@ export const shopItems: ShopItem[] = [
     name: 'スキル複製珠',
     desc: 'スキルを変更し、既に覚えているスキルのどれかを1つ覚えます',
     limit: (data, rnd) => data.skills?.length >= 3 && rnd() < 0.2,
+    noDiscount: true,
     price: (data) =>
       data.skills.length >= 5 ? 30 : data.skills.length >= 4 ? 100 : 140,
     type: 'item',
@@ -649,6 +657,16 @@ export const shopItems: ShopItem[] = [
     isMinusDurability: (data) => data.stockRandomCount <= 0,
   } as AmuletItem,
   {
+    name: `虹色のお守り`,
+    price: 20,
+    desc: `曜日に関係なく、全ての属性剣が強化状態になります 耐久10 使用時耐久減少`,
+    type: 'amulet',
+    effect: { rainbow: 1 },
+    durability: 10,
+    short: '🌈',
+    isUsed: (data) => true,
+  } as AmuletItem,
+  {
     name: `⚠時間圧縮ボタン`,
     limit: (data) =>
       data.lv < 254 &&
@@ -837,31 +855,6 @@ const eventAmulet = () => {
   const y = new Date().getFullYear();
   const m = new Date().getMonth() + 1;
   const d = new Date().getDate();
-  if (y === 2024 && m === 8 && d === 26) {
-    return '運命不変のお守り';
-  }
-  if (y === 2024 && m === 8 && d === 27) {
-    return ['氷属性妖術', '光属性妖術', '負けそうなら逃げる'];
-  }
-  if (y === 2024 && m === 8 && d === 28) {
-    return ['慎重', `油断せず行こう`, '粘り強い'];
-  }
-  if (y === 2024 && m === 8 && d === 29) {
-    return ['道具大好き', '道具の扱いが上手い', '道具の選択が上手い'];
-  }
-  if (y === 2024 && m === 8 && d === 30) {
-    return ['テキパキこなす', '疲れにくい', '高速RPG'];
-  }
-  if (y === 2024 && m === 8 && d === 31) {
-    return ['脳筋', `${serifs.rpg.status.atk}アップ`, '天国か地獄か'];
-  }
-  if (y === 2024 && m === 9 && d === 1) {
-    return [
-      `${serifs.rpg.status.atk}アップ`,
-      `${serifs.rpg.status.def}アップ`,
-      '伝説',
-    ];
-  }
   return undefined;
 };
 
@@ -960,7 +953,8 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
     .map((x) => {
       let _x = deepClone(x);
       const price = Math.ceil(
-        getVal(x.price, [data, rnd, ai]) * (1 - (skillEffects.priceOff ?? 0)),
+        getVal(x.price, [data, rnd, ai]) *
+          (x.noDiscount ? 1 : 1 - (skillEffects.priceOff ?? 0)),
       );
       return { ..._x, price };
     });
