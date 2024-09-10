@@ -503,7 +503,7 @@ export default class extends Module {
 
 		// 投稿数に応じてステータス倍率を得る
 		// 連続プレイの場合は倍率アップ
-		let tp = getPostX(postCount) * (1 + (skillEffects.postXUp ?? 0));
+		let tp = getPostX(postCount) * (1 + ((skillEffects.postXUp ?? 0) * Math.min((postCount - (isSuper ? 200 : 0)) / 20, 10)));
 
 		// 自分のカラー
 		let me = color.name;
@@ -533,7 +533,8 @@ export default class extends Module {
 		// 敵のステータスを計算
 		let edef = data.lv * 3.5;
 		const enemyMinDef = edef * 0.4
-		edef -= Math.max(atk * (skillEffects.arpen ?? 0), edef * (skillEffects.arpen ?? 0));
+		const arpenX = 1 - (1 / (1 + (skillEffects.arpen ?? 0)));
+		edef -= Math.max(atk * arpenX, edef * arpenX);
 		if (edef < enemyMinDef) edef = enemyMinDef;
 
 		atk = atk * (1 + ((skillEffects.critUpFixed ?? 0) * (1 + (skillEffects.critDmgUp ?? 0))));
@@ -1015,11 +1016,15 @@ export default class extends Module {
 			def = def * (1 + (skillEffects.notBattleBonusDef ?? 0));
 		}
 
+		let critUp = 0;
+
 		// HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
 		if (!aggregateTokensEffects(data).notLastPower) {
 			if (playerHpPercent <= (1 / 7) * (1 + (skillEffects.haisuiUp ?? 0)) && (enemyHpPercent - playerHpPercent) >= 0.5 / (1 + (skillEffects.haisuiUp ?? 0))) {
 				buff += 1;
 				message += serifs.rpg.haisui + "\n";
+				atk = Math.round(atk * (1 + (skillEffects.haisuiAtkUp ?? 0)));
+				critUp += (skillEffects.haisuiCritUp ?? 0)
 				const effect = Math.min((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.haisuiUp ?? 0)), 1);
 				atk = atk + Math.round(def * effect);
 				def = Math.round(def * (1 - effect));
@@ -1054,6 +1059,7 @@ export default class extends Module {
 				if ((count !== 1 || data.enemy.pLToR) && skillEffects.lowHpFood && Math.random() < skillEffects.lowHpFood * playerHpPercent) {
 					if (playerHpPercent < 0.5) message += serifs.rpg.skill.lowHpFood;
 					types = ["medicine", "poison"];
+					if (Math.random() < skillEffects.lowHpFood * playerHpPercent) types = ["medicine"];
 				}
 				if (types.includes("poison") && Math.random() < (skillEffects.poisonAvoid ?? 0)) {
 					types = types.filter((x) => x !== "poison");
@@ -1247,7 +1253,8 @@ export default class extends Module {
 			}
 		}
 
-		enemyDef -= Math.max(atk * (skillEffects.arpen ?? 0), enemyDef * (skillEffects.arpen ?? 0));
+		const arpenX = 1 - (1 / (1 + (skillEffects.arpen ?? 0)));
+		enemyDef -= Math.max(atk * arpenX, enemyDef * arpenX);
 
 		if (skillEffects.firstTurnResist && count === 1 && isBattle && isPhysical) {
 			buff += 1;
@@ -1300,7 +1307,7 @@ export default class extends Module {
 				trueDmg = Math.ceil(lv * skillEffects.fire);
 			} else if (skillEffects.fire && !(isBattle && isPhysical)) {
 				// 非戦闘時は、パワーに還元される
-				atk = atk + lv * 3.75 * skillEffects.fire;
+				atk = atk + Math.min(lv, 255) * 3.75 * skillEffects.fire;
 			}
 
 			// 毒属性剣攻撃
@@ -1309,8 +1316,12 @@ export default class extends Module {
 					buff += 1;
 					message += serifs.rpg.skill.weak(data.enemy.dname ?? data.enemy.name) + "\n";
 				}
-				enemyAtk = Math.max(enemyAtk * (1 - (skillEffects.weak * (count - 1))), 0);
-				enemyDef = Math.max(enemyDef * (1 - (skillEffects.weak * (count - 1))), 0);
+				const enemyMinDef = enemyDef * 0.4
+				const weakX = 1 - (1 / (1 + ((skillEffects.weak * (count - 1)))))
+				enemyAtk -= Math.max(enemyAtk * weakX, atk * weakX);
+				enemyDef -= Math.max(enemyDef * weakX, atk * weakX);
+				if (enemyAtk < 0) enemyAtk = 0;
+				if (enemyDef < enemyMinDef) enemyDef = enemyMinDef;
 			}
 
 			// バフが1つでも付与された場合、改行を追加する
@@ -1329,8 +1340,10 @@ export default class extends Module {
 				atk = atk * (1 + skillEffects.abortDown * (1 / 3));
 			}
 
+			const defMinusMin = skillEffects.defDmgUp && skillEffects.defDmgUp < 0 ? (1 / (-1 + (skillEffects.defDmgUp ?? 0)) * -1) : 1;
+
 			const defDmgX = Math.max(1 *
-				(1 + Math.max(skillEffects.defDmgUp ?? 0, -0.9)) *
+				(Math.max(1 + (skillEffects.defDmgUp ?? 0), defMinusMin)) *
 				(count === 1 && skillEffects.firstTurnResist ? (1 - (skillEffects.firstTurnResist ?? 0)) : 1) *
 				(count === 2 && skillEffects.firstTurnResist && skillEffects.firstTurnResist > 1 ? (1 - ((skillEffects.firstTurnResist ?? 0) - 1)) : 1) *
 				(1 - Math.min((skillEffects.tenacious ?? 0) * (1 - playerHpPercent), 0.9)), 0);
@@ -1395,7 +1408,7 @@ export default class extends Module {
 				if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`;
 				const dmgBonus = (1 + (skillEffects.atkDmgUp ?? 0)) * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1);
 				/** クリティカルかどうか */
-				let crit = Math.random() < Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0)), 0) + (skillEffects.critUpFixed ?? 0);
+				let crit = Math.random() < Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0) + critUp), 0) + (skillEffects.critUpFixed ?? 0);
 				const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
 				/** ダメージ */
 				let dmg = getAtkDmg(data, atk, tp, count, crit ? critDmg : false, enemyDef, enemyMaxHp, rng * dmgBonus) + trueDmg;

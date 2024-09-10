@@ -147,6 +147,7 @@ export const shopItems: ShopItem[] = [
 	{ name: `バーサクのお守り`, price: 20, desc: `レイド時、毎ターンダメージを受けますが、パワーがアップします 耐久10 レイドでの使用時耐久減少`, type: "amulet", effect: { berserk: 0.15 }, durability: 10, short: "バ", isUsed: (data) => data.raid } as AmuletItem,
 	{ name: `スロースタートのお守り`, price: 20, desc: `レイド時、最初は弱くなりますが、ターンが進む度にどんどん強くなります 耐久10 レイドでの使用時耐久減少`, type: "amulet", effect: { slowStart: 1 }, durability: 10, short: "ス", isUsed: (data) => data.raid } as AmuletItem,
 	{ name: `謎のお守り`, price: 20, desc: `すこし不思議な力を感じる……`, type: "amulet", effect: { stockRandomEffect: 1 }, durability: 1, short: "？", isUsed: (data) => data.raid, isMinusDurability: (data) => data.stockRandomCount <= 0 } as AmuletItem,
+	{ name: `虹色のお守り`, price: 20, desc: `曜日に関係なく、全ての属性剣が強化状態になります 耐久10 使用時耐久減少`, type: "amulet", effect: { rainbow: 1 }, durability: 10, short: "🌈", isUsed: (data) => true } as AmuletItem,
 	{ name: `⚠時間圧縮ボタン`, limit: (data) => data.lv < 254 && data.maxLv > 254 && data.info === 3 && data.clearHistory.includes(":mk_chickenda_gtgt:"), price: lvBoostPrice, desc: `購入時、周囲の時間を圧縮！もこチキがLv254に急成長します（⚠注意！戦闘を行う事なくレベルを上げる為、戦闘勝利数などの統計は一切増加しません！さらに、RPGおかわりの権利があと1回まで減少します！一度購入すると元には戻せません！）`, type: "item", effect: lvBoostEffect, always: true },
 	...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly).map((x): AmuletItem => ({ name: `${x.name}のお守り`, price: (data, rnd, ai) => skillPrice(ai, x.name, rnd), desc: `持っているとスキル「${x.name}」を使用できる${x.desc ? `（${x.desc}）` : ""} 耐久6 使用時耐久減少`, type: "amulet", effect: x.effect, durability: 6, skillName: x.name, short: x.short, isUsed: (data) => true })),
 ];
@@ -284,50 +285,8 @@ const eventAmulet = () => {
 	const y = new Date().getFullYear();
 	const m = new Date().getMonth() + 1;
 	const d = new Date().getDate()
-	if (y === 2024 && m === 8 && d === 26) {
-		return "運命不変のお守り"
-	}
-	if (y === 2024 && m === 8 && d === 27) {
-		return [
-			"氷属性剣攻撃",
-			"光属性剣攻撃",
-			"負けそうなら逃げる"
-		]
-	}
-	if (y === 2024 && m === 8 && d === 28) {
-		return [
-			"慎重",
-			`油断しない`,
-			"粘り強い"
-		]
-	}
-	if (y === 2024 && m === 8 && d === 29) {
-		return [
-			"道具大好き",
-			"道具の扱いが上手い",
-			"道具の選択が上手い"
-		]
-	}
-	if (y === 2024 && m === 8 && d === 30) {
-		return [
-			"テキパキこなす",
-			"疲れにくい",
-			"高速RPG",
-		]
-	}
-	if (y === 2024 && m === 8 && d === 31) {
-		return [
-			"脳筋",
-			`${serifs.rpg.status.atk}アップ`,
-			"天国か地獄か"
-		]
-	}
-	if (y === 2024 && m === 9 && d === 1) {
-		return [
-			`${serifs.rpg.status.atk}アップ`,
-			`${serifs.rpg.status.def}アップ`,
-			"伝説"
-		]
+	if (y === 2024 && m === 9 && d === 11) {
+		return `虹色のお守り`
 	}
 	return undefined;
 }

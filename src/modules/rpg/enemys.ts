@@ -95,6 +95,8 @@ export type RaidEnemy = Enemy & {
 	fixRnd?: number;
 	/** スキル効果倍率 */
 	skillX?: number;
+	/** ダメージは常にクリティカル？ */
+	alwaysCrit?: boolean;
 	/** 処理に使用するパターンを指定 */
 	pattern?: number;
 };
@@ -135,7 +137,7 @@ export const raidEnemys: RaidEnemy[] = [
 	{ name: ":sinkansen:", msg: ":sinkansen:討伐戦！", short: "", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの攻撃！\n${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:sinkansen:は加速してもこチキから逃げた！\nなんとか追いついた！\n疲れで${dmg}ポイントのダメージ！`, winmsg: "撃退した！", losemsg: ":sinkansen:はさらに加速してもこチキから逃げた！\n:sinkansen:に逃げられてしまった…", abortmsg: ":sinkansen:の移動速度が速すぎて、連続攻撃出来ない！", atk: 3, def: 1, atkx: 3, defx: 1, abort: 1, power: 4.7 },
 	{ name: ":mk_crystal:", msg: ":mk_crystal:討伐戦！", short: "", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの攻撃！\n${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mk_crystal:はめちゃくちゃ頑丈だ…\n疲れで${dmg}ポイントのダメージ！`, winmsg: "撃退した！", losemsg: "もこチキは疲れで倒れてしまった…", atk: 0.5, def: 8, atkx: 3, defx: 8, power: 40 },
 	{ name: ":mk_lovechicken:", msg: ":mk_lovechicken:討伐戦！", short: "", mark: "☆", mark2: "★", atkmsg: (dmg) => `もこチキの攻撃！\n${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mk_lovechicken:の愛の抱擁！もこチキに${dmg}ポイントのダメージ！`, winmsg: "", losemsg: "もこチキはやられてしまった…", atk: 1, def: 1, atkx: 3, defx: 3, power: 25, forcePostCount: 3 },
-	{ name: ":mk_senryu_kun:", msg: ":mk_senryu_kun:討伐戦！", short: "", mark: "☆", mark2: "★", atkmsg: (dmg) => `もこチキの攻撃！\n${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mk_senryu_kun:の川柳ビーム！\nもこチキに${dmg}ポイントのダメージ！`, winmsg: "", losemsg: "もこチキは吹き飛んでいった…", atk: 10, def: 10, atkx: (count) => Math.min(count * 2 + 1, 12), defx: (count) => Math.min(count + 1, 6), power: 100, fixRnd: 0.5 },
+	{ name: ":mk_senryu_kun:", msg: ":mk_senryu_kun:討伐戦！", short: "", mark: "☆", mark2: "★", atkmsg: (dmg) => `もこチキの攻撃！\n${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:mk_senryu_kun:の川柳ビーム！\nもこチキに${dmg}ポイントのダメージ！`, winmsg: "", losemsg: "もこチキは吹き飛んでいった…", atk: 10, def: 10, atkx: (count) => Math.min(count * 1 + 0.5, 6), defx: (count) => Math.min(count + 1, 6), power: 100, fixRnd: 0.5, alwaysCrit: true },
 	{ name: ":mk_hero:", msg: "自身の幻影討伐戦！", short: "", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの攻撃！\n自身の幻影に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `自分の幻影の剣攻撃！\nもこチキに${dmg}ポイントのダメージ！`, winmsg: "", losemsg: "もこチキはやられてしまった…", atk: (atk, def, spd) => def, def: (atk, def, spd) => atk * (spd <= 2 ? spd : spd === 3 ? 2.5 : 2.75 + (spd * 0.125)), atkx: 4.25, defx: 4.25, power: 50 },
 	{ name: ":blobbacteria_campylobacter:", msg: "巨大:blobbacteria_campylobacter:討伐戦！", short: "", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの攻撃！\n:blobbacteria_campylobacter:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:blobbacteria_campylobacter:は小さい分身で攻撃してきた！\nもこチキに${dmg}ポイントのダメージ！`, winmsg: "", losemsg: "もこチキはやられてしまった…", atk: 2, def: 0.1, atkx: 3, defx: 1, power: 0.7 },
 	{ name: ":mk_giga:", msg: ":mk_giga:討伐戦！", short: "", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの攻撃！\n:mk_giga:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `$[twitch.speed=0.5s $[x2 :mk_giga:]]\n\nもこチキに${dmg}ポイントのダメージ！`, winmsg: "", losemsg: "もこチキはやられてしまった…", atk: 5, def: 5, atkx: 5, defx: 5, power: 8, skillX: 3 },

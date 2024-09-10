@@ -469,7 +469,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	let tp;
 	if (enemy.forcePostCount) {
 		postCount = enemy.forcePostCount;
-		tp = getPostX(postCount) * (1 + (skillEffects.postXUp ?? 0));
+		tp = getPostX(postCount) * (1 + ((skillEffects.postXUp ?? 0) * Math.min((postCount - (isSuper ? 200 : 0)) / 20, 10)));
 	} else {
 		postCount = await getPostCount(ai, module_, data, msg, (isSuper ? 200 : 0));
 
@@ -477,7 +477,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
 		postCount = postCount + continuousBonusNum;
 
-		tp = getRaidPostX(postCount) * (1 + (skillEffects.postXUp ?? 0));
+		tp = getRaidPostX(postCount) * (1 + ((skillEffects.postXUp ?? 0) * Math.min((postCount - (isSuper ? 200 : 0)) / 20), 10));
 	}
 
 	if (!isSuper) {
@@ -559,14 +559,14 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		message += result.message + `\n`;
 	}
 	// 数取りボーナスに上限がついたため、その分の補填を全員に付与
-	// ID毎に決められた得意曜日に従って最大50%分のステータスバフ
+	// ID毎に決められた得意曜日に従って最大100%分のステータスバフ
 	const day = new Date().getDay();
-	let bonusX = (day === 6 || day === 0 ? 0.5 : (Math.floor(seedrandom("" + msg.user.id + Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) + ai.account.id)() * 5 + day) % 5) * 0.125) + (Math.random() < 0.01 ? 0.3 : 0) + (Math.random() < 0.01 ? 0.3 : 0);
+	let bonusX = (day === 6 || day === 0 ? 1 : (Math.floor(seedrandom("" + msg.user.id + Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) + ai.account.id)() * 5 + day) % 5) * 0.25) + (Math.random() < 0.01 ? 0.3 : 0) + (Math.random() < 0.01 ? 0.3 : 0);
 	while (Math.random() < 0.01) {
 		bonusX += 0.3;
 	}
-	atk = Math.round(atk * (1 + bonusX));
-	def = Math.round(def * (1 + bonusX));
+	atk = Math.round(atk * (0.5 + bonusX));
+	def = Math.round(def * (0.5 + bonusX));
 
 	/** 敵の最大HP */
 	let enemyMaxHp = 100000;
@@ -698,7 +698,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	}
 
 	const enemyMinDef = enemyDef * 0.4
-	enemyDef -= Math.max(atk * (skillEffects.arpen ?? 0), enemyDef * (skillEffects.arpen ?? 0));
+	const arpenX = 1 - (1 / (1 + (skillEffects.arpen ?? 0)));
+	enemyDef -= Math.max(atk * arpenX, enemyDef * arpenX);
 	if (enemyDef < enemyMinDef) enemyDef = enemyMinDef;
 
 	// バフが1つでも付与された場合、改行を追加する
@@ -773,8 +774,10 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 				message += serifs.rpg.skill.weak(enemy.dname ?? enemy.name) + "\n";
 			}
 			const enemyMinDef = enemyDef * 0.4
-			enemyAtk -= Math.max(enemyAtk * (skillEffects.weak * (count - 1)), atk * (skillEffects.weak * (count - 1)));
-			enemyDef -= Math.max(enemyDef * (skillEffects.weak * (count - 1)), atk * (skillEffects.weak * (count - 1)));
+			const weakXList = [0, 0.25, 0.5, 1, 1.5, 3.5, 4, 4.5, 5];
+			const weakX = 1 - (1 / (1 + ((skillEffects.weak * weakXList[count - 1]))))
+			enemyAtk -= Math.max(enemyAtk * weakX, atk * weakX);
+			enemyDef -= Math.max(enemyDef * weakX, atk * weakX);
 			if (enemyAtk < 0) enemyAtk = 0;
 			if (enemyDef < enemyMinDef) enemyDef = enemyMinDef;
 		}
@@ -791,11 +794,15 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			spd = 2;
 		}
 
+		let critUp = 0;
+
 		// HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
 		if (!aggregateTokensEffects(data).notLastPower) {
 			if (playerHpPercent <= (1 / 7) * (1 + (skillEffects.haisuiUp ?? 0)) && (enemyHpPercent - playerHpPercent) >= 0.5 / (1 + (skillEffects.haisuiUp ?? 0))) {
 				buff += 1;
 				message += serifs.rpg.haisui + "\n";
+				atk = Math.round(atk * (1 + (skillEffects.haisuiAtkUp ?? 0)));
+				critUp += (skillEffects.haisuiCritUp ?? 0)
 				const effect = Math.min((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.haisuiUp ?? 0)), 1);
 				atk = atk + Math.round(def * effect);
 				def = Math.round(def * (1 - effect));
@@ -830,6 +837,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 				if ((count !== 1 || enemy.pLToR) && skillEffects.lowHpFood && Math.random() < skillEffects.lowHpFood * playerHpPercent) {
 					if (skillEffects.lowHpFood && playerHpPercent < 0.5) message += serifs.rpg.skill.lowHpFood;
 					types = ["medicine", "poison"];
+					if (Math.random() < skillEffects.lowHpFood * playerHpPercent) types = ["medicine"];
 				}
 				if (types.includes("poison") && Math.random() < (skillEffects.poisonAvoid ?? 0)) {
           types = types.filter((x) => x!== "poison");
@@ -837,10 +845,10 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 				const type = types[Math.floor(Math.random() * types.length)];
 				if ((type === "weapon" && !(isBattle && isPhysical)) || (type === "armor" && isTired) || enemy.pLToR) {
 					let isPlus = Math.random() < (0.5 + (skillEffects.mindMinusAvoid ?? 0) + (count === 1 ? skillEffects.firstTurnMindMinusAvoid ?? 0 : 0));
-					const items = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind < 0));
+					const items = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind < 0) && (count !== 1 || !skillEffects.firstTurnItemChoice || x.mind >= (skillEffects.firstTurnItemChoice * 100)));
 					item = items[Math.floor(Math.random() * items.length)];
 				} else {
-					const items = rpgItems.filter((x) => x.type === type && x.effect > 0);
+					const items = rpgItems.filter((x) => x.type === type && x.effect > 0 && (count !== 1 || !skillEffects.firstTurnItemChoice || x.effect >= (skillEffects.firstTurnItemChoice * 100)));
 					item = items[Math.floor(Math.random() * items.length)];
 				}
 			}
@@ -1028,8 +1036,10 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			atk = atk * (1 + skillEffects.abortDown * (1 / 3));
 		}
 
+		const defMinusMin = skillEffects.defDmgUp && skillEffects.defDmgUp < 0 ? (1 / (-1 + (skillEffects.defDmgUp ?? 0)) * -1) : 1;
+
 		const defDmgX = Math.max(1 *
-			(1 + Math.max(skillEffects.defDmgUp ?? 0, -0.9)) *
+			(Math.max(1 + (skillEffects.defDmgUp ?? 0), defMinusMin)) *
 			(count === 1 && skillEffects.firstTurnResist ? (1 - (skillEffects.firstTurnResist ?? 0)) : 1) *
 			(count === 2 && skillEffects.firstTurnResist && skillEffects.firstTurnResist > 1 ? (1 - ((skillEffects.firstTurnResist ?? 0) - 1)) : 1) *
 			(1 - Math.min((skillEffects.tenacious ?? 0) * (1 - playerHpPercent), 0.9)), 0);
@@ -1056,7 +1066,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		// spdが1ではない、または戦闘ではない場合は先制攻撃しない
 		if (!enemy.spd && !enemy.hpmsg && !isTired) {
 			/** クリティカルかどうか */
-			const crit = Math.random() < (playerHpPercent - enemyHpPercent) * (1 - (skillEffects.enemyCritDown ?? 0));
+			const crit = Math.random() < (enemy.alwaysCrit ? 1 : 0) * (1 - (skillEffects.enemyCritDown ?? 0));
 			// 予測最大ダメージが相手のHPの何割かで先制攻撃の確率が判定される
 			if (Math.random() < predictedDmg / enemyHp || (count === 3 && enemy.fire && (data.thirdFire ?? 0) <= 2)) {
 				const rng = (defMinRnd + (enemy.fixRnd ?? random(data, startCharge, skillEffects, true)) * defMaxRnd);
@@ -1116,15 +1126,17 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			if (crit) warriorCritX += 0.5;
 		}
 
+		const atkMinusMin = skillEffects.atkDmgUp && skillEffects.atkDmgUp < 0 ? (1 / (-1 + (skillEffects.atkDmgUp ?? 0)) * -1) : 1;
+
 		// 自身攻撃の処理
 		// spdの回数分、以下の処理を繰り返す
 		for (let i = 0; i < spd; i++) {
 			const rng = (atkMinRnd + random(data, startCharge, skillEffects, false) * atkMaxRnd);
 			if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`;
 			const turnDmgX = (i < 2 ? 1 : i < 3 ? 0.5 : i < 4 ? 0.25 : 0.125);
-			const dmgBonus = ((1 + Math.max((skillEffects.atkDmgUp ?? 0), -0.4)) * turnDmgX) + (skillEffects.thunder ? (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 0);
+			const dmgBonus = ((Math.max(1 + (skillEffects.atkDmgUp ?? 0), atkMinusMin)) * turnDmgX) + (skillEffects.thunder ? (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 0);
 			//** クリティカルかどうか */
-			let crit = Math.random() < Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0)), 0) + (skillEffects.critUpFixed ?? 0);
+			let crit = Math.random() < Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0) + critUp), 0) + (skillEffects.critUpFixed ?? 0);
 			const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
 			/** ダメージ */
 			let dmg = getAtkDmg(data, atk, tp, 1, crit ? critDmg : false, enemyDef, enemyMaxHp, rng * dmgBonus, getVal(enemy.defx, [count])) + Math.round(trueDmg * turnDmgX);
@@ -1202,7 +1214,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 					const rng = (defMinRnd + (enemy.fixRnd ?? random(data, startCharge, skillEffects, true)) * defMaxRnd);
 					if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`;
 					/** クリティカルかどうか */
-					const crit = Math.random() < (playerHpPercent - enemyHpPercent) * (1 - (skillEffects.enemyCritDown ?? 0));
+					const crit = Math.random() < (enemy.alwaysCrit ? 1 : 0) * (1 - (skillEffects.enemyCritDown ?? 0));
 					const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
 					/** ダメージ */
 					let dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX, getVal(enemy.atkx, [count]));
@@ -1236,7 +1248,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 					playerHp = 1;
 					endureCount -= 1;
 				}
-				if (skillEffects.escape && actionX + 1 < plusActionX && playerHp <= 0 && playerHp >= (playerMaxHp) * (skillEffects.escape / -10) && !enemy.notEndure) {
+				if (skillEffects.escape && actionX + 1 < plusActionX && playerHp <= 0 && playerHp >= (playerMaxHp) * (skillEffects.escape / -16) && !enemy.notEndure) {
 					message += "やられそうになったので、\n一旦距離を取り、1ターン分回復に徹した！\n";
 					const heal = Math.ceil((playerMaxHp) * (skillEffects.escape / 10)) + 1;
 					playerHp += heal;
