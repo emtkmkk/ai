@@ -477,7 +477,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
 		postCount = postCount + continuousBonusNum;
 
-		tp = getRaidPostX(postCount) * (1 + ((skillEffects.postXUp ?? 0) * Math.min((postCount - (isSuper ? 200 : 0)) / 20), 10));
+		tp = getRaidPostX(postCount) * (1 + ((skillEffects.postXUp ?? 0) * Math.min((postCount - (isSuper ? 200 : 0)) / 20, 10)));
 	}
 
 	if (!isSuper) {

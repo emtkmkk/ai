@@ -791,7 +791,7 @@ export default class extends Module {
 		// 投稿数に応じてステータス倍率を得る
 		// 連続プレイの場合は倍率アップ
 		/** ステータス倍率（投稿数） */
-		let tp = getPostX(postCount) * (1 + (skillEffects.postXUp ?? 0));
+		let tp = getPostX(postCount) * (1 + ((skillEffects.postXUp ?? 0) * Math.min((postCount - (isSuper ? 200 : 0)) / 20, 10)));
 
 		// これが2ターン目以降の場合、戦闘中に計算された最大倍率の50%の倍率が保証される
 		data.maxTp = Math.max(tp, data.maxTp ?? 0);
