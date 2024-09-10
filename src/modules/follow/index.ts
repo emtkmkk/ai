@@ -22,6 +22,12 @@ export default class extends Module {
 			if (msg.user.isRenoteMuted) return {
 				reaction: msg.friend.love >= 0 ? ':mk_hotchicken:' : null
 			};
+			if (msg.user.host && msg.friend.love < 10) {
+				msg.reply(serifs.core.followLoveErr);
+				return {
+					reaction: ':mk_hotchicken:'
+				};
+			}
 			if (msg.user.host && !msg.user.isFollowed && msg.friend.love >= 0) {
 				msg.reply(serifs.core.followBackErr);
 				return {
@@ -49,11 +55,20 @@ export default class extends Module {
 
 	@autobind
 	private onNote(note: any) {
-		if (!note.user?.isBot && note.user.host && note.user.isFollowing && !note.user.isFollowed) {
-			this.log("following/delete: " + note.userId);
-			this.ai.api('following/delete', {
-				userId: note.userId,
-			});
+		if (!note.user?.isBot && note.user.host && note.user.isFollowing) {
+			if (!note.user.isFollowed) {
+				this.log("following/delete: " + note.userId);
+				this.ai.api('following/delete', {
+					userId: note.userId,
+				});
+			}
+			const friend = this.ai.lookupFriend(note.user.id)
+			if (!friend?.love || friend?.love < 10) {
+				this.log("following/delete: " + note.userId);
+				this.ai.api('following/delete', {
+					userId: note.userId,
+				});
+			}
 		}
 	}
 }
