@@ -393,6 +393,7 @@ export default class extends Module {
 				if (value && typeof value === "number") {
 					const enemy = raidEnemys.find((x) => x.name === key);
 					const score = enemy ? Math.max(Math.log2((value * 20) / (1024 / ((enemy.power ?? 30) / 30))) + 1, 1) : undefined;
+					totalScore += score
 					message.push(`${createRankMessage(value, key + " 最大ダメージ", `raidScore.${key}`, { suffix: data.clearRaid?.includes(key) ? "ダメージ ⭐️" : "ダメージ" })}${score ? `\n★${Math.floor(score)} ${Math.floor((score % 1) * 8) !== 0 ? `$[bg.color=ffff90 ${":blank:".repeat(Math.floor((score % 1) * 8))}]` : ""}$[bg.color=ff9090 ${":blank:".repeat(8 - Math.floor((score % 1) * 8))}] ★${Math.floor(score) + 1}` : ""}`);
 				}
 			}
