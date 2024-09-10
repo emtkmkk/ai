@@ -457,10 +457,11 @@ export default class extends Module {
 			const games = this.raids.find({});
 			const allData = this.ai.friends.find();
 
-			allData.forEach(x => {
+			games[games.length - 1].attackers.forEach(x => {
+				const doc = this.ai.lookupFriend(x.user.id)?.doc;
 				const enemyName = ":mk_crystal:"
-				if (!x?.perModulesData?.rpg?.raidScore?.[enemyName]) return;
-				x.perModulesData.rpg.raidScore[enemyName] = 0;
+				if (!doc?.perModulesData?.rpg?.raidScore?.[enemyName]) return;
+				doc.perModulesData.rpg.raidScore[enemyName] = 0;
 			});
 			const rpgData = ai.moduleData.findOne({ type: 'rpg' });
 			if (rpgData) {
