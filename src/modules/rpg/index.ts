@@ -1603,7 +1603,7 @@ export default class extends Module {
 					data.ehp = 103 + lv * 3 + (data.winCount ?? 0) * 5;
 					data.maxTp = 0;
 					data.fireAtk = 0;
-					data.totalRerollDmg = 0;
+					data.totalResistDmg = 0;
 					break;
 				} else {
 					// 決着がつかない場合
