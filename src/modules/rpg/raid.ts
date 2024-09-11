@@ -559,14 +559,14 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		message += result.message + `\n`;
 	}
 	// 数取りボーナスに上限がついたため、その分の補填を全員に付与
-	// ID毎に決められた得意曜日に従って最大100%分のステータスバフ
+	// ID毎に決められた得意曜日に従って最大75%分のステータスバフ
 	const day = new Date().getDay();
-	let bonusX = (day === 6 || day === 0 ? 1 : (Math.floor(seedrandom("" + msg.user.id + Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) + ai.account.id)() * 5 + day) % 5) * 0.25) + (Math.random() < 0.01 ? 0.3 : 0) + (Math.random() < 0.01 ? 0.3 : 0);
+	let bonusX = (day === 6 || day === 0 ? 1 : (Math.floor(seedrandom("" + msg.user.id + Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) + ai.account.id)() * 5 + day) % 5) * 0.1875) + (Math.random() < 0.01 ? 0.3 : 0) + (Math.random() < 0.01 ? 0.3 : 0);
 	while (Math.random() < 0.01) {
 		bonusX += 0.3;
 	}
-	atk = Math.round(atk * (0.5 + bonusX));
-	def = Math.round(def * (0.5 + bonusX));
+	atk = Math.round(atk * (0.75 + bonusX));
+	def = Math.round(def * (0.75 + bonusX));
 
 	/** 敵の最大HP */
 	let enemyMaxHp = 100000;
