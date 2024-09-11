@@ -28,7 +28,7 @@ export function calculateStats(data, msg, skillEffects, color, maxBonus = 100) {
 	return { atk, def, spd };
 }
 
-export function fortune(_atk, _def, effect = 1) {
+export function fortune(_atk, _def, effect = 0) {
 
 	let atk = _atk;
 	let def = _def;
