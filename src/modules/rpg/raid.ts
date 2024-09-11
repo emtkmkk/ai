@@ -725,6 +725,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
 	const plusActionX = 5;
 
+	let totalResistDmg = 0;
 
 	for (let actionX = 0; actionX < plusActionX + 1; actionX++) {
 
@@ -765,6 +766,13 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 				buff += 1;
 				message += serifs.rpg.skill.berserk(berserkDmg) + "\n";
 			}
+		}
+
+		if (skillEffects.guardAtkUp && totalResistDmg >= 300) {
+			buff += 1;
+			totalResistDmg = Math.min(totalResistDmg, 1200)
+			message += serifs.rpg.skill.guardAtkUp(Math.floor(totalResistDmg / 300)) + "\n";
+			atk += (def * (skillEffects.guardAtkUp * Math.floor(totalResistDmg / 300)));
 		}
 
 		// 毒属性剣攻撃
@@ -1070,12 +1078,13 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			// 予測最大ダメージが相手のHPの何割かで先制攻撃の確率が判定される
 			if (Math.random() < predictedDmg / enemyHp || (count === 3 && enemy.fire && (data.thirdFire ?? 0) <= 2)) {
 				const rng = (defMinRnd + (enemy.fixRnd ?? random(data, startCharge, skillEffects, true)) * defMaxRnd);
-				if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`;
 				const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
 				/** ダメージ */
 				let dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [count]));
 				let noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [count]));
+				let normalDmg = getEnemyDmg(_data, lv * 3.5, tp, 1, enemy.alwaysCrit ? 1 : false, enemyAtk, rng, getVal(enemy.atkx, [count]));
 				let addMessage = "";
+				const rawDmg = dmg;
 				if (sevenFever) {
 					const minusDmg = dmg - Math.max(dmg - sevenFever, 0);
 					dmg = Math.max(dmg - sevenFever, 0);
@@ -1084,6 +1093,10 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 				}
 				// ダメージが負けるほど多くなる場合は、先制攻撃しない
 				if (warriorFlg || playerHp > dmg || (count === 3 && enemy.fire && (data.thirdFire ?? 0) <= 2)) {
+					if (normalDmg > rawDmg) {
+						totalResistDmg += (normalDmg - rawDmg);
+					}
+					if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`;
 					playerHp -= dmg;
 					message += (crit ? `**${enemy.defmsg(dmg)}**` : enemy.defmsg(dmg)) + "\n";
 					if (addMessage) message += addMessage;
@@ -1219,7 +1232,11 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 					/** ダメージ */
 					let dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX, getVal(enemy.atkx, [count]));
 					let noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX, getVal(enemy.atkx, [count]));
+					let normalDmg = getEnemyDmg(_data, lv * 3.5, tp, 1, enemy.alwaysCrit ? 1 : false, enemyAtk, rng, getVal(enemy.atkx, [count]));
 					let addMessage = "";
+					if (normalDmg > dmg) {
+						totalResistDmg += (normalDmg - dmg);
+					}
 					if (sevenFever) {
 						const minusDmg = dmg - Math.max(dmg - sevenFever, 0);
 						dmg = Math.max(dmg - sevenFever, 0);

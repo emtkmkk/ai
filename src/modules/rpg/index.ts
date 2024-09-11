@@ -827,6 +827,8 @@ export default class extends Module {
 		/** プレイヤーの最大HP */
 		let playerMaxHp = 100 + Math.min(lv * 3, 765) + Math.floor((data.defMedal ?? 0) * 13.4);
 
+		if (!data.totalResistDmg) data.totalResistDmg = 0;
+
 		// 敵情報
 		if (!data.enemy || count === 1) {
 			// 新しい敵
@@ -1311,6 +1313,13 @@ export default class extends Module {
 				atk = atk + Math.min(lv, 255) * 3.75 * skillEffects.fire;
 			}
 
+			if (skillEffects.guardAtkUp && data.totalResistDmg >= 300) {
+				buff += 1;
+				const totalResistDmg = Math.min(data.totalResistDmg, 1200)
+				message += serifs.rpg.skill.guardAtkUp(Math.floor(totalResistDmg / 300)) + "\n";
+				atk += (def * (skillEffects.guardAtkUp * Math.floor(totalResistDmg / 300)));
+			}
+
 			// 毒属性剣攻撃
 			if (skillEffects.weak && count > 1) {
 				if (isBattle && isPhysical) {
@@ -1376,8 +1385,13 @@ export default class extends Module {
 					/** ダメージ */
 					const dmg = getEnemyDmg(data, def, tp, count, crit ? critDmg : false, enemyAtk, rng * defDmgX);
 					const noItemDmg = getEnemyDmg(data, def - itemBonus.def, tp, count, crit ? critDmg : false, enemyAtk, rng * defDmgX);
+					const normalDmg = getEnemyDmg(data, lv * 3.5, tp, count, crit ? critDmg : false, enemyAtk, rng);
+					
 					// ダメージが負けるほど多くなる場合は、先制攻撃しない
 					if (playerHp > dmg || (count === 3 && data.enemy.fire && (data.thirdFire ?? 0) <= 2)) {
+						if (normalDmg > dmg) {
+							data.totalResistDmg += (normalDmg - dmg);
+						}
 						playerHp -= dmg;
 						message += (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n";
 						if (noItemDmg - dmg > 1) {
@@ -1478,6 +1492,7 @@ export default class extends Module {
 				data.ehp = 103 + lv * 3 + (data.winCount ?? 0) * 5;
 				data.maxTp = 0;
 				data.fireAtk = 0;
+				data.totalResistDmg = 0;
 				break;
 			} else {
 				let enemyAtkX = 1;
@@ -1524,6 +1539,10 @@ export default class extends Module {
 						/** ダメージ */
 						const dmg = getEnemyDmg(data, def, tp, count, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX);
 						const noItemDmg = getEnemyDmg(data, def - itemBonus.def, tp, count, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX);
+						const normalDmg = getEnemyDmg(data, lv * 3.5, tp, count, crit ? critDmg : false, enemyAtk, rng);
+						if (normalDmg > dmg) {
+							data.totalResistDmg += (normalDmg - dmg);
+						}
 						playerHp -= dmg;
 						message += (crit ? `**${data.enemy.defmsg(dmg)}**` : data.enemy.defmsg(dmg)) + "\n";
 						if (noItemDmg - dmg > 1) {
@@ -1584,6 +1603,7 @@ export default class extends Module {
 					data.ehp = 103 + lv * 3 + (data.winCount ?? 0) * 5;
 					data.maxTp = 0;
 					data.fireAtk = 0;
+					data.totalRerollDmg = 0;
 					break;
 				} else {
 					// 決着がつかない場合

@@ -165,6 +165,7 @@ export type SkillEffect = {
 	haisuiAtkUp?: number;
 	haisuiCritUp?: number;
 	rainbow?: number;
+	guardAtkUp?: number
 };
 
 export type Skill = {
@@ -244,6 +245,7 @@ export const skills: Skill[] = [
 	{ name: `気性が荒い`, short: "荒", desc: `戦闘が得意になりますが、戦闘以外の効率が大きく下がります`, info: `${serifs.rpg.status.atk}+25% 非戦闘時、${serifs.rpg.status.atk}-40%`, effect: { atkUp: 0.25, notBattleBonusAtk: -0.4 }, unique: "mind" },
 	{ name: `気性穏やか`, short: "穏", desc: `戦闘以外の効率がとても上がりますが、戦闘が苦手になります`, info: `${serifs.rpg.status.atk}-25% 非戦闘時、${serifs.rpg.status.atk}+70%`, effect: { atkUp: -0.25, notBattleBonusAtk: 0.7 }, unique: "mind" },
 	{ name: `かるわざ`, short: "軽", desc: `ステータスが上がり、お守りを持っていない時、追加で${serifs.rpg.status.atk}がさらに上がります`, info: `ステータス+5% お守りを持っていない時、追加で${serifs.rpg.status.atk}+4%`, effect: { atkUp: 0.05, defUp: 0.05, noAmuletAtkUp: 0.04 }, skillOnly: true },
+	{ name: `攻めの守勢`, short: "勢", desc: `通常よりもダメージを防げば防ぐ程、パワーが上がります（ただし７フィーバー！を除きます）`, info: `ダメージ軽減300毎に防御の10%分のパワーを得ます（７フィーバー！を除く） この効果は最大4回まで発動します`, effect: { guardAtkUp: 0.1 }, unique: "counter" },
 ];
 
 export const getSkill = (data) => {
@@ -373,8 +375,13 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
 				if (!playerSkills[i].cantReroll) {
 					const oldSkillName = playerSkills[i].name;
 					if (data.nextSkill && skills.find((x) => x.name === data.nextSkill)) {
-						data.skills[i] = skills.find((x) => x.name === data.nextSkill);
-						data.nextSkill = null;
+						const skill = skills.find((x) => x.name === data.nextSkill);
+						if (skill && !playerSkills?.filter((y) => y.unique).map((y) => y.unique).includes(skill.unique)) {
+							data.skills[i] = skill;
+							data.nextSkill = null;
+						} else {
+							data.skills[i] = getRerollSkill(data, oldSkillName);
+						}
 					} else {
 						data.skills[i] = getRerollSkill(data, oldSkillName);
 					}
