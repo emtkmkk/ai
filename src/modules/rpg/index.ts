@@ -453,7 +453,18 @@ export default class extends Module {
 			if (id && num) {
 				const friend = this.ai.lookupFriend(id);
 				if (friend == null) return { reaction: ":mk_hotchicken:" };
-				friend.doc.perModulesData.rpg.coin = (friend.doc.perModulesData.rpg.coin ?? 0) + num;
+				friend.doc.perModulesData.rpg.coin = (friend.doc.perModulesData.rpg.coin ?? 0) + parseInt(num);
+				friend.save();
+				return { reaction: "love" };
+			}
+		}
+		if (msg.includes(["setCoin"])) {
+			const id = /\w{10,}/.exec(msg.extractedText)?.[0];
+			const num = /\s(\d+)\s/.exec(msg.extractedText)?.[1];
+			if (id && num) {
+				const friend = this.ai.lookupFriend(id);
+				if (friend == null) return { reaction: ":mk_hotchicken:" };
+				friend.doc.perModulesData.rpg.coin = parseInt(num);
 				friend.save();
 				return { reaction: "love" };
 			}
