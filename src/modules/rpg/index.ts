@@ -277,7 +277,7 @@ export default class extends Module {
 			message.push(`青の勲章${data.defMedal >= 2 ? " ×" + data.defMedal : "" }`)
 		}
 		if (data.itemMedal) {
-			message.push(`緑の勲章${data.itemMedal >= 2 ? " ×" + data.itemMedal : "" }`
+			message.push(`緑の勲章${data.itemMedal >= 2 ? " ×" + data.itemMedal : "" }`)
 		}
 		if (data.rerollOrb) {
 			message.push(`スキル変更珠${data.rerollOrb >= 2 ? " ×" + data.rerollOrb : "" }`)
