@@ -271,22 +271,22 @@ export default class extends Module {
 			message.push(data.nextSkill + "の教本")
 		}
 		if (data.atkMedal) {
-			message.push("赤の勲章: " + data.atkMedal + "個")
+			message.push(`赤の勲章${data.atkMedal >= 2 ? " ×" + data.atkMedal : "" }`)
 		}
 		if (data.defMedal) {
-			message.push("青の勲章: " + data.defMedal + "個")
+			message.push(`青の勲章${data.defMedal >= 2 ? " ×" + data.defMedal : "" }`)
 		}
 		if (data.itemMedal) {
-			message.push("緑の勲章: " + data.itemMedal + "個")
+			message.push(`緑の勲章${data.itemMedal >= 2 ? " ×" + data.itemMedal : "" }`
 		}
 		if (data.rerollOrb) {
-			message.push("スキル変更珠: " + data.rerollOrb + "個")
+			message.push(`スキル変更珠${data.rerollOrb >= 2 ? " ×" + data.rerollOrb : "" }`)
 		}
 		if (data.duplicationOrb) {
-			message.push("スキル複製珠: " + data.duplicationOrb + "個")
+			message.push(`スキル複製珠${data.duplicationOrb >= 2 ? " ×" + data.duplicationOrb : "" }`)
 		}
 		if (message.length !== 1 && data.coin) {
-			message.push("もこコイン: " + data.coin + "枚")
+			message.push(`もこコイン${data.coin >= 2 ? " ×" + data.coin : "" }`)
 		}
 		msg.reply("\n" + message.join("\n") + (message.length === 1 ? "\n\n何も持っていないようです。\n「RPG ショップ」で購入できます。" : ""));
 		return { reaction: "love" };
@@ -443,6 +443,17 @@ export default class extends Module {
 				const friend = this.ai.lookupFriend(id);
 				if (friend == null) return { reaction: ":mk_hotchicken:" };
 				friend.doc.perModulesData.rpg.skills[num] = skills.find((x) => x.name.startsWith(skill));
+				friend.save();
+				return { reaction: "love" };
+			}
+		}
+		if (msg.includes(["giveCoin"])) {
+			const id = /\w{10,}/.exec(msg.extractedText)?.[0];
+			const num = /\s(\d+)\s/.exec(msg.extractedText)?.[1];
+			if (id && num) {
+				const friend = this.ai.lookupFriend(id);
+				if (friend == null) return { reaction: ":mk_hotchicken:" };
+				friend.doc.perModulesData.rpg.coin = (friend.doc.perModulesData.rpg.coin ?? 0) + num;
 				friend.save();
 				return { reaction: "love" };
 			}
