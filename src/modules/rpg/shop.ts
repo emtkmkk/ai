@@ -386,6 +386,8 @@ export function shopContextHook(module: Module, key: any, msg: Message, data: an
 		};
 	}
 
+	if (msg.extractedText.length >= 3) return false;
+
 	for (let i = 0; i < data.showShopItems.length; i++) {
 		const str = numberCharConvert(i + 1);
 		if (str && msg.includes([str])) {
