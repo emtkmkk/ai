@@ -1772,6 +1772,10 @@ export default class extends Module {
 			message += serifs.rpg.reachMaxLv;
 		}
 
+		if (data.skills?.length >= 5 && !data.items.filter((x) => x.name === "裏ショップ入場の札").length && data.coin >= 99 && data.clearHistory.includes(":mk_chickenda_gtgt:")) {
+			message += serifs.rpg.shop2remind
+		}
+
 		// 色解禁確認
 		const newColorData = colors.map((x) => x.unlock(data));
 		/** 解禁した色 */
