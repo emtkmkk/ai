@@ -1338,8 +1338,9 @@ export default class extends Module {
 			if (skillEffects.guardAtkUp && data.totalResistDmg >= 300) {
 				buff += 1;
 				const totalResistDmg = Math.min(data.totalResistDmg, 1200)
+				const guardAtkUpX = [0, 1, 2.4, 4.8, 8, 8];
 				message += serifs.rpg.skill.guardAtkUp(Math.floor(totalResistDmg / 300)) + "\n";
-				atk += (def * (skillEffects.guardAtkUp * Math.floor(totalResistDmg / 300)));
+				atk += (def * (skillEffects.guardAtkUp * guardAtkUpX[Math.floor(totalResistDmg / 300)]));
 			}
 
 			// 毒属性剣攻撃

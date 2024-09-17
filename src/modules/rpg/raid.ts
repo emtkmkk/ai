@@ -771,8 +771,9 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		if (skillEffects.guardAtkUp && totalResistDmg >= 300) {
 			buff += 1;
 			totalResistDmg = Math.min(totalResistDmg, 1200)
+			const guardAtkUpX = [0, 1, 2.4, 4.8, 8, 8];
 			message += serifs.rpg.skill.guardAtkUp(Math.floor(totalResistDmg / 300)) + "\n";
-			atk += (def * (skillEffects.guardAtkUp * Math.floor(totalResistDmg / 300)));
+			atk += (def * (skillEffects.guardAtkUp * guardAtkUpX[Math.floor(totalResistDmg / 300)]));
 		}
 
 		// 毒属性剣攻撃
@@ -1302,6 +1303,12 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		warriorTotalDmg += dmg;
 	}
 	if (playerHp > 0) {
+		if (skillEffects.guardAtkUp && totalResistDmg >= 300) {
+			totalResistDmg = Math.min(totalResistDmg, 1200)
+			const guardAtkUpX = [0, 1, 2.4, 4.8, 8, 8];
+			const heal = Math.round(((playerMaxHp) - playerHp) * (skillEffects.guardAtkUp * guardAtkUpX[Math.floor(totalResistDmg / 300)]));
+			playerHp += heal;
+		}
 		const enemySAtk = Math.max((_enemyAtk / (lv * 3.5)) * (getVal(enemy.atkx, [6]) ?? 3), 0.01);
 		let enemyFDef = (typeof enemy.def === "function") ? enemy.def(atk, def, spd) : lv * 3.5 * (enemy.def ?? 1);
 		const enemySDef = Math.max((enemyFDef / (lv * 3.5)) * (getVal(enemy.defx, [6]) ?? 3), enemySAtk / 3000);
