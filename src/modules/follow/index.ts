@@ -2,6 +2,7 @@ import autobind from 'autobind-decorator';
 import Module from '@/module';
 import Message from '@/message';
 import serifs from '@/serifs';
+import parseDate from '@/utils/parse-date';
 
 export default class extends Module {
 	public readonly name = 'follow';
@@ -68,6 +69,21 @@ export default class extends Module {
 				this.ai.api('following/delete', {
 					userId: note.userId,
 				});
+			} else {
+				const time = parseDate(friend.doc.lastLoveIncrementedAt)?.getTime();
+				if (friend?.love < 100 && time && (Date.now() - time > (friend?.love * 0.3 * 24 * 60 * 60 * 1000) * (friend?.love >= 50 ? 2 : 1))) {
+					const data = friend.getPerModulesData(this);
+					data.removeCount = (data.removeCount ?? 0) + 1;
+					this.log(note.userId + " removeCount: " + data.removeCount);
+					if (data.removeCount >= 20) {
+						data.removeCount = 0;
+						this.log("following/delete: " + note.userId);
+						this.ai.api('following/delete', {
+							userId: note.userId,
+						});
+					}
+					friend.setPerModulesData(this, data);
+				}
 			}
 		}
 	}
