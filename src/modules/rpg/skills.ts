@@ -166,6 +166,7 @@ export type SkillEffect = {
 	haisuiCritUp?: number;
 	rainbow?: number;
 	guardAtkUp?: number
+	distributed?: number
 };
 
 export type Skill = {
@@ -245,7 +246,8 @@ export const skills: Skill[] = [
 	{ name: `気性が荒い`, short: "荒", desc: `戦闘が得意になりますが、戦闘以外の効率が大きく下がります`, info: `${serifs.rpg.status.atk}+25% 非戦闘時、${serifs.rpg.status.atk}-40%`, effect: { atkUp: 0.25, notBattleBonusAtk: -0.4 }, unique: "mind" },
 	{ name: `気性穏やか`, short: "穏", desc: `戦闘以外の効率がとても上がりますが、戦闘が苦手になります`, info: `${serifs.rpg.status.atk}-25% 非戦闘時、${serifs.rpg.status.atk}+70%`, effect: { atkUp: -0.25, notBattleBonusAtk: 0.7 }, unique: "mind" },
 	{ name: `かるわざ`, short: "軽", desc: `ステータスが上がり、お守りを持っていない時、追加で${serifs.rpg.status.atk}がさらに上がります`, info: `ステータス+5% お守りを持っていない時、追加で${serifs.rpg.status.atk}+4%`, effect: { atkUp: 0.05, defUp: 0.05, noAmuletAtkUp: 0.04 }, skillOnly: true },
-	{ name: `攻めの守勢`, short: "勢", desc: `通常よりもダメージを防げば防ぐ程、パワーが上がります（ただし７フィーバー！を除きます）`, info: `ダメージ軽減300毎に防御の12.5%分のパワーを得ます（７フィーバー！を除く） この効果は最大4回まで発動します`, effect: { guardAtkUp: 0.125 }, unique: "counter" },
+	{ name: `攻めの守勢`, short: "勢", desc: `通常よりもダメージを防げば防ぐ程、パワーが上がります（ただし７フィーバー！を除きます）`, info: `ダメージ軽減300毎に防御の12.5~40%分のパワーを得ます（７フィーバー！を除く）\nこの効果は最大4回まで発動し、発動した回数が多いほど効果が上がります\nさらにレイド時は発動した回数分、全力の一撃のダメージが上がります このスキルは重複しません`, effect: { guardAtkUp: 0.125 }, unique: "counter" },
+	{ name: `分散型`, short: "散", desc: `同じスキルを持っていない程、ステータスが上がります（お守りは対象外）`, info: `パワー・防御+10% クリティカル率+10% ダメージ軽減+10% 同じスキルを持つ度に全ての効果-4%（お守りは対象外）`, effect: { distributed: 0.1 }, unique: "distributed" },
 ];
 
 export const getSkill = (data) => {
@@ -524,6 +526,16 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
 		aggregatedEffect.dart *= 5 / 3;
 	}
 
+	if (aggregatedEffect.distributed) {
+		const count = countDuplicateSkillNames(data.skills)
+		if (count < 3) {
+			aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) + (aggregatedEffect.distributed) * (1 - (count * 0.4));
+			aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) + (aggregatedEffect.distributed) * (1 - (count * 0.4));
+			aggregatedEffect.critUpFixed = (aggregatedEffect.critUpFixed ?? 0) + (aggregatedEffect.distributed) * (1 - (count * 0.4));
+			aggregatedEffect.defDmgUp = (aggregatedEffect.defDmgUp ?? 0) - (aggregatedEffect.distributed) * (1 - (count * 0.4));
+		}
+	}
+
 	if (aggregatedEffect.itemEquip && aggregatedEffect.itemEquip > 1.5) {
 		aggregatedEffect.itemBoost = (aggregatedEffect.itemBoost ?? 0) + (aggregatedEffect.itemEquip - 1.5);
 		aggregatedEffect.itemEquip = 1.5;
@@ -642,6 +654,16 @@ export function aggregateSkillsEffectsSkillX(data: any, skillX: number): SkillEf
 		aggregatedEffect.dart *= 5 / 3;
 	}
 
+	if (aggregatedEffect.distributed) {
+		const count = countDuplicateSkillNames(data.skills)
+		if (count < 3) {
+			aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) + (aggregatedEffect.distributed) * (1 - (count * 0.4));
+			aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) + (aggregatedEffect.distributed) * (1 - (count * 0.4));
+			aggregatedEffect.critUpFixed = (aggregatedEffect.critUpFixed ?? 0) + (aggregatedEffect.distributed) * (1 - (count * 0.4));
+			aggregatedEffect.defDmgUp = (aggregatedEffect.defDmgUp ?? 0) - (aggregatedEffect.distributed) * (1 - (count * 0.4));
+		}
+	}
+
 	if (aggregatedEffect.itemEquip && aggregatedEffect.itemEquip > 1.5) {
 		aggregatedEffect.itemBoost = (aggregatedEffect.itemBoost ?? 0) + (aggregatedEffect.itemEquip - 1.5);
 		aggregatedEffect.itemEquip = 1.5;
@@ -672,6 +694,31 @@ export function getSkillsShortName(data: { items?: ShopItem[], skills: Skill[]; 
 	const amuletShort = amuletItem?.short ? "[" + amuletItem.short + "]" : undefined;
 
 	return { skills: dataSkills, amulet: amuletShort };
+}
+
+export function countDuplicateSkillNames(skills: { name: string }[]): number {
+  // スキル名の出現回数をカウントするためのマップを作成
+  const skillCountMap: { [key: string]: number } = {};
+
+  // 各スキル名の出現回数をカウント
+  skills.forEach(skill => {
+    if (skillCountMap[skill.name]) {
+      skillCountMap[skill.name]++;
+    } else {
+      skillCountMap[skill.name] = 1;
+    }
+  });
+
+  // 重複しているスキルの数をカウント
+  let duplicateCount = 0;
+  for (const name in skillCountMap) {
+    if (skillCountMap[name] > 1) {
+      // 重複している回数全てをカウント
+      duplicateCount += skillCountMap[name] - 1;
+    }
+  }
+
+  return duplicateCount;
 }
 
 export function amuletMinusDurability(data: any): string {

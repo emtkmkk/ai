@@ -4,7 +4,7 @@ import serifs from "@/serifs";
 import { colors, enhanceCount } from './colors';
 import * as seedrandom from 'seedrandom';
 import getDate from '@/utils/get-date';
-import { skillNameCountMap, totalSkillCount, skills, SkillEffect, skillCalculate, Skill, skillPower, aggregateSkillsEffects } from './skills';
+import { skillNameCountMap, totalSkillCount, skills, SkillEffect, skillCalculate, Skill, skillPower, aggregateSkillsEffects, countDuplicateSkillNames } from './skills';
 import { getVal, initializeData, deepClone, numberCharConvert } from './utils';
 import 藍 from '@/ai';
 import rpg from './index';
@@ -95,6 +95,7 @@ const resetCantRerollSkill = (data) => {
 }
 
 export const shop2Items: ShopItem[] = [
+	...skills.filter((x) => x.name === "分散型").map((x): Item => ({ name: `${x.name}の教本`, limit: (data) => !data.nextSkill && countDuplicateSkillNames(data.skills) === 0 && data.skills.every((x) => x.name !== "分散型"), price: (data, rnd, ai) => skillPrice(ai, x.name, rnd), desc: `購入すると次のスキル変更時に必ず「${x.name}」${x.desc ? `（${x.desc}）` : ""}を習得できる（複製時は対象外）`, type: "item", effect: (data) => { data.nextSkill = x.name }, always: true })),
 	{ name: `お守りを捨てる`, limit: (data) => data.items.filter((x) => x.type === "amulet").length, price: 0, desc: `今所持しているお守りを捨てます`, type: "item", effect: (data) => data.items = data.items?.filter((x) => x.type !== "amulet"), always: true },
 	{ name: `行動加速のお札`, limit: (data) => (data.maxSpd ?? 0) < 5 && !data.items.filter((x) => x.name === "行動加速のお札").length, price: (data) => 370 - (data.maxSpd ?? 0) * 70, desc: `持っているともこチキの懐き度に関係なく最低5回行動できるようになる`, type: "token", effect: { fivespd: true }, always: true } as TokenItem,
 	{ name: `究極のお守り`, limit: (data) => enhanceCount(data) >= 9, price: 18, desc: `もこチキRPGを極めたあなたに……`, type: "amulet", effect: ultimateEffect, durability: 6, short: "究極", isUsed: (data) => true, always: true } as AmuletItem,
