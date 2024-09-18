@@ -9,7 +9,7 @@ import { endressEnemy, enemys, Enemy, raidEnemys } from './enemys';
 import { rpgItems } from './items';
 import { aggregateTokensEffects, shopContextHook, shopReply } from './shop';
 import { shop2Reply } from './shop2';
-import { skills, Skill, SkillEffect, getSkill, skillReply, skillCalculate, aggregateSkillsEffects, calcSevenFever, amuletMinusDurability } from './skills';
+import { skills, Skill, SkillEffect, getSkill, skillReply, skillCalculate, aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, countDuplicateSkillNames } from './skills';
 import { start, Raid, raidInstall, raidContextHook, raidTimeoutCallback } from './raid';
 import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatus, getPostCount, getPostX, getVal, random } from './utils';
 import { calculateStats } from './battle';
@@ -1711,6 +1711,18 @@ export default class extends Module {
 			for (const _skill of data.skills as Skill[]) {
 				const skill = skills.find((x) => x.name === _skill.name) ?? _skill;
 
+				if (!data.checkFreeDistributed && data.skills?.length === 5 && (data.totalRerollOrb ?? 0) === (data.rerollOrb ?? 0) && !data.freeDistributed && countDuplicateSkillNames(data.skills) === 0 && data.skills.every((x) => x.name !== "分散型")) {
+					const moveToSkill = skills.find((x) => x.name === "分散型");
+					if (moveToSkill) {
+						oldSkillName = data.skills[4].name;
+						data.skills[4] = moveToSkill;
+						data.freeDistributed = true;
+						addMessage += `\n` + serifs.rpg.moveToSkill(oldSkillName, moveToSkill.name);
+					}
+				} else {
+					if (!data.checkFreeDistributed) data.checkFreeDistributed = true;
+				}
+
 				if (skill.unique && uniques.has(skill.unique)) {
 					oldSkillName = skill.name;
 					data.skills = data.skills.filter((x: Skill) => x.name !== oldSkillName);
@@ -1734,7 +1746,14 @@ export default class extends Module {
 
 		if ((data.skills ?? []).length < skillCounts) {
 			if (!data.skills) data.skills = [];
-			const skill = getSkill(data);
+			let skill;
+			if ((data.skills ?? []).length === 4 && skillCounts === 5 && countDuplicateSkillNames(data.skills) === 0 && data.skills.every((x) => x.name !== "分散型")) {
+				skill = skills.find((x) => x.name === "分散型");
+				data.freeDistributed = true;
+				data.checkFreeDistributed = true;
+			} else {
+				skill = getSkill(data)
+			}
 			data.skills.push(skill);
 			if (oldSkillName) {
 				addMessage += `\n` + serifs.rpg.moveToSkill(oldSkillName, skill.name);
