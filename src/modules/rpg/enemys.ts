@@ -173,8 +173,8 @@ export const summerEnemys: Enemy[] = [
 /** 旅モードの場合の敵 */
 export const endressEnemy = (data): Enemy => ({
 	name: "旅モード",
-	msg: (data.endress ?? 0) ? `旅の途中 (ステージ${data.endress + 1})` : "もこチキは旅に出たいようだ。",
-	short: (data.endress ?? 0) ? `旅の途中 (ステージ${data.endress + 1})` : "旅立ち中",
+	msg: (data.endress ?? 0) >= 100 ? (data.endress ?? 0) !== 100 ? `旅の途中 (ステージ⭐${data.endress - 99})` : "もこチキは再び旅に出たいようだ。" : (data.endress ?? 0) ? `旅の途中 (ステージ${data.endress + 1})` : "もこチキは旅に出たいようだ。",
+	short: (data.endress ?? 0) >= 100 ? (data.endress ?? 0) !== 100 ? `旅の途中 (ステージ⭐${data.endress - 99})` : "再び旅立ち中" : (data.endress ?? 0) ? `旅の途中 (ステージ${data.endress + 1})` : "旅立ち中",
 	hpmsg: "進行度",
 	lToR: true,
 	mark: "☆",
@@ -185,11 +185,11 @@ export const endressEnemy = (data): Enemy => ({
 	winmsg: "宿が見えてきた。\n今回はここで休むようだ。\n\n次のステージへ続く…",
 	losemsg: "もこチキは疲れてしまった…",
 	escapemsg: "もこチキは疲れてしまったが、\n焦ることもないなと思い、\nその場で休憩を始めた。",
-	atk: 1.5 + (0.1 * (data.endress ?? 0)),
-	def: 2 + (0.3 * (data.endress ?? 0)),
-	atkx: 3 + (0.05 * (data.endress ?? 0)),
-	defx: 3 + (0.15 * (data.endress ?? 0)),
-	abort: 0.01,
+	atk: (data.endress ?? 0) >= 100 ? 12 + (2 * (data.endress - 100)) : 1.5 + (0.1 * (data.endress ?? 0)),
+	def: (data.endress ?? 0) >= 100 ? 32 + (6 * (data.endress - 100)) : 2 + (0.3 * (data.endress ?? 0)),
+	atkx: (data.endress ?? 0) >= 100 ? 8 + (1 * (data.endress - 100)) : 3 + (0.05 * (data.endress ?? 0)),
+	defx: (data.endress ?? 0) >= 100 ? 18 + (3 * (data.endress - 100)) : 3 + (0.15 * (data.endress ?? 0)),
+	abort: (data.endress ?? 0) >= 100 ? 0 : 0.01,
 });
 
 export const ending = (module: rpg, msg: Message, _data: any): any => {

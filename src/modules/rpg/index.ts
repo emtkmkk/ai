@@ -1487,7 +1487,15 @@ export default class extends Module {
 				if (data.enemy.name !== endressEnemy(data).name) {
 					message += "\n" + data.enemy.winmsg + "\n\n" + serifs.rpg.win;
 				} else {
-					message += "\n" + data.enemy.winmsg + (data.endressFlg ? "\n" + serifs.rpg.journey.win : "");
+					if ((data.endress ?? 0) === 99 && (data.maxEndress ?? -1) < 99) {
+						message += "\n" + serifs.rpg.allStageClear;
+						if (!data.items) data.items = [];
+						data.items.push({ name: "長き旅の思い出", limit: (data) => true, desc: "長い旅をした証です", price: 1, type: "token", effect: { journeyAllClear: true }},)
+						data.journeyClearStats = {lv: data.lv, skill: data.skill, atk: data.atk, def: data.def}
+						data.coin += 1000;
+					} else {
+						message += "\n" + data.enemy.winmsg + (data.endressFlg ? "\n" + serifs.rpg.journey.win : "");
+					}
 					if ((data.endress ?? 0) > (data.maxEndress ?? -1)) data.maxEndress = data.endress;
 					data.endress = (data.endress ?? 0) + 1;
 				}
@@ -1601,10 +1609,14 @@ export default class extends Module {
 							message += "\n" + data.enemy.losemsg + "\n\n" + serifs.rpg.lose;
 							data.revenge = data.enemy.name;
 						} else {
-							const minusStage = Math.min(Math.ceil((data.endress ?? 0) / 2), 3 - ((data.endress ?? 0) > (data.maxEndress ?? -1) ? 0 : (data.endress ?? 0) >= ((data.maxEndress ?? -1) / 2) ? 1 : 2));
-							message += "\n" + data.enemy.losemsg + (minusStage ? `\n` + serifs.rpg.journey.lose(minusStage) : "");
-							if ((data.endress ?? 0) - 1 > (data.maxEndress ?? -1)) data.maxEndress = data.endress - 1;
-							data.endress = (data.endress ?? 0) - minusStage;
+							if ((data.maxEndress ?? -1) < 99) {
+								const minusStage = Math.min(Math.ceil((data.endress ?? 0) / 2), 3 - ((data.endress ?? 0) > (data.maxEndress ?? -1) ? 0 : (data.endress ?? 0) >= ((data.maxEndress ?? -1) / 2) ? 1 : 2));
+								message += "\n" + data.enemy.losemsg + (minusStage ? `\n` + serifs.rpg.journey.lose(minusStage) : "");
+								if ((data.endress ?? 0) - 1 > (data.maxEndress ?? -1)) data.maxEndress = data.endress - 1;
+								data.endress = (data.endress ?? 0) - minusStage;
+							} else {
+								message += "\n" + data.enemy.losemsg;
+							}
 						}
 						// これが任意に入った旅モードだった場合は、各種フラグをリセットしない
 						if (!data.endressFlg) {
