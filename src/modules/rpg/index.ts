@@ -1408,7 +1408,7 @@ export default class extends Module {
 					/** ダメージ */
 					const dmg = getEnemyDmg(data, def, tp, count, crit ? critDmg : false, enemyAtk, rng * defDmgX);
 					const noItemDmg = getEnemyDmg(data, def - itemBonus.def, tp, count, crit ? critDmg : false, enemyAtk, rng * defDmgX);
-					const normalDmg = getEnemyDmg(data, lv * 3.5, tp, count, crit ? critDmg : false, enemyAtk, rng);
+					const normalDmg = getEnemyDmg(data, lv * 3.75, tp, count, crit ? critDmg : false, enemyAtk, rng);
 					
 					// ダメージが負けるほど多くなる場合は、先制攻撃しない
 					if (playerHp > dmg || (count === 3 && data.enemy.fire && (data.thirdFire ?? 0) <= 2)) {
@@ -1562,7 +1562,7 @@ export default class extends Module {
 						/** ダメージ */
 						const dmg = getEnemyDmg(data, def, tp, count, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX);
 						const noItemDmg = getEnemyDmg(data, def - itemBonus.def, tp, count, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX);
-						const normalDmg = getEnemyDmg(data, lv * 3.5, tp, count, crit ? critDmg : false, enemyAtk, rng);
+						const normalDmg = getEnemyDmg(data, lv * 3.75, tp, count, crit ? critDmg : false, enemyAtk, rng);
 						if (normalDmg > dmg) {
 							data.totalResistDmg += (normalDmg - dmg);
 						}

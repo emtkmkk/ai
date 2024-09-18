@@ -1083,7 +1083,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 				/** ダメージ */
 				let dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [count]));
 				let noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [count]));
-				let normalDmg = getEnemyDmg(_data, lv * 3.5, tp, 1, enemy.alwaysCrit ? 1 : false, enemyAtk, rng, getVal(enemy.atkx, [count]));
+				let normalDmg = getEnemyDmg(_data, lv * 3.75, tp, 1, enemy.alwaysCrit ? 1 : false, enemyAtk, rng, getVal(enemy.atkx, [count]));
 				let addMessage = "";
 				const rawDmg = dmg;
 				if (sevenFever) {
@@ -1233,7 +1233,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 					/** ダメージ */
 					let dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX, getVal(enemy.atkx, [count]));
 					let noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX, getVal(enemy.atkx, [count]));
-					let normalDmg = getEnemyDmg(_data, lv * 3.5, tp, 1, enemy.alwaysCrit ? 1 : false, enemyAtk, rng, getVal(enemy.atkx, [count]));
+					let normalDmg = getEnemyDmg(_data, lv * 3.75, tp, 1, enemy.alwaysCrit ? 1 : false, enemyAtk, rng, getVal(enemy.atkx, [count]));
 					let addMessage = "";
 					if (normalDmg > dmg) {
 						totalResistDmg += (normalDmg - dmg);
