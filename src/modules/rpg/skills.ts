@@ -1123,7 +1123,7 @@ export function getTotalEffectString(data: any): string {
 		result.push("最低行動回数保障: 5");
 	}
 	if (skillEffects.fortuneEffect || aggregateTokensEffects(data).fortuneEffect) {
-		result.push(`ランダムステータス${(skillEffects.fortuneEffect ?? 0) !== 1 ? (skillEffects.fortuneEffect ?? 0) > 1 ? ` ×${skillEffects.fortuneEffect.toFixed(1)}` : `: ${skillEffects.fortuneEffect.toFixed(1)}` : ""}`);
+		result.push(`ランダムステータス${(skillEffects.fortuneEffect ?? 0) !== 1 ? (skillEffects.fortuneEffect ?? 0) > 1 ? ` ×${(skillEffects.fortuneEffect ?? 0).toFixed(1)}` : `: ${(skillEffects.fortuneEffect ?? 0).toFixed(1)}` : ""}`);
 	}
 	if (skillEffects.slowStart) {
 		result.push(`スロースタート${(skillEffects.slowStart ?? 0) > 1 ? ` ×${skillEffects.slowStart.toFixed(1)}` : ""}`);
