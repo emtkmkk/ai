@@ -917,7 +917,7 @@ export function getTotalEffectString(data: any): string {
 		if (atk >= 0) {
 			result.push("パワー: +" + Math.round(atk * 100) + "%");
 		} else {
-			result.push("パワー: -" + Math.round(atk * 100) + "%");
+			result.push("パワー: " + Math.round(atk * 100) + "%");
 		}
 	}
 	bAtk -= 1
@@ -925,7 +925,7 @@ export function getTotalEffectString(data: any): string {
 		if (bAtk >= 0) {
 			result.push("戦闘時パワー: +" + Math.round(atk * 100) + "%");
 		} else {
-			result.push("戦闘時パワー: -" + Math.round(atk * 100) + "%");
+			result.push("戦闘時パワー: " + Math.round(atk * 100) + "%");
 		}
 	}
 	nbAtk -= 1
@@ -933,7 +933,7 @@ export function getTotalEffectString(data: any): string {
 		if (nbAtk >= 0) {
 			result.push("非戦闘時パワー: +" + Math.round(atk * 100) + "%");
 		} else {
-			result.push("非戦闘時パワー: -" + Math.round(atk * 100) + "%");
+			result.push("非戦闘時パワー: " + Math.round(atk * 100) + "%");
 		}
 	}
 	if (skillEffects.fire) {
