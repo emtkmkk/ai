@@ -1045,11 +1045,11 @@ export function getTotalEffectString(data: any): string {
 	if (skillEffects.critDmgUp) {
 		result.push("クリティカルダメージ: +" + Math.round((skillEffects.critDmgUp ?? 0) * 100) + "%");
 	}
-	if (skillEffects.critUpFixed) {
-		result.push("敵クリティカル率: -" + Math.round((1 - (skillEffects.enemyCritDown ?? 0)) * 100) + "%");
+	if (skillEffects.enemyCritDown) {
+		result.push("敵クリティカル率: -" + Math.round(((skillEffects.enemyCritDown ?? 0)) * 100) + "%");
 	}
-	if (skillEffects.critDmgUp) {
-		result.push("敵クリティカルダメージ: -" + Math.round((1 - (skillEffects.enemyCritDmgDown ?? 0)) * 100) + "%");
+	if (skillEffects.enemyCritDmgDown) {
+		result.push("敵クリティカルダメージ: -" + Math.round(((skillEffects.enemyCritDmgDown ?? 0)) * 100) + "%");
 	}
 	if (skillEffects.haisuiUp) {
 		result.push("決死の覚悟発動体力: " + Math.round(((1 / 7) * (1 + (skillEffects.haisuiUp ?? 0)) * 100)) + "%以下 (+" + Math.round((1 + (skillEffects.haisuiUp ?? 0)) * 100)) + "%)";
