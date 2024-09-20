@@ -923,17 +923,17 @@ export function getTotalEffectString(data: any): string {
 	bAtk -= 1
 	if (bAtk) {
 		if (bAtk >= 0) {
-			result.push("戦闘時パワー: +" + Math.round(atk * 100) + "%");
+			result.push("戦闘時パワー: +" + Math.round(bAtk * 100) + "%");
 		} else {
-			result.push("戦闘時パワー: " + Math.round(atk * 100) + "%");
+			result.push("戦闘時パワー: " + Math.round(bAtk * 100) + "%");
 		}
 	}
 	nbAtk -= 1
 	if (nbAtk) {
 		if (nbAtk >= 0) {
-			result.push("非戦闘時パワー: +" + Math.round(atk * 100) + "%");
+			result.push("非戦闘時パワー: +" + Math.round(nbAtk * 100) + "%");
 		} else {
-			result.push("非戦闘時パワー: " + Math.round(atk * 100) + "%");
+			result.push("非戦闘時パワー: " + Math.round(nbAtk * 100) + "%");
 		}
 	}
 	if (skillEffects.fire) {
@@ -1007,7 +1007,7 @@ export function getTotalEffectString(data: any): string {
 		result.push("与ダメージ乱数固定: " + Math.round((atkMinRnd + atkMinRnd + atkMaxRnd) * 100) * (0.5 + (skillEffects.notRandom ?? 0) * 0.05) + "%")
 	} else {
 		if (atkMinRnd !== 0.2 || atkMaxRnd !== 1.6) {
-			result.push("与ダメージ乱数幅: " + Math.round(atkMinRnd * 100) + "% ～ " + Math.round((atkMinRnd + atkMinRnd + atkMaxRnd) * 100) + "%")
+			result.push("与ダメージ乱数幅: " + Math.round(atkMinRnd * 100) + "% ～ " + Math.round((atkMinRnd + atkMaxRnd) * 100) + "%")
 		}
 	}
 
