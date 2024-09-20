@@ -1102,8 +1102,8 @@ export function getTotalEffectString(data: any): string {
 	if (skillEffects.itemBoost) {
 		result.push("アイテム気合上昇率: +" + Math.round((skillEffects.itemBoost ?? 0) * 100) + "%");
 	}
-	if (skillEffects.itemBoost) {
-		result.push("アイテム気合低下率: -" + Math.round((1 - (1 / (1 + (skillEffects.itemBoost ?? 0)))) *  (isSuper ? 0.5 : 1) * 100) + "%");
+	if (skillEffects.itemBoost || isSuper) {
+		result.push("アイテム気合低下率: -" + Math.round((1 - (1 / (1 + (skillEffects.itemBoost ?? 0))) * (isSuper ? 0.5 : 1)) * 100) + "%");
 	}
 	if (skillEffects.lowHpFood) {
 		result.push("残体力依存食べ物選択");
