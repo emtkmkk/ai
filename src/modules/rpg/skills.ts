@@ -3,7 +3,7 @@ import Module from "@/module";
 import serifs from "@/serifs";
 import 藍 from '@/ai';
 import { aggregateTokensEffects, AmuletItem, ShopItem, shopItems, mergeSkillAmulet } from './shop';
-import { deepClone } from './utils';
+import { deepClone, getColor } from './utils';
 
 export let skillNameCountMap = new Map();
 export let totalSkillCount = 0;
@@ -334,6 +334,13 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
 		data.skills = data.skills.sort((a, b) => (skills.map((x) => x.name).indexOf(a.name) - skills.map((x) => x.name).indexOf(b.name)));
 		msg.reply(`\n` + serifs.rpg.skills.sort);
 		msg.friend.setPerModulesData(module, data);
+		return {
+			reaction: 'love'
+		};
+	}
+
+	if (msg.includes(["効果"])) {
+		msg.reply(`\n\`\`\`\n` + getTotalEffectString(data) + `\n\`\`\``);
 		return {
 			reaction: 'love'
 		};
@@ -771,4 +778,366 @@ export function calcSevenFever(arr: number[]) {
 	});
 
 	return totalSevens;
+}
+
+export function getTotalEffectString(data: any): string {
+
+	const skillEffects = aggregateSkillsEffects(data);
+
+	/** 使用中の色情報 */
+	let color = getColor(data);
+
+	/** 覚醒状態か？*/
+	const isSuper = color.alwaysSuper;
+	
+	let result: string[] = [];
+	const resultS: string[] = [];
+
+	let atk = 1;
+	let def = 1;
+	let spd = 1;
+
+	let bAtk = 1;
+	let bDef = 1;
+	let bSpd = 1;
+
+	let nbAtk = 1;
+	let nbDef = 1;
+
+	let eAtk = 1;
+	let eDef = 1;
+
+	let itemAtk = 1;
+	let itemDef = 1;
+	let itemFood = 1;
+	let itemResist = 1;
+
+
+	atk *= 1 + ((skillEffects.atkUp ?? 0) + (data.items?.some((y) => y.type === "amulet") ? 0 : (skillEffects.noAmuletAtkUp ?? 0)))
+	atk *= (1 + (data.atkMedal ?? 0) * 0.01)
+
+	def *= 1 + (skillEffects.defUp ?? 0);
+
+	spd *= 1 + (isSuper ? 0.2 : 0);
+
+	if (skillEffects.postXUp) {
+		atk *= (1 + (skillEffects.postXUp ?? 0) * 10)
+		def *= (1 + (skillEffects.postXUp ?? 0) * 10)
+	}
+
+	if (skillEffects.heavenOrHell) {
+		atk = atk * (1 + skillEffects.heavenOrHell);
+		def = def * (1 + skillEffects.heavenOrHell);
+	}
+
+	if (skillEffects.sevenFever) {
+		const bonus = 7 * (skillEffects.sevenFever ?? 1);
+		atk *= (1 + (bonus / 100));
+		def *= (1 + (bonus / 100));
+	}
+
+	if (skillEffects.spdUp) {
+		bSpd *= 1 + (skillEffects.spdUp ?? 0);
+		nbAtk *= 1 + (skillEffects.spdUp ?? 0);
+	}
+
+	if (skillEffects.notBattleBonusAtk) {
+		nbAtk *= (1 + (skillEffects.notBattleBonusAtk ?? 0));
+	}
+
+	if (skillEffects.notBattleBonusDef) {
+		nbDef *= (1 + (skillEffects.notBattleBonusDef ?? 0));
+	}
+
+	if (skillEffects.enemyStatusBonus) {
+		const bonus = Math.floor(10 * skillEffects.enemyStatusBonus);
+		atk *= (1 + (bonus / 100));
+		def *= (1 + (bonus / 100));
+	}
+
+	if (skillEffects.arpen) {
+		const enemyMinDef = eDef * 0.4
+		const arpenX = 1 - (1 / (1 + (skillEffects.arpen ?? 0)));
+		eDef -= eDef * arpenX;
+		if (eDef < enemyMinDef) eDef = enemyMinDef;
+	}
+
+	if (skillEffects.plusActionX) {
+		atk *= (1 + (skillEffects.plusActionX ?? 0) / 10);
+	}
+
+	if (skillEffects.enemyCritDmgDown) {
+		def *= (1 + (skillEffects.enemyCritDmgDown ?? 0) / 30);
+	}
+
+	if (skillEffects.enemyBuff) {
+		atk *= (1 + (skillEffects.enemyBuff ?? 0) / 20);
+		def *= (1 + (skillEffects.enemyBuff ?? 0) / 20);
+	}
+	
+	if (skillEffects.berserk) {
+			atk *= (1 + (skillEffects.berserk ?? 0) * 1.6);
+	}
+
+	if (skillEffects.weak) {
+		const enemyMinDef = eDef * 0.4
+		const weakX = 1 - (1 / (1 + ((skillEffects.weak * 1.125))))
+		eAtk -= eAtk * weakX;
+		eDef -= eDef * weakX;
+		if (eAtk < 0) eAtk = 0;
+		if (eDef < enemyMinDef) eDef = enemyMinDef;
+	}
+
+	if (skillEffects.dart) {
+		atk *= (1 + skillEffects.dart * 0.5);
+	}
+
+	if (skillEffects.abortDown) {
+		atk *= (1 + skillEffects.abortDown * (1 / 3));
+	}
+
+	if (skillEffects.ice) {
+		resultS.push("戦闘時凍結率: "+ Math.round(skillEffects.ice * 100) + "%");
+		nbDef *= 1 + (skillEffects.ice ?? 0);
+	}
+
+	if (skillEffects.light) {
+		resultS.push("戦闘時被ダメージ半減率: "+ Math.round(skillEffects.light * 100) + "%");
+		nbDef *= 1 + (skillEffects.light ?? 0) * 0.5;
+	}
+
+	if (skillEffects.dark) {
+		resultS.push("戦闘時行動回数低下率: "+ Math.round(skillEffects.dark ?? 0 * 2 * 100) + "%");
+		resultS.push("戦闘時固定ダメージ付与率: "+ Math.round(skillEffects.dark ?? 0 * 100) + "%");
+		nbDef *= 1 + (skillEffects.dark ?? 0) * 0.3;
+	}
+
+	atk -= 1
+	if (atk) {
+		result.push("パワー: +" + Math.round(atk * 100) + "%");
+	}
+	bAtk -= 1
+	if (bAtk) {
+		result.push("戦闘時パワー: +" + Math.round(bAtk * 100) + "%");
+	}
+	nbAtk -= 1
+	if (nbAtk) {
+		result.push("非戦闘時パワー: +" + Math.round(nbAtk * 100) + "%");
+	}
+	if (skillEffects.fire) {
+		result.push("非戦闘時パワー: +" + Math.round(data.lv * 3.75 * skillEffects.fire));
+	}
+	if (skillEffects.haisuiAtkUp) {
+		result.push("覚悟パワー: +" + Math.floor((skillEffects.haisuiAtkUp ?? 0) * 100) + "%");
+	}
+	def -= 1
+	if (def) {
+		result.push("防御: +" + Math.round(def * 100) + "%");
+	}
+	bDef -= 1
+	if (bDef) {
+		result.push("戦闘時防御: +" + Math.round(bDef * 100) + "%");
+	}
+	nbDef -= 1
+	if (nbDef) {
+		result.push("非戦闘時防御: +" + Math.round(nbDef * 100) + "%");
+	}
+	if (color.reverseStatus) {
+		result.push("パワー・防御 ステータス逆転");
+	}
+	spd -= 1
+	if (spd) {
+		result.push("行動回数: +" + Math.round(spd * 100) + "%");
+	}
+	bSpd -= 1
+	if (bSpd) {
+		result.push("戦闘時行動回数: +" + Math.round(bSpd * 100) + "%");
+	}
+	if (skillEffects.allForOne || aggregateTokensEffects(data).allForOne) {
+		result.push("行動回数圧縮状態");
+	}
+	if (data.defMedal) {
+		result.push("最大体力: +" + Math.floor((data.defMedal ?? 0) * 13.4));
+	}
+	if (skillEffects.endureUp) {
+		result.push(`気合: +${Math.floor(skillEffects.endureUp * 100)}%`);
+	}
+	eAtk -= 1
+	if (eAtk) {
+		result.push("敵パワー減少: " + Math.floor((1 - eAtk) * 100) + "%")
+	}
+	eDef -= 1
+	if (eDef) {
+		result.push("敵防御減少: " + Math.floor((1 - eDef) * 100) + "%")
+	}
+
+	const atkMinusMin = skillEffects.atkDmgUp && skillEffects.atkDmgUp < 0 ? (1 / (-1 + (skillEffects.atkDmgUp ?? 0)) * -1) : 1;
+	let dmgBonus = ((Math.max(1 + (skillEffects.atkDmgUp ?? 0), atkMinusMin)) * 1) * (1 + ((skillEffects.thunder ?? 0) * 0.1));
+
+	const defMinusMin = skillEffects.defDmgUp && skillEffects.defDmgUp < 0 ? (1 / (-1 + (skillEffects.defDmgUp ?? 0)) * -1) : 1;
+	let defDmgX = (Math.max(1 + (skillEffects.defDmgUp ?? 0), defMinusMin));
+
+	dmgBonus -= 1
+	if (dmgBonus) {
+		if (dmgBonus > 0) {
+			result.push("与ダメージ増加: " + Math.floor(dmgBonus * 100) + "%")
+		} else {
+			result.push("与ダメージ軽減: " + Math.floor(dmgBonus * -100) + "%")
+		}
+	}
+
+	const atkMinRnd = Math.max(0.2 + (skillEffects.atkRndMin ?? 0), 0);
+	const atkMaxRnd = Math.max(1.6 + (skillEffects.atkRndMax ?? 0), 0);
+	const defMinRnd = Math.max(0.2 + (skillEffects.defRndMin ?? 0), 0);
+	const defMaxRnd = Math.max(1.6 + (skillEffects.defRndMax ?? 0), 0);
+
+	if (skillEffects.notRandom || aggregateTokensEffects(data).notRandom) {
+		result.push("与ダメージ乱数固定: " + Math.floor((atkMinRnd + atkMaxRnd) * 100) * (0.5 + (skillEffects.notRandom ?? 0) * 0.05) + "%")
+	} else {
+		if (atkMinRnd !== 0.2 || atkMaxRnd !== 1.6) {
+			result.push("与ダメージ乱数幅: " + Math.floor(atkMinRnd * 100) + "% ～ " + Math.floor((atkMinRnd + atkMaxRnd) * 100) + "%")
+		}
+	}
+
+	if (skillEffects.fire) {
+		result.push("戦闘時ダメージ追加: +" + Math.ceil(Math.min(data.lv, 255) * skillEffects.fire));
+	}
+
+	defDmgX -= 1
+	if (defDmgX) {
+		if (defDmgX > 0) {
+			result.push("被ダメージ増加: " + Math.floor(defDmgX * 100) + "%")
+		} else {
+			result.push("被ダメージ軽減: " + Math.floor(defDmgX * -100) + "%")
+		}
+	}
+	
+	if (skillEffects.firstTurnResist) {
+		if (skillEffects.firstTurnResist > 1) {
+			result.push("ターン1ダメージ無効");
+			result.push("ターン2ダメージ軽減: " + Math.floor((skillEffects.firstTurnResist - 1) * 100) + "%")
+		} else {
+			result.push("ターン1ダメージ軽減: " + Math.floor((skillEffects.firstTurnResist) * 100) + "%")
+		}
+	}
+	if (skillEffects.tenacious) {
+		if (skillEffects.tenacious > 0.9) {
+			result.push("ピンチダメージ軽減: 最大90%")
+			result.push("（体力" +  Math.floor((0.9 / skillEffects.tenacious) * 100) + "%で効果最大）")
+		} else {
+			result.push("ピンチダメージ軽減: 最大" + Math.floor((skillEffects.tenacious) * 100) + "%")
+		}
+	}
+
+	if (defMinRnd !== 0.2 || defMaxRnd !== 1.6) {
+		result.push("被ダメージ乱数幅: " + Math.floor(defMinRnd * 100) + "% ～ " + Math.floor((defMinRnd + defMaxRnd) * 100) + "%")
+	}
+	
+	if (skillEffects.critUp) {
+		result.push("クリティカル率（割合）: +" + Math.floor((skillEffects.critUp ?? 0) * 100) + "%");
+	}
+	if (skillEffects.haisuiCritUp) {
+		result.push("覚悟クリティカル率（割合）: +" + Math.floor((skillEffects.haisuiCritUp ?? 0) * 100) + "%");
+	}
+	if (skillEffects.critUpFixed) {
+		result.push("クリティカル率（固定）: +" + Math.floor((skillEffects.critUpFixed ?? 0) * 100) + "%");
+	}
+	if (skillEffects.critDmgUp) {
+		result.push("クリティカルダメージ: +" + Math.floor((skillEffects.critDmgUp ?? 0) * 100) + "%");
+	}
+	if (skillEffects.critUpFixed) {
+		result.push("敵クリティカル率: -" + Math.floor((1 - (skillEffects.enemyCritDown ?? 0)) * 100) + "%");
+	}
+	if (skillEffects.critDmgUp) {
+		result.push("敵クリティカルダメージ: -" + Math.floor((1 - (skillEffects.enemyCritDmgDown ?? 0)) * 100) + "%");
+	}
+	if (skillEffects.finalAttackUp) {
+		result.push("全力の一撃ダメージ: +" + Math.floor((skillEffects.finalAttackUp ?? 0) * 100) + "%");
+	}
+	if (skillEffects.firstTurnItem) {
+		result.push("ターン1アイテム装備");
+	}
+	if (skillEffects.itemEquip) {
+		result.push("アイテム装備率: +" + Math.floor((skillEffects.itemEquip ?? 0) * 100) + "%");
+	}
+	if (skillEffects.weaponSelect) {
+		result.push("武器選択率: +" + Math.floor((skillEffects.weaponSelect ?? 0) * 100) + "%");
+	}
+	if (skillEffects.armorSelect) {
+		result.push("防具選択率: +" + Math.floor((skillEffects.armorSelect ?? 0) * 100) + "%");
+	}
+	if (skillEffects.foodSelect) {
+		result.push("食べ物選択率: +" + Math.floor((skillEffects.foodSelect ?? 0) * 100) + "%");
+	}
+	if (skillEffects.poisonAvoid) {
+		result.push("毒食べ物回避率: " + Math.floor((skillEffects.poisonAvoid ?? 0) * 100) + "%");
+	}
+	if (skillEffects.poisonAvoid) {
+		result.push("悪アイテム回避率: +" + Math.floor((skillEffects.mindMinusAvoid ?? 0) * 100) + "%");
+	}
+
+	itemAtk = (1 + (skillEffects.itemBoost ?? 0)) * (1 + (skillEffects.weaponBoost ?? 0));
+	itemDef = (1 + (skillEffects.itemBoost ?? 0)) * (1 + (skillEffects.armorBoost ?? 0));
+	itemFood = (1 + (skillEffects.itemBoost ?? 0)) * (1 + (skillEffects.foodBoost ?? 0));
+	itemResist = itemResist / (1 + (skillEffects.itemBoost ?? 0));
+	itemResist = itemResist / (1 + (skillEffects.poisonResist ?? 0));
+	if (isSuper) itemResist = itemResist / 2
+
+	itemAtk -= 1
+	if (itemAtk) {
+		result.push("武器効果量: +" + Math.floor(itemAtk * 100) + "%");
+	}
+	itemDef -= 1
+	if (itemDef) {
+		result.push("防具効果量: +" + Math.floor(itemDef * 100) + "%");
+	}
+	itemFood -= 1
+	if (itemFood) {
+		result.push("食べ物効果量: +" + Math.floor(itemFood * 100) + "%");
+	}
+	itemResist -= 1
+	if (itemResist) {
+		result.push("毒効果量軽減: -" + Math.floor(itemResist * -100) + "%");
+	}
+	if (skillEffects.itemBoost) {
+		result.push("アイテム気合上昇率: +" + Math.floor((skillEffects.itemBoost ?? 0) * 100) + "%");
+	}
+	if (skillEffects.itemBoost) {
+		result.push("アイテム気合低下率: -" + Math.floor((1 - (1 / (skillEffects.itemBoost ?? 0)) * (isSuper ? 0.5 : 1)) * 100) + "%");
+	}
+	if (skillEffects.lowHpFood) {
+		result.push("残体力依存食べ物選択");
+	}
+	result = [...result, ...resultS];
+	if (skillEffects.sevenFever) {
+		result.push("与ダメージ７の倍数化");
+		result.push(`７ステータスダメージ軽減${skillEffects.sevenFever > 1 ? ` ×${skillEffects.sevenFever}` : ""}`);
+	}
+	if (skillEffects.escape) {
+		result.push(`負けそうな時逃げる${skillEffects.escape > 1 ? ` ×${skillEffects.escape}` : ""}`);
+	}
+	if (skillEffects.charge) {
+		result.push(`不運チャージ${skillEffects.charge > 1 ? ` ×${skillEffects.charge}` : ""}`);
+	}
+	if (aggregateTokensEffects(data).fivespd) {
+		result.push("最低行動回数保障: 5");
+	}
+	if (skillEffects.fortuneEffect || aggregateTokensEffects(data).fortuneEffect) {
+		result.push(`ランダムステータス${(skillEffects.fortuneEffect ?? 0) !== 1 ? (skillEffects.fortuneEffect ?? 0) > 1 ? ` ×${skillEffects.fortuneEffect}` : `: ${skillEffects.fortuneEffect}` : ""}`);
+	}
+	if (skillEffects.slowStart) {
+		result.push(`スロースタート${(skillEffects.slowStart ?? 0) > 1 ? ` ×${skillEffects.slowStart}` : ""}`);
+	}
+	if (skillEffects.plusActionX) {
+		result.push("通常時高速RPG: +" + (skillEffects.plusActionX ?? 0));
+	}
+	const boost = data.skills ? data.skills?.filter((x) => x.effect?.amuletBoost).reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0 : 0;
+	if (boost) {
+		result.push("お守り耐久減少率: " + Math.floor((1 / Math.pow(1.5, boost * 2)) * 100) + "%");
+	}
+	if (skillEffects.priceOff) {
+		result.push("ショップ割引率: " + Math.floor((skillEffects.priceOff ?? 0) * 100) + "%");
+	}
+
+	return result.join("\n");
 }

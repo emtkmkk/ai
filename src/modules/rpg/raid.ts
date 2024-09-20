@@ -1378,6 +1378,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		if (skillEffects.statusBonus && skillEffects.statusBonus > 0 && data.lv % Math.max(2 / skillEffects.statusBonus, 1) === 0) {
 			const upBonus = Math.ceil(skillEffects.statusBonus / 2);
 			for (let i = 0; i < upBonus; i++) {
+				totalUp += 1;
 				if (Math.random() < 0.5) atkUp += 1;
 			}
 		}

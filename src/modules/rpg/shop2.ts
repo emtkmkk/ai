@@ -77,7 +77,9 @@ const ultimateEffect: SkillEffect = {
 	"enemyCritDmgDown": 0.04,
 	"sevenFever": 0.1,
 	"charge": 0.1,
-	"heavenOrHell": 0.02
+	"heavenOrHell": 0.02,
+	"haisuiAtkUp": 0.004,
+	"haisuiCritUp": 0.02,
 }
 
 const resetCantRerollSkill = (data) => {
