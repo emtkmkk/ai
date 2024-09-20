@@ -1051,6 +1051,9 @@ export function getTotalEffectString(data: any): string {
 	if (skillEffects.critDmgUp) {
 		result.push("敵クリティカルダメージ: -" + Math.round((1 - (skillEffects.enemyCritDmgDown ?? 0)) * 100) + "%");
 	}
+	if (skillEffects.haisuiUp) {
+		result.push("決死の覚悟発動体力: " + Math.round(((1 / 7) * (1 + (skillEffects.haisuiUp ?? 0)) * 100)) + "%以下 (+" + Math.round((1 + (skillEffects.haisuiUp ?? 0)) * 100)) + "%)";
+	}
 	if (skillEffects.finalAttackUp) {
 		result.push("全力の一撃ダメージ: +" + Math.round((skillEffects.finalAttackUp ?? 0) * 100) + "%");
 	}
@@ -1097,7 +1100,7 @@ export function getTotalEffectString(data: any): string {
 	}
 	itemResist -= 1
 	if (itemResist) {
-		result.push("毒効果量軽減: -" + Math.round(itemResist * -100) + "%");
+		result.push("毒効果量軽減: " + Math.round(itemResist * -100) + "%");
 	}
 	if (skillEffects.itemBoost) {
 		result.push("アイテム気合上昇率: +" + Math.round((skillEffects.itemBoost ?? 0) * 100) + "%");
