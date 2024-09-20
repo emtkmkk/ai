@@ -995,7 +995,7 @@ export function getTotalEffectString(data: any): string {
 		result.push("与ダメージ乱数固定: " + Math.floor((atkMinRnd + atkMaxRnd) * 100) * (0.5 + (skillEffects.notRandom ?? 0) * 0.05) + "%")
 	} else {
 		if (atkMinRnd !== 0.2 || atkMaxRnd !== 1.6) {
-			result.push("与ダメージ乱数幅: " + Math.floor(atkMinRnd * 100) + "% ～ " + Math.floor((atkMinRnd + atkMaxRnd) * 100) + "%")
+			result.push("与ダメージ乱数幅: " + Math.floor(atkMinRnd * 100) + "% ～ " + Math.floor((atkMinRnd + atkMinRnd + atkMaxRnd) * 100) + "%")
 		}
 	}
 
@@ -1023,7 +1023,7 @@ export function getTotalEffectString(data: any): string {
 	if (skillEffects.tenacious) {
 		if (skillEffects.tenacious > 0.9) {
 			result.push("ピンチダメージ軽減: 最大90%")
-			result.push("（体力" +  Math.floor((0.9 / skillEffects.tenacious) * 100) + "%で効果最大）")
+			result.push("（体力" +  Math.floor((1 - (0.9 / skillEffects.tenacious)) * 100) + "%で効果最大）")
 		} else {
 			result.push("ピンチダメージ軽減: 最大" + Math.floor((skillEffects.tenacious) * 100) + "%")
 		}
@@ -1103,7 +1103,7 @@ export function getTotalEffectString(data: any): string {
 		result.push("アイテム気合上昇率: +" + Math.floor((skillEffects.itemBoost ?? 0) * 100) + "%");
 	}
 	if (skillEffects.itemBoost) {
-		result.push("アイテム気合低下率: -" + Math.floor((1 - (1 / (skillEffects.itemBoost ?? 0)) * (isSuper ? 0.5 : 1)) * 100) + "%");
+		result.push("アイテム気合低下率: -" + Math.floor((1 - (1 / (skillEffects.itemBoost ?? 0))) * (isSuper ? 0.5 : 1) * 100) + "%");
 	}
 	if (skillEffects.lowHpFood) {
 		result.push("残体力依存食べ物選択");
