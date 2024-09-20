@@ -1249,7 +1249,7 @@ export default class extends Module {
 
 		let hardEnemyFlg = false;
 
-		if (skillEffects.enemyBuff && data.enemy.name !== endressEnemy(data).name) {
+		if (skillEffects.enemyBuff && data.enemy.name !== endressEnemy(data).name && data.clearHistory.includes(data.enemy)) {
 			hardEnemyFlg = true;
 			if (!data.enemy.spd && enemyAtk + enemyDef <= (lv * 10.5)) data.enemy.spd = 3;
 			if (!data.enemy.spd && enemyAtk + enemyDef <= (lv * 15.75)) data.enemy.spd = 2;
