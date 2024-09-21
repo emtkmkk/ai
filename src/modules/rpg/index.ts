@@ -19,6 +19,7 @@ import {
   aggregateSkillsEffects,
   calcSevenFever,
   amuletMinusDurability,
+  countDuplicateSkillNames,
 } from './skills';
 import {
   start,
@@ -76,6 +77,23 @@ export default class extends Module {
 
   @autobind
   private async mentionHook(msg: Message) {
+    if (
+      !msg.user.host &&
+      msg.visibility !== 'specified' &&
+      (!msg.replyId || msg.replyNote?.userId !== this.ai.account.id)
+    ) {
+      if (msg.includes([serifs.rpg.command.rpg])) {
+        msg.reply(
+          'RPG関連のコマンドを使うときはわらわの投稿のどれかに返信で送ってほしいのじゃ',
+          { visibility: 'specified' },
+        );
+        return {
+          reaction: 'hmm',
+        };
+      } else {
+        return false;
+      }
+    }
     if (
       !msg.user.host &&
       msg.user.username === config.master &&
@@ -386,35 +404,41 @@ export default class extends Module {
     message.push(jarList.slice(0, data.jar).join('\n'));
     if (data.jar > jarList.length) {
       message.push(
-        `謎の壺${data.jar - jarList.length >= 2 ? ' ×' + (data.jar - jarList.length) : ''}`,
+        `激レア穢根くんのチェキ${data.jar - jarList.length >= 2 ? ' ×' + (data.jar - jarList.length) : ''}`,
       );
     }
     if (data.nextSkill) {
       message.push(data.nextSkill + 'の教本');
     }
     if (data.atkMedal) {
-      message.push('赤の勲章: ' + data.atkMedal + '個');
+      message.push(`赤の勲章${data.atkMedal >= 2 ? ' ×' + data.atkMedal : ''}`);
     }
     if (data.defMedal) {
-      message.push('青の勲章: ' + data.defMedal + '個');
+      message.push(`青の勲章${data.defMedal >= 2 ? ' ×' + data.defMedal : ''}`);
     }
     if (data.itemMedal) {
-      message.push('緑の勲章: ' + data.itemMedal + '個');
+      message.push(
+        `緑の勲章${data.itemMedal >= 2 ? ' ×' + data.itemMedal : ''}`,
+      );
     }
     if (data.rerollOrb) {
-      message.push('スキル変更珠: ' + data.rerollOrb + '個');
+      message.push(
+        `スキル変更珠${data.rerollOrb >= 2 ? ' ×' + data.rerollOrb : ''}`,
+      );
     }
     if (data.duplicationOrb) {
-      message.push('スキル複製珠: ' + data.duplicationOrb + '個');
+      message.push(
+        `スキル複製珠${data.duplicationOrb >= 2 ? ' ×' + data.duplicationOrb : ''}`,
+      );
     }
     if (message.length !== 1 && data.coin) {
-      message.push('キレイなどんぐり: ' + data.coin + '個');
+      message.push(`キレイなどんぐり${data.coin >= 2 ? ' ×' + data.coin : ''}`);
     }
     msg.reply(
       '\n' +
         message.join('\n') +
         (message.length === 1
-          ? '\n\n何も持っていないようじゃ \n「RPG ショップ」で購入できるのじゃ'
+          ? '\n\n何も持っていないようじゃ。\n「RPG ショップ」で購入できるのじゃ。'
           : ''),
     );
     return { reaction: 'love' };
@@ -513,7 +537,7 @@ export default class extends Module {
       message.push(
         createRankMessage(
           data.maxEndress,
-          '修行モード最高クリア記録',
+          '旅モード最高クリア記録',
           'maxEndress',
           { prefix: 'ステージ', addValue: 1 },
         ),
@@ -611,6 +635,29 @@ export default class extends Module {
         friend.doc.perModulesData.rpg.skills[num] = skills.find((x) =>
           x.name.startsWith(skill),
         );
+        friend.save();
+        return { reaction: 'love' };
+      }
+    }
+    if (msg.includes(['giveCoin'])) {
+      const id = /\w{10,}/.exec(msg.extractedText)?.[0];
+      const num = /\s(\d+)\s/.exec(msg.extractedText)?.[1];
+      if (id && num) {
+        const friend = this.ai.lookupFriend(id);
+        if (friend == null) return { reaction: ':neofox_approve:' };
+        friend.doc.perModulesData.rpg.coin =
+          (friend.doc.perModulesData.rpg.coin ?? 0) + parseInt(num);
+        friend.save();
+        return { reaction: 'love' };
+      }
+    }
+    if (msg.includes(['setCoin'])) {
+      const id = /\w{10,}/.exec(msg.extractedText)?.[0];
+      const num = /\s(\d+)\s/.exec(msg.extractedText)?.[1];
+      if (id && num) {
+        const friend = this.ai.lookupFriend(id);
+        if (friend == null) return { reaction: ':neofox_approve:' };
+        friend.doc.perModulesData.rpg.coin = parseInt(num);
         friend.save();
         return { reaction: 'love' };
       }
@@ -726,7 +773,7 @@ export default class extends Module {
 
     let trueDmg = 0;
 
-    // 炎属性剣攻撃
+    // 炎属性妖術
     if (skillEffects.fire) {
       trueDmg = Math.ceil(data.lv * skillEffects.fire);
     }
@@ -865,11 +912,7 @@ export default class extends Module {
 
     const isMaxLevel = data.lv >= rpgData.maxLv;
 
-    let needCoin = 10;
-    if (rpgData.maxLv - data.lv >= 200) needCoin -= 1;
-    if (rpgData.maxLv - data.lv >= 150) needCoin -= 2;
-    if (rpgData.maxLv - data.lv >= 100) needCoin -= 2;
-    if (rpgData.maxLv - data.lv >= 50) needCoin -= 2;
+    let needCoin = 2;
 
     // プレイ済でないかのチェック
     if (data.lastPlayedAt === nowTimeStr || data.lastPlayedAt === nextTimeStr) {
@@ -1008,7 +1051,7 @@ export default class extends Module {
     /** 現在の敵と戦ってるターン数。 敵がいない場合は1 */
     let count = data.count ?? 1;
 
-    // 修行モード（エンドレスモード）のフラグ
+    // 旅モード（エンドレスモード）のフラグ
     if (
       msg.includes(
         Array.isArray(serifs.rpg.command.journey)
@@ -1017,7 +1060,7 @@ export default class extends Module {
       ) &&
       !aggregateTokensEffects(data).autoJournal
     ) {
-      // 現在戦っている敵がいない場合で修行モード指定がある場合はON
+      // 現在戦っている敵がいない場合で旅モード指定がある場合はON
       if (!data.enemy || count === 1 || data.endressFlg) {
         data.endressFlg = true;
       } else {
@@ -1027,7 +1070,7 @@ export default class extends Module {
         };
       }
     } else {
-      // 現在戦っている敵がいない場合で修行モード指定がない場合はOFF
+      // 現在戦っている敵がいない場合で旅モード指定がない場合はOFF
       if (!data.enemy || count === 1) {
         data.endressFlg = false;
       }
@@ -1128,6 +1171,8 @@ export default class extends Module {
     let playerMaxHp =
       100 + Math.min(lv * 3, 765) + Math.floor((data.defMedal ?? 0) * 13.4);
 
+    if (!data.totalResistDmg) data.totalResistDmg = 0;
+
     // 敵情報
     if (!data.enemy || count === 1) {
       // 新しい敵
@@ -1158,8 +1203,8 @@ export default class extends Module {
             filteredEnemys[Math.floor(filteredEnemys.length * Math.random())];
         }
       } else {
-        // 修行モード（エンドレスモード）
-        // 倒す敵がいなくてこのモードに入った場合、修行モード任意入場フラグをOFFにする
+        // 旅モード（エンドレスモード）
+        // 倒す敵がいなくてこのモードに入った場合、旅モード任意入場フラグをOFFにする
         if (!filteredEnemys.length) {
           if (!data.allClear) {
             data.allClear = lv - 1;
@@ -1733,7 +1778,7 @@ export default class extends Module {
         ? enemyMaxHp * data.enemy.maxdmg
         : undefined;
 
-      // 土属性剣攻撃
+      // 土属性妖術
       if (skillEffects.dart && isBattle && isPhysical && maxdmg) {
         buff += 1;
         message += serifs.rpg.skill.dart + '\n';
@@ -1745,7 +1790,7 @@ export default class extends Module {
 
       let trueDmg = 0;
 
-      // 炎属性剣攻撃
+      // 炎属性妖術
       if (skillEffects.fire && isBattle && isPhysical) {
         buff += 1;
         message += serifs.rpg.skill.fire + '\n';
@@ -1755,7 +1800,19 @@ export default class extends Module {
         atk = atk + Math.min(lv, 255) * 3.75 * skillEffects.fire;
       }
 
-      // 毒属性剣攻撃
+      if (skillEffects.guardAtkUp && data.totalResistDmg >= 300) {
+        buff += 1;
+        const totalResistDmg = Math.min(data.totalResistDmg, 1200);
+        const guardAtkUpX = [0, 1, 2.4, 4.8, 8, 8];
+        message +=
+          serifs.rpg.skill.guardAtkUp(Math.floor(totalResistDmg / 300)) + '\n';
+        atk +=
+          def *
+          (skillEffects.guardAtkUp *
+            guardAtkUpX[Math.floor(totalResistDmg / 300)]);
+      }
+
+      // 毒属性妖術
       if (skillEffects.weak && count > 1) {
         if (isBattle && isPhysical) {
           buff += 1;
@@ -1881,11 +1938,24 @@ export default class extends Module {
             enemyAtk,
             rng * defDmgX,
           );
+          const normalDmg = getEnemyDmg(
+            data,
+            lv * 3.75,
+            tp,
+            count,
+            crit ? critDmg : false,
+            enemyAtk,
+            rng,
+          );
+
           // ダメージが負けるほど多くなる場合は、先制攻撃しない
           if (
             playerHp > dmg ||
             (count === 3 && data.enemy.fire && (data.thirdFire ?? 0) <= 2)
           ) {
+            if (normalDmg > dmg) {
+              data.totalResistDmg += normalDmg - dmg;
+            }
             playerHp -= dmg;
             message +=
               (crit
@@ -2007,10 +2077,30 @@ export default class extends Module {
         if (data.enemy.name !== endressEnemy(data).name) {
           message += '\n' + data.enemy.winmsg + '\n\n' + serifs.rpg.win;
         } else {
-          message +=
-            '\n' +
-            data.enemy.winmsg +
-            (data.endressFlg ? '\n' + serifs.rpg.journey.win : '');
+          if ((data.endress ?? 0) === 99 && (data.maxEndress ?? -1) < 99) {
+            message += '\n' + serifs.rpg.allStageClear;
+            if (!data.items) data.items = [];
+            data.items.push({
+              name: '長き旅の思い出',
+              limit: (data) => true,
+              desc: '長い旅をした証です',
+              price: 1,
+              type: 'token',
+              effect: { journeyAllClear: true },
+            });
+            data.journeyClearStats = {
+              lv: data.lv,
+              skill: data.skill,
+              atk: data.atk,
+              def: data.def,
+            };
+            data.coin += 1000;
+          } else {
+            message +=
+              '\n' +
+              data.enemy.winmsg +
+              (data.endressFlg ? '\n' + serifs.rpg.journey.win : '');
+          }
           if ((data.endress ?? 0) > (data.maxEndress ?? -1))
             data.maxEndress = data.endress;
           data.endress = (data.endress ?? 0) + 1;
@@ -2041,11 +2131,12 @@ export default class extends Module {
         data.ehp = 103 + lv * 3 + (data.winCount ?? 0) * 5;
         data.maxTp = 0;
         data.fireAtk = 0;
+        data.totalResistDmg = 0;
         break;
       } else {
         let enemyAtkX = 1;
         // 攻撃後発動スキル効果
-        // 氷属性剣攻撃
+        // 氷属性妖術
         if (
           isBattle &&
           isPhysical &&
@@ -2059,7 +2150,7 @@ export default class extends Module {
           // 非戦闘時は氷の効果はないが、防御に還元される
           def = def * (1 + (skillEffects.ice ?? 0));
         }
-        // 光属性剣攻撃
+        // 光属性妖術
         if (
           isBattle &&
           isPhysical &&
@@ -2073,7 +2164,7 @@ export default class extends Module {
           // 非戦闘時は光の効果はないが、防御に還元される
           def = def * (1 + (skillEffects.light ?? 0) * 0.5);
         }
-        // 闇属性剣攻撃
+        // 闇属性妖術
         if (
           data.enemy.spd &&
           data.enemy.spd >= 2 &&
@@ -2134,6 +2225,18 @@ export default class extends Module {
               enemyAtk,
               rng * defDmgX * enemyAtkX,
             );
+            const normalDmg = getEnemyDmg(
+              data,
+              lv * 3.75,
+              tp,
+              count,
+              crit ? critDmg : false,
+              enemyAtk,
+              rng,
+            );
+            if (normalDmg > dmg) {
+              data.totalResistDmg += normalDmg - dmg;
+            }
             playerHp -= dmg;
             message +=
               (crit
@@ -2196,24 +2299,30 @@ export default class extends Module {
               message += '\n' + data.enemy.losemsg + '\n\n' + serifs.rpg.lose;
               data.revenge = data.enemy.name;
             } else {
-              const minusStage = Math.min(
-                Math.ceil((data.endress ?? 0) / 2),
-                3 -
-                  ((data.endress ?? 0) > (data.maxEndress ?? -1)
-                    ? 0
-                    : (data.endress ?? 0) >= (data.maxEndress ?? -1) / 2
-                      ? 1
-                      : 2),
-              );
-              message +=
-                '\n' +
-                data.enemy.losemsg +
-                (minusStage ? `\n` + serifs.rpg.journey.lose(minusStage) : '');
-              if ((data.endress ?? 0) - 1 > (data.maxEndress ?? -1))
-                data.maxEndress = data.endress - 1;
-              data.endress = (data.endress ?? 0) - minusStage;
+              if ((data.maxEndress ?? -1) < 99) {
+                const minusStage = Math.min(
+                  Math.ceil((data.endress ?? 0) / 2),
+                  3 -
+                    ((data.endress ?? 0) > (data.maxEndress ?? -1)
+                      ? 0
+                      : (data.endress ?? 0) >= (data.maxEndress ?? -1) / 2
+                        ? 1
+                        : 2),
+                );
+                message +=
+                  '\n' +
+                  data.enemy.losemsg +
+                  (minusStage
+                    ? `\n` + serifs.rpg.journey.lose(minusStage)
+                    : '');
+                if ((data.endress ?? 0) - 1 > (data.maxEndress ?? -1))
+                  data.maxEndress = data.endress - 1;
+                data.endress = (data.endress ?? 0) - minusStage;
+              } else {
+                message += '\n' + data.enemy.losemsg;
+              }
             }
-            // これが任意に入った修行モードだった場合は、各種フラグをリセットしない
+            // これが任意に入った旅モードだった場合は、各種フラグをリセットしない
             if (!data.endressFlg) {
               data.streak = 0;
               data.clearEnemy = [];
@@ -2233,6 +2342,7 @@ export default class extends Module {
           data.ehp = 103 + lv * 3 + (data.winCount ?? 0) * 5;
           data.maxTp = 0;
           data.fireAtk = 0;
+          data.totalResistDmg = 0;
           break;
         } else {
           // 決着がつかない場合
@@ -2316,6 +2426,26 @@ export default class extends Module {
       for (const _skill of data.skills as Skill[]) {
         const skill = skills.find((x) => x.name === _skill.name) ?? _skill;
 
+        if (
+          !data.checkFreeDistributed &&
+          data.skills?.length === 5 &&
+          (data.totalRerollOrb ?? 0) === (data.rerollOrb ?? 0) &&
+          !data.freeDistributed &&
+          countDuplicateSkillNames(data.skills) === 0 &&
+          data.skills.every((x) => x.name !== '分散型')
+        ) {
+          const moveToSkill = skills.find((x) => x.name === '分散型');
+          if (moveToSkill) {
+            oldSkillName = data.skills[4].name;
+            data.skills[4] = moveToSkill;
+            data.freeDistributed = true;
+            addMessage +=
+              `\n` + serifs.rpg.moveToSkill(oldSkillName, moveToSkill.name);
+          }
+        } else {
+          if (!data.checkFreeDistributed) data.checkFreeDistributed = true;
+        }
+
         if (skill.unique && uniques.has(skill.unique)) {
           oldSkillName = skill.name;
           data.skills = data.skills.filter(
@@ -2344,7 +2474,19 @@ export default class extends Module {
 
     if ((data.skills ?? []).length < skillCounts) {
       if (!data.skills) data.skills = [];
-      const skill = getSkill(data);
+      let skill;
+      if (
+        (data.skills ?? []).length === 4 &&
+        skillCounts === 5 &&
+        countDuplicateSkillNames(data.skills) === 0 &&
+        data.skills.every((x) => x.name !== '分散型')
+      ) {
+        skill = skills.find((x) => x.name === '分散型');
+        data.freeDistributed = true;
+        data.checkFreeDistributed = true;
+      } else {
+        skill = getSkill(data);
+      }
       data.skills.push(skill);
       if (oldSkillName) {
         addMessage += `\n` + serifs.rpg.moveToSkill(oldSkillName, skill.name);
@@ -2452,6 +2594,15 @@ export default class extends Module {
       message += serifs.rpg.reachMaxLv;
     }
 
+    if (
+      data.skills?.length >= 5 &&
+      !data.items.filter((x) => x.name === '裏ショップ入場の札').length &&
+      data.coin >= 99 &&
+      data.clearHistory.includes(':aine_youshou:')
+    ) {
+      message += serifs.rpg.shop2remind;
+    }
+
     // 色解禁確認
     const newColorData = colors.map((x) => x.unlock(data));
     /** 解禁した色 */
@@ -2467,7 +2618,6 @@ export default class extends Module {
 
     msg.reply(`<center>${message}</center>`, {
       cw,
-      visibility: 'specified',
     });
 
     return {

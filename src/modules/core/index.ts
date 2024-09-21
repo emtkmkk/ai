@@ -682,7 +682,8 @@ export default class extends Module {
   @autobind
   private getStatus(msg: Message): boolean {
     if (!msg.text) return false;
-    if (!msg.text.includes('ステータス')) return false;
+    if (!msg.text.includes('ステータス') && !msg.includes(['status']))
+      return false;
 
     const lovep = msg.friend.love || 0;
     let love = '';
@@ -718,7 +719,7 @@ export default class extends Module {
               : ''),
           `  ${serifs.rpg.status.enemy} : ${
             msg.friend.doc.perModulesData.rpg.enemy
-              ? msg.friend.doc.perModulesData.rpg.enemy?.short ?? ''
+              ? (msg.friend.doc.perModulesData.rpg.enemy?.short ?? '')
               : '探索中'
           }`,
           `  ${serifs.rpg.status.lv} : ${msg.friend.doc.perModulesData.rpg.lv ?? 1}`,

@@ -13,6 +13,7 @@ import {
   Skill,
   skillPower,
   aggregateSkillsEffects,
+  countDuplicateSkillNames,
 } from './skills';
 import { getVal, initializeData, deepClone, numberCharConvert } from './utils';
 import 藍 from '@/ai';
@@ -115,6 +116,8 @@ const ultimateEffect: SkillEffect = {
   sevenFever: 0.1,
   charge: 0.1,
   heavenOrHell: 0.02,
+  haisuiAtkUp: 0.004,
+  haisuiCritUp: 0.02,
 };
 
 const resetCantRerollSkill = (data) => {
@@ -132,6 +135,45 @@ const resetCantRerollSkill = (data) => {
 };
 
 export const shop2Items: ShopItem[] = [
+  ...skills
+    .filter((x) => x.name === '分散型')
+    .map(
+      (x): Item => ({
+        name: `${x.name}の教本`,
+        limit: (data) =>
+          !data.freeDistributed &&
+          !data.nextSkill &&
+          countDuplicateSkillNames(data.skills) === 0 &&
+          data.skills.every((x) => x.name !== '分散型'),
+        price: (data, rnd, ai) => 1,
+        desc: `購入すると次のスキル変更時に必ず「${x.name}」${x.desc ? `（${x.desc}）` : ''}を習得できる（複製時は対象外）`,
+        type: 'item',
+        effect: (data) => {
+          data.freeDistributed = true;
+          data.nextSkill = x.name;
+        },
+        always: true,
+      }),
+    ),
+  ...skills
+    .filter((x) => x.name === '分散型')
+    .map(
+      (x): Item => ({
+        name: `${x.name}の教本`,
+        limit: (data) =>
+          data.freeDistributed &&
+          !data.nextSkill &&
+          countDuplicateSkillNames(data.skills) === 0 &&
+          data.skills.every((x) => x.name !== '分散型'),
+        price: (data, rnd, ai) => skillPrice(ai, x.name, rnd),
+        desc: `購入すると次のスキル変更時に必ず「${x.name}」${x.desc ? `（${x.desc}）` : ''}を習得できる（複製時は対象外）`,
+        type: 'item',
+        effect: (data) => {
+          data.nextSkill = x.name;
+        },
+        always: true,
+      }),
+    ),
   {
     name: `お守りを捨てる`,
     limit: (data) => data.items.filter((x) => x.type === 'amulet').length,
@@ -184,7 +226,7 @@ export const shop2Items: ShopItem[] = [
     effect: { enemyBuff: 1 },
     durability: 1,
     short: '苦',
-    isUsed: (data) => data.enemy && data.clearHistory.includes(data.enemy),
+    isUsed: (data) => true,
     isMinusDurability: (data) => data.streak < 1,
     always: true,
   } as AmuletItem,
@@ -420,6 +462,19 @@ export const shop2Items: ShopItem[] = [
     always: true,
   },
   {
+    name: '幸運の力の種A',
+    limit: (data) => ((data.def % 10) - 7 + 10) % 10 !== 0,
+    desc: '購入時、防御の下1桁が7になるように防御から移動',
+    price: (data) => ((data.def % 10) - 7 + 10) % 10,
+    type: 'item',
+    effect: (data) => {
+      data.atk = (data.atk ?? 0) + (((data.def % 10) - 7 + 10) % 10);
+      data.def = (data.def ?? 0) - (((data.def % 10) - 7 + 10) % 10);
+    },
+    infinite: true,
+    always: true,
+  },
+  {
     name: '高級力の種',
     desc: '購入時、防御2%をパワーに移動',
     price: 5,
@@ -492,6 +547,19 @@ export const shop2Items: ShopItem[] = [
     effect: (data) => {
       data.atk = (data.atk ?? 0) - ((10 - (data.def % 10) + 7) % 10);
       data.def = (data.def ?? 0) + ((10 - (data.def % 10) + 7) % 10);
+    },
+    infinite: true,
+    always: true,
+  },
+  {
+    name: '幸運の守りの種A',
+    limit: (data) => ((data.atk % 10) - 7 + 10) % 10 !== 0,
+    desc: '購入時、パワーの下1桁が7になるようにパワーから移動',
+    price: (data) => ((data.atk % 10) - 7 + 10) % 10,
+    type: 'item',
+    effect: (data) => {
+      data.def = (data.def ?? 0) + (((data.atk % 10) - 7 + 10) % 10);
+      data.atk = (data.atk ?? 0) - (((data.atk % 10) - 7 + 10) % 10);
     },
     infinite: true,
     always: true,

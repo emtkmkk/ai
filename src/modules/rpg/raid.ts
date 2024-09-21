@@ -454,7 +454,7 @@ function finish(raid: Raid) {
       sortAttackers[Math.floor(Math.random() * sortAttackers.length)].user;
     const bonus = Math.ceil((sortAttackers.length / 5) * scoreRaw);
     results.push(
-      '\nラッキー！: ' + acct(luckyUser) + '\nもこコイン+' + bonus + '枚',
+      '\nラッキー！: ' + acct(luckyUser) + '\nキレイなどんぐり+' + bonus + '個',
     );
     const friend = ai.lookupFriend(luckyUser.id);
     if (!friend) return;
@@ -765,7 +765,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     message += result.message + `\n`;
   }
   // 数取りボーナスに上限がついたため、その分の補填を全員に付与
-  // ID毎に決められた得意曜日に従って最大100%分のステータスバフ
+  // ID毎に決められた得意曜日に従って最大75%分のステータスバフ
   const day = new Date().getDay();
   let bonusX =
     (day === 6 || day === 0
@@ -781,14 +781,14 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
             day,
         ) %
           5) *
-        0.25) +
+        0.1875) +
     (Math.random() < 0.01 ? 0.3 : 0) +
     (Math.random() < 0.01 ? 0.3 : 0);
   while (Math.random() < 0.01) {
     bonusX += 0.3;
   }
-  atk = Math.round(atk * (0.5 + bonusX));
-  def = Math.round(def * (0.5 + bonusX));
+  atk = Math.round(atk * (0.75 + bonusX));
+  def = Math.round(def * (0.75 + bonusX));
 
   /** 敵の最大HP */
   let enemyMaxHp = 100000;
@@ -974,6 +974,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
   const plusActionX = 5;
 
+  let totalResistDmg = 0;
+
   for (let actionX = 0; actionX < plusActionX + 1; actionX++) {
     /** バフを得た数。行数のコントロールに使用 */
     let buff = 0;
@@ -1020,6 +1022,18 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
         buff += 1;
         message += serifs.rpg.skill.berserk(berserkDmg) + '\n';
       }
+    }
+
+    if (skillEffects.guardAtkUp && totalResistDmg >= 300) {
+      buff += 1;
+      totalResistDmg = Math.min(totalResistDmg, 1200);
+      const guardAtkUpX = [0, 1, 2.4, 4.8, 8, 8];
+      message +=
+        serifs.rpg.skill.guardAtkUp(Math.floor(totalResistDmg / 300)) + '\n';
+      atk +=
+        def *
+        (skillEffects.guardAtkUp *
+          guardAtkUpX[Math.floor(totalResistDmg / 300)]);
     }
 
     // 毒属性剣攻撃
@@ -1449,7 +1463,18 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
           rng * defDmgX,
           getVal(enemy.atkx, [count]),
         );
+        let normalDmg = getEnemyDmg(
+          _data,
+          lv * 3.5,
+          tp,
+          1,
+          enemy.alwaysCrit ? 1 : false,
+          enemyAtk,
+          rng,
+          getVal(enemy.atkx, [count]),
+        );
         let addMessage = '';
+        const rawDmg = dmg;
         if (sevenFever) {
           const minusDmg = dmg - Math.max(dmg - sevenFever, 0);
           dmg = Math.max(dmg - sevenFever, 0);
@@ -1462,6 +1487,11 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
           playerHp > dmg ||
           (count === 3 && enemy.fire && (data.thirdFire ?? 0) <= 2)
         ) {
+          if (normalDmg > rawDmg) {
+            totalResistDmg += normalDmg - rawDmg;
+          }
+          if (aggregateTokensEffects(data).showRandom)
+            message += `⚂ ${Math.floor(rng * 100)}%\n`;
           playerHp -= dmg;
           message +=
             (crit ? `**${enemy.defmsg(dmg)}**` : enemy.defmsg(dmg)) + '\n';
@@ -1702,7 +1732,20 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
             rng * defDmgX * enemyAtkX,
             getVal(enemy.atkx, [count]),
           );
+          let normalDmg = getEnemyDmg(
+            _data,
+            lv * 3.5,
+            tp,
+            1,
+            enemy.alwaysCrit ? 1 : false,
+            enemyAtk,
+            rng,
+            getVal(enemy.atkx, [count]),
+          );
           let addMessage = '';
+          if (normalDmg > dmg) {
+            totalResistDmg += normalDmg - dmg;
+          }
           if (sevenFever) {
             const minusDmg = dmg - Math.max(dmg - sevenFever, 0);
             dmg = Math.max(dmg - sevenFever, 0);
@@ -1793,6 +1836,16 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     warriorTotalDmg += dmg;
   }
   if (playerHp > 0) {
+    if (skillEffects.guardAtkUp && totalResistDmg >= 300) {
+      totalResistDmg = Math.min(totalResistDmg, 1200);
+      const guardAtkUpX = [0, 1, 2.4, 4.8, 8, 8];
+      const heal = Math.round(
+        (playerMaxHp - playerHp) *
+          (skillEffects.guardAtkUp *
+            guardAtkUpX[Math.floor(totalResistDmg / 300)]),
+      );
+      playerHp += heal;
+    }
     const enemySAtk = Math.max(
       (_enemyAtk / (lv * 3.5)) * (getVal(enemy.atkx, [6]) ?? 3),
       0.01,
@@ -1887,6 +1940,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
     ) {
       const upBonus = Math.ceil(skillEffects.statusBonus / 2);
       for (let i = 0; i < upBonus; i++) {
+        totalUp += 1;
         if (Math.random() < 0.5) atkUp += 1;
       }
     }

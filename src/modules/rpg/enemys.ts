@@ -1037,6 +1037,7 @@ export const enemys: Enemy[] = [
     limit: (data, friend) =>
       (data.winCount ?? 0) >= 15 &&
       ((friend.love ?? 0) >= 500 ||
+        data.lv > 255 ||
         aggregateTokensEffects(data).appearStrongBoss) &&
       !data.clearHistory.includes(':aine_youshou:') &&
       data.clearHistory.includes(':aine_oko:'),

@@ -170,6 +170,7 @@ export const shopItems: ShopItem[] = [
     limit: (data) =>
       !data.items.filter((x) => x.name === '穢根くんの身分証の写し').length &&
       data.lv >= 99 &&
+      data.lv <= 255 &&
       !data.clearHistory.includes(':aine_youshou:'),
     desc: '穢根くんの本名が書かれている 所持している間、穢根くんが本気で怒ります',
     price: 5,
@@ -576,7 +577,7 @@ export const shopItems: ShopItem[] = [
     effect: { enemyBuff: 1 },
     durability: 1,
     short: '苦',
-    isUsed: (data) => data.enemy && data.clearHistory.includes(data.enemy),
+    isUsed: (data) => true,
     isMinusDurability: (data) => data.streak < 1,
   } as AmuletItem,
   {
@@ -1017,6 +1018,8 @@ export function shopContextHook(
       reaction: 'hmm',
     };
   }
+
+  if (msg.extractedText.length >= 3) return false;
 
   for (let i = 0; i < data.showShopItems.length; i++) {
     const str = numberCharConvert(i + 1);
