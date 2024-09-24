@@ -162,7 +162,7 @@ export default class extends Module {
 					}
 
 					let chart;
-					if (!friend.doc.user.host || config.forceRemoteChartPostCount) {
+					if (config.forceRemoteChartPostCount) {
 						// ユーザの投稿数を取得
 						chart = await this.ai.api('charts/user/notes', {
 							span: 'day',
