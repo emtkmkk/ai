@@ -117,13 +117,16 @@ export default class extends Module {
 				return { reaction: ":mk_hotchicken:" };
 			}
 			let message = "とリンクしているアカウント一覧\n\n";
-			// ユーザの投稿数を取得
-			const chart = await this.ai.api('charts/user/notes', {
-				span: 'day',
-				limit: 2,
-				userId: msg.userId,
-				addInfo: true,
-			});
+			let chart;
+			if (!msg.user.host || config.forceRemoteChartPostCount) {
+				// ユーザの投稿数を取得
+				chart = await this.ai.api('charts/user/notes', {
+					span: 'day',
+					limit: 2,
+					userId: msg.userId,
+					addInfo: true,
+				});
+			}
 
 			let totalPostCount = 0;
 			// チャートがない場合
@@ -158,12 +161,15 @@ export default class extends Module {
 						message += "\n" + acct(friend.doc.user) + " 未リンク（リンク先のアカウントから" + acct(msg.user) + "をリンクしてください）";
 					}
 
-					// ユーザの投稿数を取得
-					const chart = await this.ai.api('charts/user/notes', {
-						span: 'day',
-						limit: 2,
-						userId: userId,
-					});
+					let chart;
+					if (!friend.doc.user.host || config.forceRemoteChartPostCount) {
+						// ユーザの投稿数を取得
+						chart = await this.ai.api('charts/user/notes', {
+							span: 'day',
+							limit: 2,
+							userId: userId,
+						});
+					}
 
 					// チャートがない場合
 					if (!chart?.diffs) {
@@ -188,7 +194,7 @@ export default class extends Module {
 					}
 				}
 			}
-			if (chart.add) {
+			if (chart?.add) {
 				const userstats = chart.add.filter((x) => !msg.friend.doc.linkedAccounts?.includes(x.id));
 				let postCount = 0;
 				for (const userstat of userstats) {
