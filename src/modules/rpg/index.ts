@@ -1822,7 +1822,7 @@ export default class extends Module {
 
 		msg.reply(`<center>${message}</center>`, {
 			cw,
-			visibility: config.rpgReplyVisibility
+			...(config.rpgReplyVisibility ? { visibility: config.rpgReplyVisibility } : {})
 		});
 
 		return {
