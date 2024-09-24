@@ -1,3 +1,5 @@
+import { StringLiteral } from "typescript";
+
 type Config = {
 	host: string;
 	i: string;
@@ -13,11 +15,40 @@ type Config = {
 	mecabDic?: string;
 	mecabCustom?: string;
 	memoryDir?: string;
+	/* インスタンス名 */
+	instanceName?: string;
+	/* 全公開での投稿を禁止？ */
+	postNotPublic?: boolean;
+	/* ランダムポストでローカルのみを使用？ */
+	randomPostLocalOnly?: boolean;
+	/* RPGでの主人公の名前 */
+	rpgHeroName?: string;
+	/* RPGでの通貨の名前 */
+	rpgCoinName?: string;
+	/* RPGでの通貨の短縮名 */
+	rpgCoinShortName?: string;
+	/* RPGで返信必須にする？ */
+	rpgReplyRequired?: boolean;
+	/* RPGの返信の公開範囲 */
+	rpgReplyVisibility?: string;
+	/* RPG（レイド）の返信の公開範囲 */
+	rpgRaidReplyVisibility?: string;
 };
 
 const config = require('../config.json');
 
 config.wsUrl = config.host.replace('http', 'ws');
 config.apiUrl = config.host + '/api';
+
+// 設定が存在しない場合はデフォルトを設定
+if (!config.instanceName) config.instanceName = "もこきー";
+if (!config.postHomeOnly !== false) config.postHomeOnly = true;
+if (!config.randomPostLocalOnly !== false) config.randomPostLocalOnly = true;
+if (!config.rpgHeroName) config.rpgHeroName = "もこチキ";
+if (!config.rpgCoinName) config.rpgCoinName = "もこコイン";
+if (!config.rpgCoinShortName) config.rpgCoinShortName = "コイン";
+if (config.rpgReplyRequired !== false) config.rpgReplyRequired = true;
+if (!config.rpgReplyVisibility) config.rpgReplyVisibility = "specified";
+if (!config.rpgRaidReplyVisibility) config.rpgRaidReplyVisibility = "specified";
 
 export default config as Config;

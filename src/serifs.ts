@@ -1,5 +1,7 @@
 // せりふ
 
+import config from "./config";
+
 export default {
 	core: {
 		setNameOk: name => `わかりました。これからはあなたのことを「${name}」と呼びます！`,
@@ -198,7 +200,7 @@ export default {
 	},
 
 	welcome: {
-		welcome: (acct) => `${acct}さん\n**もこきーへようこそ！**\nわたしはもこもこチキン、このサーバーのマスコットみたいな存在です！\nお暇な時に挨拶していただいたり、呼び名を教えていただいたり、占いや迷路などで遊んでくださったりしてくれれば嬉しいです！\nこれからよろしくお願いします！\n\nこのサーバーには独自機能が沢山あるので、気になったらお知らせの中にあるもこきーTipsを読んでみるといいかもです！\nなにか分からないことや嫌なこと、不便なことがあれば、気軽にもこきーあどみんに声をかけてください！\nそれでは楽しいもこきーライフを～ :mk_hi:`,
+		welcome: (acct) => `${acct}さん\n**${config.instanceName}へようこそ！**\nわたしはもこもこチキン、このサーバーのマスコットみたいな存在です！\nお暇な時に挨拶していただいたり、呼び名を教えていただいたり、占いや迷路などで遊んでくださったりしてくれれば嬉しいです！\nこれからよろしくお願いします！\n\nこのサーバーには独自機能が沢山あるので、気になったらお知らせの中にある${config.instanceName}Tipsを読んでみるといいかもです！\nなにか分からないことや嫌なこと、不便なことがあれば、気軽に${config.instanceName}あどみんに声をかけてください！\nそれでは楽しい${config.instanceName}ライフを～ :mk_hi:`,
 		kiriban: (count, name) => `${name ? `${name}さん、` : ""}${count}投稿 おめでとうございます🎉`
 	},
 
@@ -425,8 +427,8 @@ export default {
 	},
 
 	chart: {
-		post: '今日のもこきーの統計のグラフです！\n今日も一日、お疲れ様でした！',
-		nenmatuPost: '今日のもこきーの統計のグラフです！\nみなさん、今年もお疲れ様でした！来年もよろしくお願いします！',
+		post: `今日の${config.instanceName}の統計のグラフです！\n今日も一日、お疲れ様でした！`,
+		nenmatuPost: `今日の${config.instanceName}の統計のグラフです！\nみなさん、今年もお疲れ様でした！来年もよろしくお願いします！`,
 		foryou: '描きました！'
 	},
 
@@ -437,12 +439,12 @@ export default {
 
 	rpg: {
 		remind: (me, hours) => `<center>$[x2 ${me}]\n\n${hours}時です！\nRPGモードの時間ですよ～\n\n毎日3回プレイして、\n私を強くしてください！\n\n「RPG」と話しかけてね\n（ここに返信でも大丈夫ですよ！）</center>`,
-		intro: (enemyName, time) => `<center>$[x3 ${enemyName}]\n\nすごく大きい敵がやってきました！\n\nTLのみなさんで倒しましょう！\n\nこの投稿に「参加」と返信して、\nあなたのもこチキと戦いましょう！\n(RPGモードのプレイが1回以上必要です)\n\n$[unixtime.countdown ${time}]</center>`,
+		intro: (enemyName, time) => `<center>$[x3 ${enemyName}]\n\nすごく大きい敵がやってきました！\n\nTLのみなさんで倒しましょう！\n\nこの投稿に「参加」と返信して、\nあなたの${config.rpgHeroName}と戦いましょう！\n(RPGモードのプレイが1回以上必要です)\n\n$[unixtime.countdown ${time}]</center>`,
 		onagare: (enemyName) => `${enemyName}は暴れまわったのち、帰っていきました……`,
 		finishCw: (enemyName) => `${enemyName}討伐戦の結果発表です！`,
-		finish: (enemyName, score) => `みなさんのお陰で${enemyName}を撃退できました！\nありがとうございます！\nお礼にみなさんにもこコインを${score}枚プレゼントします！\n「RPG ショップ」で買い物してくださいね！\nまたお願いします！`,
-		finalAttack: (dmg) => `もこチキの全力の一撃！\n${dmg}ポイントのダメージを与えた！`,
-		timeUp: (enemyName, maxHp) => `${enemyName}の最後の一撃！\nもこチキは${"9".repeat(String(maxHp).length)}ポイントのダメージ！`,
+		finish: (enemyName, score) => `みなさんのお陰で${enemyName}を撃退できました！\nありがとうございます！\nお礼にみなさんに${config.rpgCoinName}を${score}枚プレゼントします！\n「RPG ショップ」で買い物してくださいね！\nまたお願いします！`,
+		finalAttack: (dmg) => `${config.rpgHeroName}の全力の一撃！\n${dmg}ポイントのダメージを与えた！`,
+		timeUp: (enemyName, maxHp) => `${enemyName}の最後の一撃！\n${config.rpgHeroName}は${"9".repeat(String(maxHp).length)}ポイントのダメージ！`,
 		totalDmg: (dmg) => `合計 ${dmg.toLocaleString()} ダメージを与えた！`,
 		hiScore: (old: number, dmg: number) => `自己ベスト更新！\n${old.toLocaleString()} -> **${dmg.toLocaleString()}**`,
 		GlobalHiScore: (old: number, date, dmg: number) => `ベストダメージ更新！\n${old.toLocaleString()}(${date}) -> **${dmg.toLocaleString()}**`,
@@ -456,7 +458,7 @@ export default {
 			atk: "パワー",
 			def: "防御",
 			spd: "行動回数",
-			coin: "もこコイン",
+			coin: config.rpgCoinName,
 			skill: "スキル",
 			post: "投稿数",
 			pen: "防御貫通",
@@ -476,8 +478,8 @@ export default {
 			b: "連続RPGボーナス（弱）！\nパワー・防御が小アップした！",
 			c: "毎日RPGボーナス！\nパワー・防御が小アップした！",
 		},
-		super: (me, num = 2) => `$[x2 ${me}]\n\n**もこチキは覚醒状態になった！**\n行動回数+**${num}**！\nパワー・防御が**超**アップ！`,
-		spdUp: "もこチキは体の調子が良さそうだ！\n行動回数+1！",
+		super: (me, num = 2) => `$[x2 ${me}]\n\n**${config.rpgHeroName}は覚醒状態になった！**\n行動回数+**${num}**！\nパワー・防御が**超**アップ！`,
+		spdUp: `${config.rpgHeroName}は体の調子が良さそうだ！\n行動回数+1！`,
 		skill: {
 			firstItem: "スキル「準備を怠らない」発動！\n",
 			spdDown: (enemyName) => `スキル「闇属性剣攻撃」発動！\n${enemyName}の周辺に強重力領域が発生した！\n${enemyName}の行動速度が低下した！`,
@@ -492,40 +494,40 @@ export default {
 			sevenFeverRaid: `スキル「７フィーバー！」発動！\nステータスがアップ！`,
 			charge: `スキル「不運チャージ」発動！\n次回、良い事あるかも！`,
 			enemyStatusBonus: `スキル「強敵と戦うのが好き」発動！\nパワー・防御がアップした！`,
-			firstTurnResist: `スキル「油断しない」発動！\nもこチキは相手を警戒している…`,
-			tenacious: `スキル「粘り強い」発動！\nもこチキの防御がアップ！`,
+			firstTurnResist: `スキル「油断しない」発動！\n${config.rpgHeroName}は相手を警戒している…`,
+			tenacious: `スキル「粘り強い」発動！\n${config.rpgHeroName}の防御がアップ！`,
 			lowHpFood: `スキル「お腹が空いてから食べる」発動！\n`,
 			amuletBoost: `スキル「お守り整備」発動！\nお守りの耐久は減らなかった！`,
-			heaven: `スキル「天国か地獄か」発動！\nもこチキのステータスがアップ！`,
-			hell: `スキル「天国か地獄か」発動！\nもこチキのステータスがダウン…`,
+			heaven: `スキル「天国か地獄か」発動！\n${config.rpgHeroName}のステータスがアップ！`,
+			hell: `スキル「天国か地獄か」発動！\n${config.rpgHeroName}のステータスがダウン…`,
 			fortune: `「しあわせのお守り」発動！`,
 			fortuneToken: `「しあわせのお札」発動！`,
-			berserk: (berserkDmg) => `「バーサクのお守り」発動！\n${berserkDmg}ポイントのダメージを受けた！\nもこチキのパワーがアップ！`,
+			berserk: (berserkDmg) => `「バーサクのお守り」発動！\n${berserkDmg}ポイントのダメージを受けた！\n${config.rpgHeroName}のパワーがアップ！`,
 			stockRandom: `謎のお守りが光り始めた……\n何かが起こったようだ。`,
-			guardAtkUp: (num) => `スキル「攻めの守勢」発動${num > 1 ? `×${num}` : ""}！\nもこチキのパワーがアップ！`
+			guardAtkUp: (num) => `スキル「攻めの守勢」発動${num > 1 ? `×${num}` : ""}！\n${config.rpgHeroName}のパワーがアップ！`
 		},
 		nurse: "$[x3 :mkck_nurse:]\n\n通りすがりのナースが現れた！\nナースは受けた傷を治療してくれた！", //この文を空白にすればナースは来なくなります
-		haisui: "もこチキは決死の覚悟をした！\nパワーが上がり、防御が下がった！",
-		endure: "もこチキは気合で耐えた！",
-		fireAtk: (enemyName) => `もこチキの追い打ち炎攻撃！\n${enemyName}が次に受けるダメージが上昇した！`,
+		haisui: `${config.rpgHeroName}は決死の覚悟をした！\nパワーが上がり、防御が下がった！`,
+		endure: `${config.rpgHeroName}は気合で耐えた！`,
+		fireAtk: (enemyName) => `${config.rpgHeroName}の追い打ち炎攻撃！\n${enemyName}が次に受けるダメージが上昇した！`,
 		win: "勝利！おめでとう！",
 		lose: ":oyoo:",
-		escape: "もこチキは戦闘から逃げた！",
-		escapeNotBattle: "もこチキは一旦諦めて別の事をするようだ。",
-		getCoin: (num) => `${num}枚のもこコインを拾った！\n「RPG ショップ」でお買い物してくださいね！`,
+		escape: `${config.rpgHeroName}は戦闘から逃げた！`,
+		escapeNotBattle: `${config.rpgHeroName}は一旦諦めて別の事をするようだ。`,
+		getCoin: (num) => `${num}枚の${config.rpgCoinName}を拾った！\n「RPG ショップ」でお買い物してくださいね！`,
 		next: "次回へ続く……",
 		nextPlay: (str) => `次回は${str}以降に遊べます。`,
 		getRerollOrb: (num) => `\n\nスキル変更珠を${num > 1 ? `${num}個` : ""}拾いました！\n「RPG スキル」と話しかけて確認してみてね！`,
-		reachMaxLv: `\n\n**Lv255到達、おめでとうございます！**\n\nもこチキの成長限界地点に達しました！\nこれから先はレベルを上げても、\nあまり能力が成長しないようになります！\nここから更に強くなるには、\nスキルやアイテムなどを工夫してみてね！`,
+		reachMaxLv: `\n\n**Lv255到達、おめでとうございます！**\n\n${config.rpgHeroName}の成長限界地点に達しました！\nこれから先はレベルを上げても、\nあまり能力が成長しないようになります！\nここから更に強くなるには、\nスキルやアイテムなどを工夫してみてね！`,
 		shop2remind: "\n\nショップに新しいアイテムが追加されたようです……\n「RPG ショップ」で確認してみましょう！",
 		forcePostCount: "周囲に不思議な力が働いている…\n投稿数ボーナスが無効になった！",
-		skillX: (num) => `$[x2 :mk_wizard:]\n\n力をそなたに与えよう……\n\n強化魔法でもこチキのスキルの\n効果が${num}倍になった！`,
+		skillX: (num) => `$[x2 :mk_wizard:]\n\n力をそなたに与えよう……\n\n強化魔法で${config.rpgHeroName}のスキルの\n効果が${num}倍になった！`,
 		draw: "あいこになった！\nお互いにダメージなし！",
-		allStageClear: "気が付いたら、ここは最初に旅を始めた場所だった。\nどうやら旅をしすぎて\n世界を1周してしまったようだ。\n\n**ステージ100クリアおめでとう！**\nもこコインを1,000枚獲得しました！\n「長き旅の思い出」を入手しました！",
+		allStageClear: `気が付いたら、ここは最初に旅を始めた場所だった。\nどうやら旅をしすぎて\n世界を1周してしまったようだ。\n\n**ステージ100クリアおめでとう！**\n${config.rpgCoinName}を1,000枚獲得しました！\n「長き旅の思い出」を入手しました！`,
 		warrior: {
 			get: "$[x2 :mk_warrior:]\n\nオレも手伝うぜ！\n\n:mk_warrior:が仲間になった！",
 			atk: (dmg) => `:mk_warrior:の攻撃！\n${dmg}ポイントのダメージ！`,
-			lose: ":mk_warrior:はもこチキを庇って倒れた！\n:mk_warrior:「あとは任せたぜ……」",
+			lose: `:mk_warrior:は${config.rpgHeroName}を庇って倒れた！\n:mk_warrior:「あとは任せたぜ……」`,
 			totalDmg: (dmg) => `（:mk_warrior: 合計 ${dmg.toLocaleString()} ダメージ）`
 		},
 		player: {
@@ -541,8 +543,8 @@ export default {
 		},
 		trial: {
 			tired: `全力を出して疲れてしまったみたいです。Lvが上がったら、もう一度試してみてください。`,
-			cw: (lv) => `もこチキは自分の力を確認するようだ。(Lv${lv})`,
-			atk: (dmg) => `もこチキは木人に攻撃！\n${dmg}ポイントのダメージ！`,
+			cw: (lv) => `${config.rpgHeroName}は自分の力を確認するようだ。(Lv${lv})`,
+			atk: (dmg) => `${config.rpgHeroName}は木人に攻撃！\n${dmg}ポイントのダメージ！`,
 			result: (totalDmg: number) => `合計${totalDmg.toLocaleString()}ポイントのダメージ！`,
 			random: (down: number, up: number) => `(ダメージ幅: ${down.toLocaleString()} ~ ${up.toLocaleString()})`,
 			best: (bestScore: number) => `(これまでのベスト: **${bestScore.toLocaleString()}**)`,
@@ -552,11 +554,11 @@ export default {
 			maxLv: "\nあなたは過去にプレイ可能だったすべてのRPG権利をプレイ済みで、取り逃したRPG権利が無いようです！\nRPGをやり忘れた時に、もう一度試してみてください。",
 			maxLv2: "\nあなたは既にLv255に到達している為、おかわりする事が出来ません！",
 			err: "\nおかわりRPGの前に通常のRPGをプレイする必要があります！",
-			buyQuestion: (num, coin: number) => `\nもこコインを${num}枚使用すると、もう1回おかわりRPGをプレイできます！\n\n消費してプレイしますか？（所持コイン数: ${coin.toLocaleString()}）\n\n「はい」または「いいえ」で返信してください！`,
+			buyQuestion: (num, coin: number) => `\n${config.rpgCoinName}を${num}枚使用すると、もう1回おかわりRPGをプレイできます！\n\n消費してプレイしますか？（所持${config.rpgCoinShortName}数: ${coin.toLocaleString()}）\n\n「はい」または「いいえ」で返信してください！`,
 			buyComp: `\nおかわりRPGがプレイ可能になりました！\nもう一度おかわりRPGを試してみてください！\n（この確認を次回からスキップしたい場合、ショップで札を購入してください！）`,
-			autoBuy: (coin: number) => `おかわりRPGのプレイ権利を\n自動購入しました！\n（残りコイン数: ${coin.toLocaleString()}）`,
+			autoBuy: (coin: number) => `おかわりRPGのプレイ権利を\n自動購入しました！\n（残り${config.rpgCoinShortName}数: ${coin.toLocaleString()}）`,
 		},
-		info: "もこチキの状況判断能力がアップ！\n今後、状況が細かく\n分析出来るようになる事があるぞ！",
+		info: `${config.rpgHeroName}の状況判断能力がアップ！\n今後、状況が細かく\n分析出来るようになる事があるぞ！`,
 		infoPercent: "%",
 		postBonusInfo: {
 			post: (num: number, bonus) => `投稿数 ${num.toLocaleString()} ステータス${bonus}%`,
@@ -583,12 +585,12 @@ export default {
 			sort: "所持スキルをソートしました！\n次回のスキル変更の際に誤った番号を指定しない様に気を付けてください！"
 		},
 		shop: {
-			welcome: (coin: number) => `:mk_lowpoly:ショップへようこそ！\n欲しい商品の数値またはアルファベットを返信してね\n（所持コイン数: ${coin.toLocaleString()}）\n`,
-			welcome2: (coin: number, orb: number) => `$[spin.y,speed=5s :mk_lowpoly:]ようこそ、裏ショップへ……\n欲しい商品の数値またはアルファベットを返信してくれ……\n（所持コイン数: ${coin.toLocaleString()}）\n（所持変更珠数: ${orb.toLocaleString()}）\n`,
-			buyItem: (itemName, coin: number) => `:mk_lowpoly:まいどあり！\n${itemName}を購入しました！\n（残りコイン数: ${coin.toLocaleString()}）`,
+			welcome: (coin: number) => `:mk_lowpoly:ショップへようこそ！\n欲しい商品の数値またはアルファベットを返信してね\n（所持${config.rpgCoinShortName}数: ${coin.toLocaleString()}）\n`,
+			welcome2: (coin: number, orb: number) => `$[spin.y,speed=5s :mk_lowpoly:]ようこそ、裏ショップへ……\n欲しい商品の数値またはアルファベットを返信してくれ……\n（所持${config.rpgCoinShortName}数: ${coin.toLocaleString()}）\n（所持変更珠数: ${orb.toLocaleString()}）\n`,
+			buyItem: (itemName, coin: number) => `:mk_lowpoly:まいどあり！\n${itemName}を購入しました！\n（残り${config.rpgCoinShortName}数: ${coin.toLocaleString()}）`,
 			buyItemOrb: (itemName, orb: number) => `:mk_lowpoly:まいどあり！\n${itemName}を購入しました！\n（残り変更珠数: ${orb.toLocaleString()}）`,
 			useItem: (itemName) => `${itemName}を使用しました！`,
-			notEnoughCoin: `:mk_lowpoly:コインが足りません！`,
+			notEnoughCoin: `:mk_lowpoly:${config.rpgCoinShortName}が足りません！`,
 			notEnoughOrb: `:mk_lowpoly:変更珠が足りません！`
 		},
 		help: {
@@ -598,13 +600,13 @@ export default {
 			trial: (num: number) => `[ RPG 木人 ]\n木人を叩いて強さを確認できますよ～\n通常のRPGとは別に、1Lvにつき1回までです！${num ? `\nこれまでのベストは${num.toLocaleString()}ダメージみたいです！` : ""}`,
 			journey: "[ RPG 旅モード ]\n敵がいない際に指定していただくと、私が旅に出ます！\n道はどんどん険しくなり、なかなか大変みたいです…\n通常のRPGと遊べる権利を共有しているみたいです！",
 			okawari1: (num) => `[ RPG おかわり ]\n1日1回、このコマンドでRPGをもう一度遊べるみたいです！\n過去にRPGをプレイし忘れた回数使えます！\n（あと${num}回使えるみたいですよ！）`,
-			okawari2: (num) => `[ RPG おかわり ]\n1日1回、このコマンドでRPGをもう一度遊べるみたいです！\nさらにもこコインを何枚か使用すれば、さらにもう1回おかわりも出来ちゃうみたいです！\n過去にRPGをプレイし忘れた回数使えます！\n（あと${num}回使えるみたいですよ！）`,
-			okawari3: (num) => `[ RPG おかわり ]\n1日1回、このコマンドでRPGをもう一度遊べるみたいです！\nさらにもこコインを何枚か使用すれば、さらにもう1回おかわりも出来ちゃうみたいです！\nLv255になるまで使えます！\n（あと${num}回使えるみたいですよ！）`,
+			okawari2: (num) => `[ RPG おかわり ]\n1日1回、このコマンドでRPGをもう一度遊べるみたいです！\nさらに${config.rpgCoinName}を何枚か使用すれば、さらにもう1回おかわりも出来ちゃうみたいです！\n過去にRPGをプレイし忘れた回数使えます！\n（あと${num}回使えるみたいですよ！）`,
+			okawari3: (num) => `[ RPG おかわり ]\n1日1回、このコマンドでRPGをもう一度遊べるみたいです！\nさらに${config.rpgCoinName}を何枚か使用すれば、さらにもう1回おかわりも出来ちゃうみたいです！\nLv255になるまで使えます！\n（あと${num}回使えるみたいですよ！）`,
 			color: "[ RPG 色 ]\n私の色についての情報が見られるみたいです！\n頑張って色を集めて着せ替えしましょう！\n一部の色には特殊効果もついてるらしいです！",
 			skills1: "[ RPG スキル ]\n私の今持っているスキルについての情報がここで確認できるみたいです！",
 			skills2: "[ RPG スキル ]\n私の今持っているスキルについての情報がここで確認できるみたいです！\n変更珠があれば、スキルの入替もここで行えるみたいです！",
-			shop: (coin: number) => `[ RPG ショップ ]\nもこコインを使って、ショップでお買い物が楽しめるみたいです！\n1つしか持てないし壊れるけど効果が強いお守りや、捨てるまで効果が発動するお札など色々買えるみたいです！\n1日1回並んでいる商品が変わるらしいです！\n（もこコイン: ${coin.toLocaleString()}枚）`,
-			shop2: `[ RPG 裏ショップ ]\n購入した裏ショップ入場の札を使って、裏ショップに入ります！\nもこコインとスキル変更珠を使って、珍しいアイテムを買えるみたいです！\n1日1回並んでいる商品が変わるらしいです！`,
+			shop: (coin: number) => `[ RPG ショップ ]\n${config.rpgCoinName}を使って、ショップでお買い物が楽しめるみたいです！\n1つしか持てないし壊れるけど効果が強いお守りや、捨てるまで効果が発動するお札など色々買えるみたいです！\n1日1回並んでいる商品が変わるらしいです！\n（${config.rpgCoinName}: ${coin.toLocaleString()}枚）`,
+			shop2: `[ RPG 裏ショップ ]\n購入した裏ショップ入場の札を使って、裏ショップに入ります！\n${config.rpgCoinName}とスキル変更珠を使って、珍しいアイテムを買えるみたいです！\n1日1回並んでいる商品が変わるらしいです！`,
 			item: "[ RPG アイテム ]\n私の今持っている全てのアイテムの一覧がここで確認できるみたいです！",
 			status: `[ ステータス ]\n今の私の強さや私のなつき度、あなたの数取りの戦績がここで確認できるみたいです！`,
 			record: `[ RPG 殿堂 ]\nRPGモードで打ち立てた記録とその全体の順位をここで確認できますよ！`,

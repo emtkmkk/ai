@@ -242,7 +242,7 @@ export default class extends Module {
 			const visibility =
 				msg.visibility == 'followers' ? "フォロワー限定" :
 					msg.visibility == 'specified' ? "ダイレクト" :
-						msg.user.host == null ? "もこきー＆フォロワー" : "";
+						msg.user.host == null ? `ローカル＆フォロワー` : "";
 
 			msg.reply(`\n公開投稿限定です！\n参加するには${visibility ? "「" + visibility + "」ではなく、" : ""}「公開」または「ホーム」の公開範囲にてリプライしてくださいね～`).then(reply => {
 				game.replyKey.push(msg.userId);

@@ -9,6 +9,7 @@ import { getVal, initializeData, deepClone, numberCharConvert } from './utils';
 import { shop2Items } from './shop2';
 import 藍 from '@/ai';
 import rpg from './index';
+import config from "@/config";
 
 export type ItemType = "token" | "item" | "amulet";
 
@@ -102,7 +103,7 @@ export const skillPrice = (_ai: 藍, skillName: Skill["name"], rnd: () => number
 
 export const shopItems: ShopItem[] = [
 	{ name: `お守りを捨てる`, limit: (data) => data.items.filter((x) => x.type === "amulet").length, price: 0, desc: `今所持しているお守りを捨てます`, type: "item", effect: (data) => data.items = data.items?.filter((x) => x.type !== "amulet"), always: true },
-	{ name: "おかわり2RPG自動支払いの札", limit: (data) => data.lv < 255 && !data.items.filter((x) => x.name === "おかわり2RPG自動支払いの札").length && data.replayOkawari != null, desc: "所持している間、おかわりおかわりRPGをプレイする際に確認をスキップして自動でコインを消費します", price: 1, type: "token", effect: { autoReplayOkawari: true }, always: true },
+	{ name: "おかわり2RPG自動支払いの札", limit: (data) => data.lv < 255 && !data.items.filter((x) => x.name === "おかわり2RPG自動支払いの札").length && data.replayOkawari != null, desc: `所持している間、おかわりおかわりRPGをプレイする際に確認をスキップして自動で${config.rpgCoinShortName}を消費します`, price: 1, type: "token", effect: { autoReplayOkawari: true }, always: true },
 	{ name: "自動旅モードの札", limit: (data) => (data.maxEndress ?? 0) > 0 && !data.items.filter((x) => x.name === "自動旅モードの札").length, desc: "所持している間、旅モードに自動で突入します", price: (data) => data.allClear ? 1 : Math.max(8 - (data.maxEndress ?? 0), 1), type: "token", effect: { autoJournal: true }, always: true },
 	{ name: "†の札", limit: (data) => !data.items.filter((x) => x.name === "†の札").length && data.lv >= 99 && data.lv <= 255 && !data.clearHistory.includes(":mk_chickenda_gtgt:"), desc: "所持している間、本気の†を味わう事が出来ます", price: 5, type: "token", effect: { appearStrongBoss: true }, always: true },
 	{ name: "おかわり2RPG自動支払いの札を捨てる", limit: (data) => data.items.filter((x) => x.name === "おかわり2RPG自動支払いの札").length, desc: "おかわりおかわりRPGをプレイする際に毎回確認を表示します", price: 0, type: "item", effect: (data) => data.items = data.items.filter((x) => x.name !== "おかわり2RPG自動支払いの札"), always: true },
@@ -149,7 +150,7 @@ export const shopItems: ShopItem[] = [
 	{ name: `謎のお守り`, price: 20, desc: `すこし不思議な力を感じる……`, type: "amulet", effect: { stockRandomEffect: 1 }, durability: 1, short: "？", isUsed: (data) => data.raid, isMinusDurability: (data) => data.stockRandomCount <= 0 } as AmuletItem,
 	{ name: `虹色のお守り`, price: 20, desc: `曜日に関係なく、全ての属性剣が強化状態になります 耐久10 使用時耐久減少`, type: "amulet", effect: { rainbow: 1 }, durability: 10, short: "🌈", isUsed: (data) => true } as AmuletItem,
 	{ name: `ダイジェストフィルム`, limit: (data) => data.lv >= 255 && !data.allClear && (data.clearHistory?.length ?? 0) - (data.clearEnemy?.length ?? 0) > 0, price: (data) => (data.clearHistory?.length ?? 0) - (data.clearEnemy?.length ?? 0) * 1, desc: `購入時、これまで倒した事のある敵全てに連勝中である事にします`, type: "item", effect: (data) => { data.clearEnemy = data.clearHistory; } },
-	{ name: `⚠時間圧縮ボタン`, limit: (data) => data.lv < 254 && data.maxLv > 254 && data.info === 3 && data.clearHistory.includes(":mk_chickenda_gtgt:"), price: lvBoostPrice, desc: `購入時、周囲の時間を圧縮！もこチキがLv254に急成長します（⚠注意！戦闘を行う事なくレベルを上げる為、戦闘勝利数などの統計は一切増加しません！さらに、RPGおかわりの権利があと1回まで減少します！一度購入すると元には戻せません！）`, type: "item", effect: lvBoostEffect, always: true },
+	{ name: `⚠時間圧縮ボタン`, limit: (data) => data.lv < 254 && data.maxLv > 254 && data.info === 3 && data.clearHistory.includes(":mk_chickenda_gtgt:"), price: lvBoostPrice, desc: `購入時、周囲の時間を圧縮！${config.rpgHeroName}がLv254に急成長します（⚠注意！戦闘を行う事なくレベルを上げる為、戦闘勝利数などの統計は一切増加しません！さらに、RPGおかわりの権利があと1回まで減少します！一度購入すると元には戻せません！）`, type: "item", effect: lvBoostEffect, always: true },
 	...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly).map((x): AmuletItem => ({ name: `${x.name}のお守り`, price: (data, rnd, ai) => skillPrice(ai, x.name, rnd), desc: `持っているとスキル「${x.name}」を使用できる${x.desc ? `（${x.desc}）` : ""} 耐久6 使用時耐久減少`, type: "amulet", effect: x.effect, durability: 6, skillName: x.name, short: x.short, isUsed: (data) => true })),
 ];
 

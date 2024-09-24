@@ -63,7 +63,7 @@ export default class extends Module {
 		let note;
 
 		if (Math.random() < 0.333) {
-			localOnly = true;
+			if (config.randomPostLocalOnly) localOnly = true;
 			this.ai.decActiveFactor(0.005);
 			note = notes[Math.floor(Math.random() * notes.length)];
 		} else {

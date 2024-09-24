@@ -50,7 +50,7 @@ export default class extends Module {
 
 	@autobind
 	private async mentionHook(msg: Message) {
-		if (!msg.user.host && msg.visibility !== "specified" && (!msg.replyId || msg.replyNote?.userId !== this.ai.account.id)) {
+		if (config.rpgReplyRequired && !msg.user.host && msg.visibility !== "specified" && (!msg.replyId || msg.replyNote?.userId !== this.ai.account.id)) {
 			if (msg.includes([serifs.rpg.command.rpg])) {
 				msg.reply("RPG関連のコマンドを使用する際は私の何らかの投稿への返信で送ってください！", { visibility: "specified" })
 				return {
@@ -286,7 +286,7 @@ export default class extends Module {
 			message.push(`スキル複製珠${data.duplicationOrb >= 2 ? " ×" + data.duplicationOrb : "" }`)
 		}
 		if (message.length !== 1 && data.coin) {
-			message.push(`もこコイン${data.coin >= 2 ? " ×" + data.coin : "" }`)
+			message.push(`${config.rpgCoinName}${data.coin >= 2 ? " ×" + data.coin : "" }`)
 		}
 		msg.reply("\n" + message.join("\n") + (message.length === 1 ? "\n\n何も持っていないようです。\n「RPG ショップ」で購入できます。" : ""));
 		return { reaction: "love" };
@@ -1101,17 +1101,17 @@ export default class extends Module {
 			}
 			const mindMsg = (mind) => {
 				if (mind >= 100) {
-					message += `もこチキの気合が特大アップ！\n`;
+					message += `${config.rpgHeroName}の気合が特大アップ！\n`;
 				} else if (mind >= 70) {
-					message += `もこチキの気合が大アップ！\n`;
+					message += `${config.rpgHeroName}の気合が大アップ！\n`;
 				} else if (mind > 30) {
-					message += `もこチキの気合がアップ！\n`;
+					message += `${config.rpgHeroName}の気合がアップ！\n`;
 				} else if (mind > 0) {
-					message += `もこチキの気合が小アップ！\n`;
+					message += `${config.rpgHeroName}の気合が小アップ！\n`;
 				} else if (mind > -50) {
 					message += `あまり良い気分ではないようだ…\n`;
 				} else {
-					message += `もこチキの気合が下がった…\n`;
+					message += `${config.rpgHeroName}の気合が下がった…\n`;
 				}
 			};
 			if (item.type !== "poison") {
@@ -1142,13 +1142,13 @@ export default class extends Module {
 						itemBonus.atk = (lv * 4) * (item.effect * 0.005);
 						atk = atk + itemBonus.atk;
 						if (item.effect >= 100) {
-							message += `もこチキのパワーが特大アップ！\n`;
+							message += `${config.rpgHeroName}のパワーが特大アップ！\n`;
 						} else if (item.effect >= 70) {
-							message += `もこチキのパワーが大アップ！\n`;
+							message += `${config.rpgHeroName}のパワーが大アップ！\n`;
 						} else if (item.effect > 30) {
-							message += `もこチキのパワーがアップ！\n`;
+							message += `${config.rpgHeroName}のパワーがアップ！\n`;
 						} else {
-							message += `もこチキのパワーが小アップ！\n`;
+							message += `${config.rpgHeroName}のパワーが小アップ！\n`;
 						}
 					}
 					break;
@@ -1165,13 +1165,13 @@ export default class extends Module {
 						itemBonus.def = (lv * 4) * (item.effect * 0.005);
 						def = def + itemBonus.def;
 						if (item.effect >= 100) {
-							message += `もこチキの防御が特大アップ！\n`;
+							message += `${config.rpgHeroName}の防御が特大アップ！\n`;
 						} else if (item.effect >= 70) {
-							message += `もこチキの防御が大アップ！\n`;
+							message += `${config.rpgHeroName}の防御が大アップ！\n`;
 						} else if (item.effect > 30) {
-							message += `もこチキの防御がアップ！\n`;
+							message += `${config.rpgHeroName}の防御がアップ！\n`;
 						} else {
-							message += `もこチキの防御が小アップ！\n`;
+							message += `${config.rpgHeroName}の防御が小アップ！\n`;
 						}
 					}
 					break;
@@ -1198,13 +1198,13 @@ export default class extends Module {
 						playerHp += heal;
 						if (heal > 0) {
 							if (item.effect >= 100 && heal >= 50) {
-								message += `もこチキの体力が特大回復！\n${heal}ポイント回復した！\n`;
+								message += `${config.rpgHeroName}の体力が特大回復！\n${heal}ポイント回復した！\n`;
 							} else if (item.effect >= 70 && heal >= 35) {
-								message += `もこチキの体力が大回復！\n${heal}ポイント回復した！\n`;
+								message += `${config.rpgHeroName}の体力が大回復！\n${heal}ポイント回復した！\n`;
 							} else if (item.effect > 30 && heal >= 15) {
-								message += `もこチキの体力が回復！\n${heal}ポイント回復した！\n`;
+								message += `${config.rpgHeroName}の体力が回復！\n${heal}ポイント回復した！\n`;
 							} else {
-								message += `もこチキの体力が小回復！\n${heal}ポイント回復した！\n`;
+								message += `${config.rpgHeroName}の体力が小回復！\n${heal}ポイント回復した！\n`;
 							}
 						}
 					}
@@ -1222,9 +1222,9 @@ export default class extends Module {
 						const dmg = Math.round(playerHp * (item.effect * 0.003) * (isSuper ? 0.5 : 1));
 						playerHp -= dmg;
 						if (item.effect >= 70 && dmg > 0) {
-							message += `もこチキはかなり調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`;
+							message += `${config.rpgHeroName}はかなり調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`;
 						} else if (item.effect > 30 && dmg > 0) {
-							message += `もこチキは調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`;
+							message += `${config.rpgHeroName}は調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`;
 						} else {
 							message += `あまり美味しくなかったようだ…${dmg > 0 ? `\n${dmg}ポイントのダメージを受けた！` : ""}\n`;
 						}
@@ -1781,7 +1781,7 @@ export default class extends Module {
 			addMessage,
 			minusDurability ? "\n" + minusDurability : "",
 			`\n${serifs.rpg.nextPlay(nextPlay == 24 ? "明日" : nextPlay + "時")}`,
-			data.lv >= rpgData.maxLv ? "" : data.lastOnemorePlayedAt !== getDate() ? "(無料でおかわり可能)" : data.coin >= needCoin ? `(コインでおかわり可能 ${data.coin > 99 ? "99+" : data.coin} / ${needCoin})` : "",
+			data.lv >= rpgData.maxLv ? "" : data.lastOnemorePlayedAt !== getDate() ? "(無料でおかわり可能)" : data.coin >= needCoin ? `(${config.rpgCoinShortName}でおかわり可能 ${data.coin > 99 ? "99+" : data.coin} / ${needCoin})` : "",
 		].filter(Boolean).join("\n");
 
 		const calcRerollOrbCount = Math.max(Math.min(Math.floor((data.lv - skillBorders[1]) / ((skillBorders[2] - skillBorders[1]) / 5)), 5), 0) +
@@ -1822,7 +1822,7 @@ export default class extends Module {
 
 		msg.reply(`<center>${message}</center>`, {
 			cw,
-			visibility: "specified"
+			visibility: config.rpgReplyVisibility
 		});
 
 		return {
