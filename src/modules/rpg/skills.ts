@@ -782,6 +782,10 @@ export function calcSevenFever(arr: number[]) {
 
 export function getTotalEffectString(data: any): string {
 
+	const showNum = (num: number) => {
+		return showNum(num * 10) / 10;
+	}
+
 	data.raid = true
 
 	const skillEffects = aggregateSkillsEffects(data);
@@ -878,7 +882,8 @@ export function getTotalEffectString(data: any): string {
 	}
 	
 	if (skillEffects.berserk) {
-			atk *= (1 + (skillEffects.berserk ?? 0) * 1.6);
+		resultS.push("毎ターン体力減少: "+ showNum(skillEffects.berserk * 100) + "%");
+		atk *= (1 + (skillEffects.berserk ?? 0) * 1.6);
 	}
 
 	if (skillEffects.weak) {
@@ -891,98 +896,100 @@ export function getTotalEffectString(data: any): string {
 	}
 
 	if (skillEffects.dart) {
+		resultS.push("ターン内最大ダメージ: +"+ showNum(skillEffects.dart * 100) + "%");
 		atk *= (1 + skillEffects.dart * 0.5);
 	}
 
 	if (skillEffects.abortDown) {
+		resultS.push("連続攻撃中断回避率: +"+ showNum(skillEffects.abortDown * 100) + "%");
 		atk *= (1 + skillEffects.abortDown * (1 / 3));
 	}
 
 	if (skillEffects.ice) {
-		resultS.push("戦闘時凍結率: "+ Math.round(skillEffects.ice * 100) + "%");
+		resultS.push("戦闘時凍結率: "+ showNum(skillEffects.ice * 100) + "%");
 		nbDef *= 1 + (skillEffects.ice ?? 0);
 	}
 
 	if (skillEffects.light) {
-		resultS.push("戦闘時被ダメージ半減率: "+ Math.round(skillEffects.light * 100) + "%");
+		resultS.push("戦闘時被ダメージ半減率: "+ showNum(skillEffects.light * 100) + "%");
 		nbDef *= 1 + (skillEffects.light ?? 0) * 0.5;
 	}
 
 	if (skillEffects.dark) {
-		resultS.push("戦闘時行動回数低下率: "+ Math.round(skillEffects.dark ?? 0 * 2 * 100) + "%");
-		resultS.push("戦闘時固定ダメージ付与率: "+ Math.round(skillEffects.dark ?? 0 * 100) + "%");
+		resultS.push("戦闘時行動回数低下率: "+ showNum(skillEffects.dark ?? 0 * 2 * 100) + "%");
+		resultS.push("戦闘時固定ダメージ付与率: "+ showNum(skillEffects.dark ?? 0 * 100) + "%");
 		nbDef *= 1 + (skillEffects.dark ?? 0) * 0.3;
 	}
 
 	atk -= 1
 	if (atk) {
 		if (atk >= 0) {
-			result.push("パワー: +" + Math.round(atk * 100) + "%");
+			result.push("パワー: +" + showNum(atk * 100) + "%");
 		} else {
-			result.push("パワー: " + Math.round(atk * 100) + "%");
+			result.push("パワー: " + showNum(atk * 100) + "%");
 		}
 	}
 	bAtk -= 1
 	if (bAtk) {
 		if (bAtk >= 0) {
-			result.push("戦闘時パワー: +" + Math.round(bAtk * 100) + "%");
+			result.push("戦闘時パワー: +" + showNum(bAtk * 100) + "%");
 		} else {
-			result.push("戦闘時パワー: " + Math.round(bAtk * 100) + "%");
+			result.push("戦闘時パワー: " + showNum(bAtk * 100) + "%");
 		}
 	}
 	nbAtk -= 1
 	if (nbAtk) {
 		if (nbAtk >= 0) {
-			result.push("非戦闘時パワー: +" + Math.round(nbAtk * 100) + "%");
+			result.push("非戦闘時パワー: +" + showNum(nbAtk * 100) + "%");
 		} else {
-			result.push("非戦闘時パワー: " + Math.round(nbAtk * 100) + "%");
+			result.push("非戦闘時パワー: " + showNum(nbAtk * 100) + "%");
 		}
 	}
 	if (skillEffects.fire) {
-		result.push("非戦闘時パワー: +" + Math.round(data.lv * 3.75 * skillEffects.fire));
+		result.push("非戦闘時パワー: +" + showNum(data.lv * 3.75 * skillEffects.fire));
 	}
 	if (skillEffects.haisuiAtkUp) {
-		result.push("覚悟パワー: +" + Math.round((skillEffects.haisuiAtkUp ?? 0) * 100) + "%");
+		result.push("覚悟パワー: +" + showNum((skillEffects.haisuiAtkUp ?? 0) * 100) + "%");
 	}
 	def -= 1
 	if (def) {
-		result.push("防御: +" + Math.round(def * 100) + "%");
+		result.push("防御: +" + showNum(def * 100) + "%");
 	}
 	bDef -= 1
 	if (bDef) {
-		result.push("戦闘時防御: +" + Math.round(bDef * 100) + "%");
+		result.push("戦闘時防御: +" + showNum(bDef * 100) + "%");
 	}
 	nbDef -= 1
 	if (nbDef) {
-		result.push("非戦闘時防御: +" + Math.round(nbDef * 100) + "%");
+		result.push("非戦闘時防御: +" + showNum(nbDef * 100) + "%");
 	}
 	if (color.reverseStatus) {
 		result.push("パワー・防御 ステータス逆転");
 	}
 	spd -= 1
 	if (spd) {
-		result.push("行動回数: +" + Math.round(spd * 100) + "%");
+		result.push("行動回数: +" + (showNum(spd * 100)) + "%");
 	}
 	bSpd -= 1
 	if (bSpd) {
-		result.push("戦闘時行動回数: +" + Math.round(bSpd * 100) + "%");
+		result.push("戦闘時行動回数: +" + showNum(bSpd * 100) + "%");
 	}
 	if (skillEffects.allForOne || aggregateTokensEffects(data).allForOne) {
 		result.push("行動回数圧縮状態");
 	}
 	if (data.defMedal) {
-		result.push("最大体力: +" + Math.round((data.defMedal ?? 0) * 13.4));
+		result.push("最大体力: +" + showNum((data.defMedal ?? 0) * 13.4));
 	}
 	if (skillEffects.endureUp) {
-		result.push(`気合: +${Math.round(skillEffects.endureUp * 100)}%`);
+		result.push(`気合: +${showNum(skillEffects.endureUp * 100)}%`);
 	}
 	eAtk -= 1
 	if (eAtk) {
-		result.push("敵パワー減少: " + Math.round((1 - eAtk) * 100) + "%")
+		result.push("敵パワー減少: " + showNum((1 - eAtk) * 100) + "%")
 	}
 	eDef -= 1
 	if (eDef) {
-		result.push("敵防御減少: " + Math.round((1 - eDef) * 100) + "%")
+		result.push("敵防御減少: " + showNum((1 - eDef) * 100) + "%")
 	}
 
 	const atkMinusMin = skillEffects.atkDmgUp && skillEffects.atkDmgUp < 0 ? (1 / (-1 + (skillEffects.atkDmgUp ?? 0)) * -1) : 1;
@@ -994,9 +1001,9 @@ export function getTotalEffectString(data: any): string {
 	dmgBonus -= 1
 	if (dmgBonus) {
 		if (dmgBonus > 0) {
-			result.push("与ダメージ増加: " + Math.round(dmgBonus * 100) + "%")
+			result.push("与ダメージ増加: " + showNum(dmgBonus * 100) + "%")
 		} else {
-			result.push("与ダメージ軽減: " + Math.round(dmgBonus * -100) + "%")
+			result.push("与ダメージ軽減: " + showNum(dmgBonus * -100) + "%")
 		}
 	}
 
@@ -1006,10 +1013,10 @@ export function getTotalEffectString(data: any): string {
 	const defMaxRnd = Math.max(1.6 + (skillEffects.defRndMax ?? 0), 0);
 
 	if (skillEffects.notRandom || aggregateTokensEffects(data).notRandom) {
-		result.push("与ダメージ乱数固定: " + Math.round((atkMinRnd + atkMinRnd + atkMaxRnd) * 100) * (0.5 + (skillEffects.notRandom ?? 0) * 0.05) + "%")
+		result.push("与ダメージ乱数固定: " + showNum((atkMinRnd + atkMinRnd + atkMaxRnd) * 100) * (0.5 + (skillEffects.notRandom ?? 0) * 0.05) + "%")
 	} else {
 		if (atkMinRnd !== 0.2 || atkMaxRnd !== 1.6) {
-			result.push("与ダメージ乱数幅: " + Math.round(atkMinRnd * 100) + "% ～ " + Math.round((atkMinRnd + atkMaxRnd) * 100) + "%")
+			result.push("与ダメージ乱数幅: " + showNum(atkMinRnd * 100) + "% ～ " + showNum((atkMinRnd + atkMaxRnd) * 100) + "%")
 		}
 	}
 
@@ -1020,77 +1027,81 @@ export function getTotalEffectString(data: any): string {
 	defDmgX -= 1
 	if (defDmgX) {
 		if (defDmgX > 0) {
-			result.push("被ダメージ増加: " + Math.round(defDmgX * 100) + "%")
+			result.push("被ダメージ増加: " + showNum(defDmgX * 100) + "%")
 		} else {
-			result.push("被ダメージ軽減: " + Math.round(defDmgX * -100) + "%")
+			result.push("被ダメージ軽減: " + showNum(defDmgX * -100) + "%")
 		}
 	}
 	
 	if (skillEffects.firstTurnResist) {
 		if (skillEffects.firstTurnResist > 1) {
 			result.push("ターン1ダメージ無効");
-			result.push("ターン2ダメージ軽減: " + Math.round((skillEffects.firstTurnResist - 1) * 100) + "%")
+			result.push("ターン2ダメージ軽減: " + showNum((skillEffects.firstTurnResist - 1) * 100) + "%")
 		} else {
-			result.push("ターン1ダメージ軽減: " + Math.round((skillEffects.firstTurnResist) * 100) + "%")
+			result.push("ターン1ダメージ軽減: " + showNum((skillEffects.firstTurnResist) * 100) + "%")
 		}
 	}
 	if (skillEffects.tenacious) {
 		if (skillEffects.tenacious > 0.9) {
 			result.push("ピンチダメージ軽減: 最大90%")
-			result.push("（体力" +  Math.round((1 - (0.9 / skillEffects.tenacious)) * 100) + "%で効果最大）")
+			result.push("（体力" +  showNum((1 - (0.9 / skillEffects.tenacious)) * 100) + "%で効果最大）")
 		} else {
-			result.push("ピンチダメージ軽減: 最大" + Math.round((skillEffects.tenacious) * 100) + "%")
+			result.push("ピンチダメージ軽減: 最大" + showNum((skillEffects.tenacious) * 100) + "%")
 		}
 	}
 
 	if (defMinRnd !== 0.2 || defMaxRnd !== 1.6) {
-		result.push("被ダメージ乱数幅: " + Math.round(defMinRnd * 100) + "% ～ " + Math.round((defMinRnd + defMaxRnd) * 100) + "%")
+		result.push("被ダメージ乱数幅: " + showNum(defMinRnd * 100) + "% ～ " + showNum((defMinRnd + defMaxRnd) * 100) + "%")
 	}
 	
 	if (skillEffects.critUp) {
-		result.push("クリティカル率（割合）: +" + Math.round((skillEffects.critUp ?? 0) * 100) + "%");
+		result.push("クリティカル率（割合）: +" + showNum((skillEffects.critUp ?? 0) * 100) + "%");
 	}
 	if (skillEffects.haisuiCritUp) {
-		result.push("覚悟クリティカル率（割合）: +" + Math.round((skillEffects.haisuiCritUp ?? 0) * 100) + "%");
+		result.push("覚悟クリティカル率（割合）: +" + showNum((skillEffects.haisuiCritUp ?? 0) * 100) + "%");
 	}
 	if (skillEffects.critUpFixed) {
-		result.push("クリティカル率（固定）: +" + Math.round((skillEffects.critUpFixed ?? 0) * 100) + "%");
+		result.push("クリティカル率（固定）: +" + showNum((skillEffects.critUpFixed ?? 0) * 100) + "%");
 	}
 	if (skillEffects.critDmgUp) {
-		result.push("クリティカルダメージ: +" + Math.round((skillEffects.critDmgUp ?? 0) * 100) + "%");
+		result.push("クリティカルダメージ: +" + showNum((skillEffects.critDmgUp ?? 0) * 100) + "%");
 	}
 	if (skillEffects.enemyCritDown) {
-		result.push("敵クリティカル率: -" + Math.round(((skillEffects.enemyCritDown ?? 0)) * 100) + "%");
+		result.push("敵クリティカル率: -" + showNum(((skillEffects.enemyCritDown ?? 0)) * 100) + "%");
 	}
 	if (skillEffects.enemyCritDmgDown) {
-		result.push("敵クリティカルダメージ: -" + Math.round(((skillEffects.enemyCritDmgDown ?? 0)) * 100) + "%");
+		result.push("敵クリティカルダメージ: -" + showNum(((skillEffects.enemyCritDmgDown ?? 0)) * 100) + "%");
 	}
 	if (skillEffects.haisuiUp) {
-		result.push("決死の覚悟発動体力: " + Math.round(((1 / 7) * (1 + (skillEffects.haisuiUp ?? 0)) * 100)) + "%以下 (+" + Math.round((1 + (skillEffects.haisuiUp ?? 0)) * 100)) + "%)";
+		result.push("決死の覚悟効果量: +" + showNum((1 + (skillEffects.haisuiUp ?? 0)) * 100)) + "%";
+		result.push("決死の覚悟発動体力: " + showNum(((1 / 7) * (1 + (skillEffects.haisuiUp ?? 0)) * 100)) + "%以下");
 	}
 	if (skillEffects.finalAttackUp) {
-		result.push("全力の一撃ダメージ: +" + Math.round((skillEffects.finalAttackUp ?? 0) * 100) + "%");
+		result.push("全力の一撃ダメージ: +" + showNum((skillEffects.finalAttackUp ?? 0) * 100) + "%");
+	}
+	if (skillEffects.guardAtkUp) {
+		result.push(`がまんパワーアップ${(skillEffects.guardAtkUp ?? 0) > 1 ? ` ×${showNum((skillEffects.guardAtkUp ?? 0))}` : ""}`);
 	}
 	if (skillEffects.firstTurnItem) {
 		result.push("ターン1アイテム装備");
 	}
 	if (skillEffects.itemEquip) {
-		result.push("アイテム装備率: +" + Math.round((skillEffects.itemEquip ?? 0) * 100) + "%");
+		result.push("アイテム装備率: +" + showNum((skillEffects.itemEquip ?? 0) * 100) + "%");
 	}
 	if (skillEffects.weaponSelect) {
-		result.push("武器選択率: +" + Math.round((skillEffects.weaponSelect ?? 0) * 100) + "%");
+		result.push("武器選択率: +" + showNum((skillEffects.weaponSelect ?? 0) * 100) + "%");
 	}
 	if (skillEffects.armorSelect) {
-		result.push("防具選択率: +" + Math.round((skillEffects.armorSelect ?? 0) * 100) + "%");
+		result.push("防具選択率: +" + showNum((skillEffects.armorSelect ?? 0) * 100) + "%");
 	}
 	if (skillEffects.foodSelect) {
-		result.push("食べ物選択率: +" + Math.round((skillEffects.foodSelect ?? 0) * 100) + "%");
+		result.push("食べ物選択率: +" + showNum((skillEffects.foodSelect ?? 0) * 100) + "%");
 	}
 	if (skillEffects.poisonAvoid) {
-		result.push("毒食べ物回避率: " + Math.round((skillEffects.poisonAvoid ?? 0) * 100) + "%");
+		result.push("毒食べ物回避率: " + showNum((skillEffects.poisonAvoid ?? 0) * 100) + "%");
 	}
 	if (skillEffects.poisonAvoid) {
-		result.push("悪アイテム回避率: +" + Math.round((skillEffects.mindMinusAvoid ?? 0) * 100) + "%");
+		result.push("悪アイテム回避率: +" + showNum((skillEffects.mindMinusAvoid ?? 0) * 100) + "%");
 	}
 
 	itemAtk = (1 + (skillEffects.itemBoost ?? 0)) * (1 + (skillEffects.weaponBoost ?? 0));
@@ -1102,25 +1113,25 @@ export function getTotalEffectString(data: any): string {
 
 	itemAtk -= 1
 	if (itemAtk) {
-		result.push("武器効果量: +" + Math.round(itemAtk * 100) + "%");
+		result.push("武器効果量: +" + showNum(itemAtk * 100) + "%");
 	}
 	itemDef -= 1
 	if (itemDef) {
-		result.push("防具効果量: +" + Math.round(itemDef * 100) + "%");
+		result.push("防具効果量: +" + showNum(itemDef * 100) + "%");
 	}
 	itemFood -= 1
 	if (itemFood) {
-		result.push("食べ物効果量: +" + Math.round(itemFood * 100) + "%");
+		result.push("食べ物効果量: +" + showNum(itemFood * 100) + "%");
 	}
 	itemResist -= 1
 	if (itemResist) {
-		result.push("毒効果量軽減: " + Math.round(itemResist * -100) + "%");
+		result.push("毒効果量軽減: " + showNum(itemResist * -100) + "%");
 	}
 	if (skillEffects.itemBoost) {
-		result.push("アイテム気合上昇率: +" + Math.round((skillEffects.itemBoost ?? 0) * 100) + "%");
+		result.push("アイテム気合上昇率: +" + showNum((skillEffects.itemBoost ?? 0) * 100) + "%");
 	}
 	if (skillEffects.itemBoost || isSuper) {
-		result.push("アイテム気合低下率: -" + Math.round((1 - (1 / (1 + (skillEffects.itemBoost ?? 0))) * (isSuper ? 0.5 : 1)) * 100) + "%");
+		result.push("アイテム気合低下率: -" + showNum((1 - (1 / (1 + (skillEffects.itemBoost ?? 0))) * (isSuper ? 0.5 : 1)) * 100) + "%");
 	}
 	if (skillEffects.lowHpFood) {
 		result.push("残体力依存食べ物選択");
@@ -1128,32 +1139,63 @@ export function getTotalEffectString(data: any): string {
 	result = [...result, ...resultS];
 	if (skillEffects.sevenFever) {
 		result.push("与ダメージ７の倍数化");
-		result.push(`７ステータスダメージ軽減${skillEffects.sevenFever > 1 ? ` ×${skillEffects.sevenFever.toFixed(1)}` : ""}`);
+		result.push(`７ステータスダメージ軽減${skillEffects.sevenFever > 1 ? ` ×${showNum(skillEffects.sevenFever)}` : ""}`);
 	}
 	if (skillEffects.escape) {
-		result.push(`負けそうな時逃げる${skillEffects.escape > 1 ? ` ×${skillEffects.escape.toFixed(1)}` : ""}`);
+		result.push(`負けそうな時逃げる${skillEffects.escape > 1 ? ` ×${showNum(skillEffects.escape)}` : ""}`);
 	}
 	if (skillEffects.charge) {
-		result.push(`不運チャージ${skillEffects.charge > 1 ? ` ×${skillEffects.charge.toFixed(1)}` : ""}`);
+		result.push(`不運チャージ${skillEffects.charge > 1 ? ` ×${showNum(skillEffects.charge)}` : ""}`);
 	}
 	if (aggregateTokensEffects(data).fivespd) {
 		result.push("最低行動回数保障: 5");
 	}
 	if (skillEffects.fortuneEffect || aggregateTokensEffects(data).fortuneEffect) {
-		result.push(`ランダムステータス${(skillEffects.fortuneEffect ?? 0) !== 1 ? (skillEffects.fortuneEffect ?? 0) > 1 ? ` ×${(skillEffects.fortuneEffect ?? 0).toFixed(1)}` : `: ${(skillEffects.fortuneEffect ?? 0).toFixed(1)}` : ""}`);
+		result.push(`ランダムステータス${(skillEffects.fortuneEffect ?? 0) !== 1 ? (skillEffects.fortuneEffect ?? 0) > 1 ? ` ×${showNum((skillEffects.fortuneEffect ?? 0))}` : `: ${showNum((skillEffects.fortuneEffect ?? 0))}` : ""}`);
 	}
 	if (skillEffects.slowStart) {
-		result.push(`スロースタート${(skillEffects.slowStart ?? 0) > 1 ? ` ×${skillEffects.slowStart.toFixed(1)}` : ""}`);
+		result.push(`スロースタート${(skillEffects.slowStart ?? 0) > 1 ? ` ×${showNum(skillEffects.slowStart)}` : ""}`);
 	}
 	if (skillEffects.plusActionX) {
-		result.push("通常時高速RPG: +" + (skillEffects.plusActionX ?? 0).toFixed(1));
+		result.push("通常時高速RPG: +" + (showNum(skillEffects.plusActionX ?? 0)));
 	}
 	const boost = data.skills ? data.skills?.filter((x) => x.effect?.amuletBoost).reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0 : 0;
 	if (boost) {
-		result.push("お守り耐久減少率: " + Math.round((1 / Math.pow(1.5, boost * 2)) * 100) + "%");
+		result.push("お守り耐久減少率: " + showNum((1 / Math.pow(1.5, boost * 2)) * 100) + "%");
 	}
 	if (skillEffects.priceOff) {
-		result.push("ショップ割引率: " + Math.round((skillEffects.priceOff ?? 0) * 100) + "%");
+		result.push("ショップ割引率: " + showNum((skillEffects.priceOff ?? 0) * 100) + "%");
+	}
+
+	const totalAtk = (1 + atk) * Math.max((1 + bAtk), (1 + nbAtk)) * (1 + (skillEffects.haisuiAtkUp ?? 0)) *
+	 (1 + spd) *  (1 + bSpd) * (1 / eDef) * (1 + dmgBonus) * 
+	 (((atkMinRnd + atkMinRnd + atkMaxRnd)) * (0.5 + (skillEffects.notRandom ?? 0) * 0.05)) *
+	 (1 + ((skillEffects.critUpFixed ?? 0) * (1 + (skillEffects.critDmgUp ?? 0) * 2))) *
+	 (
+		(0.25 * (1 + (skillEffects.critUp ?? 0)) * (1 + (skillEffects.haisuiCritUp ?? 0)) * (1 + (skillEffects.critDmgUp ?? 0) * 2)) - 
+		(0.25 * (1 + (skillEffects.critDmgUp ?? 0) * 2))
+	 ) *
+	 (1 + ((skillEffects.finalAttackUp ?? 0) / 7)) *
+	 (1 + (Math.min(0.4 * (skillEffects.itemEquip ?? 0) + (skillEffects.firstTurnItem ? (1/6) : 0), 1) * ((1 + (skillEffects.weaponSelect ?? 0)) / (4 + (skillEffects.weaponSelect ?? 0) - (skillEffects.poisonAvoid ?? 0))) * (0.25 * (1 + itemAtk))))
+
+	if (totalAtk > 1) {
+		result.push("")
+		result.push("合計攻撃効果（最大）: " + showNum((totalAtk - 1) * 100) + "%");
+	}
+
+	const totalDef = (1 / (1 + def)) * (1 / Math.max((1 + bDef), (1 + nbDef))) *
+	(eAtk) * (1 + defDmgX) *
+	((defMinRnd + defMinRnd + defMaxRnd) / 2) *
+	(1 / (1 + (data.defMedal ?? 0) * 13.4 / 865)) *
+	Math.max(1 - ((skillEffects.firstTurnResist ?? 0) / 7), (5/7)) *
+	Math.max(1 - ((skillEffects.tenacious ?? 0) / 2), 0.1) *
+	(1 - (skillEffects.ice ?? 0)) *
+	(1 - ((skillEffects.light ?? 0) / 2)) *
+	(1 / (Math.min(0.4 * (skillEffects.itemEquip ?? 0) + (skillEffects.firstTurnItem ? (1/6) : 0), 1) * ((1 + (skillEffects.armorSelect ?? 0) + (skillEffects.foodSelect ?? 0)) / (4 + (skillEffects.armorSelect ?? 0) + (skillEffects.foodSelect ?? 0) - (skillEffects.poisonAvoid ?? 0))) * ((0.25 * (1 + itemDef)) + 0.25 * (1 + itemFood))))
+
+	if (totalDef > 1) {
+		result.push("")
+		result.push("合計防御効果（平均）: " + showNum((1 - totalDef) * 100) + "%");
 	}
 
 	data.raid = false
