@@ -588,7 +588,7 @@ export function aggregateSkillsEffectsSkillX(data: any, skillX: number): SkillEf
 			if (item.isUsed(data) && (!aggregateTokensEffects(data).normalModeNotUseAmulet || data.raid)) {
 			const boost = dataSkills.filter((x) => x.effect?.amuletBoost).reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0;
 			const adjustEffect = (effect: any, boost: number): any => {
-				const multiplier = (1 + (boost ?? 0)) * skillX;
+				const multiplier = (1 + ((boost ?? 0) * skillX));
 				const adjustedEffect: any = {};
 
 				for (const key in effect) {
