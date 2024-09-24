@@ -126,7 +126,7 @@ export async function getPostCount(ai: 藍, module: rpg, data, msg, bonus = 0): 
 
 		let chart;
     // ユーザの投稿数を取得
-		if (!msg.user.host || config.forceRemoteChartPostCount) {
+		if (config.forceRemoteChartPostCount) {
 			// ユーザの投稿数を取得
 			chart = await ai.api('charts/user/notes', {
 					span: 'day',
@@ -194,7 +194,7 @@ export async function getPostCount(ai: 藍, module: rpg, data, msg, bonus = 0): 
 											userId: userId
 									});
 								}
-
+							
                 postCount += Math.max(
                     (chart.diffs.normal?.[0] ?? 0) + (chart.diffs.reply?.[0] ?? 0) + (chart.diffs.withFile?.[0] ?? 0),
                     (chart.diffs.normal?.[1] ?? 0) + (chart.diffs.reply?.[1] ?? 0) + (chart.diffs.withFile?.[1] ?? 0)
