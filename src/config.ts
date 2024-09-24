@@ -54,7 +54,6 @@ if (!config.rpgHeroName) config.rpgHeroName = "もこチキ";
 if (!config.rpgCoinName) config.rpgCoinName = "もこコイン";
 if (!config.rpgCoinShortName) config.rpgCoinShortName = "コイン";
 if (config.rpgReplyRequired !== false) config.rpgReplyRequired = true;
-if (!config.rpgReplyVisibility) config.rpgReplyVisibility = "specified";
 if (!config.rpgRaidReplyVisibility) config.rpgRaidReplyVisibility = "specified";
 if (!config.forceRemoteChartPostCount) config.forceRemoteChartPostCount = false;
 
