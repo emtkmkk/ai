@@ -1168,7 +1168,7 @@ export function getTotalEffectString(data: any): string {
 	}
 
 	const totalAtk = (1 + atk) * Math.max((1 + bAtk), (1 + nbAtk)) * (1 + (skillEffects.haisuiAtkUp ?? 0)) *
-	 (1 + spd) *  (1 + bSpd) * (1 / eDef) * (1 + dmgBonus) * 
+	 (1 + spd) *  (1 + bSpd) * (1 / (1 + eDef)) * (1 + dmgBonus) * 
 	 (((atkMinRnd + atkMinRnd + atkMaxRnd)) * (0.5 + (skillEffects.notRandom ?? 0) * 0.05)) *
 	 (1 + ((skillEffects.critUpFixed ?? 0) * (1 + (skillEffects.critDmgUp ?? 0) * 2))) *
 	 ( 
@@ -1185,7 +1185,7 @@ export function getTotalEffectString(data: any): string {
 	}
 
 	const totalDef = (1 / (1 + def)) * (1 / Math.max((1 + bDef), (1 + nbDef))) *
-	(eAtk) * (1 + defDmgX) *
+	(1 + eAtk) * (1 + defDmgX) *
 	((defMinRnd + defMinRnd + defMaxRnd) / 2) *
 	(1 / (1 + (data.defMedal ?? 0) * 13.4 / 865)) *
 	Math.max(1 - ((skillEffects.firstTurnResist ?? 0) / 7), (5/7)) *
