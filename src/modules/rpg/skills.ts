@@ -916,8 +916,8 @@ export function getTotalEffectString(data: any): string {
 	}
 
 	if (skillEffects.dark) {
-		resultS.push("戦闘時行動回数低下率: "+ showNum(skillEffects.dark ?? 0 * 2 * 100) + "%");
-		resultS.push("戦闘時固定ダメージ付与率: "+ showNum(skillEffects.dark ?? 0 * 100) + "%");
+		resultS.push("戦闘時行動回数低下率: "+ showNum((skillEffects.dark ?? 0) * 2 * 100) + "%");
+		resultS.push("戦闘時固定ダメージ付与率: "+ showNum((skillEffects.dark ?? 0) * 100) + "%");
 		nbDef *= 1 + (skillEffects.dark ?? 0) * 0.3;
 	}
 
