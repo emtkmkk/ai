@@ -783,7 +783,7 @@ export function calcSevenFever(arr: number[]) {
 export function getTotalEffectString(data: any): string {
 
 	const showNum = (num: number) => {
-		return showNum(num * 10) / 10;
+		return Math.round(num * 10) / 10;
 	}
 
 	data.raid = true
