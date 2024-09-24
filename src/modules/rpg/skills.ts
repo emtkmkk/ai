@@ -636,6 +636,13 @@ export function aggregateSkillsEffectsSkillX(data: any, skillX: number): SkillEf
 
 	const day = new Date().getDay();
 
+	if (data.itemMedal) {
+		aggregatedEffect.itemEquip = (aggregatedEffect.itemEquip ?? 0) + data.itemMedal * 0.01;
+		aggregatedEffect.itemBoost = (aggregatedEffect.itemBoost ?? 0) + data.itemMedal * 0.01;
+		aggregatedEffect.mindMinusAvoid = (aggregatedEffect.mindMinusAvoid ?? 0) + data.itemMedal * 0.01;
+		aggregatedEffect.poisonAvoid = (aggregatedEffect.poisonAvoid ?? 0) + data.itemMedal * 0.01;
+	}
+
 	if (aggregatedEffect.rainbow && aggregatedEffect.rainbow > 1) {
 		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) + (aggregatedEffect.rainbow - 1) * 0.05;
 		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) + (aggregatedEffect.rainbow - 1) * 0.05;
