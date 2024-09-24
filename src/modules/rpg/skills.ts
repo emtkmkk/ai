@@ -340,7 +340,11 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
 	}
 
 	if (msg.includes(["効果", "詳細" , "合計", "情報", "バフ"])) {
-		msg.reply(`\n\`\`\`\n` + getTotalEffectString(data) + `\n\`\`\``);
+		if (msg.includes(["3"])) {
+			msg.reply(`\n※スキル3倍時効果\n\`\`\`\n` + getTotalEffectString(data, 3) + `\n\`\`\``);
+		} else {
+			msg.reply(`\n\`\`\`\n` + getTotalEffectString(data) + `\n\`\`\``);
+		}
 		return {
 			reaction: 'love'
 		};
@@ -780,7 +784,7 @@ export function calcSevenFever(arr: number[]) {
 	return totalSevens;
 }
 
-export function getTotalEffectString(data: any): string {
+export function getTotalEffectString(data: any, skillX = 1): string {
 
 	const showNum = (num: number) => {
 		return Math.round(num * 10) / 10;
@@ -788,7 +792,14 @@ export function getTotalEffectString(data: any): string {
 
 	data.raid = true
 
-	const skillEffects = aggregateSkillsEffects(data);
+	let skillEffects: SkillEffect;
+	if (skillX > 1) {
+		skillEffects = aggregateSkillsEffectsSkillX(data, skillX)
+	} else {
+		skillEffects = aggregateSkillsEffects(data);
+	}
+
+	if (!skillEffects) return "";
 
 	/** 使用中の色情報 */
 	let color = getColor(data);
