@@ -339,7 +339,7 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
 		};
 	}
 
-	if (msg.includes(["効果"])) {
+	if (msg.includes(["効果", "詳細" , "合計", "情報", "バフ"])) {
 		msg.reply(`\n\`\`\`\n` + getTotalEffectString(data) + `\n\`\`\``);
 		return {
 			reaction: 'love'
@@ -782,6 +782,8 @@ export function calcSevenFever(arr: number[]) {
 
 export function getTotalEffectString(data: any): string {
 
+	data.raid = true
+
 	const skillEffects = aggregateSkillsEffects(data);
 
 	/** 使用中の色情報 */
@@ -1153,6 +1155,8 @@ export function getTotalEffectString(data: any): string {
 	if (skillEffects.priceOff) {
 		result.push("ショップ割引率: " + Math.round((skillEffects.priceOff ?? 0) * 100) + "%");
 	}
+
+	data.raid = false
 
 	return result.join("\n");
 }
