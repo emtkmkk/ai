@@ -1171,7 +1171,8 @@ export function getTotalEffectString(data: any): string {
 	 (1 + spd) *  (1 + bSpd) * (1 / eDef) * (1 + dmgBonus) * 
 	 (((atkMinRnd + atkMinRnd + atkMaxRnd)) * (0.5 + (skillEffects.notRandom ?? 0) * 0.05)) *
 	 (1 + ((skillEffects.critUpFixed ?? 0) * (1 + (skillEffects.critDmgUp ?? 0) * 2))) *
-	 (
+	 ( 
+		1 +
 		(0.25 * (1 + (skillEffects.critUp ?? 0)) * (1 + (skillEffects.haisuiCritUp ?? 0)) * (1 + (skillEffects.critDmgUp ?? 0) * 2)) - 
 		(0.25 * (1 + (skillEffects.critDmgUp ?? 0) * 2))
 	 ) *
@@ -1193,7 +1194,7 @@ export function getTotalEffectString(data: any): string {
 	(1 - ((skillEffects.light ?? 0) / 2)) *
 	(1 / (Math.min(0.4 * (skillEffects.itemEquip ?? 0) + (skillEffects.firstTurnItem ? (1/6) : 0), 1) * ((1 + (skillEffects.armorSelect ?? 0) + (skillEffects.foodSelect ?? 0)) / (4 + (skillEffects.armorSelect ?? 0) + (skillEffects.foodSelect ?? 0) - (skillEffects.poisonAvoid ?? 0))) * ((0.25 * (1 + itemDef)) + 0.25 * (1 + itemFood))))
 
-	if (totalDef > 1) {
+	if (totalDef < 1) {
 		result.push("")
 		result.push("合計防御効果（平均）: " + showNum((1 - totalDef) * 100) + "%");
 	}
