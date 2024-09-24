@@ -898,7 +898,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 		atk *= (1 + (skillEffects.enemyBuff ?? 0) / 20);
 		def *= (1 + (skillEffects.enemyBuff ?? 0) / 20);
 	}
-	
+
 	if (skillEffects.berserk) {
 		resultS.push("毎ターン体力減少: "+ showNum(skillEffects.berserk * 100) + "%");
 		atk *= (1 + (skillEffects.berserk ?? 0) * 1.6);
@@ -922,6 +922,11 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 		resultS.push("連続攻撃中断回避率: +"+ showNum(skillEffects.abortDown * 100) + "%");
 		atk *= (1 + skillEffects.abortDown * (1 / 3));
 	}
+
+	if (skillEffects.allForOne) {
+		atk *= (1 + (skillEffects.allForOne ?? 0) * 0.1)
+	}
+	
 
 	if (skillEffects.ice) {
 		resultS.push("戦闘時凍結率: "+ showNum(skillEffects.ice * 100) + "%");
@@ -1091,7 +1096,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 		result.push("敵クリティカルダメージ: -" + showNum(((skillEffects.enemyCritDmgDown ?? 0)) * 100) + "%");
 	}
 	if (skillEffects.haisuiUp) {
-		result.push("決死の覚悟効果量: +" + showNum((1 + (skillEffects.haisuiUp ?? 0)) * 100)) + "%";
+		result.push("決死の覚悟効果量: +" + showNum(((skillEffects.haisuiUp ?? 0)) * 100) + "%");
 		result.push("決死の覚悟発動体力: " + showNum(((1 / 7) * (1 + (skillEffects.haisuiUp ?? 0)) * 100)) + "%以下");
 	}
 	if (skillEffects.finalAttackUp) {
@@ -1199,7 +1204,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 
 	if (totalAtk > 1) {
 		result.push("")
-		result.push("合計攻撃効果（最大）: " + showNum((totalAtk - 1) * 100) + "%");
+		result.push("合計攻撃効果（最大）: +" + showNum((totalAtk - 1) * 100) + "%");
 	}
 
 	const totalDef = (1 / (1 + def)) * (1 / Math.max((1 + bDef), (1 + nbDef))) *
