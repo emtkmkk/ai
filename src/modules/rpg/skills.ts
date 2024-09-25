@@ -1151,7 +1151,7 @@ export function aggregateSkillsEffectsSkillX(
             .filter((x) => x.effect?.amuletBoost)
             .reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0;
         const adjustEffect = (effect: any, boost: number): any => {
-          const multiplier = (1 + (boost ?? 0)) * skillX;
+          const multiplier = 1 + (boost ?? 0);
           const adjustedEffect: any = {};
 
           for (const key in effect) {
