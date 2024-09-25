@@ -1428,14 +1428,14 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	} else {
 		reply = await msg.reply(`<center>${message.slice(0, 7500)}</center>`, {
 			cw,
-			visibility: config.rpgRaidReplyVisibility,
+			...(config.rpgReplyVisibility ? {visibility: config.rpgRaidReplyVisibility} : {}),
 		});
 		let msgCount = 1
 		while (message.length > msgCount * 7500) {
 			msgCount += 1;
 			await msg.reply(`<center>${message.slice((msgCount - 1) * 7500, msgCount * 7500)}</center>`, {
 				cw: cw + " " + msgCount,
-				visibility: config.rpgRaidReplyVisibility,
+				...(config.rpgReplyVisibility ? {visibility: config.rpgRaidReplyVisibility} : {}),
 			});
 		}
 	}
@@ -1643,14 +1643,14 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 	} else {
 		reply = await msg.reply(`<center>${message.slice(0, 7500)}</center>`, {
 			cw,
-			visibility: config.rpgRaidReplyVisibility,
+			...(config.rpgReplyVisibility ? {visibility: config.rpgRaidReplyVisibility} : {}),
 		});
 		let msgCount = 1
 		while (message.length > msgCount * 7500) {
 			msgCount += 1;
 			await msg.reply(`<center>${message.slice((msgCount - 1) * 7500, msgCount * 7500)}</center>`, {
 				cw: cw + " " + msgCount,
-				visibility: config.rpgRaidReplyVisibility,
+				...(config.rpgReplyVisibility ? {visibility: config.rpgRaidReplyVisibility} : {}),
 			});
 		}
 	}
