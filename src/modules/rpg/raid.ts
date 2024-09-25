@@ -1315,7 +1315,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		const enemySDef = Math.max((enemyFDef / (lv * 3.5)) * (getVal(enemy.defx, [6]) ?? 3), enemySAtk / 3000);
 		let dmg = Math.round(playerHp / (playerMaxHp) * (1000 + (enemySAtk >= 24 ? enemySAtk / 0.048 : 0)) * Math.max(enemySAtk / enemySDef, 1) * (1 + (skillEffects.finalAttackUp ?? 0)));
 		if (sevenFever) {
-			dmg = Math.max(Math.floor((dmg - 777) / 1000) * 1000, dmg - 777) + 777;
+			dmg = dmg >= 777 ? Math.max(Math.floor((dmg - 777) / 1000) * 1000, 0) + 777 : dmg;
 		}
 		message += "\n\n" + serifs.rpg.finalAttack(dmg) + `\n\n` + serifs.rpg.timeUp(enemy.name, (playerMaxHp)) + "\n\n" + enemy.losemsg;
 		totalDmg += dmg;
