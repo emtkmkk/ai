@@ -291,7 +291,7 @@ const eventAmulet = (data?) => {
 	if (y === 2024 && m === 9 && d === 11) {
 		return `虹色のお守り`
 	}
-	if (data?.skills?.length <= 3) {
+	if (data?.skills?.length >= 1 && data?.skills?.length <= 3) {
 		return `わかばのお守り`
 	}
 	return undefined;
