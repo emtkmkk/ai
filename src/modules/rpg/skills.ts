@@ -516,10 +516,9 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
 	}
 
 	if (aggregatedEffect.beginner) {
-		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) + (Math.pow(1 + begginer, 5 - data.skills?.length) - 1);
-		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) + (Math.pow(1 + begginer, 5 - data.skills?.length) - 1);
+		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) + (Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) - 1);
+		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) + (Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) - 1);
 	}
-
 
 	if (aggregatedEffect.rainbow && aggregatedEffect.rainbow > 1) {
 		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) + (aggregatedEffect.rainbow - 1) * 0.05;
