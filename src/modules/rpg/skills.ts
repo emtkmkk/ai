@@ -820,6 +820,9 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 	let atk = 1;
 	let def = 1;
 	let spd = 1;
+	
+	let lAtk = 1;
+	let lDef = 1;
 
 	let bAtk = 1;
 	let bDef = 1;
@@ -842,6 +845,9 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 
 	def *= 1 + (skillEffects.defUp ?? 0);
 
+	lAtk = atk;
+	lDef = def;
+
 	spd *= 1 + (isSuper ? 0.2 : 0);
 
 	if (skillEffects.postXUp) {
@@ -852,6 +858,8 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 	if (skillEffects.heavenOrHell) {
 		atk = atk * (1 + skillEffects.heavenOrHell);
 		def = def * (1 + skillEffects.heavenOrHell);
+		lAtk *= 1 / (1 + skillEffects.heavenOrHell)
+		lDef *= 1 / (1 + skillEffects.heavenOrHell)
 	}
 
 	if (skillEffects.sevenFever) {
@@ -924,7 +932,8 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 	}
 
 	if (skillEffects.allForOne) {
-		atk *= (1 + (skillEffects.allForOne ?? 0) * 0.1)
+		atk *= (1 + (skillEffects.allForOne ?? 0) * 0.1);
+		lAtk *= (1 + (skillEffects.allForOne ?? 0) * 0.1);
 	}
 	
 
@@ -944,12 +953,23 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 		nbDef *= 1 + (skillEffects.dark ?? 0) * 0.3;
 	}
 
+	let lAtkText = "";
+	let lDefText = "";
+
 	atk -= 1
+	latk -= 1
+	if (lAtk !== atk) {
+		if (lAtk >= 0) {
+			lAtkText = "+" + showNum(lAtk * 100) + "% ～ ";
+		} else {
+			lAtkText = showNum(lAtk * 100) + "% ～ ";
+		}
+	}
 	if (atk) {
 		if (atk >= 0) {
-			result.push("パワー: +" + showNum(atk * 100) + "%");
+			result.push("パワー: " + lAtkText + "+" + showNum(atk * 100) + "%");
 		} else {
-			result.push("パワー: " + showNum(atk * 100) + "%");
+			result.push("パワー: " + lAtkText + showNum(atk * 100) + "%");
 		}
 	}
 	bAtk -= 1
@@ -975,8 +995,16 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 		result.push("覚悟パワー: +" + showNum((skillEffects.haisuiAtkUp ?? 0) * 100) + "%");
 	}
 	def -= 1
+	lDef -= 1
+	if (lDef !== def) {
+		if (ldef >= 0) {
+			lDefText = "+" + showNum(lDef * 100) + "% ～ ";
+		} else {
+			lDefText = showNum(lDef * 100) + "% ～ ";
+		}
+	}
 	if (def) {
-		result.push("防御: +" + showNum(def * 100) + "%");
+		result.push("防御: " + lDefText + "+" + showNum(def * 100) + "%");
 	}
 	bDef -= 1
 	if (bDef) {
