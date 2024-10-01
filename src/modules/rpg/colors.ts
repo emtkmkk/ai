@@ -82,7 +82,7 @@ export const colors: Color[] = [
 		keyword: "7",
 		unlock: (data) => (data.winCount ?? 0) >= 100 || data.maxStatusUp >= 12,
 		message: (data) => (data.winCount ?? 0) >= 100 || data.maxStatusUp >= 12 ? `${serifs.rpg.color.unlock} (勝利数: **${(data.winCount ?? 0)}**) (運: **${(data.maxStatusUp ?? 7)}**)` : `100回勝利する、または運が良いと解放されます。(**${(data.winCount ?? 0)}** / 100) (**${(data.maxStatusUp ?? 7)}** / 12)`,
-		enhance: (data) => (data.winCount ?? 0) + (data.maxStatusUp ?? 0) * 75 >= 1200,
+		enhance: (data) => (data.winCount ?? 0) + (data.maxStatusUp ?? 0) * 40 >= 710,
 	},
 	{
 		id: 8,
