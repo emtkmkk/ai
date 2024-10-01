@@ -957,7 +957,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 	let lDefText = "";
 
 	atk -= 1
-	latk -= 1
+	lAtk -= 1
 	if (lAtk !== atk) {
 		if (lAtk >= 0) {
 			lAtkText = "+" + showNum(lAtk * 100) + "% ～ ";
