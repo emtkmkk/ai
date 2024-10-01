@@ -997,7 +997,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 	def -= 1
 	lDef -= 1
 	if (lDef !== def) {
-		if (ldef >= 0) {
+		if (lDef >= 0) {
 			lDefText = "+" + showNum(lDef * 100) + "% ～ ";
 		} else {
 			lDefText = showNum(lDef * 100) + "% ～ ";
@@ -1246,7 +1246,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 	(1 / (1 + (Math.min(0.4 * (skillEffects.itemEquip ?? 0) + (skillEffects.firstTurnItem ? (1/6) : 0), 1) * ((1 + (skillEffects.armorSelect ?? 0) + (skillEffects.foodSelect ?? 0)) / (4 + (skillEffects.armorSelect ?? 0) + (skillEffects.foodSelect ?? 0) - (skillEffects.poisonAvoid ?? 0))) * ((0.25 * (1 + itemDef)) + 0.25 * (1 + itemFood)))))
 
 	if (totalDef < 1) {
-		result.push("")
+		if (totalAtk <= 1) result.push("")
 		result.push("合計防御効果（平均）: " + showNum((1 - totalDef) * 100) + "%");
 	}
 
