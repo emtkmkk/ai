@@ -283,13 +283,16 @@ const determineOutcome = (ai, data, getShopItems) => {
 	return getShopItems();
 };
 
-const eventAmulet = () => {
+const eventAmulet = (data?) => {
 	// イベント的にショップにアイテムを並ばせることができます
 	const y = new Date().getFullYear();
 	const m = new Date().getMonth() + 1;
 	const d = new Date().getDate()
 	if (y === 2024 && m === 9 && d === 11) {
 		return `虹色のお守り`
+	}
+	if (data?.skills?.length <= 3) {
+		return `わかばのお守り`
 	}
 	return undefined;
 }
