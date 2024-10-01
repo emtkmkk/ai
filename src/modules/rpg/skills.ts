@@ -167,6 +167,7 @@ export type SkillEffect = {
 	rainbow?: number;
 	guardAtkUp?: number
 	distributed?: number
+	beginner?: number
 };
 
 export type Skill = {
@@ -514,26 +515,38 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
 		aggregatedEffect.poisonAvoid = (aggregatedEffect.poisonAvoid ?? 0) + data.itemMedal * 0.01;
 	}
 
+	if (aggregatedEffect.beginner) {
+		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) + (Math.pow(1 + begginer, 5 - data.skills?.length) - 1);
+		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) + (Math.pow(1 + begginer, 5 - data.skills?.length) - 1);
+	}
+
+
+	if (aggregatedEffect.rainbow && aggregatedEffect.rainbow > 1) {
+		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) + (aggregatedEffect.rainbow - 1) * 0.05;
+		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) + (aggregatedEffect.rainbow - 1) * 0.05;
+		aggregatedEffect.rainbow = 1;
+	}
+
 	//曜日ボーナス
-	if (day == 0 && aggregatedEffect.thunder) {
+	if ((day == 0 || aggregatedEffect.rainbow) && aggregatedEffect.thunder) {
 		aggregatedEffect.thunder *= 5 / 3;
 	}
-	if (day == 1 && aggregatedEffect.dark) {
+	if ((day == 1 || aggregatedEffect.rainbow) && aggregatedEffect.dark) {
 		aggregatedEffect.dark *= 5 / 3;
 	}
-	if (day == 2 && aggregatedEffect.fire) {
+	if ((day == 2 || aggregatedEffect.rainbow) && aggregatedEffect.fire) {
 		aggregatedEffect.fire *= 5 / 3;
 	}
-	if (day == 3 && aggregatedEffect.ice) {
+	if ((day == 3 || aggregatedEffect.rainbow) && aggregatedEffect.ice) {
 		aggregatedEffect.ice *= 5 / 3;
 	}
-	if (day == 4 && aggregatedEffect.spdUp) {
+	if ((day == 4 || aggregatedEffect.rainbow) && aggregatedEffect.spdUp) {
 		aggregatedEffect.spdUp *= 5 / 3;
 	}
-	if (day == 5 && aggregatedEffect.light) {
+	if ((day == 5 || aggregatedEffect.rainbow) && aggregatedEffect.light) {
 		aggregatedEffect.light *= 5 / 3;
 	}
-	if (day == 6 && aggregatedEffect.dart) {
+	if ((day == 6 || aggregatedEffect.rainbow) && aggregatedEffect.dart) {
 		aggregatedEffect.dart *= 5 / 3;
 	}
 
@@ -641,6 +654,11 @@ export function aggregateSkillsEffectsSkillX(data: any, skillX: number): SkillEf
 		aggregatedEffect.itemBoost = (aggregatedEffect.itemBoost ?? 0) + data.itemMedal * 0.01;
 		aggregatedEffect.mindMinusAvoid = (aggregatedEffect.mindMinusAvoid ?? 0) + data.itemMedal * 0.01;
 		aggregatedEffect.poisonAvoid = (aggregatedEffect.poisonAvoid ?? 0) + data.itemMedal * 0.01;
+	}
+
+	if (aggregatedEffect.beginner) {
+		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) + (Math.pow(1 + begginer, 5 - data.skills?.length) - 1);
+		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) + (Math.pow(1 + begginer, 5 - data.skills?.length) - 1);
 	}
 
 	if (aggregatedEffect.rainbow && aggregatedEffect.rainbow > 1) {
