@@ -516,8 +516,11 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
 	}
 
 	if (aggregatedEffect.beginner) {
-		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) + (Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) - 1);
-		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) + (Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) - 1);
+		/** 常時覚醒？ */
+		let alwaysSuper = getColor(data).alwaysSuper;
+		/* スキル数が1少ない度に×1.05 常時覚醒でない場合さらに×1.1 */
+		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) + ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) - 1) * (alwaysSuper ? 1 : 1 + (aggregatedEffect.beginner * 2)));
+		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) + ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) - 1) * (alwaysSuper ? 1 : 1 + (aggregatedEffect.beginner * 2)));
 	}
 
 	if (aggregatedEffect.rainbow && aggregatedEffect.rainbow > 1) {
@@ -656,8 +659,11 @@ export function aggregateSkillsEffectsSkillX(data: any, skillX: number): SkillEf
 	}
 
 	if (aggregatedEffect.beginner) {
-		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) + (Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) - 1);
-		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) + (Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) - 1);
+		/** 常時覚醒？ */
+		let alwaysSuper = getColor(data).alwaysSuper;
+		/* スキル数が1少ない度に×1.05 常時覚醒でない場合さらに×1.1 */
+		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) + ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) - 1) * (alwaysSuper ? 1 : 1 + (aggregatedEffect.beginner * 2)));
+		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) + ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) - 1) * (alwaysSuper ? 1 : 1 + (aggregatedEffect.beginner * 2)));
 	}
 
 	if (aggregatedEffect.rainbow && aggregatedEffect.rainbow > 1) {
