@@ -522,12 +522,12 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
 		/** 常時覚醒？ */
 		let alwaysSuper = getColor(data).alwaysSuper;
 		/* スキル数が1少ない度に×1.05 常時覚醒でない場合さらに×1.1 */
-		aggregatedEffect.atkUp = (1 + (aggregatedEffect.atkUp ?? 0)) * ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) * (alwaysSuper ? 1 : 1 + (aggregatedEffect.beginner * 2))));
+		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) * ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) * (alwaysSuper ? 1 : 1 + (aggregatedEffect.beginner * 2))));
 		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) * ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) * (alwaysSuper ? 1 : 1 + (aggregatedEffect.beginner * 2))));
 	}
 	
 	if (aggregatedEffect.rainbow && aggregatedEffect.rainbow > 1) {
-		aggregatedEffect.atkUp = (1 + (aggregatedEffect.atkUp ?? 0)) * (1 + (aggregatedEffect.rainbow - 1) * 0.05);
+		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) * (1 + (aggregatedEffect.rainbow - 1) * 0.05);
 		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) * (1 + (aggregatedEffect.rainbow - 1) * 0.05);
 		aggregatedEffect.rainbow = 1;
 	}
@@ -558,7 +558,7 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
 	if (aggregatedEffect.distributed) {
 		const count = countDuplicateSkillNames(data.skills)
 		if (count < 3) {
-			aggregatedEffect.atkUp = (1 + (aggregatedEffect.atkUp ?? 0)) * (1 + (aggregatedEffect.distributed) * (1 - (count * 0.4)));
+			aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) * (1 + (aggregatedEffect.distributed) * (1 - (count * 0.4)));
 			aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) * (1 + (aggregatedEffect.distributed) * (1 - (count * 0.4)));
 			aggregatedEffect.critUpFixed = (aggregatedEffect.critUpFixed ?? 0) + (aggregatedEffect.distributed) * (1 - (count * 0.4));
 			aggregatedEffect.defDmgUp = (aggregatedEffect.defDmgUp ?? 0) - (aggregatedEffect.distributed) * (1 - (count * 0.4));
@@ -576,7 +576,7 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
 	}
 
 	if (aggregatedEffect.abortDown && aggregatedEffect.abortDown > 1) {
-		aggregatedEffect.atkUp = (1 + (aggregatedEffect.atkUp ?? 0)) * (1 + (aggregatedEffect.abortDown - 1) * (1 / 3));
+		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) * (1 + (aggregatedEffect.abortDown - 1) * (1 / 3));
 		aggregatedEffect.abortDown = 1;
 	}
 
