@@ -519,10 +519,10 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
 		/** 常時覚醒？ */
 		let alwaysSuper = getColor(data).alwaysSuper;
 		/* スキル数が1少ない度に×1.05 常時覚醒でない場合さらに×1.1 */
-		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) + ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) * (alwaysSuper ? 1 : 1 + (aggregatedEffect.beginner * 2)) - 1));
-		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) + ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) * (alwaysSuper ? 1 : 1 + (aggregatedEffect.beginner * 2)) - 1));
+		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) * ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) * (alwaysSuper ? 1 : 1 + (aggregatedEffect.beginner * 2))));
+		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) * ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) * (alwaysSuper ? 1 : 1 + (aggregatedEffect.beginner * 2))));
 	}
-
+	
 	if (aggregatedEffect.rainbow && aggregatedEffect.rainbow > 1) {
 		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) * (1 + (aggregatedEffect.rainbow - 1) * 0.05);
 		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) * (1 + (aggregatedEffect.rainbow - 1) * 0.05);
@@ -628,8 +628,8 @@ export function aggregateSkillsEffectsSkillX(data: any, skillX: number): SkillEf
 		const skill = _skill.name ? skills.find((x) => x.name === _skill.name) ?? _skill : _skill;
 		const __skill = deepClone(skill);
 		if (__skill.unique) {
-			__skill.effect.atkUp = (__skill.effect.atkUp ?? 0) + (0.05 * (skillX - 1));
-			__skill.effect.defUp = (__skill.effect.defUp ?? 0) + (0.05 * (skillX - 1));
+			__skill.effect.atkUp = (__skill.effect.atkUp ?? 0) * (1 + (0.05 * (skillX - 1)));
+			__skill.effect.defUp = (__skill.effect.defUp ?? 0) * (1 + (0.05 * (skillX - 1)));
 		} else {
 			for (const eff in __skill.effect) {
 				__skill.effect[eff] = __skill.effect[eff] * skillX;
@@ -716,12 +716,12 @@ export function aggregateSkillsEffectsSkillX(data: any, skillX: number): SkillEf
 	}
 
 	if (aggregatedEffect.abortDown && aggregatedEffect.abortDown > 1) {
-		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) * (1 + (aggregatedEffect.abortDown - 1) * (1 / 3));
+		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) * (1 + ((aggregatedEffect.abortDown - 1) * (1 / 3)));
 		aggregatedEffect.abortDown = 1;
 	}
 
 	if (aggregatedEffect.enemyCritDown && aggregatedEffect.enemyCritDown > 1) {
-		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) * ((1 + aggregatedEffect.enemyCritDown - 1) * (1 / 3));
+		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) * (1 + (aggregatedEffect.enemyCritDown - 1) * (1 / 3));
 		aggregatedEffect.enemyCritDown = 1;
 	}
 
