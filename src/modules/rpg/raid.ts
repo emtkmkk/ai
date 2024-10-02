@@ -533,7 +533,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		message += serifs.rpg.forcePostCount + `\n`;
 		if (aggregateTokensEffects(data).showPostBonus) {
 			buff += 1;
-			message += serifs.rpg.postBonusInfo.post(postCount, tp > 1 ? "+" + Math.floor((tp - 1) * 100) : "-" + Math.floor((tp - 1) * 100)) + `\n`;
+			message += serifs.rpg.postBonusInfo.post(postCount, tp > 1 ? "+" + Math.floor((tp - 1) * 100) : Math.floor((tp - 1) * 100)) + `\n`;
 		}
 	} else {
 		if (aggregateTokensEffects(data).showPostBonus) {
@@ -548,6 +548,13 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
 	// ここで残りのステータスを計算しなおす
 	let { atk, def, spd } = calculateStats(data, msg, skillEffects, color, 0.2);
+
+	// 敵のステータスを計算
+	/** 敵の攻撃力 */
+	let enemyAtk = (typeof enemy.atk === "function") ? enemy.atk(atk, def, spd) : lv * 3.5 * (enemy.atk ?? 1);
+	/** 敵の防御力 */
+	let enemyDef = (typeof enemy.def === "function") ? enemy.def(atk, def, spd) : lv * 3.5 * (enemy.def ?? 1);
+	
 	if (skillEffects.fortuneEffect || aggregateTokensEffects(data).fortuneEffect) {
 		const result = fortune(atk, def, skillEffects.fortuneEffect);
 		atk = result.atk;
@@ -675,12 +682,6 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	if (isTired) {
 		def = def * (1 + (skillEffects.notBattleBonusDef ?? 0));
 	}
-
-	// 敵のステータスを計算
-	/** 敵の攻撃力 */
-	let enemyAtk = (typeof enemy.atk === "function") ? enemy.atk(atk, def, spd) : lv * 3.5 * (enemy.atk ?? 1);
-	/** 敵の防御力 */
-	let enemyDef = (typeof enemy.def === "function") ? enemy.def(atk, def, spd) : lv * 3.5 * (enemy.def ?? 1);
 
 	if (skillEffects.enemyStatusBonus) {
 		const enemyStrongs = Math.min((enemyAtk / (lv * 3.5)) * (getVal(enemy.atkx, [3]) ?? 3) + (enemyDef / (lv * 3.5)) * (getVal(enemy.defx, [3]) ?? 3), 40);
