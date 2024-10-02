@@ -522,8 +522,8 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
 		/** 常時覚醒？ */
 		let alwaysSuper = getColor(data).alwaysSuper;
 		/* スキル数が1少ない度に×1.05 レイドかつ常時覚醒でない場合さらに×1.1 */
-		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) * ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) * (alwaysSuper || !data.raid ? 1 : 1 + (aggregatedEffect.beginner * 2))));
-		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) * ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) * (alwaysSuper || !data.raid ? 1 : 1 + (aggregatedEffect.beginner * 2))));
+		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) * ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) * (alwaysSuper || !data.raid ? 1 : 1.1)));
+		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) * ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) * (alwaysSuper || !data.raid ? 1 : 1.1)));
 	}
 	
 	if (aggregatedEffect.rainbow && aggregatedEffect.rainbow > 1) {
@@ -671,8 +671,8 @@ export function aggregateSkillsEffectsSkillX(data: any, skillX: number): SkillEf
 		/** 常時覚醒？ */
 		let alwaysSuper = getColor(data).alwaysSuper;
 		/* スキル数が1少ない度に×1.05 レイドかつ常時覚醒でない場合さらに×1.1 */
-		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) * ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) * (alwaysSuper || !data.raid ? 1 : 1 + (aggregatedEffect.beginner * 2))));
-		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) * ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) * (alwaysSuper || !data.raid ? 1 : 1 + (aggregatedEffect.beginner * 2))));
+		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) * ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) * (alwaysSuper || !data.raid ? 1 : 1.1)));
+		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) * ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) * (alwaysSuper || !data.raid ? 1 : 1.1)));
 	}
 
 	if (aggregatedEffect.rainbow && aggregatedEffect.rainbow > 1) {
