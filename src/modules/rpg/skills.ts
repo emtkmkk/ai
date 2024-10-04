@@ -883,7 +883,27 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 	lAtk = atk;
 	lDef = def;
 
-	spd *= 1 + (isSuper ? 0.2 : 0);
+	if (isSuper) {
+		if (!aggregateTokensEffects(data).notSuperSpeedUp) spd *= 1.2;
+		if (aggregateTokensEffects(data).redMode) {
+			skillEffects.critUpFixed = (skillEffects.critUpFixed ?? 0) + 0.08
+			skillEffects.critDmgUp = Math.max((skillEffects.critDmgUp ?? 0), 0.4)
+		} else if (aggregateTokensEffects(data).blueMode) {
+			skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.2
+		} else if (aggregateTokensEffects(data).yellowMode) {
+			spd *= 1.1;
+			skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.1
+		} else if (aggregateTokensEffects(data).greenMode) {
+			skillEffects.itemEquip = (skillEffects.itemEquip ?? 0) + 0.1;
+			skillEffects.itemBoost = (skillEffects.itemBoost ?? 0) + 0.1;
+			skillEffects.mindMinusAvoid = (skillEffects.mindMinusAvoid ?? 0) + 0.1;
+			skillEffects.poisonAvoid = (skillEffects.poisonAvoid ?? 0) + 0.1;
+		}
+		if (aggregateTokensEffects(data).hyperMode) {
+			skillEffects.postXUp = (skillEffects.postXUp ?? 0) + 0.005
+			resultS.push("覚醒投稿数ボーナス: 無効");
+		}
+	}
 
 	if (skillEffects.postXUp) {
 		atk *= (1 + (skillEffects.postXUp ?? 0) * 10)
@@ -1195,7 +1215,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 	itemFood = (1 + (skillEffects.itemBoost ?? 0)) * (1 + (skillEffects.foodBoost ?? 0));
 	itemResist = itemResist / (1 + (skillEffects.itemBoost ?? 0));
 	itemResist = itemResist / (1 + (skillEffects.poisonResist ?? 0));
-	if (isSuper) itemResist = itemResist / 2
+	if (isSuper && !aggregateTokensEffects(data).redMode) itemResist = itemResist / 2
 
 	itemAtk -= 1
 	if (itemAtk) {

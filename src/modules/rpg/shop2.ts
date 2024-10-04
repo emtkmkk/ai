@@ -96,6 +96,34 @@ const resetCantRerollSkill = (data) => {
 		}
 	}
 }
+//limit: (data) => !data.items.filter((x) => x.name === "平常心のお札").length && !data.bankItems?.filter((x) => x === "平常心のお札").length,
+const canBankItems: ShopItem[] = [
+	{ name: `乱数透視の札`, price: 50, desc: `所持している間、ダメージの乱数が表示されるようになります`, type: "token", effect: { showRandom: true }, always: true } as TokenItem,
+	{ name: `平常心のお札`, price: 50, desc: `どれだけ体力が低くても決死の覚悟をしなくなる`, type: "token", effect: { notLastPower: true }, always: true } as TokenItem,
+	{ name: `温存のお札`, price: 50, desc: `レイドボス以外でお守りを使わないようになる`, type: "token", effect: { normalModeNotUseAmulet: true }, always: true } as TokenItem,
+	{ name: `全身全霊のお札`, price: 300, desc: `持っていると常に行動回数が1回になるが、すごく重い一撃を放てる`, type: "token", effect: { allForOne: true }, always: true } as TokenItem,
+	{ name: `運命不変のお札`, price: 300, desc: `持っていると常に与ダメージがランダム変化しなくなる`, type: "token", effect: { notRandom: true }, always: true } as TokenItem,
+	{ name: `しあわせのお札`, price: 300, desc: `レイド時、常にステータスの割合がランダムに一時的に変化する`, type: "token", effect: { fortuneEffect: true }, always: true } as TokenItem,
+	{ name: `超覚醒の札`, price: 50, desc: `持っていると覚醒時の投稿数増加ボーナスを失いますが、投稿数による効果が10%上がります`, type: "token", effect: { hyperMode: true }, always: true } as TokenItem,
+	{ name: `覚醒変更の札（朱）`, price: 50, desc: `覚醒時の行動回数増加と毒アイテム効果軽減を失いますが、代わりにクリティカルダメージが+40%以下の場合、+40%になり、クリティカル率（固定）+8%を得るようになります 4色のうちどれか1つしか発動しません`, type: "token", effect: { notSuperSpeedUp: true, redMode: true }, always: true } as TokenItem,
+	{ name: `覚醒変更の札（橙）`, price: 50, desc: `覚醒時の行動回数増加が半減しますが、代わりにダメージカット+10%を得るようになります 4色のうちどれか1つしか発動しません`, type: "token", effect: { notSuperSpeedUp: true, yellowMode: true }, always: true } as TokenItem,
+	{ name: `覚醒変更の札（蒼）`, price: 50, desc: `覚醒時の行動回数増加を失いますが、代わりにダメージカット+20%を得るようになります 4色のうちどれか1つしか発動しません`, type: "token", effect: { notSuperSpeedUp: true, blueMode: true }, always: true } as TokenItem,
+	{ name: `覚醒変更の札（翠）`, price: 50, desc: `覚醒時の行動回数増加を失いますが、代わりに全ての道具効果+10%を得るようになります 4色のうちどれか1つしか発動しません`, type: "token", effect: { notSuperSpeedUp: true, greenMode: true }, always: true } as TokenItem,
+]
+
+const bankItemsDesc2 = {
+	"乱数透視の札": "ダメージの乱数が表示されなくなる",
+	"平常心のお札": "体力が低くなると決死の覚悟をするようになる",
+	"温存のお札": "レイドボス以外でもお守りを使うようになる",
+	"全身全霊のお札": "複数回行動するようになるが、一撃は軽くなる",
+	"運命不変のお札": "与ダメージがランダム変化するようになる",
+	"しあわせのお札": "ステータスの割合がランダムに一時的に変化しなくなる",
+	"超覚醒の札": "覚醒時の投稿数増加ボーナスを得られますが、投稿数効果上昇を失います",
+	"覚醒変更の札（朱）": "覚醒時の効果が行動回数増加・毒アイテム効果軽減に戻ります",
+	"覚醒変更の札（橙）": "覚醒時の効果が行動回数増加に戻ります",
+	"覚醒変更の札（蒼）": "覚醒時の効果が行動回数増加に戻ります",
+	"覚醒変更の札（翠）": "覚醒時の効果が行動回数増加に戻ります",
+}
 
 export const shop2Items: ShopItem[] = [
 	...skills.filter((x) => x.name === "分散型").map((x): Item => ({ name: `${x.name}の教本`, limit: (data) => !data.freeDistributed && !data.nextSkill && countDuplicateSkillNames(data.skills) === 0 && data.skills.every((x) => x.name !== "分散型"), price: (data, rnd, ai) => 1, desc: `購入すると次のスキル変更時に必ず「${x.name}」${x.desc ? `（${x.desc}）` : ""}を習得できる（複製時は対象外）`, type: "item", effect: (data) => { data.freeDistributed = true; data.nextSkill = x.name }, always: true })),
@@ -105,23 +133,9 @@ export const shop2Items: ShopItem[] = [
 	{ name: `究極のお守り`, limit: (data) => enhanceCount(data) >= 9, price: 18, desc: `${config.rpgHeroName}RPGを極めたあなたに……`, type: "amulet", effect: ultimateEffect, durability: 6, short: "究極", isUsed: (data) => true, always: true } as AmuletItem,
 	{ name: "スキル複製珠", desc: "スキルを変更し、既に覚えているスキルのどれかを1つ覚えます", price: 6, orb: true, type: "item", effect: (data) => data.duplicationOrb = (data.duplicationOrb ?? 0) + 1, infinite: true, always: true },
 	{ name: `苦労のお守り`, limit: (data) => data.allClear && data.streak > 0, price: 1, desc: `持っていると通常モードの敵が強くなります 耐久1 敗北時耐久減少`, type: "amulet", effect: { enemyBuff: 1 }, durability: 1, short: "苦", isUsed: (data) => true, isMinusDurability: (data) => data.streak < 1, always: true } as AmuletItem,
-	{ name: `平常心のお札`, limit: (data) => !data.items.filter((x) => x.name === "平常心のお札").length && !data.bankItems?.filter((x) => x === "平常心のお札").length, price: 50, desc: `どれだけ体力が低くても決死の覚悟をしなくなる`, type: "token", effect: { notLastPower: true }, always: true } as TokenItem,
-	{ name: `温存のお札`, limit: (data) => !data.items.filter((x) => x.name === "温存のお札").length && !data.bankItems?.filter((x) => x === "温存のお札").length, price: 50, desc: `レイドボス以外でお守りを使わないようになる`, type: "token", effect: { normalModeNotUseAmulet: true }, always: true } as TokenItem,
-	{ name: `全身全霊のお札`, limit: (data) => !data.items.filter((x) => x.name === "全身全霊のお札").length && !data.bankItems?.filter((x) => x === "全身全霊のお札").length, price: 300, desc: `持っていると常に行動回数が1回になるが、すごく重い一撃を放てる`, type: "token", effect: { allForOne: true }, always: true } as TokenItem,
-	{ name: `運命不変のお札`, limit: (data) => !data.items.filter((x) => x.name === "運命不変のお札").length && !data.bankItems?.filter((x) => x === "運命不変のお札").length, price: 300, desc: `持っていると常に与ダメージがランダム変化しなくなる`, type: "token", effect: { notRandom: true }, always: true } as TokenItem,
-	{ name: `しあわせのお札`, limit: (data) => !data.items.filter((x) => x.name === "しあわせのお札").length && !data.bankItems?.filter((x) => x === "しあわせのお札").length, price: 300, desc: `レイド時、常にステータスの割合がランダムに一時的に変化する`, type: "token", effect: { fortuneEffect: true }, always: true } as TokenItem,
-	{ name: `平常心のお札`, limit: (data) => !data.items.filter((x) => x.name === "平常心のお札").length && data.bankItems?.filter((x) => x === "平常心のお札").length, price: 1, desc: `どれだけ体力が低くても決死の覚悟をしなくなる`, type: "token", effect: { notLastPower: true }, always: true } as TokenItem,
-	{ name: `温存のお札`, limit: (data) => !data.items.filter((x) => x.name === "温存のお札").length && data.bankItems?.filter((x) => x === "温存のお札").length, price: 1, desc: `レイドボス以外でお守りを使わないようになる`, type: "token", effect: { normalModeNotUseAmulet: true }, always: true } as TokenItem,
-	{ name: `全身全霊のお札`, limit: (data) => !data.items.filter((x) => x.name === "全身全霊のお札").length && data.bankItems?.filter((x) => x === "全身全霊のお札").length, price: 1, desc: `持っていると常に行動回数が1回になるが、すごく重い一撃を放てる`, type: "token", effect: { allForOne: true }, always: true } as TokenItem,
-	{ name: `運命不変のお札`, limit: (data) => !data.items.filter((x) => x.name === "運命不変のお札").length && data.bankItems?.filter((x) => x === "運命不変のお札").length, price: 1, desc: `持っていると常に与ダメージがランダム変化しなくなる`, type: "token", effect: { notRandom: true }, always: true } as TokenItem,
-	{ name: `しあわせのお札`, limit: (data) => !data.items.filter((x) => x.name === "しあわせのお札").length && data.bankItems?.filter((x) => x === "しあわせのお札").length, price: 1, desc: `レイド時、常にステータスの割合がランダムに一時的に変化する`, type: "token", effect: { fortuneEffect: true }, always: true } as TokenItem,
-	{ name: `乱数透視の札`, limit: (data) => !data.items.filter((x) => x.name === "乱数透視の札").length && data.bankItems?.filter((x) => x === "乱数透視の札").length, price: 1, desc: `所持している間、ダメージの乱数が表示されるようになります`, type: "token", effect: { showRandom: true }, always: true } as TokenItem,
-	{ name: "平常心のお札を預ける", limit: (data) => data.items.filter((x) => x.name === "平常心のお札").length, desc: "体力が低くなると決死の覚悟をするようになる", price: 0, type: "item", effect: (data) => { data.bankItems = Array.from(new Set([...(data.bankItems ?? []), "平常心のお札"])); data.items = data.items.filter((x) => x.name !== "平常心のお札") }, always: true },
-	{ name: "温存のお札を預ける", limit: (data) => data.items.filter((x) => x.name === "温存のお札").length, desc: "レイドボス以外でもお守りを使う", price: 0, type: "item", effect: (data) => { data.bankItems = Array.from(new Set([...(data.bankItems ?? []), "温存のお札"])); data.items = data.items.filter((x) => x.name !== "温存のお札") }, always: true },
-	{ name: "全身全霊のお札を預ける", limit: (data) => data.items.filter((x) => x.name === "全身全霊のお札").length, desc: "複数回行動するようになるが、一撃は軽くなる", price: 0, type: "item", effect: (data) => { data.bankItems = Array.from(new Set([...(data.bankItems ?? []), "全身全霊のお札"])); data.items = data.items.filter((x) => x.name !== "全身全霊のお札") }, always: true },
-	{ name: "運命不変のお札を預ける", limit: (data) => data.items.filter((x) => x.name === "運命不変のお札").length, desc: "与ダメージがランダム変化するようになる", price: 0, type: "item", effect: (data) => { data.bankItems = Array.from(new Set([...(data.bankItems ?? []), "運命不変のお札"])); data.items = data.items.filter((x) => x.name !== "運命不変のお札") }, always: true },
-	{ name: "しあわせのお札を預ける", limit: (data) => data.items.filter((x) => x.name === "しあわせのお札").length, desc: "ステータスの割合がランダムに一時的に変化しなくなる", price: 0, type: "item", effect: (data) => { data.bankItems = Array.from(new Set([...(data.bankItems ?? []), "しあわせのお札"])); data.items = data.items.filter((x) => x.name !== "しあわせのお札") }, always: true },
-	{ name: "乱数透視の札を預ける", limit: (data) => data.items.filter((x) => x.name === "乱数透視の札").length, desc: "ダメージの乱数が表示されなくなります", price: 0, type: "item", effect: (data) => { data.bankItems = Array.from(new Set([...(data.bankItems ?? []), "乱数透視の札"])); data.items = data.items.filter((x) => x.name !== "乱数透視の札") }, always: true },
+	...(canBankItems.map((x) => ({...x, limit: (data) => !data.items.filter((y) => y.name === x.name).length && !data.bankItems?.filter((y) => y === x.name).length && (!x.limit || x.limit(data, () => 0))})) as TokenItem[]),
+	...(canBankItems.map((x) => ({...x, price: 1, limit: (data) => !data.items.filter((y) => y.name === x.name).length && data.bankItems?.filter((y) => y === x.name).length && (!x.limit || x.limit(data, () => 0))})) as TokenItem[]),
+	...(canBankItems.map((x) => ({...x, name:x.name + "を預ける", price: 0, type: "item", desc: bankItemsDesc2[x.name], effect: (data) => { data.bankItems = Array.from(new Set([...(data.bankItems ?? []), x.name])); data.items = data.items.filter((y) => y.name !== x.name) }, limit: (data) => !data.items.filter((y) => y.name === x.name).length && (!x.limit || x.limit(data, () => 0))})) as Item[]),
 	{ name: `浄化の水晶`, limit: (data) => data.skills.filter((x) => x.cantReroll).length, price: 50, desc: `${config.rpgHeroName}が持っている変更不可のスキルを変更可能なスキルに置き換えます ただしステータスが変動する可能性があります`, type: "item", effect: resetCantRerollSkill, always: true },
 	{ name: "力の種", desc: "購入時、パワー+1 防御-1", price: 1, type: "item", effect: (data) => { data.atk = (data.atk ?? 0) + 1; data.def = (data.def ?? 0) - 1; }, infinite: true, always: true },
 	{ name: "幸運の力の種", limit: (data) => ((10 - (data.atk % 10) + 7) % 10) !== 0, desc: "購入時、パワーの下1桁が7になるように防御から移動", price: (data) => ((10 - (data.atk % 10) + 7) % 10), type: "item", effect: (data) => { data.def = (data.def ?? 0) - ((10 - (data.atk % 10) + 7) % 10); data.atk = (data.atk ?? 0) + ((10 - (data.atk % 10) + 7) % 10); }, infinite: true, always: true },

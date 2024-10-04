@@ -468,17 +468,22 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	let postCount = 0;
 	let continuousBonusNum = 0;
 	let tp;
+	
+	if (isSuper && aggregateTokensEffects(data).hyperMode) {
+		skillEffects.postXUp = (skillEffects.postXUp ?? 0) + 0.005
+	}
+	const superBonusPost = (isSuper && !aggregateTokensEffects(data).hyperMode ? 200 : 0)
 	if (enemy.forcePostCount) {
 		postCount = enemy.forcePostCount;
-		tp = getPostX(postCount) * (1 + ((skillEffects.postXUp ?? 0) * Math.min((postCount - (isSuper ? 200 : 0)) / 20, 10)));
+		tp = getPostX(postCount) * (1 + ((skillEffects.postXUp ?? 0) * Math.min((postCount - superBonusPost) / 20, 10)));
 	} else {
-		postCount = await getPostCount(ai, module_, data, msg, (isSuper ? 200 : 0));
+		postCount = await getPostCount(ai, module_, data, msg, superBonusPost);
 
 		continuousBonusNum = (Math.min(Math.max(10, postCount / 2), 25));
 
 		postCount = postCount + continuousBonusNum;
 
-		tp = getRaidPostX(postCount) * (1 + ((skillEffects.postXUp ?? 0) * Math.min((postCount - (isSuper ? 200 : 0)) / 20, 10)));
+		tp = getRaidPostX(postCount) * (1 + ((skillEffects.postXUp ?? 0) * Math.min((postCount - superBonusPost) / 20, 10)));
 	}
 
 	if (!isSuper) {
@@ -618,10 +623,35 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			const superColor = colors.find((x) => x.alwaysSuper)?.name ?? colors.find((x) => x.default)?.name ?? colors[0]?.name;
 			buff += 1;
 			me = superColor;
-			message += serifs.rpg.super(me, up) + `\n`;
+			if (!aggregateTokensEffects(data).notSuperSpeedUp) message += serifs.rpg.super(me, up) + `\n`;
 			data.superCount = (data.superCount ?? 0) + 1;
 		}
-		spd = spd + up;
+		let customStr = ""
+		if (!aggregateTokensEffects(data).hyperMode) {
+			customStr += "パワー・防御が**超**アップ！"
+		} else {
+			customStr += "投稿数による能力上昇量がアップ！"
+		}
+		if (!aggregateTokensEffects(data).notSuperSpeedUp) spd = spd + up;
+		if (aggregateTokensEffects(data).redMode) {
+			skillEffects.critUpFixed = (skillEffects.critUpFixed ?? 0) + 0.08
+			skillEffects.critDmgUp = Math.max((skillEffects.critDmgUp ?? 0), 0.4)
+			if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`クリティカル性能アップ！\n${customStr}`) + `\n`;
+		} else if (aggregateTokensEffects(data).blueMode) {
+			skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.2
+			if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`ダメージカット+20%！\n${customStr}`) + `\n`;
+		} else if (aggregateTokensEffects(data).yellowMode) {
+			const up = Math.max(spd + 1, Math.round(getSpd(getSpdX(spd) * 1.1))) - spd;
+			spd = spd + up;
+			skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.1
+			if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`行動回数+${up}！\nダメージカット+10%！\n${customStr}`) + `\n`;
+		} else if (aggregateTokensEffects(data).greenMode) {
+			skillEffects.itemEquip = (skillEffects.itemEquip ?? 0) + 0.1;
+			skillEffects.itemBoost = (skillEffects.itemBoost ?? 0) + 0.1;
+			skillEffects.mindMinusAvoid = (skillEffects.mindMinusAvoid ?? 0) + 0.1;
+			skillEffects.poisonAvoid = (skillEffects.poisonAvoid ?? 0) + 0.1;
+			if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`全アイテム効果+10%！\n${customStr}`) + `\n`;
+		}
 	}
 
 	let mark = ":blank:";
@@ -943,7 +973,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 					message += `${item.name}を取り出し、食べた！\n`;
 					if (enemy.pLToR) {
 						mindMsg(item.mind);
-						if (item.mind < 0 && isSuper) item.mind = item.mind / 2;
+						if (item.mind < 0 && isSuper && !aggregateTokensEffects(data).redMode) item.mind = item.mind / 2;
 						itemBonus.atk = atk * (item.mind * 0.0025);
 						itemBonus.def = def * (item.mind * 0.0025);
 						atk = atk + itemBonus.atk;
@@ -977,7 +1007,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 					message += `${item.name}を取り出し、食べた！\n`;
 					if (enemy.pLToR) {
 						mindMsg(item.mind);
-						if (item.mind < 0 && isSuper) item.mind = item.mind / 2;
+						if (item.mind < 0 && isSuper && !aggregateTokensEffects(data).redMode) item.mind = item.mind / 2;
 						itemBonus.atk = atk * (item.mind * 0.0025);
 						itemBonus.def = def * (item.mind * 0.0025);
 						atk = atk + itemBonus.atk;
