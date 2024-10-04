@@ -952,7 +952,7 @@ export default class extends Module {
 			} else if (continuousBonus > 0) {
 				message += serifs.rpg.postBonusInfo.continuous.c(Math.floor(continuousBonusNum)) + `\n`;
 			}
-			if (isSuper) {
+			if (isSuper && !aggregateTokensEffects(data).hyperMode) {
 				message += serifs.rpg.postBonusInfo.super + `\n`;
 			}
 			message += serifs.rpg.postBonusInfo.post(Math.floor(postCount), tp >= 1 ? "+" + Math.floor((tp - 1) * 100) : "-" + Math.floor((tp - 1) * 100)) + `\n`;
