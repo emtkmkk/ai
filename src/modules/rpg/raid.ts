@@ -544,7 +544,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		if (aggregateTokensEffects(data).showPostBonus) {
 			buff += 1;
 			if (continuousBonusNum) message += serifs.rpg.postBonusInfo.continuous.a(Math.floor(continuousBonusNum)) + `\n`;
-			if (isSuper) {
+			if (isSuper && !aggregateTokensEffects(data).hyperMode) {
 				message += serifs.rpg.postBonusInfo.super + `\n`;
 			}
 			message += serifs.rpg.postBonusInfo.post(postCount, tp > 1 ? "+" + Math.floor((tp - 1) * 100) : (tp != 1 ? "-" : "") + Math.floor((tp - 1) * 100)) + `\n`;
