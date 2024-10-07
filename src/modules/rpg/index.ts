@@ -1016,7 +1016,7 @@ export default class extends Module {
 			if (!aggregateTokensEffects(data).notSuperSpeedUp) spd += 2;
 			if (aggregateTokensEffects(data).redMode) {
 				skillEffects.critUpFixed = (skillEffects.critUpFixed ?? 0) + 0.08
-				skillEffects.critDmgUp = Math.max((skillEffects.critDmgUp ?? 0), 0.4)
+				skillEffects.critDmgUp = Math.max((skillEffects.critDmgUp ?? 0), 0.35)
 				if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`クリティカル性能アップ！\n${customStr}`) + `\n`;
 			} else if (aggregateTokensEffects(data).blueMode) {
 				skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.2
