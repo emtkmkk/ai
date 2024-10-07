@@ -887,7 +887,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 		if (!aggregateTokensEffects(data).notSuperSpeedUp) spd *= 1.2;
 		if (aggregateTokensEffects(data).redMode) {
 			skillEffects.critUpFixed = (skillEffects.critUpFixed ?? 0) + 0.08
-			skillEffects.critDmgUp = Math.max((skillEffects.critDmgUp ?? 0), 0.4)
+			skillEffects.critDmgUp = Math.max((skillEffects.critDmgUp ?? 0), 0.35)
 		} else if (aggregateTokensEffects(data).blueMode) {
 			skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.2
 		} else if (aggregateTokensEffects(data).yellowMode) {
