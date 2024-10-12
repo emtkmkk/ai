@@ -35,6 +35,10 @@ export default class extends Module {
 	@autobind
 	private async mentionHook(msg: Message) {
 		if (!msg.includes(['数当て', '数あて'])) return false;
+		if (msg.visibility === 'specified') {
+			msg.reply("数当てはダイレクトでは始められなくなりました。\nフォロワー以上の公開範囲でお願いします！")
+			return true
+		}
 
 		const exist = this.guesses.findOne({
 			userId: msg.userId,
