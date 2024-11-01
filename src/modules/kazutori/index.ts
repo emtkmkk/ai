@@ -303,7 +303,7 @@ export default class extends Module {
         }
 
         // 整数じゃない
-        if (!num.isInteger()) {
+        if (!num.equals(num.floor())) {
             msg.reply('リプライの中に整数が見つかりませんでした！').then(reply => {
                 game.replyKey.push(msg.userId);
                 this.games.update(game);
