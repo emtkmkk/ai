@@ -19,6 +19,8 @@
 		"paths": {
 			"@/*": ["src/*"]
 		},
+    "typeRoots": ["./src/types"]
+
 	},
 	"compileOnSave": false,
 	"include": [
