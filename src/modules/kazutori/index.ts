@@ -99,7 +99,7 @@ export default class extends Module {
         else if (Math.random() < 0.02 && recentGame?.maxnum && !recentGame.maxnum.equals(1)) {
             maxnum = new Decimal(1);
         }
-        // 3%かつ開催2回目以降かつ前回が無限モードではない場合 MaxをDecimal.MAX_VALUEにする
+        // 3%かつ開催2回目以降かつ前回が無限モードではない場合 Maxを Decimal.MAX_VALUE にする
         else if ((Math.random() < 0.03 && recentGame?.maxnum && !recentGame.maxnum.equals(Decimal.MAX_VALUE)) || flg?.includes("inf")) {
             maxnum = Decimal.MAX_VALUE;
         }
@@ -303,7 +303,7 @@ export default class extends Module {
         }
 
         // 整数じゃない
-        if (!num.equals(num.floor())) {
+        if (!num.isInteger()) {
             msg.reply('リプライの中に整数が見つかりませんでした！').then(reply => {
                 game.replyKey.push(msg.userId);
                 this.games.update(game);
@@ -317,7 +317,7 @@ export default class extends Module {
         // 範囲外
         if (game.maxnum.greaterThan(0) && (num.lessThan(0) || num.greaterThan(game.maxnum))) {
             let strn = num.equals(new Decimal(Decimal.NUMBER_MAX_VALUE)) ? '∞' : num.toString();
-            let maxStr = game.maxnum.equals(Decimal.NUMBER_MAX_VALUE) ? '∞' : game.maxnum.toString();
+            let maxStr = game.maxnum.equals(Decimal.MAX_VALUE) ? '∞' : game.maxnum.toString();
             msg.reply(`\n「${strn}」は今回のゲームでは範囲外です！\n0~${maxStr}の範囲で指定してくださいね！`).then(reply => {
                 game.replyKey.push(msg.userId);
                 this.games.update(game);
@@ -599,7 +599,7 @@ export default class extends Module {
             strmed += "}\\)";
             strmed = "\\(" + strmed;
         }
-        const maxnumText = game.maxnum.equals(Decimal.NUMBER_MAX_VALUE) ? '∞' : game.maxnum.toString();
+        const maxnumText = game.maxnum.equals(Decimal.MAX_VALUE) ? '∞' : game.maxnum.toString();
         const text = (game.winRank > 0 ? game.winRank === 1 ? "" : "勝利条件 : " + game.winRank + "番目に大きい値\n\n" : "勝利条件 : 中央値 (" + strmed + ")\n\n") + results.join('\n') + '\n\n' + (winner
             ? serifs.kazutori.finishWithWinner(acct(winner), name, item, reverse, perfect, winnerFriend?.doc?.kazutoriData?.winCount ?? 0, medal && (winnerFriend?.doc?.kazutoriData?.winCount ?? 0) > 50 ? winnerFriend?.doc?.kazutoriData?.medal ?? 0 : null)
             : serifs.kazutori.finishWithNoWinner(item));
