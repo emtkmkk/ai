@@ -8,7 +8,7 @@ import { acct } from '@/utils/acct';
 import { genItem } from '@/vocabulary';
 import config from '@/config';
 
-var Decimal = require("break_infinity.js");
+import Decimal = require('break_infinity.js');
 
 type Game = {
     votes: {
