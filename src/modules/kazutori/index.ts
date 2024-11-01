@@ -1,6 +1,6 @@
 import autobind from 'autobind-decorator';
 import * as loki from 'lokijs';
-import * as Decimal from 'break_infinity.js';
+import Decimal from 'break_infinity.js';
 import Module from '@/module';
 import Message from '@/message';
 import serifs from '@/serifs';
