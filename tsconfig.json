@@ -12,6 +12,8 @@
 		"module": "commonjs",
 		"removeComments": false,
 		"noLib": false,
+		"esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
 		"skipLibCheck": true,
 		"outDir": "built",
 		"rootDir": "src",
