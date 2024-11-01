@@ -1,6 +1,5 @@
 import autobind from 'autobind-decorator';
 import * as loki from 'lokijs';
-import Decimal from 'break_infinity.js';
 import Module from '@/module';
 import Message from '@/message';
 import serifs from '@/serifs';
@@ -8,6 +7,8 @@ import { User } from '@/misskey/user';
 import { acct } from '@/utils/acct';
 import { genItem } from '@/vocabulary';
 import config from '@/config';
+
+var Decimal = require("break_infinity.js");
 
 type Game = {
     votes: {
