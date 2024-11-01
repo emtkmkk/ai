@@ -7,7 +7,7 @@ import { User } from '@/misskey/user';
 import { acct } from '@/utils/acct';
 import { genItem } from '@/vocabulary';
 import config from '@/config';
-import * as Decimal from 'break_infinity.js';
+var Decimal = require("break_infinity.js");
 
 type Game = {
     votes: {
