@@ -44,37 +44,51 @@ export default class extends Module {
 
 	@autobind
 	private async linkAccountListAdd() {
-		const lists = await this.ai.api("users/lists/list", {}) as List[];
-		this.list = lists.find((x) => x.name === "Linked");
-		if (!this.list) {
-			this.list = await this.ai.api("users/lists/create", { name: "Linked" }) as List;
-			if (!this.list) return;
-			console.log("Linked List Create: " + this.list.id);
-		}
-		if (this.list) {
-			console.log("Linked List: " + this.list.id);
-			const friends = this.ai.friends.find() ?? [];
-			const linkedUsers = friends.filter((x) => x.linkedAccounts);
-			const listUserIds = new Set(this.list.userIds);
-			let newLinkedUserIds = new Set();
-
-			for (const linkedUser of linkedUsers) {
-				if (linkedUser.linkedAccounts !== Array.from(new Set(linkedUser.linkedAccounts))) {
-					linkedUser.linkedAccounts = Array.from(new Set(linkedUser.linkedAccounts));
-				}
-				for (const linkedId of linkedUser.linkedAccounts!) {
-					if (!listUserIds.has(linkedId)) {
-						newLinkedUserIds.add(linkedId);
-					}
-				}
+			const lists = await this.ai.api("users/lists/list", {}) as List[];
+			this.list = lists.find((x) => x.name === "Linked");
+			if (!this.list) {
+					this.list = await this.ai.api("users/lists/create", { name: "Linked" }) as List;
+					if (!this.list) return;
+					console.log("Linked List Create: " + this.list.id);
 			}
-
-			newLinkedUserIds.forEach(async (x) => {
-				if (this.list?.id) await this.ai.api("users/lists/push", { listId: this.list.id, userId: x });
-				console.log("Linked Account List Push: " + x);
-			});
-		}
+			if (this.list) {
+					console.log("Linked List: " + this.list.id);
+					const friends = this.ai.friends.find() ?? [];
+					const linkedUsers = friends.filter((x) => x.linkedAccounts);
+					const listUserIds = new Set(this.list.userIds);
+					let newLinkedUserIds = new Set();
+	
+					for (const linkedUser of linkedUsers) {
+							if (linkedUser.linkedAccounts !== Array.from(new Set(linkedUser.linkedAccounts))) {
+									linkedUser.linkedAccounts = Array.from(new Set(linkedUser.linkedAccounts));
+							}
+							for (const linkedId of linkedUser.linkedAccounts!) {
+									if (!listUserIds.has(linkedId)) {
+											newLinkedUserIds.add(linkedId);
+									}
+							}
+					}
+	
+					newLinkedUserIds.forEach(async (x) => {
+							if (this.list?.id) {
+									await this.ai.api("users/lists/push", { listId: this.list.id, userId: x }).then(async (res) => {
+											if (typeof x === "string" && res?.response?.body?.error?.code === "YOU_HAVE_BEEN_BLOCKED") {
+													// ブロックされたユーザーIDをリンクしているユーザーのアカウントからそのIDを削除
+													for (const linkedUser of linkedUsers) {
+															if (linkedUser.linkedAccounts?.includes(x)) {
+																	// 該当IDを削除
+																	linkedUser.linkedAccounts = linkedUser.linkedAccounts.filter(id => id !== x);
+																	console.log(`Removed blocked ID ${x} from user ${linkedUser.userId}`);
+															}
+													}
+											}
+									});
+									console.log("Linked Account List Push: " + x);
+							}
+					});
+			}
 	}
+	
 
 	@autobind
 	private async mentionHook(msg: Message) {
