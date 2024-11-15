@@ -507,6 +507,7 @@ export default class extends Module {
 					if (a.greaterThan(b)) return 1;
 					return 0;
 				});
+				console.log(inOrderArr);
 				let result: typeof Decimal;
 				if (inOrderArr.length % 2 === 0) {
 					result = inOrderArr[inOrderArr.length / 2 - 1]
