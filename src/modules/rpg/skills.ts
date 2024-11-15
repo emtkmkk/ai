@@ -1323,7 +1323,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 		result.push(`スロースタート${(skillEffects.slowStart ?? 0) != 1 ? ` ×${showNum(skillEffects.slowStart)}` : ""}`);
 	}
 	if (skillEffects.plusActionX) {
-		result.push("通常時高速RPG: ×" + (showNum(skillEffects.plusActionX ?? 0) + 1));
+		result.push("通常時RPG進行数: ×" + (showNum(skillEffects.plusActionX ?? 0) + 1));
 	}
 	const boost = data.skills ? data.skills?.filter((x) => x.effect?.amuletBoost).reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0 : 0;
 	if (boost) {
