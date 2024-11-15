@@ -4,6 +4,8 @@ import serifs from "@/serifs";
 import 藍 from '@/ai';
 import { aggregateTokensEffects, AmuletItem, ShopItem, shopItems, mergeSkillAmulet } from './shop';
 import { deepClone, getColor } from './utils';
+import { colors, enhanceCount } from './colors';
+import config from "@/config";
 
 export let skillNameCountMap = new Map();
 export let totalSkillCount = 0;
