@@ -6,6 +6,7 @@ import serifs from '@/serifs';
 import rpg from './index';
 import { colorReply, colors } from './colors';
 import { aggregateTokensEffects, shopItems } from './shop';
+import { ultimateAmulet } from './skills';
 import config from '@/config';
 
 export function initializeData(module: rpg, msg) {
@@ -21,7 +22,7 @@ export function initializeData(module: rpg, msg) {
 		if (data.shopExp < 3000 && data.jar === 5) data.shopExp = 3000;
 		if (data.shopExp < 4200 && data.jar === 6) data.shopExp = 4200;
     data.clearRaidNum = (Array.from(new Set(data.clearRaid ?? []))?.length) ?? 0;
-    data.items?.filter((x) => x.type = (shopItems.find((y) => x.name === y.name)?.type ?? (x.skillName ? "amulet" : "token")));
+    data.items?.filter((x) => x.type = ([...shopItems, ultimateAmulet].find((y) => x.name === y.name)?.type ?? (x.skillName ? "amulet" : "token")));
     if (data.items.filter((x) => x.type === "amulet").length > 1) {
         data.items.filter((x) => x.type === "amulet").forEach((x) => {
             data.coin += x.price;
