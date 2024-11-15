@@ -8,7 +8,7 @@ import { skillNameCountMap, totalSkillCount, skills, SkillEffect, skillCalculate
 import { getVal, initializeData, deepClone, numberCharConvert } from './utils';
 import 藍 from '@/ai';
 import rpg from './index';
-import { AmuletItem, BaseItem, Item, mergeSkillAmulet, ShopItem, TokenItem } from "./shop";
+import { aggregateTokensEffects, AmuletItem, BaseItem, Item, mergeSkillAmulet, ShopItem, TokenItem } from "./shop";
 import config from "@/config";
 
 export const skillPrice = (_ai: 藍, skillName: Skill["name"], rnd: () => number) => {
@@ -55,7 +55,7 @@ const canBankItems: ShopItem[] = [
 	{ name: `運命不変のお札`, price: 300, desc: `持っていると常に与ダメージがランダム変化しなくなる`, type: "token", effect: { notRandom: true }, always: true } as TokenItem,
 	{ name: `しあわせのお札`, price: 300, desc: `レイド時、常にステータスの割合がランダムに一時的に変化する`, type: "token", effect: { fortuneEffect: true }, always: true } as TokenItem,
 	{ name: `超覚醒の札`, price: 50, desc: `持っていると覚醒時の投稿数増加ボーナスを失いますが、投稿数による効果が10%上がります`, type: "token", effect: { hyperMode: true }, always: true } as TokenItem,
-	{ name: `修繕の札`, price: 500, limit: (data) => enhanceCount(data) >= 9, desc: `持っているとお守りが耐久が減る代わりにもこコインを減少させます 耐久1につき減少するコイン数はお守りの購入額/耐久です`, type: "token", effect: { autoRepair: true }, always: true } as TokenItem,
+	{ name: `修繕の札`, price: 500, limit: (data) => enhanceCount(data) >= 9, desc: `持っているとお守りが耐久が減る代わりにもこコインを減少させます 耐久1につき減少するコイン数はお守りの購入額/耐久+1です`, type: "token", effect: { autoRepair: true }, always: true } as TokenItem,
 	{ name: `覚醒変更の札（朱）`, price: 50, desc: `覚醒時の行動回数増加と毒アイテム効果軽減を失いますが、代わりにクリティカルダメージが+35%以下の場合、+35%になり、クリティカル率（固定）+8%を得るようになります 4色のうちどれか1つしか発動しません`, type: "token", effect: { notSuperSpeedUp: true, redMode: true }, always: true } as TokenItem,
 	{ name: `覚醒変更の札（橙）`, price: 50, desc: `覚醒時の行動回数増加が半減しますが、代わりにダメージカット+10%を得るようになります 4色のうちどれか1つしか発動しません`, type: "token", effect: { notSuperSpeedUp: true, yellowMode: true }, always: true } as TokenItem,
 	{ name: `覚醒変更の札（蒼）`, price: 50, desc: `覚醒時の行動回数増加を失いますが、代わりにダメージカット+20%を得るようになります 4色のうちどれか1つしか発動しません`, type: "token", effect: { notSuperSpeedUp: true, blueMode: true }, always: true } as TokenItem,
@@ -176,7 +176,7 @@ export const shop2Reply = async (module: rpg, ai: 藍, msg: Message) => {
 	const reply = await msg.reply([
 		amuletDelFlg ? "\n所持しているお守りを捨てました！" : "",
 		serifs.rpg.shop.welcome2(data.coin, data.rerollOrb),
-		...showShopItems.map((x, index) => `[${numberCharConvert(index + 1)}] ${x.name} ${x.orb ? "**変更珠** " : ""}${x.price}${x.orb ? "個" : "枚"}\n${x.desc}\n`)
+		...showShopItems.map((x, index) => `[${numberCharConvert(index + 1)}] ${x.name} ${x.orb ? "**変更珠** " : ""}${x.price}${x.orb ? "個" : "枚"}${x.type === "amulet" && x.durability && aggregateTokensEffects(data).autoRepair ? ` (コイン/耐久: ${Math.round((x.price ?? 12) / (x.durability ?? 6)) + 1})` : ""}\n${x.desc}\n`)
 	].join("\n"), { visibility: "specified" });
 
 	msg.friend.setPerModulesData(module, data);

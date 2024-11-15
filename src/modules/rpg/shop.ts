@@ -360,7 +360,7 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 	const reply = await msg.reply([
 		amuletDelFlg ? "\n所持しているお守りを捨てました！" : "",
 		serifs.rpg.shop.welcome(data.coin),
-		...showShopItems.map((x, index) => `[${numberCharConvert(index + 1)}] ${x.name} ${x.price}枚\n${x.desc}\n`)
+		...showShopItems.map((x, index) => `[${numberCharConvert(index + 1)}] ${x.name} ${x.price}枚${x.type === "amulet" && x.durability && aggregateTokensEffects(data).autoRepair ? ` (コイン/耐久: ${Math.round((x.price ?? 12) / (x.durability ?? 6)) + 1})` : ""}\n${x.desc}\n`)
 	].join("\n"), { visibility: "specified" });
 
 	msg.friend.setPerModulesData(module, data);
