@@ -127,12 +127,14 @@ const bankItemsDesc2 = {
 	"覚醒変更の札（翠）": "覚醒時の効果が行動回数増加に戻ります",
 }
 
+export const ultimateAmulet = { name: `究極のお守り`, limit: (data) => enhanceCount(data) >= 9, price: 18, desc: `${config.rpgHeroName}RPGを極めたあなたに……`, type: "amulet", effect: ultimateEffect, durability: 6, short: "究極", isUsed: (data) => true, always: true } as AmuletItem;
+
 export const shop2Items: ShopItem[] = [
 	...skills.filter((x) => x.name === "分散型").map((x): Item => ({ name: `${x.name}の教本`, limit: (data) => !data.freeDistributed && !data.nextSkill && countDuplicateSkillNames(data.skills) === 0 && data.skills.every((x) => x.name !== "分散型"), price: (data, rnd, ai) => 1, desc: `購入すると次のスキル変更時に必ず「${x.name}」${x.desc ? `（${x.desc}）` : ""}を習得できる（複製時は対象外）`, type: "item", effect: (data) => { data.freeDistributed = true; data.nextSkill = x.name }, always: true })),
 	...skills.filter((x) => x.name === "分散型").map((x): Item => ({ name: `${x.name}の教本`, limit: (data) => data.freeDistributed && !data.nextSkill && countDuplicateSkillNames(data.skills) === 0 && data.skills.every((x) => x.name !== "分散型"), price: (data, rnd, ai) => skillPrice(ai, x.name, rnd), desc: `購入すると次のスキル変更時に必ず「${x.name}」${x.desc ? `（${x.desc}）` : ""}を習得できる（複製時は対象外）`, type: "item", effect: (data) => { data.nextSkill = x.name }, always: true })),
 	{ name: `お守りを捨てる`, limit: (data) => data.items.filter((x) => x.type === "amulet").length, price: 0, desc: `今所持しているお守りを捨てます`, type: "item", effect: (data) => data.items = data.items?.filter((x) => x.type !== "amulet"), always: true },
 	{ name: `行動加速のお札`, limit: (data) => (data.maxSpd ?? 0) < 5 && !data.items.filter((x) => x.name === "行動加速のお札").length, price: (data) => 370 - (data.maxSpd ?? 0) * 70, desc: `持っていると${config.rpgHeroName}の懐き度に関係なく最低5回行動できるようになる`, type: "token", effect: { fivespd: true }, always: true } as TokenItem,
-	{ name: `究極のお守り`, limit: (data) => enhanceCount(data) >= 9, price: 18, desc: `${config.rpgHeroName}RPGを極めたあなたに……`, type: "amulet", effect: ultimateEffect, durability: 6, short: "究極", isUsed: (data) => true, always: true } as AmuletItem,
+	ultimateAmulet,
 	{ name: "スキル複製珠", desc: "スキルを変更し、既に覚えているスキルのどれかを1つ覚えます", price: 6, orb: true, type: "item", effect: (data) => data.duplicationOrb = (data.duplicationOrb ?? 0) + 1, infinite: true, always: true },
 	{ name: `苦労のお守り`, limit: (data) => data.allClear && data.streak > 0, price: 1, desc: `持っていると通常モードの敵が強くなります 耐久1 敗北時耐久減少`, type: "amulet", effect: { enemyBuff: 1 }, durability: 1, short: "苦", isUsed: (data) => true, isMinusDurability: (data) => data.streak < 1, always: true } as AmuletItem,
 	...(canBankItems.map((x) => ({...x, limit: (data) => !data.items.filter((y) => y.name === x.name).length && !data.bankItems?.filter((y) => y === x.name).length && (!x.limit || x.limit(data, () => 0))})) as TokenItem[]),
