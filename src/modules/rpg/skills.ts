@@ -4,7 +4,6 @@ import serifs from "@/serifs";
 import 藍 from '@/ai';
 import { aggregateTokensEffects, AmuletItem, ShopItem, shopItems, mergeSkillAmulet } from './shop';
 import { deepClone, getColor } from './utils';
-import { ultimateAmulet } from './shop2';
 
 export let skillNameCountMap = new Map();
 export let totalSkillCount = 0;
@@ -251,6 +250,58 @@ export const skills: Skill[] = [
 	{ name: `攻めの守勢`, short: "勢", desc: `通常よりもダメージを防げば防ぐ程、パワーが上がります（ただし７フィーバー！を除きます）`, info: `ダメージ軽減300毎に防御の12.5~40%分のパワーを得ます（７フィーバー！を除く）\nこの効果は最大4回まで発動し、発動した回数が多いほど効果が上がります\nさらにレイド時は発動した回数分、全力の一撃のダメージが上がります このスキルは重複しません`, effect: { guardAtkUp: 0.125 }, unique: "counter" },
 	{ name: `分散型`, short: "散", desc: `同じスキルを持っていない程、ステータスが上がります（お守りは対象外）`, info: `パワー・防御+10% クリティカル率+10% ダメージ軽減+10% 同じスキルを持つ度に全ての効果-4%（お守りは対象外）`, effect: { distributed: 0.1 }, unique: "distributed" },
 ];
+
+const ultimateEffect: SkillEffect = {
+	"atkUp": 0.035,
+	"defUp": 0.027,
+	"fire": 0.009,
+	"ice": 0.009,
+	"thunder": 0.018,
+	"spdUp": 0.009,
+	"dart": 0.018,
+	"light": 0.018,
+	"dark": 0.009,
+	"weak": 0.006,
+	"notBattleBonusAtk": 0.022,
+	"notBattleBonusDef": 0.022,
+	"firstTurnResist": 0.03,
+	"tenacious": 0.025,
+	"plusActionX": 1,
+	"atkDmgUp": 0.01,
+	"defDmgUp": -0.01,
+	"continuousBonusUp": 0.05,
+	"escape": 1,
+	"endureUp": 0.05,
+	"haisuiUp": 0.05,
+	"postXUp": 0.005,
+	"enemyStatusBonus": 0.1,
+	"arpen": 0.01,
+	"defRndMin": -0.02,
+	"defRndMax": -0.02,
+	"firstTurnItem": 1,
+	"firstTurnMindMinusAvoid": 1,
+	"itemEquip": 0.05,
+	"itemBoost": 0.055,
+	"weaponBoost": 0.06,
+	"armorBoost": 0.06,
+	"foodBoost": 0.08,
+	"poisonResist": 0.08,
+	"mindMinusAvoid": 0.015,
+	"poisonAvoid": 0.04,
+	"abortDown": 0.03,
+	"critUp": 0.02,
+	"critUpFixed": 0.003,
+	"critDmgUp": 0.02,
+	"enemyCritDown": 0.04,
+	"enemyCritDmgDown": 0.04,
+	"sevenFever": 0.1,
+	"charge": 0.1,
+	"heavenOrHell": 0.02,
+	"haisuiAtkUp": 0.004,
+	"haisuiCritUp": 0.02,
+}
+
+export const ultimateAmulet = { name: `究極のお守り`, limit: (data) => enhanceCount(data) >= 9, price: 18, desc: `${config.rpgHeroName}RPGを極めたあなたに……`, type: "amulet", effect: ultimateEffect, durability: 6, short: "究極", isUsed: (data) => true, always: true } as AmuletItem;
 
 export const getSkill = (data) => {
 	const playerSkills = data.skills.map((x) => skills.find((y) => x.name === y.name) ?? x);
