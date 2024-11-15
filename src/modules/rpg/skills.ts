@@ -4,6 +4,7 @@ import serifs from "@/serifs";
 import 藍 from '@/ai';
 import { aggregateTokensEffects, AmuletItem, ShopItem, shopItems, mergeSkillAmulet } from './shop';
 import { deepClone, getColor } from './utils';
+import { shop2Items } from './shop2';
 
 export let skillNameCountMap = new Map();
 export let totalSkillCount = 0;
@@ -421,9 +422,9 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
 	let amuletSkill: string[] = [];
 	if (data.items?.filter((x) => x.type === "amulet").length) {
 		const amulet = data.items?.filter((x) => x.type === "amulet")[0];
-		const item = [...shopItems, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem;
+		const item = [...shopItems, ...shop2Items, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem;
 		const skill = amulet.skillName && !Array.isArray(amulet.skillName) ? [skills.find((x) => amulet.skillName === x.name)] : amulet.skillName && Array.isArray(amulet.skillName) ? amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) : undefined;
-		if (amulet.durability) amuletSkill.push(`[お守り] ${amulet.skillName && !Array.isArray(amulet.skillName) ? amulet.skillName : amulet.name} 残耐久${amulet.durability}${skillInfo(skill, item.desc, aggregateTokensEffects(data).showSkillBonus)}`);
+		if (amulet.durability) amuletSkill.push(`[お守り] ${amulet.skillName && !Array.isArray(amulet.skillName) ? amulet.skillName : amulet.name} ${aggregateTokensEffects(data).autoRepair ? `コイン消費${Math.round((amulet.price ?? 12) / (item.durability ?? 6))}` : `残耐久${amulet.durability}`}${skillInfo(skill, item.desc, aggregateTokensEffects(data).showSkillBonus)}`);
 	}
 
 	msg.reply([
@@ -460,7 +461,7 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
 	if (data.items?.filter((x) => x.type === "amulet").length) {
 		const amulet = data.items?.filter((x) => x.type === "amulet")[0] as AmuletItem;
 		console.log("amulet: " + amulet.name);
-		const item = [...shopItems, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem;
+		const item = [...shopItems, ...shop2Items, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem;
 		if (!item) {
 			data.items.filter((x) => x.type === "amulet").forEach((x) => {
 				data.coin = (data.coin ?? 0) + (x.price || 0);
@@ -599,7 +600,7 @@ export function aggregateSkillsEffectsSkillX(data: any, skillX: number): SkillEf
 	if (data.items?.filter((x) => x.type === "amulet").length) {
 		const amulet = data.items?.filter((x) => x.type === "amulet")[0] as AmuletItem;
 		console.log("amulet: " + amulet.name);
-		const item = [...shopItems, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem;
+		const item = [...shopItems, ...shop2Items, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem;
 		if (!item) {
 			data.items.filter((x) => x.type === "amulet").forEach((x) => {
 				data.coin = (data.coin ?? 0) + (x.price || 0);
@@ -743,7 +744,7 @@ export function aggregateSkillsEffectsSkillX(data: any, skillX: number): SkillEf
 export function getSkillsShortName(data: { items?: ShopItem[], skills: Skill[]; }): { skills?: string | undefined, amulet?: string | undefined; } {
 	const dataSkills = data.skills?.length ? "[" + data.skills.map((x) => (skills.find((y) => x.name === y.name) ?? x).short).join("") + "]" : undefined;
 	const amulet = data.items?.filter((x) => x.type === "amulet").length ? data.items?.filter((x) => x.type === "amulet")[0] as AmuletItem : undefined;
-	const amuletItem = amulet ? [...shopItems, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem : undefined;
+	const amuletItem = amulet ? [...shopItems, ...shop2Items, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem : undefined;
 	const amuletShort = amuletItem?.short ? "[" + amuletItem.short + "]" : undefined;
 
 	return { skills: dataSkills, amulet: amuletShort };
@@ -778,19 +779,25 @@ export function amuletMinusDurability(data: any): string {
 	let ret = "";
 	if (data.items?.filter((x) => x.type === "amulet").length) {
 		const amulet = data.items?.filter((x) => x.type === "amulet")[0] as AmuletItem;
-		const item = [...shopItems, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem;
+		const item = [...shopItems, ...shop2Items, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem;
 		if ((item.isMinusDurability ?? item.isUsed)(data) && (!aggregateTokensEffects(data).normalModeNotUseAmulet || data.raid)) {
 			const boost = data.skills ? data.skills?.filter((x) => x.effect?.amuletBoost).reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0 : 0;
 			data.items.forEach((x) => {
 				if (x.type === "amulet") {
 					if (boost <= 0 || Math.random() < (1 / Math.pow(1.5, boost * 2))) {
-						x.durability -= 1;
-						if (x.durability <= 0) {
-							data.lastBreakItem = amulet.name;
-							data.items = data.items?.filter((x) => x.type !== "amulet");
-							ret = `${x.name}が壊れました！`;
+						const minusCoin = Math.round((x.price ?? 12) / (item.durability ?? 6));
+						if(aggregateTokensEffects(data).autoRepair && data.coin > minusCoin) {
+							data.coin -= minusCoin;
+							ret = `${x.name} もこコイン-${minusCoin}`;
 						} else {
-							ret = `${x.name} 残耐久${x.durability}`;
+							x.durability -= 1;
+							if (x.durability <= 0) {
+								data.lastBreakItem = amulet.name;
+								data.items = data.items?.filter((x) => x.type !== "amulet");
+								ret = `${x.name}が壊れました！`;
+							} else {
+								ret = `${x.name} 残耐久${x.durability}`;
+							}
 						}
 					} else {
 						ret = serifs.rpg.skill.amuletBoost;
