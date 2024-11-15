@@ -4,7 +4,7 @@ import serifs from "@/serifs";
 import { colors, enhanceCount } from './colors';
 import * as seedrandom from 'seedrandom';
 import getDate from '@/utils/get-date';
-import { skillNameCountMap, totalSkillCount, skills, SkillEffect, skillCalculate, Skill, skillPower, aggregateSkillsEffects, countDuplicateSkillNames } from './skills';
+import { skillNameCountMap, totalSkillCount, skills, SkillEffect, skillCalculate, Skill, skillPower, aggregateSkillsEffects, countDuplicateSkillNames, ultimateAmulet } from './skills';
 import { getVal, initializeData, deepClone, numberCharConvert } from './utils';
 import 藍 from '@/ai';
 import rpg from './index';
