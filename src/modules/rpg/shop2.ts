@@ -33,56 +33,6 @@ export const skillPrice = (_ai: 藍, skillName: Skill["name"], rnd: () => number
 						: 12 * 12;
 };
 
-const ultimateEffect: SkillEffect = {
-	"atkUp": 0.035,
-	"defUp": 0.027,
-	"fire": 0.009,
-	"ice": 0.009,
-	"thunder": 0.018,
-	"spdUp": 0.009,
-	"dart": 0.018,
-	"light": 0.018,
-	"dark": 0.009,
-	"weak": 0.006,
-	"notBattleBonusAtk": 0.022,
-	"notBattleBonusDef": 0.022,
-	"firstTurnResist": 0.03,
-	"tenacious": 0.025,
-	"plusActionX": 1,
-	"atkDmgUp": 0.01,
-	"defDmgUp": -0.01,
-	"continuousBonusUp": 0.05,
-	"escape": 1,
-	"endureUp": 0.05,
-	"haisuiUp": 0.05,
-	"postXUp": 0.005,
-	"enemyStatusBonus": 0.1,
-	"arpen": 0.01,
-	"defRndMin": -0.02,
-	"defRndMax": -0.02,
-	"firstTurnItem": 1,
-	"firstTurnMindMinusAvoid": 1,
-	"itemEquip": 0.05,
-	"itemBoost": 0.055,
-	"weaponBoost": 0.06,
-	"armorBoost": 0.06,
-	"foodBoost": 0.08,
-	"poisonResist": 0.08,
-	"mindMinusAvoid": 0.015,
-	"poisonAvoid": 0.04,
-	"abortDown": 0.03,
-	"critUp": 0.02,
-	"critUpFixed": 0.003,
-	"critDmgUp": 0.02,
-	"enemyCritDown": 0.04,
-	"enemyCritDmgDown": 0.04,
-	"sevenFever": 0.1,
-	"charge": 0.1,
-	"heavenOrHell": 0.02,
-	"haisuiAtkUp": 0.004,
-	"haisuiCritUp": 0.02,
-}
-
 const resetCantRerollSkill = (data) => {
 	const totalStatus = data.lv * 7.6;
 	const atkPercent = data.atk / (data.atk + data.def);
@@ -126,8 +76,6 @@ const bankItemsDesc2 = {
 	"覚醒変更の札（蒼）": "覚醒時の効果が行動回数増加に戻ります",
 	"覚醒変更の札（翠）": "覚醒時の効果が行動回数増加に戻ります",
 }
-
-export const ultimateAmulet = { name: `究極のお守り`, limit: (data) => enhanceCount(data) >= 9, price: 18, desc: `${config.rpgHeroName}RPGを極めたあなたに……`, type: "amulet", effect: ultimateEffect, durability: 6, short: "究極", isUsed: (data) => true, always: true } as AmuletItem;
 
 export const shop2Items: ShopItem[] = [
 	...skills.filter((x) => x.name === "分散型").map((x): Item => ({ name: `${x.name}の教本`, limit: (data) => !data.freeDistributed && !data.nextSkill && countDuplicateSkillNames(data.skills) === 0 && data.skills.every((x) => x.name !== "分散型"), price: (data, rnd, ai) => 1, desc: `購入すると次のスキル変更時に必ず「${x.name}」${x.desc ? `（${x.desc}）` : ""}を習得できる（複製時は対象外）`, type: "item", effect: (data) => { data.freeDistributed = true; data.nextSkill = x.name }, always: true })),
