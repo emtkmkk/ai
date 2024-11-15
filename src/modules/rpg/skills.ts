@@ -841,6 +841,8 @@ export function amuletMinusDurability(data: any): string {
 						const minusCoin = Math.round((x.price ?? 12) / (item.durability ?? 6)) + 1;
 						if(aggregateTokensEffects(data).autoRepair && (item.durability ?? 0) >= 2 && data.coin > minusCoin) {
 							data.coin -= minusCoin;
+							if (!data.shopExp) data.shopExp = 0;
+							data.shopExp += minusCoin;
 							ret = `${x.name} もこコイン-${minusCoin}`;
 						} else {
 							x.durability -= 1;
