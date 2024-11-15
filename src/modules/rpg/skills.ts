@@ -1151,11 +1151,11 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 	}
 	eAtk -= 1
 	if (eAtk) {
-		result.push("敵パワー減少: " + showNum((1 - eAtk) * 100) + "%")
+		result.push("敵パワー減少: " + showNum(eAtk * 100) + "%")
 	}
 	eDef -= 1
 	if (eDef) {
-		result.push("敵防御減少: " + showNum((1 - eDef) * 100) + "%")
+		result.push("敵防御減少: " + showNum(eDef * 100) + "%")
 	}
 
 	const atkMinusMin = skillEffects.atkDmgUp && skillEffects.atkDmgUp < 0 ? (1 / (-1 + (skillEffects.atkDmgUp ?? 0)) * -1) : 1;
@@ -1305,13 +1305,13 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 	result = [...result, ...resultS];
 	if (skillEffects.sevenFever) {
 		result.push("与ダメージ７の倍数化");
-		result.push(`７ステータスダメージ軽減${skillEffects.sevenFever > 1 ? ` ×${showNum(skillEffects.sevenFever)}` : ""}`);
+		result.push(`７ステータスダメージ軽減${skillEffects.sevenFever != 1 ? ` ×${showNum(skillEffects.sevenFever)}` : ""}`);
 	}
 	if (skillEffects.escape) {
-		result.push(`負けそうな時逃げる${skillEffects.escape > 1 ? ` ×${showNum(skillEffects.escape)}` : ""}`);
+		result.push(`負けそうな時逃げる${skillEffects.escape != 1 ? ` ×${showNum(skillEffects.escape)}` : ""}`);
 	}
 	if (skillEffects.charge) {
-		result.push(`不運チャージ${skillEffects.charge > 1 ? ` ×${showNum(skillEffects.charge)}` : ""}`);
+		result.push(`不運チャージ${skillEffects.charge != 1 ? ` ×${showNum(skillEffects.charge)}` : ""}`);
 	}
 	if (aggregateTokensEffects(data).fivespd) {
 		result.push("最低行動回数保障: 5");
@@ -1320,10 +1320,10 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 		result.push(`ランダムステータス${(skillEffects.fortuneEffect ?? 0) !== 1 ? (skillEffects.fortuneEffect ?? 0) > 1 ? ` ×${showNum((skillEffects.fortuneEffect ?? 0))}` : `: ${showNum((skillEffects.fortuneEffect ?? 0))}` : ""}`);
 	}
 	if (skillEffects.slowStart) {
-		result.push(`スロースタート${(skillEffects.slowStart ?? 0) > 1 ? ` ×${showNum(skillEffects.slowStart)}` : ""}`);
+		result.push(`スロースタート${(skillEffects.slowStart ?? 0) != 1 ? ` ×${showNum(skillEffects.slowStart)}` : ""}`);
 	}
 	if (skillEffects.plusActionX) {
-		result.push("通常時高速RPG: +" + (showNum(skillEffects.plusActionX ?? 0)));
+		result.push("通常時高速RPG: ×" + (showNum(skillEffects.plusActionX ?? 0) + 1));
 	}
 	const boost = data.skills ? data.skills?.filter((x) => x.effect?.amuletBoost).reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0 : 0;
 	if (boost) {
