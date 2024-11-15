@@ -509,6 +509,7 @@ export default class extends Module {
 				});
 				console.log(inOrderArr);
 				let result: typeof Decimal;
+				if (inOrderArr.length === 0) return -1;
 				if (inOrderArr.length % 2 === 0) {
 					result = inOrderArr[inOrderArr.length / 2 - 1]
 						.plus(inOrderArr[inOrderArr.length / 2])
@@ -670,7 +671,7 @@ export default class extends Module {
 			winnerFriend.save();
 		}
 
-		let strmed = med != null ? med.equals(new Decimal(Decimal.NUMBER_MAX_VALUE)) ? '∞ (\\(1.8×10^{308}\\))' : med.toString() : "";
+		let strmed = med === -1 ? "有効数字なし" : med != null ? med.equals(new Decimal(Decimal.NUMBER_MAX_VALUE)) ? '∞ (\\(1.8×10^{308}\\))' : med.toString() : "";
 		if (strmed.includes("e+")) {
 			if (strmed == "Infinity") strmed = "∞";
 			strmed = strmed.replace(/^1e/, "");
