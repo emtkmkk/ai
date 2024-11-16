@@ -1119,7 +1119,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 				let addMessage = "";
 				const rawDmg = dmg;
 				if (sevenFever) {
-					const minusDmg = Math.round(dmg - Math.max(dmg - sevenFever, 0) * 10) / 10;
+					const minusDmg = Math.round((dmg - Math.max(dmg - sevenFever, 0)) * 10) / 10;
 					dmg = Math.max(dmg - sevenFever, 0);
 					if (minusDmg) addMessage += `(７フィーバー: -${minusDmg})\n`;
 					noItemDmg = Math.max(noItemDmg - sevenFever, 0);
@@ -1271,7 +1271,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 						totalResistDmg += (normalDmg - dmg);
 					}
 					if (sevenFever) {
-						const minusDmg = Math.round(dmg - Math.max(dmg - sevenFever, 0) * 10) / 10;
+						const minusDmg = Math.round((dmg - Math.max(dmg - sevenFever, 0)) * 10) / 10;
 						dmg = Math.max(dmg - sevenFever, 0);
 						if (minusDmg) addMessage += `(７フィーバー: -${minusDmg})\n`;
 						noItemDmg = Math.max(noItemDmg - sevenFever, 0);
