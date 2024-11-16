@@ -1119,7 +1119,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 				let addMessage = "";
 				const rawDmg = dmg;
 				if (sevenFever) {
-					const minusDmg = dmg - Math.max(dmg - sevenFever, 0);
+					const minusDmg = Math.round(dmg - Math.max(dmg - sevenFever, 0) * 10) / 10;
 					dmg = Math.max(dmg - sevenFever, 0);
 					if (minusDmg) addMessage += `(７フィーバー: -${minusDmg})\n`;
 					noItemDmg = Math.max(noItemDmg - sevenFever, 0);
@@ -1271,7 +1271,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 						totalResistDmg += (normalDmg - dmg);
 					}
 					if (sevenFever) {
-						const minusDmg = dmg - Math.max(dmg - sevenFever, 0);
+						const minusDmg = Math.round(dmg - Math.max(dmg - sevenFever, 0) * 10) / 10;
 						dmg = Math.max(dmg - sevenFever, 0);
 						if (minusDmg) addMessage += `(７フィーバー: -${minusDmg})\n`;
 						noItemDmg = Math.max(noItemDmg - sevenFever, 0);
@@ -1345,9 +1345,16 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		let enemyFDef = (typeof enemy.def === "function") ? enemy.def(atk, def, spd) : lv * 3.5 * (enemy.def ?? 1);
 		const enemySDef = Math.max((enemyFDef / (lv * 3.5)) * (getVal(enemy.defx, [6]) ?? 3), enemySAtk / 3000);
 		let lastDmg = (1000 + (enemySAtk >= 24 ? enemySAtk / 0.048 : 0)) * Math.max(enemySAtk / enemySDef, 1);
-		let dmg = Math.round(playerHp / (playerMaxHp) * (enemy.maxLastDmg ? Math.min(lastDmg, enemy.maxLastDmg) : lastDmg) * (1 + (skillEffects.finalAttackUp ?? 0)));
+		let dmg = Math.round(playerHp / (playerMaxHp) * (enemy.maxLastDmg ? Math.min(lastDmg, enemy.maxLastDmg) : lastDmg));
+		dmg = Math.round(dmg * (1 + (skillEffects.finalAttackUp ?? 0)));
 		if (sevenFever) {
-			dmg = dmg >= 777 ? Math.max(Math.floor((dmg - 777) / 1000) * 1000, 0) + 777 : dmg;
+			if (dmg > 177777) {
+				dmg = dmg >= 77777 ? Math.max(Math.floor((dmg - 77777) / 100000) * 100000, 0) + 77777 : dmg;
+			} if (dmg > 17777) {
+				dmg = dmg >= 7777 ? Math.max(Math.floo7r((dmg - 7777) / 10000) * 10000, 0) + 7777 : dmg;
+			} else {
+				dmg = dmg >= 777 ? Math.max(Math.floor((dmg - 777) / 1000) * 1000, 0) + 777 : dmg;
+			}
 		}
 		message += "\n\n" + serifs.rpg.finalAttack(dmg) + `\n\n` + serifs.rpg.timeUp(enemy.name, (playerMaxHp)) + "\n\n" + enemy.losemsg;
 		totalDmg += dmg;
