@@ -1351,7 +1351,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			if (dmg > 177777) {
 				dmg = dmg >= 77777 ? Math.max(Math.floor((dmg - 77777) / 100000) * 100000, 0) + 77777 : dmg;
 			} if (dmg > 17777) {
-				dmg = dmg >= 7777 ? Math.max(Math.floo7r((dmg - 7777) / 10000) * 10000, 0) + 7777 : dmg;
+				dmg = dmg >= 7777 ? Math.max(Math.floor((dmg - 7777) / 10000) * 10000, 0) + 7777 : dmg;
 			} else {
 				dmg = dmg >= 777 ? Math.max(Math.floor((dmg - 777) / 1000) * 1000, 0) + 777 : dmg;
 			}
