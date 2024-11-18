@@ -395,6 +395,8 @@ export default {
 
 		notify: (name) => name ? `${name}、これもう終わった？` : `これもう終わった？`,
 
+		lastNotify: (name) => name ? `${name}、これもう終わった？ 最後の確認です！` : `これもう終わった？ 最後の確認です！`,
+
 		notifyWithThing: (thing, name) => name ? `${name}、「${thing}」これもう終わった？` : `「${thing}」これもう終わった？`,
 
 		done: (name) => name ? [
