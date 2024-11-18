@@ -111,7 +111,7 @@ export default class extends Module {
 			return;
 		}
 
-		const done = msg.includes(['done', 'やった', 'やりました', 'はい', 'おわった', '終わった']);
+		const done = msg.includes(['done', 'やった', 'やりました', 'はい', 'おわった', '終わった', '完了']);
 		const cancel = msg.includes(['やめる', 'やめた', 'キャンセル']);
 		const isOneself = msg.userId === remind.userId;
 
@@ -154,11 +154,12 @@ export default class extends Module {
 		if (friend == null) return; // 処理の流れ上、実際にnullになることは無さそうだけど一応
 
 		let reply;
+		const lastNotify = remind.times >= 10;
 		try {
 			reply = await this.ai.post({
 				replyId: remind.thing == null && remind.quoteId ? remind.quoteId : remind.id,
 				renoteId: remind.thing == null && remind.quoteId ? remind.quoteId : remind.id,
-				text: acct(friend.doc.user) + ' ' + serifs.reminder.notify(friend.name),
+				text: acct(friend.doc.user) + ' ' + (lastNotify ? serifs.reminder.lastNotify(friend.name) : serifs.reminder.notify(friend.name)),
 				visibility: 'home'
 			});
 		} catch (err) {
@@ -178,8 +179,10 @@ export default class extends Module {
 		});
 
 		// タイマーセット
-		this.setTimeoutWithPersistence(Math.round(NOTIFY_INTERVAL * (Math.random() + 0.5)), {
-			id: remind.id,
-		});
+		if (!lastNotify) {
+			this.setTimeoutWithPersistence(Math.round(NOTIFY_INTERVAL * (Math.random() + 0.5)), {
+				id: remind.id,
+			});
+		}
 	}
 }
