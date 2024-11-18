@@ -487,7 +487,7 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
 		data.duplicationOrb && data.duplicationOrb > 0 ? serifs.rpg.skills.duplicationInfo(data.duplicationOrb) + "\n" : "",
 		serifs.rpg.skills.list,
 		...playerSkills.map((x, index) => `[${index + 1}] ${x.name}${aggregateTokensEffects(data).showSkillBonus && x.info ? `\n${x.info}` : x.desc ? `\n${x.desc}` : ""}`),
-		...(playerSkills.length < skillBorders.length ? [`<small>[${playerSkills.length + 1}] このスキル枠はLvをあと${skillBorders[playerSkills.length] - data.lv}上げると使用可能になります</small>`] : [])
+		...(playerSkills.length < skillBorders.length ? [`<small>[${playerSkills.length + 1}] このスキル枠はLvをあと${skillBorders[playerSkills.length] - data.lv}上げると使用可能になります</small>`] : []),
 		...amuletSkill
 	].filter(Boolean).join("\n"));
 
