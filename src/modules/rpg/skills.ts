@@ -479,12 +479,15 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
 		const skill = amulet.skillName && !Array.isArray(amulet.skillName) ? [skills.find((x) => amulet.skillName === x.name)] : amulet.skillName && Array.isArray(amulet.skillName) ? amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) : undefined;
 		if (amulet.durability) amuletSkill.push(`[お守り] ${amulet.skillName && !Array.isArray(amulet.skillName) ? amulet.skillName : amulet.name} ${aggregateTokensEffects(data).autoRepair && (item.durability ?? 0) >= 2 ? `コイン消費${Math.round((amulet.price ?? 12) / (item.durability ?? 6)) + 1}` : `残耐久${amulet.durability}`}${skillInfo(skill, item.desc, aggregateTokensEffects(data).showSkillBonus)}`);
 	}
+	
+	const skillBorders = [20, 50, 100, 170, 255];
 
 	msg.reply([
 		data.rerollOrb && data.rerollOrb > 0 ? serifs.rpg.skills.info(data.rerollOrb) + "\n" : "",
 		data.duplicationOrb && data.duplicationOrb > 0 ? serifs.rpg.skills.duplicationInfo(data.duplicationOrb) + "\n" : "",
 		serifs.rpg.skills.list,
 		...playerSkills.map((x, index) => `[${index + 1}] ${x.name}${aggregateTokensEffects(data).showSkillBonus && x.info ? `\n${x.info}` : x.desc ? `\n${x.desc}` : ""}`),
+		...(playerSkills.length < skillBorders.length ? [`<small>[${playerSkills.length + 1}] このスキル枠はLvをあと${skillBorders[playerSkills.length] - data.lv}上げると使用可能になります</small>`] : [])
 		...amuletSkill
 	].filter(Boolean).join("\n"));
 
