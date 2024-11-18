@@ -162,8 +162,8 @@ export default class Friend {
 
 		const now = new Date();
 
-		// 100を超えている場合、同じ種類の好感度増加は10分間に1回
-		if (key && key != "merge" && (this.doc.love || 0) >= 100) {
+		// 同じ種類の好感度増加は10分間に1回
+		if (key && key != "merge") {
 			if (!this.doc.cooldownLoveIncrementKey || this.doc.lastLoveIncrementedTime !== ("" + now.getHours() + now.getMinutes()).slice(0, 3)) {
 				this.doc.cooldownLoveIncrementKey = [];
 				this.doc.lastLoveIncrementedTime = ("" + now.getHours() + now.getMinutes()).slice(0, 3);
