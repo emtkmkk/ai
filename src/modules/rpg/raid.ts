@@ -163,7 +163,7 @@ export async function start(triggerUserId?: string, flg?: any) {
 
 	/** レイド開始の投稿 */
 	const post = await ai.post({
-		text: serifs.rpg.intro(enemy.dname ?? enemy.name, Math.ceil((Date.now() + 1000 * 60 * limitMinutes) / 1000)),
+		text: enemy.introMsg ? enemy.introMsg(enemy.dname ?? enemy.name, Math.ceil((Date.now() + 1000 * 60 * limitMinutes) / 1000)) : serifs.rpg.intro(enemy.dname ?? enemy.name, Math.ceil((Date.now() + 1000 * 60 * limitMinutes) / 1000)),
 	});
 
 	// 新しいレイドをデータベースに挿入
@@ -251,7 +251,7 @@ function finish(raid: Raid) {
 	let references: string[] = [];
 
 	for (let attacker of sortAttackers) {
-		results.push(`${attacker.me} ${acct(attacker.user)}:\n${attacker.mark === ":blank:" && attacker.dmg === 100 ? "💯" : attacker.mark} ${attacker.count}ターン ${attacker.dmg.toLocaleString()}ダメージ`);
+		results.push(`${attacker.me} ${acct(attacker.user)}:\n${attacker.mark === ":blank:" && attacker.dmg === 100 ? "💯" : attacker.mark} ${!raid.enemy.scoreMsg2 ? `${attacker.count}ターン ` : ""}${attacker.dmg.toLocaleString()}${raid.enemy.scoreMsg2 ?? "ダメージ"}`);
 		if (results.length <= 19 && (attacker.skillsStr?.skills || attacker.skillsStr?.amulet)) results.push(`:blank: <small>${[
 			attacker.skillsStr?.skills,
 			attacker.skillsStr?.amulet ? `お守り ${attacker.skillsStr.amulet}` : undefined
@@ -262,7 +262,7 @@ function finish(raid: Raid) {
 	}
 
 	if (sortAttackers.length > 1) {
-		results.push(`\n合計: ${sortAttackers.length}人 ${total.toLocaleString()}ダメージ\n評価: ${"★".repeat(score)}\n★${Math.floor(scoreRaw)} ${Math.floor((scoreRaw % 1) * 8) !== 0 ? `$[bg.color=ffff90 ${":blank:".repeat(Math.floor((scoreRaw % 1) * 8))}]` : ""}$[bg.color=ff9090 ${":blank:".repeat(8 - Math.floor((scoreRaw % 1) * 8))}] ★${Math.floor(scoreRaw) + 1}`);
+		results.push(`\n合計: ${sortAttackers.length}人 ${total.toLocaleString()}${raid.enemy.scoreMsg2 ?? "ダメージ"}\n評価: ${"★".repeat(score)}\n★${Math.floor(scoreRaw)} ${Math.floor((scoreRaw % 1) * 8) !== 0 ? `$[bg.color=ffff90 ${":blank:".repeat(Math.floor((scoreRaw % 1) * 8))}]` : ""}$[bg.color=ff9090 ${":blank:".repeat(8 - Math.floor((scoreRaw % 1) * 8))}] ★${Math.floor(scoreRaw) + 1}`);
 	} else {
 		results.push(`\n評価: ${"★".repeat(score)}\n★${Math.floor(scoreRaw)} ${Math.floor((scoreRaw % 1) * 8) !== 0 ? `$[bg.color=ffff90 ${":blank:".repeat(Math.floor((scoreRaw % 1) * 8))}]` : ""}$[bg.color=ff9090 ${":blank:".repeat(8 - Math.floor((scoreRaw % 1) * 8))}] ★${Math.floor(scoreRaw) + 1}`);
 	}
@@ -367,6 +367,9 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
 			case 2:
 			default:
 			result = await getTotalDmg2(msg, enemy);
+			break;
+			case 3:
+			result = await getTotalDmg3(msg, enemy);
 			break;
 		}
 	} else {
@@ -1652,6 +1655,280 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 	}
 	if (!data.clearRaid) data.clearRaid = [];
 	if (count === 7 && !data.clearRaid.includes(enemy.name)) {
+		data.clearRaid.push(enemy.name);
+	}
+
+	data.raid = false;
+	msg.friend.setPerModulesData(module_, data);
+
+	// 色解禁確認
+	const newColorData = colors.map((x) => x.unlock(data));
+	/** 解禁した色 */
+	let unlockColors = "";
+	for (let i = 0; i < newColorData.length; i++) {
+		if (!colorData[i] && newColorData[i]) {
+			unlockColors += colors[i].name;
+		}
+	}
+	if (unlockColors) {
+		message += serifs.rpg.newColor(unlockColors);
+	}
+
+	let reply;
+
+	if (Number.isNaN(totalDmg) || totalDmg < 0) {
+		reply = await msg.reply(`エラーが発生しました。もう一度試してみてください。`, {
+			visibility: "specified"
+		});
+		totalDmg = 0;
+	} else {
+		reply = await msg.reply(`<center>${message.slice(0, 7500)}</center>`, {
+			cw,
+			...(config.rpgReplyVisibility ? {visibility: config.rpgRaidReplyVisibility} : {}),
+		});
+		let msgCount = 1
+		while (message.length > msgCount * 7500) {
+			msgCount += 1;
+			await msg.reply(`<center>${message.slice((msgCount - 1) * 7500, msgCount * 7500)}</center>`, {
+				cw: cw + " " + msgCount,
+				...(config.rpgReplyVisibility ? {visibility: config.rpgRaidReplyVisibility} : {}),
+			});
+		}
+	}
+
+
+	return {
+		totalDmg,
+		me,
+		lv,
+		count,
+		mark,
+		skillsStr,
+		reply,
+	};
+}
+
+export async function getTotalDmg3(msg, enemy: RaidEnemy) {
+	// データを読み込み
+	const data = initializeData(module_, msg);
+	if (!data.lv) return {
+		reaction: 'confused'
+	};
+	data.raid = true;
+	const colorData = colors.map((x) => x.unlock(data));
+	
+	// 所持しているスキル効果を読み込み
+	let skillEffects;
+	if (enemy.skillX) {
+		skillEffects = aggregateSkillsEffectsSkillX(data, enemy.skillX);
+	} else {
+		skillEffects = aggregateSkillsEffects(data);
+	}
+
+	const stockRandomResult = stockRandom(data, skillEffects);
+
+	skillEffects = stockRandomResult.skillEffects;
+
+	const skillsStr = getSkillsShortName(data);
+
+	/** 現在の敵と戦ってるターン数。 敵がいない場合は1 */
+	let count = 1;
+
+	/** 使用中の色情報 */
+	let color = getColor(data);
+
+	/** 画面に出力するメッセージ:CW */
+	let cw = acct(msg.user) + " ";
+	/** 画面に出力するメッセージ:Text */
+	let message = "";
+
+	/** プレイヤーの見た目 */
+	let me = color.name;
+
+	// ステータスを計算
+	/** プレイヤーのLv */
+	const lv = data.lv ?? 1;
+
+	// 敵の開始メッセージなどを設定
+	cw += [
+		enemy.msg,
+	].filter(Boolean).join(" ");
+	message += `$[x2 ${me}]\n\n${serifs.rpg.start}\n\n`;
+
+	const maxLv = ai.moduleData.findOne({ type: 'rpg' })?.maxLv ?? 1;
+
+	/** バフを得た数。行数のコントロールに使用 */
+	let buff = 0;
+	
+	let totalDmg = 0;
+
+	let dex = 100;
+	let fix = 0;
+	
+	if (stockRandomResult.activate) {
+		message += serifs.rpg.skill.stockRandom + `\n\n`;
+	}
+	
+	let mark = ":blank:";
+
+	const showInfo = data.lv >= 100;
+	
+	if (skillEffects.notBattleBonusAtk >= 0.7) {
+		buff += 1;
+		message += `気性穏やか 器用さ+${skillEffects.notBattleBonusAtk * 100}%` + `\n`;
+		dex = dex * (1 + (skillEffects.notBattleBonusAtk ?? 0));
+	} else if (skillEffects.notBattleBonusAtk > 0) {
+		buff += 1;
+		message += `テキパキこなす 器用さ+${skillEffects.notBattleBonusAtk * 100}%` + `\n`;
+		dex = dex * (1 + (skillEffects.notBattleBonusAtk ?? 0));
+	} else if (showInfo && skillEffects.notBattleBonusAtk == 0) {
+		buff += 1;
+		message += `テキパキこなすまたは気性穏やか なし` + `\n`;
+	}
+	
+	if (skillEffects.notBattleBonusDef > 0) {
+		buff += 1;
+		message += `疲れにくい 器用さ+${Math.floor(skillEffects.notBattleBonusDef * 25)}%` + `\n`;
+		dex = dex * (1 + ((skillEffects.notBattleBonusDef ?? 0) / 4));
+	} else if (showInfo) {
+		buff += 1;
+		message += `疲れにくい なし` + `\n`;
+	}
+		
+	if (skillEffects.noAmuletAtkUp > 0) {
+		buff += 1;
+		message += `かるわざ 器用さ+${Math.floor(skillEffects.noAmuletAtkUp * 200)}%` + `\n`;
+		dex = dex * (1 + ((skillEffects.noAmuletAtkUp ?? 0) * 2));
+	} else {
+		buff += 1;
+		message += `かるわざ なし` + `\n`;
+	}
+	
+	if (skillEffects.plusActionX > 0) {
+		buff += 1;
+		message += `高速RPG 器用さ+${Math.floor(skillEffects.plusActionX * 0.08)}%` + `\n`;
+		dex = dex * (1 + ((skillEffects.plusActionX ?? 0) * 0.0008));
+	} else if (showInfo) {
+		buff += 1;
+		message += `高速RPG なし` + `\n`;
+	}
+	
+	if (skillEffects.atkRndMin > 0) {
+		buff += 1;
+		message += `安定感 器用さ+${Math.floor(skillEffects.atkRndMin * 20)}%` + `\n`;
+		dex = dex * (1 + ((skillEffects.atkRndMin ?? 0) / 5));
+	} else if (showInfo) {
+		buff += 1;
+		message += `安定感 なし` + `\n`;
+	}
+	
+	if (skillEffects.firstTurnItem > 0) {
+		buff += 1;
+		message += `準備を怠らない 器用さ+10%` + `\n`;
+		dex = dex * 1.1;
+	} else if (showInfo) {
+		buff += 1;
+		message += `準備を怠らない なし` + `\n`;
+	}
+	
+	if (skillEffects.itemBoost > 0) {
+		buff += 1;
+		message += `道具効果量 器用さ+${Math.floor(skillEffects.itemBoost * (100/5))}%` + `\n`;
+		dex = dex * (1 + ((skillEffects.itemBoost ?? 0) / 5));
+	} else if (showInfo) {
+		buff += 1;
+		message += `道具効果量 なし` + `\n`;
+	}
+	
+	if (skillEffects.mindMinusAvoid > 0) {
+		buff += 1;
+		message += `道具の選択が上手い 器用さ+${Math.floor(skillEffects.mindMinusAvoid * (100/3))}%` + `\n`;
+		dex = dex * (1 + ((skillEffects.mindMinusAvoid ?? 0) / 3));
+	} else if (showInfo) {
+		buff += 1;
+		message += `道具の選択が上手い なし` + `\n`;
+	}
+
+	const atkDmgUp = skillEffects.atkDmgUp - skillEffects.defDmgUp;
+	const atkUp = skillEffects.atkUp - skillEffects.defUp;
+		
+	const atkX = 
+		(atkDmgUp && atkDmgUp > 0 ? (1 / (1 + (atkDmgUp ?? 0))) : 1) *
+		(atkUp && atkUp > 0 ? (1 / (1 + (atkUp ?? 0))) : 1) *
+		(0.75 + (data.def / (data.atk + data.def)) * 0.5)
+	
+	if (atkX < 1) {
+		buff += 1;
+		message += `有り余るパワー 器用さ-${Math.floor(1 - atkX * 100)}%` + `\n`;
+		dex = dex * atkX;
+	} else if (showInfo) {
+		buff += 1;
+		message += `パワー 適切` + `\n`;
+	}
+
+	if (skillEffects.notBattleBonusAtk < 1) {
+		message += `気性が荒い 器用さ-${Math.floor(1 - skillEffects.notBattleBonusAtk * 100)}%` + `\n`;
+		dex = dex * skillEffects.notBattleBonusAtk;
+	}
+
+	if (skillEffects.endureUp > 0) {
+		message += `連続攻撃完遂率上昇 仕上げ+${Math.floor(skillEffects.abortDown * 25)}%` + `\n`;
+		fix += Math.floor(skillEffects.abortDown / 4)
+	} else if (showInfo) {
+		buff += 1;
+		message += `連続攻撃完遂率上昇 なし` + `\n`;
+	}
+	
+	if (skillEffects.tenacious > 0) {
+		message += `粘り強さ 仕上げ+${Math.floor(skillEffects.tenacious * 25)}%` + `\n`;
+		fix += Math.floor(skillEffects.tenacious / 4)
+	} else if (showInfo) {
+		buff += 1;
+		message += `粘り強さ なし` + `\n`;
+	}
+
+	if (skillEffects.endureUp > 0) {
+		message += `気合で頑張る 仕上げ+${Math.floor(endureUp * 150)}%` + `\n`;
+		fix += Math.floor(skillEffects.endureUp * 1.5)
+	} else if (showInfo) {
+		buff += 1;
+		message += `気合で頑張る なし` + `\n`;
+	}
+
+	// バフが1つでも付与された場合、改行を追加する
+	if (buff > 0) message += "\n";
+	
+  let plus = 0.1;
+  let life = 30;
+
+  while (life > 0) {
+    if (Math.random() < 0.5) {
+      plus += 0.1;
+    } else {
+      life -= 1;
+    }
+  }
+
+	score = (dex / 4) * plus;
+
+	totalDmg = Math.round(100 - 100 * Math.pow(1/2, score/50) * 10) / 10;
+
+	totalDmg += Math.floor((100 - totalDmg) * fix)
+	
+	message += `${totalDmg}点の鳩車を作った！` + `\n\n`;
+
+	if (!data.raidScore) data.raidScore = {};
+	if (!data.raidScore[enemy.name] || data.raidScore[enemy.name] < totalDmg) {
+		if (data.raidScore[enemy.name]) {
+			message += "\n" + serifs.rpg.hiScore(data.raidScore[enemy.name], totalDmg);
+			if (mark === ":blank:") mark = "🆙";
+		}
+		data.raidScore[enemy.name] = totalDmg;
+	} else {
+		if (data.raidScore[enemy.name]) message += `\n（これまでのベスト: ${data.raidScore[enemy.name].toLocaleString()}）`;
+	}
+	if (!data.clearRaid) data.clearRaid = [];
+	if (totalDmg >= 100 && !data.clearRaid.includes(enemy.name)) {
 		data.clearRaid.push(enemy.name);
 	}
 
