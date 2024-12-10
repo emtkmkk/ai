@@ -105,6 +105,8 @@ export type RaidEnemy = Enemy & {
 	introMsg?: ((enemyName: string, time: string) => string);
 	/** ダメージのメッセージを指定 */
 	scoreMsg?: string;
+	/** ダメージの単位を指定 */
+	scoreMsg2?: string;
 };
 
 /** 敵一覧 */
@@ -148,7 +150,7 @@ export const raidEnemys: RaidEnemy[] = [
 	{ name: ":blobbacteria_campylobacter:", msg: "巨大:blobbacteria_campylobacter:討伐戦！", short: "", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの攻撃！\n:blobbacteria_campylobacter:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `:blobbacteria_campylobacter:は小さい分身で攻撃してきた！\nもこチキに${dmg}ポイントのダメージ！`, winmsg: "", losemsg: "もこチキはやられてしまった…", atk: 2, def: 0.1, atkx: 3, defx: 1, power: 0.7 },
 	{ name: ":mk_giga:", msg: ":mk_giga:討伐戦！", short: "", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキの攻撃！\n:mk_giga:に${dmg}ポイントのダメージ！`, defmsg: (dmg) => `$[twitch.speed=0.5s $[x2 :mk_giga:]]\n\nもこチキに${dmg}ポイントのダメージ！`, winmsg: "", losemsg: "もこチキはやられてしまった…", atk: 5, def: 5, atkx: 5, defx: 5, power: 8, skillX: 3 },
 	{ name: ":mokochoki:", msg: ":mokochoki:がじゃんけんをしたいようだ。", short: "", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキはじゃんけんに勝った！\n:mokochoki:に${dmg}ダメージ！`, defmsg: (dmg) => `もこチキはじゃんけんに負けた！\nもこチキに${dmg}ダメージ！`, winmsg: "じゃんけんバトルに勝利した！", losemsg: "じゃんけんバトルに敗北した……", atk: 1, def: 1, atkx: 1, defx: 1, power: 7.1, pattern: 2 },
-	{ name: ":hatoguruma:", startMsg: (enemyName, time) => `<center>$[x3 ${enemyName}]\n\n鳩車コンテスト開催中！\n\n誰が最も綺麗な鳩車を作れるのか！\n\nこの投稿に「参加」と返信して、\nあなたの${config.rpgHeroName}と挑戦しましょう！\n(RPGモードのプレイが1回以上必要です)\n\n$[unixtime.countdown ${time}]</center>`, scoreMsg: "点数", msg: ":hatoguruma:作成コンテストに出るようだ。", short: "", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキは鳩車を作った！\n完成度: ${dmg}`, defmsg: (dmg) => ``, winmsg: "", losemsg: "", atk: 1, def: 1, atkx: 1, defx: 1, power: 7.1, pattern: 3 },
+	{ name: ":hatoguruma:", startMsg: (enemyName, time) => `<center>$[x3 ${enemyName}]\n\n鳩車コンテスト開催中！\n\n誰が最も綺麗な鳩車を作れるのか！\n\nこの投稿に「参加」と返信して、\nあなたの${config.rpgHeroName}と挑戦しましょう！\n(RPGモードのプレイが1回以上必要です)\n\n$[unixtime.countdown ${time}]</center>`, scoreMsg: "点数", scoreMsg2: "点", msg: ":hatoguruma:作成コンテストに出るようだ。", short: "", mark: "☆", mark2: "★", lToR: false, atkmsg: (dmg) => `もこチキは鳩車を作った！\n完成度: ${dmg}`, defmsg: (dmg) => ``, winmsg: "", losemsg: "", atk: 1, def: 1, atkx: 1, defx: 1, power: 7.1, pattern: 3 },
 ];
 
 /*
