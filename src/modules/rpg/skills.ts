@@ -638,7 +638,7 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
 	}
 
 	if (aggregatedEffect.enemyCritDown && aggregatedEffect.enemyCritDown > 1) {
-		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) * ((1 + aggregatedEffect.enemyCritDown - 1) * (1 / 3));
+		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) * (1 + (aggregatedEffect.enemyCritDown - 1) * (1 / 3));
 		aggregatedEffect.enemyCritDown = 1;
 	}
 	
