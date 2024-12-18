@@ -1908,11 +1908,13 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	}
 
 	if ((skillEffects.notBattleBonusAtk ?? 0) < 0) {
+		buff += 1;
 		message += `気性が荒い 器用さ-${Math.floor((skillEffects.notBattleBonusAtk * -1) * 100)}%` + `\n`;
 		dex = dex * (1 + skillEffects.notBattleBonusAtk);
 	}
 
 	if (skillEffects.abortDown > 0) {
+		buff += 1;
 		message += `連続攻撃完遂率上昇 仕上げ+${Math.floor(skillEffects.abortDown * 25)}%` + `\n`;
 		fix += Math.floor(skillEffects.abortDown / 4)
 	} else if (showInfo) {
@@ -1921,6 +1923,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	}
 	
 	if (skillEffects.tenacious > 0) {
+		buff += 1;
 		message += `粘り強さ 仕上げ+${Math.floor(skillEffects.tenacious * 25)}%` + `\n`;
 		fix += Math.floor(skillEffects.tenacious / 4)
 	} else if (showInfo) {
@@ -1929,6 +1932,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	}
 
 	if (skillEffects.endureUp > 0) {
+		buff += 1;
 		message += `気合で頑張る 仕上げ+${Math.floor(skillEffects.endureUp * 15)}%` + `\n`;
 		fix += Math.floor(skillEffects.endureUp * 0.15)
 	} else if (showInfo) {
