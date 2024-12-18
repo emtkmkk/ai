@@ -1840,7 +1840,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 		buff += 1;
 		message += `かるわざ 器用さ+${Math.floor(skillEffects.noAmuletAtkUp * 200)}%` + `\n`;
 		dex = dex * (1 + ((skillEffects.noAmuletAtkUp ?? 0) * 2));
-	} else {
+	} else if (showInfo) {
 		buff += 1;
 		message += `かるわざ なし` + `\n`;
 	}
