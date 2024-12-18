@@ -1822,7 +1822,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 		buff += 1;
 		message += `テキパキこなす 器用さ+${skillEffects.notBattleBonusAtk * 100}%` + `\n`;
 		dex = dex * (1 + (skillEffects.notBattleBonusAtk ?? 0));
-	} else if (showInfo && skillEffects.notBattleBonusAtk == 0) {
+	} else if (showInfo && !skillEffects.notBattleBonusAtk) {
 		buff += 1;
 		message += `テキパキこなすまたは気性穏やか なし` + `\n`;
 	}
@@ -1907,7 +1907,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 		message += `パワー 適切` + `\n`;
 	}
 
-	if (skillEffects.notBattleBonusAtk < 0) {
+	if ((skillEffects.notBattleBonusAtk ?? 0) < 0) {
 		message += `気性が荒い 器用さ-${Math.floor((skillEffects.notBattleBonusAtk * -1) * 100)}%` + `\n`;
 		dex = dex * (1 + skillEffects.notBattleBonusAtk);
 	}
@@ -2010,6 +2010,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	let reply;
 
 	if (Number.isNaN(totalDmg) || totalDmg < 0) {
+		console.log(totalDmg);
 		reply = await msg.reply(`エラーが発生しました。もう一度試してみてください。`, {
 			visibility: "specified"
 		});
