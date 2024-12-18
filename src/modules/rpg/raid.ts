@@ -377,7 +377,7 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
 		result = await getTotalDmg(msg, enemy);
 	}
 
-	if (raid.attackers.some(x => x.user.id == msg.userId)) {
+	if (raid.attackers.some(x => x.dmg > 0 && x.user.id == msg.userId)) {
 		msg.reply('すでに参加済みの様です！').then(reply => {
 			raid.replyKey.push(raid.postId + ":" + reply.id);
 			module_.subscribeReply(raid.postId + ":" + reply.id, reply.id);
