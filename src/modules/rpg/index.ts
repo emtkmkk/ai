@@ -394,7 +394,7 @@ export default class extends Module {
 					const enemy = raidEnemys.find((x) => x.name === key);
 					const score = enemy ? Math.max(Math.log2((value * 20) / (1024 / ((enemy.power ?? 30) / 30))) + 1, 1) : undefined;
 					if (score) totalScore += score
-					message.push(`${createRankMessage(value, key + ` 最大${enemy.scoreMsg ?? "ダメージ"}`, `raidScore.${key}`, { suffix: data.clearRaid?.includes(key) ? `${enemy.scoreMsg2 ?? "ダメージ"} ⭐️` : `${enemy.scoreMsg2 ?? "ダメージ"}` })}${score ? `\n★${Math.floor(score)} ${Math.floor((score % 1) * 8) !== 0 ? `$[bg.color=ffff90 ${":blank:".repeat(Math.floor((score % 1) * 8))}]` : ""}$[bg.color=ff9090 ${":blank:".repeat(8 - Math.floor((score % 1) * 8))}] ★${Math.floor(score) + 1}` : ""}`);
+					message.push(`${createRankMessage(value, key + ` 最大${enemy?.scoreMsg ?? "ダメージ"}`, `raidScore.${key}`, { suffix: data.clearRaid?.includes(key) ? `${enemy?.scoreMsg2 ?? "ダメージ"} ⭐️` : `${enemy?.scoreMsg2 ?? "ダメージ"}` })}${score ? `\n★${Math.floor(score)} ${Math.floor((score % 1) * 8) !== 0 ? `$[bg.color=ffff90 ${":blank:".repeat(Math.floor((score % 1) * 8))}]` : ""}$[bg.color=ff9090 ${":blank:".repeat(8 - Math.floor((score % 1) * 8))}] ★${Math.floor(score) + 1}` : ""}`);
 				}
 			}
 			if (totalScore > 0 && Object.entries(data.raidScore).length >= 2) message.push(`合計レイドボス評価値\n★${totalScore.toFixed(2)}`);
