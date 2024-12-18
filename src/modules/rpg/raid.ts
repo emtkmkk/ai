@@ -107,7 +107,7 @@ function scheduleRaidStart() {
 	const minutes = new Date().getMinutes();
 
 	// 特定の時間（8, 12, 18, 21時）の15分にレイドを開始する
-	if ([8, 12, 18, 21].includes(hours) && minutes === 15) {
+	if ([8, 12, 18].includes(hours) && minutes === 15) {
 		start();
 	}
 	const day = new Date().getDay();
@@ -119,6 +119,13 @@ function scheduleRaidStart() {
 	}
 	if ((day === 6 || day === 0) && hours === 19 && minutes === 45) {
 		start();
+	}
+	if (hours === 21 && minutes === 45) {
+		if (new Date().getDate() === 18 || day === 1 || day === 4) {
+			start(undefined, "h");
+		} else {
+			start();
+		}
 	}
 	if (day >= 5 && hours === 22 && minutes === 45) {
 		start();
@@ -155,8 +162,10 @@ export async function start(triggerUserId?: string, flg?: any) {
 	const notPlayedBoss = raidEnemys.filter((x) => !rpgData || !rpgData.raidScore[x.name]);
 
 	/** ランダムに選ばれたレイドボス */
-	const enemy = games.length >= 2 && flg?.includes("r") && raidEnemys.find((x) => x.name === games[games.length - 1]?.enemy?.name) ? raidEnemys.find((x) => x.name === games[games.length - 1]?.enemy?.name) : notPlayedBoss.length ? notPlayedBoss[Math.floor(Math.random() * notPlayedBoss.length)] : filteredRaidEnemys[Math.floor(Math.random() * filteredRaidEnemys.length)];
+	let enemy = games.length >= 2 && flg?.includes("r") && raidEnemys.find((x) => x.name === games[games.length - 1]?.enemy?.name) ? raidEnemys.find((x) => x.name === games[games.length - 1]?.enemy?.name) : notPlayedBoss.length ? notPlayedBoss[Math.floor(Math.random() * notPlayedBoss.length)] : filteredRaidEnemys[Math.floor(Math.random() * filteredRaidEnemys.length)];
 	if (!enemy) return
+
+	if (flg?.includes("h")) enemy = raidEnemys.find((x) => x.name === ":hatoguruma:") ?? enemy;
 
 	// レイドの制限時間（分）
 	let limitMinutes = 30;
