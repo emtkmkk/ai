@@ -203,7 +203,7 @@ function finish(raid: Raid) {
 		ai.decActiveFactor((raid.finishedAt.valueOf() - raid.startedAt.valueOf()) / (60 * 1000 * 100));
 
 		ai.post({
-			text: serifs.rpg.onagare(raid.enemy.name),
+			text: raid.enemy.power ? serifs.rpg.onagare(raid.enemy.name) : serifs.rpg.onagare2(raid.enemy.name),
 			renoteId: raid.postId
 		});
 
@@ -308,7 +308,7 @@ function finish(raid: Raid) {
 
 	ai.post({
 		text: text,
-		cw: serifs.rpg.finishCw(raid.enemy.name),
+		cw: score ? serifs.rpg.finishCw(raid.enemy.name) : serifs.rpg.finishCw2(raid.enemy.name),
 		renoteId: raid.postId,
 		referenceIds: references,
 	});
@@ -1929,8 +1929,8 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	}
 
 	if (skillEffects.endureUp > 0) {
-		message += `気合で頑張る 仕上げ+${Math.floor(skillEffects.endureUp * 150)}%` + `\n`;
-		fix += Math.floor(skillEffects.endureUp * 1.5)
+		message += `気合で頑張る 仕上げ+${Math.floor(skillEffects.endureUp * 15)}%` + `\n`;
+		fix += Math.floor(skillEffects.endureUp * 0.15)
 	} else if (showInfo) {
 		buff += 1;
 		message += `気合で頑張る なし` + `\n`;
@@ -1949,6 +1949,8 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
       life -= 1;
     }
   }
+
+  	if (fix > 0.75) fix = 0.75;
 
 	const score = (dex / 4) * plus;
 
