@@ -114,6 +114,7 @@ export const shopItems: ShopItem[] = [
 	{ name: "スキル詳細表示の札", limit: (data) => data.lv >= 20 && !data.items.filter((x) => x.name === "スキル詳細表示の札").length, desc: "所持している間、スキルの詳細情報が表示されるようになります", price: 50, type: "token", effect: { showSkillBonus: true } },
 	{ name: "装備詳細表示の札", limit: (data) => data.lv >= 7 && !data.items.filter((x) => x.name === "装備詳細表示の札").length, desc: "所持している間、武器・防具の詳細な効果が表示されます", price: 50, type: "token", effect: { showItemBonus: true } },
 	{ name: "裏ショップ入場の札", limit: (data) => data.skills?.length >= 5 && !data.items.filter((x) => x.name === "裏ショップ入場の札").length && data.clearHistory.includes(":mk_chickenda_gtgt:"), desc: "所持していると、裏ショップに入店できます （コマンド:「RPG 裏ショップ」）", price: 99, type: "token", effect: { shop2: true }, always: true },
+	{ name: `おおみそかチャレンジの札`, limit: (data) => new Date().getMonth() === 11 && data.items.filter((x) => x.name === "おおみそかチャレンジの札").length, price: 1, desc: `大晦日のレイド時、体力が1で開始しますが与えるダメージが25%増加します 自身の与えたダメージによって、追加でもこコインを得ます`, type: "token", effect: { oomisoka: true }, always: true },
 	{ name: "スキル変更珠", desc: "スキルを変更するのに必要なアイテムです", limit: (data) => (data.skills?.length >= 2 && data.skills?.length <= 4) || (data.skills?.length >= 5 && data.coin < 70), noDiscount: true, price: (data) => data.skills.length >= 5 ? 7 : data.skills.length >= 4 ? 25 : data.skills.length >= 3 ? 35 : 50, type: "item", effect: (data) => data.rerollOrb = (data.rerollOrb ?? 0) + 1, infinite: true },
 	{ name: "スキル変更珠(5個)", desc: "スキルを変更するのに必要なアイテムの5個セットです", limit: (data) => data.skills?.length >= 5 && data.coin >= 70 && data.coin < 140, noDiscount: true, price: 35, type: "item", effect: (data) => data.rerollOrb = (data.rerollOrb ?? 0) + 5, infinite: true },
 	{ name: "スキル変更珠(10個)", desc: "スキルを変更するのに必要なアイテムの10個セットです", limit: (data) => data.skills?.length >= 5 && data.coin >= 140 && data.coin < 280, noDiscount: true, price: 70, type: "item", effect: (data) => data.rerollOrb = (data.rerollOrb ?? 0) + 10, infinite: true },
@@ -288,8 +289,37 @@ const eventAmulet = (data?) => {
 	const y = new Date().getFullYear();
 	const m = new Date().getMonth() + 1;
 	const d = new Date().getDate()
-	if (y === 2024 && m === 9 && d === 11) {
-		return `虹色のお守り`
+	if (y === 2024 && m === 12 && d === 24) {
+		return [
+			`氷属性剣攻撃`,
+			`光属性剣攻撃`,
+			`伝説`,
+			`道具大好き`,
+		]
+	}
+	if (y === 2024 && m === 12 && d === 25) {
+		return [
+			"７フィーバー！",
+			"天国か地獄か",
+			`気合で頑張る`,
+			`${serifs.rpg.status.pen}+10%`,
+		]
+	}
+	if (y === 2024 && m === 12 && d === 26) {
+		return [
+			`闇属性剣攻撃`,
+			`毒属性剣攻撃`,
+			`すぐ決死の覚悟をする`,
+			`不運チャージ`,
+		]
+	}
+	if (y === 2024 && m === 12 && d === 27) {
+		return [
+			`闇属性剣攻撃`,
+			`毒属性剣攻撃`,
+			`すぐ決死の覚悟をする`,
+			`不運チャージ`,
+		]
 	}
 	if (data?.skills?.length >= 1 && data?.skills?.length <= 3 && !data.items?.some((y) => y.type === "amulet")) {
 		return `わかばのお守り`

@@ -524,6 +524,8 @@ export default {
 		reachMaxLv: `\n\n**Lv255到達、おめでとうございます！**\n\n${config.rpgHeroName}の成長限界地点に達しました！\nこれから先はレベルを上げても、\nあまり能力が成長しないようになります！\nここから更に強くなるには、\nスキルやアイテムなどを工夫してみてね！`,
 		shop2remind: "\n\nショップに新しいアイテムが追加されたようです……\n「RPG ショップ」で確認してみましょう！",
 		forcePostCount: "周囲に不思議な力が働いている…\n投稿数ボーナスが無効になった！",
+		oomisoka: "大晦日チャレンジ開始！\n体力が1になった！",
+		oomisokaEnd: (score, num) => `大晦日チャレンジ結果！\n評価: ★${score}\n${config.rpgCoinName}を${num}枚ゲット！`,
 		skillX: (num) => `$[x2 :mk_wizard:]\n\n力をそなたに与えよう……\n\n強化魔法で${config.rpgHeroName}のスキルの\n効果が${num}倍になった！`,
 		draw: "あいこになった！\nお互いにダメージなし！",
 		allStageClear: `気が付いたら、ここは最初に旅を始めた場所だった。\nどうやら旅をしすぎて\n世界を1周してしまったようだ。\n\n**ステージ100クリアおめでとう！**\n${config.rpgCoinName}を1,000枚獲得しました！\n「長き旅の思い出」を入手しました！`,

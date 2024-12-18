@@ -618,6 +618,14 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
 	let totalDmg = 0;
 
+	if (aggregateTokensEffects(data).oomisoka && new Date().getMonth() === 11 && new Date().getDate() === 31) {
+		message += serifs.rpg.oomisoka + "\n";
+		buff += 1;
+		playerHp = 1;
+		atk = atk * 1.119;
+		skillEffects.atkDmgUp = ((1 + skillEffects.atkDmgUp) * 1.118) - 1;
+	}
+
 	if (isSuper) {
 		const up = Math.max(spd + 2, Math.round(getSpd(getSpdX(spd) * 1.2))) - spd;
 		if (!color.alwaysSuper) {
@@ -673,10 +681,12 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	if (skillEffects.heavenOrHell) {
 		if (Math.random() < 0.6) {
 			message += serifs.rpg.skill.heaven + "\n";
+			buff += 1;
 			atk = atk * (1 + skillEffects.heavenOrHell);
 			def = def * (1 + skillEffects.heavenOrHell);
 		} else {
 			message += serifs.rpg.skill.hell + "\n";
+			buff += 1;
 			atk = atk / (1 + skillEffects.heavenOrHell);
 			def = def / (1 + skillEffects.heavenOrHell);
 		}
@@ -1390,6 +1400,14 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		data.clearRaid.push(enemy.name);
 	}
 
+	if (aggregateTokensEffects(data).oomisoka && new Date().getMonth() === 11 && new Date().getDate() === 31) {
+		const score = enemy ? Math.max(Math.log2((totalDmg * 20) / (1024 / ((enemy.power ?? 30) / 30))) + 1, 1) : undefined;
+		if (score) {
+			message += "\n\n" + serifs.rpg.oomisokaEnd(score.toFixed(2), Math.ceil(score * 8));
+			data.coin += Math.ceil(score * 8);
+		}
+	}
+
 	const amuletmsg = amuletMinusDurability(data);
 
 	if (amuletmsg) {
@@ -1554,6 +1572,21 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 
 	let totalDmg = 0;
 
+	let dmgup = 0;
+
+	if (aggregateTokensEffects(data).oomisoka && new Date().getMonth() === 11 && new Date().getDate() === 31) {
+		message += serifs.rpg.oomisoka + "\n";
+		buff += 1;
+		playerHp = 1;
+	}
+
+	if (aggregateTokensEffects(data).oomisoka && new Date().getMonth() === 11 && new Date().getDate() === 31) {
+		message += serifs.rpg.oomisoka + "\n";
+		buff += 1;
+		playerHp = 1;
+		dmgup = 0.25;
+	}
+
 	let mark = ":blank:";
 
 	// バフが1つでも付与された場合、改行を追加する
@@ -1583,7 +1616,7 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 		if (count === 1 || rnd) {
 			if (rnd) attackCount += 1;
 			/** ダメージ */
-			let dmg = Math.round(500 * Math.max(attackCount, 1) * (1 + (drawCount * 0.5)));
+			let dmg = Math.round(500 * Math.max(attackCount, 1) * (1 + dmgup + (drawCount * 0.5)));
 			drawCount = 0;
 			//** クリティカルかどうか */
 			let crit = dmg >= 2000;
@@ -1627,7 +1660,7 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 	if (playerHp > 0) {
 		attackCount += 1;
 		/** ダメージ */
-		let dmg = Math.round(500 * attackCount * (1 + (drawCount * 0.5)));
+		let dmg = Math.round(500 * attackCount * (1 + dmgup + (drawCount * 0.5)));
 		if (attackCount >= 7) {
 			while (Math.random() < (1/3)) {
 				dmg += 1000;
@@ -1656,6 +1689,14 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 	if (!data.clearRaid) data.clearRaid = [];
 	if (count === 7 && !data.clearRaid.includes(enemy.name)) {
 		data.clearRaid.push(enemy.name);
+	}
+
+	if (aggregateTokensEffects(data).oomisoka && new Date().getMonth() === 11 && new Date().getDate() === 31) {
+		const score = enemy ? Math.max(Math.log2((totalDmg * 20) / (1024 / ((enemy.power ?? 30) / 30))) + 1, 1) : undefined;
+		if (score) {
+			message += "\n\n" + serifs.rpg.oomisokaEnd(score.toFixed(2), Math.ceil(score * 8));
+			data.coin += Math.ceil(score * 8);
+		}
 	}
 
 	data.raid = false;
@@ -1888,7 +1929,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	}
 
 	if (skillEffects.endureUp > 0) {
-		message += `気合で頑張る 仕上げ+${Math.floor(endureUp * 150)}%` + `\n`;
+		message += `気合で頑張る 仕上げ+${Math.floor(skillEffects.endureUp * 150)}%` + `\n`;
 		fix += Math.floor(skillEffects.endureUp * 1.5)
 	} else if (showInfo) {
 		buff += 1;
@@ -1909,11 +1950,11 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
     }
   }
 
-	score = (dex / 4) * plus;
+	const score = (dex / 4) * plus;
 
 	totalDmg = Math.round(100 - 100 * Math.pow(1/2, score/50) * 10) / 10;
 
-	totalDmg += Math.floor((100 - totalDmg) * fix)
+	totalDmg += Math.floor((100 - totalDmg) * fix);
 	
 	message += `${totalDmg}点の鳩車を作った！` + `\n\n`;
 
