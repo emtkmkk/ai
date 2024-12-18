@@ -234,8 +234,8 @@ function finish(raid: Raid) {
 	const total = sortAttackers.reduce((pre, cur) => pre + cur.dmg, 0);
 
 	/** 評価スコア */
-	const score = Math.max(Math.floor(Math.log2(total / (1024 / ((raid.enemy.power ?? 30) / 30))) + 1), 1);
-	const scoreRaw = Math.max(Math.log2(total / (1024 / ((raid.enemy.power ?? 30) / 30))) + 1, 1);
+	const score = raid.enemy.power ? Math.max(Math.floor(Math.log2(total / (1024 / ((raid.enemy.power ?? 30) / 30))) + 1), 1) : undefined;
+	const scoreRaw = score ? Math.max(Math.log2(total / (1024 / ((raid.enemy.power ?? 30) / 30))) + 1, 1) : undefined;
 
 	if (sortAttackers?.[0]) {
 		if (sortAttackers?.[0].mark === ":blank:") {
@@ -262,9 +262,9 @@ function finish(raid: Raid) {
 	}
 
 	if (sortAttackers.length > 1) {
-		results.push(`\n合計: ${sortAttackers.length}人 ${total.toLocaleString()}${raid.enemy.scoreMsg2 ?? "ダメージ"}\n評価: ${"★".repeat(score)}\n★${Math.floor(scoreRaw)} ${Math.floor((scoreRaw % 1) * 8) !== 0 ? `$[bg.color=ffff90 ${":blank:".repeat(Math.floor((scoreRaw % 1) * 8))}]` : ""}$[bg.color=ff9090 ${":blank:".repeat(8 - Math.floor((scoreRaw % 1) * 8))}] ★${Math.floor(scoreRaw) + 1}`);
+		results.push(`\n合計: ${sortAttackers.length}人 ${total.toLocaleString()}${raid.enemy.scoreMsg2 ?? "ダメージ"}${score && scoreRaw ? `\n評価: ${"★".repeat(score)}\n★${Math.floor(scoreRaw)} ${Math.floor((scoreRaw % 1) * 8) !== 0 ? `$[bg.color=ffff90 ${":blank:".repeat(Math.floor((scoreRaw % 1) * 8))}]` : ""}$[bg.color=ff9090 ${":blank:".repeat(8 - Math.floor((scoreRaw % 1) * 8))}] ★${Math.floor(scoreRaw) + 1}` : ""}`);
 	} else {
-		results.push(`\n評価: ${"★".repeat(score)}\n★${Math.floor(scoreRaw)} ${Math.floor((scoreRaw % 1) * 8) !== 0 ? `$[bg.color=ffff90 ${":blank:".repeat(Math.floor((scoreRaw % 1) * 8))}]` : ""}$[bg.color=ff9090 ${":blank:".repeat(8 - Math.floor((scoreRaw % 1) * 8))}] ★${Math.floor(scoreRaw) + 1}`);
+		results.push(`${score && scoreRaw ? `\n評価: ${"★".repeat(score)}\n★${Math.floor(scoreRaw)} ${Math.floor((scoreRaw % 1) * 8) !== 0 ? `$[bg.color=ffff90 ${":blank:".repeat(Math.floor((scoreRaw % 1) * 8))}]` : ""}$[bg.color=ff9090 ${":blank:".repeat(8 - Math.floor((scoreRaw % 1) * 8))}] ★${Math.floor(scoreRaw) + 1}` : ""}`);
 	}
 
 	/** RPGモジュールのデータ */
@@ -285,9 +285,9 @@ function finish(raid: Raid) {
 	}
 
 	if (sortAttackers.length >= 3) {
-		const luckyUser = sortAttackers[Math.floor(Math.random() * sortAttackers.length)].user;
-		const bonus = Math.ceil(sortAttackers.length / 5 * scoreRaw);
-		results.push("\nラッキー！: " + acct(luckyUser) + `\n${config.rpgCoinName}+` + bonus + "枚");
+		const luckyUser = sortAttackers[scoreRaw ? Math.floor(Math.random() * sortAttackers.length) : 0].user;
+		const bonus = Math.ceil(sortAttackers.length / 5 * (scoreRaw ?? 6));
+		results.push((scoreRaw ? "\nラッキー！: " : "優勝！: ") + acct(luckyUser) + `\n${config.rpgCoinName}+` + bonus + "枚");
 		const friend = ai.lookupFriend(luckyUser.id);
 		if (!friend) return;
 		const data = friend.getPerModulesData(module_);
@@ -296,13 +296,13 @@ function finish(raid: Raid) {
 		friend.setPerModulesData(module_, data);
 	}
 
-	const text = results.join('\n') + '\n\n' + serifs.rpg.finish(raid.enemy.name, score);
+	const text = results.join('\n') + '\n\n' + (score ? serifs.rpg.finish(raid.enemy.name, score) : serifs.rpg.finish2(raid.enemy.name, 4));
 
 	sortAttackers.forEach((x) => {
 		const friend = ai.lookupFriend(x.user.id);
 		if (!friend) return;
 		const data = friend.getPerModulesData(module_);
-		data.coin = Math.max((data.coin ?? 0) + (score ?? 1), data.coin);
+		data.coin = Math.max((data.coin ?? 0) + (score ?? 4), data.coin);
 		friend.setPerModulesData(module_, data);
 	});
 
@@ -1955,18 +1955,36 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	totalDmg = Math.round(100 - 100 * Math.pow(1/2, score/50) * 10) / 10;
 
 	totalDmg += Math.floor((100 - totalDmg) * fix);
+
+	let imageMsg = ""
+
+	if (totalDmg < 15) imageMsg = "もはやなにかわからない"
+	else if (totalDmg < 25) imageMsg = "失敗した"
+	else if (totalDmg < 35) imageMsg = "ぐちゃぐちゃの"
+	else if (totalDmg < 45) imageMsg = "ぼろぼろの"
+	else if (totalDmg < 55) imageMsg = ""
+	else if (totalDmg < 65) imageMsg = "自立した"
+	else if (totalDmg < 70) imageMsg = "まあまあの"
+	else if (totalDmg < 75) imageMsg = "すこし整った"
+	else if (totalDmg < 80) imageMsg = "小綺麗な"
+	else if (totalDmg < 85) imageMsg = "いい感じの"
+	else if (totalDmg < 90) imageMsg = "しっかりした"
+	else if (totalDmg < 95) imageMsg = "細部まで整った"
+	else if (totalDmg < 98) imageMsg = "職人顔負けの"
+	else if (totalDmg < 99) imageMsg = "完璧な"
+	else imageMsg = "究極の"
 	
-	message += `${totalDmg}点の鳩車を作った！` + `\n\n`;
+	message += `${imageMsg}鳩車を作って提出した！` + `\n\n`;
 
 	if (!data.raidScore) data.raidScore = {};
 	if (!data.raidScore[enemy.name] || data.raidScore[enemy.name] < totalDmg) {
 		if (data.raidScore[enemy.name]) {
-			message += "\n" + serifs.rpg.hiScore(data.raidScore[enemy.name], totalDmg);
+			//message += "\n" + serifs.rpg.hiScore(data.raidScore[enemy.name], totalDmg);
 			if (mark === ":blank:") mark = "🆙";
 		}
 		data.raidScore[enemy.name] = totalDmg;
 	} else {
-		if (data.raidScore[enemy.name]) message += `\n（これまでのベスト: ${data.raidScore[enemy.name].toLocaleString()}）`;
+		//if (data.raidScore[enemy.name]) message += `\n（これまでのベスト: ${data.raidScore[enemy.name].toLocaleString()}）`;
 	}
 	if (!data.clearRaid) data.clearRaid = [];
 	if (totalDmg >= 100 && !data.clearRaid.includes(enemy.name)) {

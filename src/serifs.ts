@@ -445,6 +445,7 @@ export default {
 		onagare: (enemyName) => `${enemyName}は暴れまわったのち、帰っていきました……`,
 		finishCw: (enemyName) => `${enemyName}討伐戦の結果発表です！`,
 		finish: (enemyName, score) => `みなさんのお陰で${enemyName}を撃退できました！\nありがとうございます！\nお礼にみなさんに${config.rpgCoinName}を${score}枚プレゼントします！\n「RPG ショップ」で買い物してくださいね！\nまたお願いします！`,
+		finish2: (enemyName, score) => `${enemyName}コンテストへの参加ありがとうございます！\n参加証としてみなさんに${config.rpgCoinName}を${score}枚プレゼントします！\n「RPG ショップ」で買い物してくださいね！\nまたお願いします！`,
 		finalAttack: (dmg) => `${config.rpgHeroName}の全力の一撃！\n${dmg}ポイントのダメージを与えた！`,
 		timeUp: (enemyName, maxHp) => `${enemyName}の最後の一撃！\n${config.rpgHeroName}は${"9".repeat(String(maxHp).length)}ポイントのダメージ！`,
 		totalDmg: (dmg) => `合計 ${dmg.toLocaleString()} ダメージを与えた！`,
