@@ -273,7 +273,7 @@ function finish(raid: Raid) {
 		if (!rpgData.raidScore) rpgData.raidScore = {};
 		if (!rpgData.raidScoreDate) rpgData.raidScoreDate = {};
 		if (!rpgData.raidScore[raid.enemy.name] || rpgData.raidScore[raid.enemy.name] < total) {
-			if (rpgData.raidScore[raid.enemy.name]) {
+			if (rpgData.raidScore[raid.enemy.name] && score) {
 				results.push("\n" + serifs.rpg.GlobalHiScore(rpgData.raidScore[raid.enemy.name], rpgData.raidScoreDate[raid.enemy.name] ?? "", total));
 			}
 			rpgData.raidScore[raid.enemy.name] = total;
@@ -286,7 +286,7 @@ function finish(raid: Raid) {
 
 	if (sortAttackers.length >= 3) {
 		const luckyUser = sortAttackers[scoreRaw ? Math.floor(Math.random() * sortAttackers.length) : 0].user;
-		const bonus = Math.ceil(sortAttackers.length / 5 * (scoreRaw ?? 6));
+		const bonus = Math.ceil(sortAttackers.length / 5 * (scoreRaw ?? (sortAttackers[0].dmg / 10)));
 		results.push((scoreRaw ? "\nラッキー！: " : "優勝！: ") + acct(luckyUser) + `\n${config.rpgCoinName}+` + bonus + "枚");
 		const friend = ai.lookupFriend(luckyUser.id);
 		if (!friend) return;
@@ -1944,14 +1944,14 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	if (buff > 0) message += "\n";
 	
   let plus = 0.1;
-  let life = 30;
+  let life = dex < 100 ? 15 / (100/dex) : 15;
 
   while (life > 0) {
-    if (Math.random() < 0.5) {
-      plus += 0.1;
-    } else {
-      life -= 1;
-    }
+	if (Math.random() < 0.5) {
+		plus += dex < 100 ? 0.2 * (100/dex) : 0.2;
+	} else { 
+		life -= 1;
+	}
   }
 
   	if (fix > 0.75) fix = 0.75;
@@ -1960,7 +1960,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 
 	totalDmg = Math.round((100 - 100 * Math.pow(1/2, score/50)) * 10) / 10;
 
-	totalDmg += Math.floor((100 - totalDmg) * fix);
+	totalDmg += Math.floor((100 - totalDmg) * fix * 10) / 10;
 
 	let imageMsg = ""
 
