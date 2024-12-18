@@ -1896,7 +1896,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	const atkX = 
 		(atkDmgUp && atkDmgUp > 0 ? (1 / (1 + (atkDmgUp ?? 0))) : 1) *
 		(atkUp && atkUp > 0 ? (1 / (1 + (atkUp ?? 0))) : 1) *
-		(0.75 + (data.def / (data.atk + data.def)) * 0.5)
+		(color.reverseStatus ? (0.75 + (data.atk / (data.atk + data.def)) * 0.5) : (0.75 + (data.def / (data.atk + data.def)) * 0.5))
 	
 	if (atkX < 1) {
 		buff += 1;
@@ -1956,7 +1956,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 
   	if (fix > 0.75) fix = 0.75;
 
-	const score = (dex / 4) * plus;
+	const score = (dex / 4) * plus * (0.97 + (Math.random() * 0.06));
 
 	totalDmg = Math.round((100 - 100 * Math.pow(1/2, score/50)) * 10) / 10;
 
@@ -2002,6 +2002,12 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	}
 
 	message += `あとは結果を待つのみ……` + `\n\n`;
+
+	const amuletmsg = amuletMinusDurability(data);
+
+	if (amuletmsg) {
+		message += "\n\n" + amuletmsg;
+	}
 
 	data.raid = false;
 	msg.friend.setPerModulesData(module_, data);
