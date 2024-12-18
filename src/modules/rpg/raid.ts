@@ -345,7 +345,7 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
 
 	if (raid == null) return;
 
-	if (raid.attackers.some(x => x.user.id == msg.userId)) {
+	if (raid.attackers.some(x => x.dmg > 0 && x.user.id == msg.userId)) {
 		msg.reply('すでに参加済みの様です！').then(reply => {
 			raid.replyKey.push(raid.postId + ":" + reply.id);
 			module_.subscribeReply(raid.postId + ":" + reply.id, reply.id);
@@ -1952,7 +1952,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 
 	const score = (dex / 4) * plus;
 
-	totalDmg = Math.round(100 - 100 * Math.pow(1/2, score/50) * 10) / 10;
+	totalDmg = Math.round((100 - 100 * Math.pow(1/2, score/50)) * 10) / 10;
 
 	totalDmg += Math.floor((100 - totalDmg) * fix);
 
