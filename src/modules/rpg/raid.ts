@@ -1900,16 +1900,16 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	
 	if (atkX < 1) {
 		buff += 1;
-		message += `有り余るパワー 器用さ-${Math.floor(1 - atkX * 100)}%` + `\n`;
+		message += `有り余るパワー 器用さ-${Math.floor((1 - atkX) * 100)}%` + `\n`;
 		dex = dex * atkX;
 	} else if (showInfo) {
 		buff += 1;
 		message += `パワー 適切` + `\n`;
 	}
 
-	if (skillEffects.notBattleBonusAtk < 1) {
-		message += `気性が荒い 器用さ-${Math.floor(1 - skillEffects.notBattleBonusAtk * 100)}%` + `\n`;
-		dex = dex * skillEffects.notBattleBonusAtk;
+	if (skillEffects.notBattleBonusAtk < 0) {
+		message += `気性が荒い 器用さ-${Math.floor((skillEffects.notBattleBonusAtk * -1) * 100)}%` + `\n`;
+		dex = dex * (1 + skillEffects.notBattleBonusAtk);
 	}
 
 	if (skillEffects.endureUp > 0) {
