@@ -107,7 +107,7 @@ function scheduleRaidStart() {
 	const minutes = new Date().getMinutes();
 
 	// 特定の時間（8, 12, 18, 21時）の15分にレイドを開始する
-	if ([8, 12, 18].includes(hours) && minutes === 15) {
+	if ([8, 12, 18, 21].includes(hours) && minutes === 15) {
 		start();
 	}
 	const day = new Date().getDay();
@@ -117,15 +117,13 @@ function scheduleRaidStart() {
 	if (day >= 1 && day <= 4 && hours === randomHours[Math.floor(rnd() * randomHours.length)] && minutes === randomMinutes[Math.floor(rnd() * randomMinutes.length)]) {
 		start();
 	}
-	if ((day === 6 || day === 0) && hours === 19 && minutes === 45) {
-		start();
-	}
-	if (hours === 21 && minutes === 45) {
-		if (new Date().getDate() === 18 || day === 1 || day === 4) {
-			start(undefined, "h");
-		} else {
+	if (hours === 19 && minutes === 45) {
+		if ((day === 6 || day === 0)) {
 			start();
+		} else if (new Date().getDate() === 18 || day === 1 || day === 4) {
+			start(undefined, "h");
 		}
+		
 	}
 	if (day >= 5 && hours === 22 && minutes === 45) {
 		start();
