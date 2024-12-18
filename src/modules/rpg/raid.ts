@@ -1975,20 +1975,21 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	else if (totalDmg < 65) imageMsg = "まあまあの"
 	else if (totalDmg < 70) imageMsg = "すこし整った"
 	else if (totalDmg < 75) imageMsg = "バランスが取れた"
-	else if (totalDmg < 80) imageMsg = "小綺麗な"
-	else if (totalDmg < 85) imageMsg = "いい感じの"
+	else if (totalDmg < 80) imageMsg = "いい感じの"
+	else if (totalDmg < 85) imageMsg = "小綺麗な"
 	else if (totalDmg < 90) imageMsg = "しっかりした"
 	else if (totalDmg < 95) imageMsg = "細部まで整った"
 	else if (totalDmg < 98) imageMsg = "職人顔負けの"
-	else if (totalDmg < 99) imageMsg = "完璧な"
-	else imageMsg = "究極の"
+	else if (totalDmg < 99) imageMsg = "非の付け所がない"
+	else if (totalDmg < 100) imageMsg = "究極の"
+	else imageMsg = "伝説に残るであろう"
 	
-	message += `${imageMsg}鳩車を作って提出した！` + `\n\n`;
+	message += `${imageMsg}鳩車を作って提出した！` + `\n\n`
 
 	if (!data.raidScore) data.raidScore = {};
 	if (!data.raidScore[enemy.name] || data.raidScore[enemy.name] < totalDmg) {
-		if (data.raidScore[enemy.name]) {
-			//message += "\n" + serifs.rpg.hiScore(data.raidScore[enemy.name], totalDmg);
+		if (data.raidScore[enemy.name] && Math.floor(data.raidScore[enemy.name]) != Math.floor(totalDmg)) {
+			message += "過去最高の手応えだ！" + `\n\n`;
 			if (mark === ":blank:") mark = "🆙";
 		}
 		data.raidScore[enemy.name] = totalDmg;
@@ -1999,6 +2000,8 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	if (totalDmg >= 100 && !data.clearRaid.includes(enemy.name)) {
 		data.clearRaid.push(enemy.name);
 	}
+
+	message += `あとは結果を待つのみ……` + `\n\n`;
 
 	data.raid = false;
 	msg.friend.setPerModulesData(module_, data);
