@@ -1912,7 +1912,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 		dex = dex * (1 + skillEffects.notBattleBonusAtk);
 	}
 
-	if (skillEffects.endureUp > 0) {
+	if (skillEffects.abortDown > 0) {
 		message += `連続攻撃完遂率上昇 仕上げ+${Math.floor(skillEffects.abortDown * 25)}%` + `\n`;
 		fix += Math.floor(skillEffects.abortDown / 4)
 	} else if (showInfo) {
