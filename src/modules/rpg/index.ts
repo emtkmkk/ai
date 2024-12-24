@@ -1050,11 +1050,21 @@ export default class extends Module {
 
 		// ７フィーバー
 		let sevenFever = skillEffects.sevenFever ? calcSevenFever([data.lv, data.atk, data.def]) * skillEffects.sevenFever : 0;
-		if (sevenFever) {
+		
+		// 修行の成果
+		const upStats = (data.lv - 384) / 3;
+		if (data.lv > 384 && data.enemy.name === endressEnemy(data).name && sevenFever < upStats) {
 			buff += 1;
-			message += serifs.rpg.skill.sevenFever(sevenFever) + "\n";
-			atk = atk * (1 + (sevenFever / 100));
-			def = def * (1 + (sevenFever / 100));
+			message += serifs.rpg.lvBonus(Math.ceil(upStats)) + "\n";
+			atk = atk * (1 + (upStats / 100));
+			def = def * (1 + (upStats / 100));
+		} else {
+			if (sevenFever) {
+				buff += 1;
+				message += serifs.rpg.skill.sevenFever(sevenFever) + "\n";
+				atk = atk * (1 + (sevenFever / 100));
+				def = def * (1 + (sevenFever / 100));
+			}
 		}
 
 		// spdが低い場合、確率でspdが+1。

@@ -512,6 +512,7 @@ export default {
 			stockRandom: `謎のお守りが光り始めた……\n何かが起こったようだ。`,
 			guardAtkUp: (num) => `スキル「攻めの守勢」発動${num > 1 ? `×${num}` : ""}！\n${config.rpgHeroName}のパワーがアップ！`
 		},
+		lvBonus: (num) => `修行の成果ボーナス！\nステータス+${num}%！`,
 		nurse: "$[x3 :mkck_nurse:]\n\n通りすがりのナースが現れた！\nナースは受けた傷を治療してくれた！", //この文を空白にすればナースは来なくなります
 		haisui: `${config.rpgHeroName}は決死の覚悟をした！\nパワーが上がり、防御が下がった！`,
 		endure: `${config.rpgHeroName}は気合で耐えた！`,

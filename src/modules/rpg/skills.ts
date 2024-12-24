@@ -578,9 +578,9 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
 	if (aggregatedEffect.beginner) {
 		/** 常時覚醒？ */
 		let alwaysSuper = getColor(data).alwaysSuper;
-		/* スキル数が1少ない度に×1.05 レイドかつ常時覚醒でない場合さらに×1.1 */
-		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) * ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) * (alwaysSuper || !data.raid ? 1 : 1.1)));
-		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) * ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) * (alwaysSuper || !data.raid ? 1 : 1.1)));
+		/* スキル数が1少ない度に×1.06 レイドかつ常時覚醒でない場合さらに×1.12 */
+		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) * ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) * (alwaysSuper || !data.raid ? 1 : 1.12)));
+		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) * ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) * (alwaysSuper || !data.raid ? 1 : 1.12)));
 	}
 	
 	if (aggregatedEffect.rainbow && aggregatedEffect.rainbow > 1) {
@@ -727,7 +727,7 @@ export function aggregateSkillsEffectsSkillX(data: any, skillX: number): SkillEf
 	if (aggregatedEffect.beginner) {
 		/** 常時覚醒？ */
 		let alwaysSuper = getColor(data).alwaysSuper;
-		/* スキル数が1少ない度に×1.05 レイドかつ常時覚醒でない場合さらに×1.1 */
+		/* スキル数が1少ない度に×1.06 レイドかつ常時覚醒でない場合さらに×1.12 */
 		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) * ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) * (alwaysSuper || !data.raid ? 1 : 1.1)));
 		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) * ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) * (alwaysSuper || !data.raid ? 1 : 1.1)));
 	}
@@ -1174,7 +1174,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 		if (dmgBonus > 0) {
 			result.push("与ダメージ増加: " + showNum(dmgBonus * 100) + "%")
 		} else {
-			result.push("与ダメージ軽減: " + showNum(dmgBonus * -100) + "%")
+			result.push("与ダメージ減少: " + showNum(dmgBonus * -100) + "%")
 		}
 	}
 
