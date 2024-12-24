@@ -1,4 +1,4 @@
-export const challenges = [
+/*export const challenges = [
     {
         id: 1,
         target: (data) => data.lv,
@@ -56,4 +56,4 @@ export const challenges = [
         bonusdesc: "２日以内に１回でも手動でRPGを行った場合、自動でレイドに参加するようになります"
     },
 
-]
+]*/
