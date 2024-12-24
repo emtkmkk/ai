@@ -380,12 +380,12 @@ export default class extends Module {
 					rankmsg2 += `（同順位：${sameRankCount - 1}人）`;
 				}
 
-				return `${label}\n1位：${(values?.[0] + (options?.addValue || 0)).toLocaleString()} ${rankmsg}${sameRankCount >= 9 ? `\n10位：${(values?.[9] + (options?.addValue || 0)).toLocaleString()} ${rankmsg2}` : ""}`;
+				return `${label}\n1位：${(values?.[0] + (options?.addValue || 0)).toLocaleString()} ${rankmsg}${sameRankCount < 9 ? `\n10位：${(values?.[9] + (options?.addValue || 0)).toLocaleString()} ${rankmsg2}` : ""}`;
 			}
 		};
 
 		if (msg.includes(["ランク"])){
-			
+
 			message.push(createRankMessage(null, "Lv", "lv"));
 			message.push(createRankMessage(null, "最大木人ダメージ", "bestScore", { suffix: "ダメージ" }));
 			message.push(createRankMessage(null, "旅モード最高クリア記録", "maxEndress", { prefix: "ステージ", addValue: 1 }));
