@@ -1956,13 +1956,20 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 
 	// バフが1つでも付与された場合、改行を追加する
 	if (buff > 0) message += "\n";
+
+  if (dex < 3) dex = 3;
 	
   let plus = 0.1;
   let life = dex < 100 ? 15 / (100/dex) : 15;
+  let spFlg = false;
 
   while (life > 0) {
 	if (Math.random() < 0.5) {
 		plus += dex < 100 ? 0.2 * (100/dex) : 0.2;
+        if (!spFlg && Math.random() < (0.02 * Math.min(1, 50/dex))) {
+            life = 15;
+            if (Math.random() < dex/50) spFlg = true;
+        }
 	} else { 
 		life -= 1;
 	}
