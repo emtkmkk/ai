@@ -377,7 +377,7 @@ export default class extends Module {
 
 				let rankmsg2 = "";
 				if (sameRankCount2 > 1) {
-					rankmsg2 += `（同順位：${sameRankCount - 1}人）`;
+					rankmsg2 += `（同順位：${sameRankCount2 - 1}人）`;
 				}
 
 				return `${label}\n1位：${(values?.[0] + (options?.addValue || 0)).toLocaleString()} ${rankmsg}${sameRankCount < 9 ? `\n10位：${(values?.[9] + (options?.addValue || 0)).toLocaleString()} ${rankmsg2}` : ""}`;
