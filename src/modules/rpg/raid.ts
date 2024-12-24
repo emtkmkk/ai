@@ -1799,7 +1799,11 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 
 	// 敵の開始メッセージなどを設定
 	cw += [
-		enemy.msg,
+		me,
+		data.lv >= 255 ? "" : `Lv${data.lv}`,
+		Math.max(data.atk, data.def) / (data.atk + data.def) * 100 <= 53 ? "" : `${data.atk > data.def ? serifs.rpg.status.atk.slice(0, 1) : serifs.rpg.status.def.slice(0, 1)}${(Math.max(data.atk, data.def) / (data.atk + data.def) * 100).toFixed(0)}%`,
+		skillsStr.skills,
+		skillsStr.amulet ? `お守り ${skillsStr.amulet}` : undefined
 	].filter(Boolean).join(" ");
 	message += `$[x2 ${me}]\n\n${serifs.rpg.start}\n\n`;
 
@@ -1810,7 +1814,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	
 	let totalDmg = 0;
 
-	let dex = 100;
+	let dex = 85;
 	let fix = 0;
 	
 	if (stockRandomResult.activate) {
@@ -1819,15 +1823,18 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	
 	let mark = ":blank:";
 
-	const showInfo = data.lv >= 100;
+	const showInfo = data.lv >= 170;
+
+	// 所持しているスキル１つ度に、器用さ＋３
+	dex += (data.skills?.length ?? 0) * 3;
 	
 	if (skillEffects.notBattleBonusAtk >= 0.7) {
 		buff += 1;
-		message += `気性穏やか 器用さ+${skillEffects.notBattleBonusAtk * 100}%` + `\n`;
+		message += `気性穏やか 器用さ+${Math.round(skillEffects.notBattleBonusAtk * 100)}%` + `\n`;
 		dex = dex * (1 + (skillEffects.notBattleBonusAtk ?? 0));
 	} else if (skillEffects.notBattleBonusAtk > 0) {
 		buff += 1;
-		message += `テキパキこなす 器用さ+${skillEffects.notBattleBonusAtk * 100}%` + `\n`;
+		message += `テキパキこなす 器用さ+${Math.round(skillEffects.notBattleBonusAtk * 100)}%` + `\n`;
 		dex = dex * (1 + (skillEffects.notBattleBonusAtk ?? 0));
 	} else if (showInfo && !skillEffects.notBattleBonusAtk) {
 		buff += 1;
@@ -1836,7 +1843,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	
 	if (skillEffects.notBattleBonusDef > 0) {
 		buff += 1;
-		message += `疲れにくい 器用さ+${Math.floor(skillEffects.notBattleBonusDef * 25)}%` + `\n`;
+		message += `疲れにくい 器用さ+${Math.round(skillEffects.notBattleBonusDef * 25)}%` + `\n`;
 		dex = dex * (1 + ((skillEffects.notBattleBonusDef ?? 0) / 4));
 	} else if (showInfo) {
 		buff += 1;
@@ -1845,7 +1852,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 		
 	if (skillEffects.noAmuletAtkUp > 0) {
 		buff += 1;
-		message += `かるわざ 器用さ+${Math.floor(skillEffects.noAmuletAtkUp * 200)}%` + `\n`;
+		message += `かるわざ 器用さ+${Math.round(skillEffects.noAmuletAtkUp * 200)}%` + `\n`;
 		dex = dex * (1 + ((skillEffects.noAmuletAtkUp ?? 0) * 2));
 	} else if (showInfo) {
 		buff += 1;
@@ -1854,7 +1861,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	
 	if (skillEffects.plusActionX > 0) {
 		buff += 1;
-		message += `高速RPG 器用さ+${Math.floor(skillEffects.plusActionX * 0.08)}%` + `\n`;
+		message += `高速RPG 器用さ+${Math.round(skillEffects.plusActionX * 0.08)}%` + `\n`;
 		dex = dex * (1 + ((skillEffects.plusActionX ?? 0) * 0.0008));
 	} else if (showInfo) {
 		buff += 1;
@@ -1863,7 +1870,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	
 	if (skillEffects.atkRndMin > 0) {
 		buff += 1;
-		message += `安定感 器用さ+${Math.floor(skillEffects.atkRndMin * 20)}%` + `\n`;
+		message += `安定感 器用さ+${Math.round(skillEffects.atkRndMin * 20)}%` + `\n`;
 		dex = dex * (1 + ((skillEffects.atkRndMin ?? 0) / 5));
 	} else if (showInfo) {
 		buff += 1;
@@ -1881,7 +1888,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	
 	if (skillEffects.itemBoost > 0) {
 		buff += 1;
-		message += `道具効果量 器用さ+${Math.floor(skillEffects.itemBoost * (100/5))}%` + `\n`;
+		message += `道具効果量 器用さ+${Math.round(skillEffects.itemBoost * (100/5))}%` + `\n`;
 		dex = dex * (1 + ((skillEffects.itemBoost ?? 0) / 5));
 	} else if (showInfo) {
 		buff += 1;
@@ -1890,7 +1897,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	
 	if (skillEffects.mindMinusAvoid > 0) {
 		buff += 1;
-		message += `道具の選択が上手い 器用さ+${Math.floor(skillEffects.mindMinusAvoid * (100/3))}%` + `\n`;
+		message += `道具の選択が上手い 器用さ+${Math.round(skillEffects.mindMinusAvoid * (100/3))}%` + `\n`;
 		dex = dex * (1 + ((skillEffects.mindMinusAvoid ?? 0) / 3));
 	} else if (showInfo) {
 		buff += 1;
@@ -1916,8 +1923,8 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 
 	if ((skillEffects.notBattleBonusAtk ?? 0) < 0) {
 		buff += 1;
-		message += `気性が荒い 器用さ-${Math.floor((skillEffects.notBattleBonusAtk * -1) * 100)}%` + `\n`;
-		dex = dex * (1 + skillEffects.notBattleBonusAtk);
+		message += `気性が荒い 器用さ-${Math.min(25, Math.floor((skillEffects.notBattleBonusAtk * -1) * 100))}%` + `\n`;
+		dex = dex * Math.max(0.75, (1 + skillEffects.notBattleBonusAtk));
 	}
 
 	if (skillEffects.abortDown > 0) {
@@ -2008,7 +2015,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 		data.clearRaid.push(enemy.name);
 	}
 
-	message += `あとは結果を待つのみ……` + `\n\n`;
+	message += `あとは結果を待つのみ……`;
 
 	const amuletmsg = amuletMinusDurability(data);
 
