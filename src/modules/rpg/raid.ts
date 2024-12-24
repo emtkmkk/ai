@@ -1861,8 +1861,8 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	
 	if (skillEffects.plusActionX > 0) {
 		buff += 1;
-		message += `高速RPG 器用さ+${Math.round(skillEffects.plusActionX * 0.08)}%` + `\n`;
-		dex = dex * (1 + ((skillEffects.plusActionX ?? 0) * 0.0008));
+		message += `高速RPG 器用さ+${Math.round(skillEffects.plusActionX * 8)}%` + `\n`;
+		dex = dex * (1 + ((skillEffects.plusActionX ?? 0) * 0.08));
 	} else if (showInfo) {
 		buff += 1;
 		message += `高速RPG なし` + `\n`;
