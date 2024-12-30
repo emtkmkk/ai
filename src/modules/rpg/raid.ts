@@ -630,7 +630,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		buff += 1;
 		playerHp = 1;
 		atk = atk * 1.119;
-		skillEffects.atkDmgUp = ((1 + skillEffects.atkDmgUp) * 1.118) - 1;
+		skillEffects.atkDmgUp = ((1 + (skillEffects.atkDmgUp ?? 0)) * 1.118) - 1;
 	}
 
 	if (isSuper) {
