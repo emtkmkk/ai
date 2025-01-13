@@ -855,6 +855,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			spd = 2;
 		}
 
+		let dmgUp = 1;
 		let critUp = 0;
 
 		// HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
@@ -862,7 +863,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			if (playerHpPercent <= (1 / 7) * (1 + (skillEffects.haisuiUp ?? 0)) && ((enemyHpPercent * (1 + (skillEffects.haisuiUp ?? 0))) - playerHpPercent) >= 0.5) {
 				buff += 1;
 				message += serifs.rpg.haisui + "\n";
-				atk = Math.round(atk * (1 + (skillEffects.haisuiAtkUp ?? 0)));
+				dmgUp *= (1 + (skillEffects.haisuiAtkUp ?? 0));
 				critUp += (skillEffects.haisuiCritUp ?? 0)
 				const effect = Math.min((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.haisuiUp ?? 0)), 1);
 				atk = atk + Math.round(def * effect);
@@ -1200,7 +1201,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			const rng = (atkMinRnd + random(data, startCharge, skillEffects, false) * atkMaxRnd);
 			if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`;
 			const turnDmgX = (i < 2 ? 1 : i < 3 ? 0.5 : i < 4 ? 0.25 : 0.125);
-			const dmgBonus = ((Math.max(1 + (skillEffects.atkDmgUp ?? 0), atkMinusMin)) * turnDmgX) + (skillEffects.thunder ? (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 0);
+			const dmgBonus = ((Math.max(1 + (skillEffects.atkDmgUp ?? 0) * dmgUp, atkMinusMin)) * turnDmgX) + (skillEffects.thunder ? (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 0);
 			//** クリティカルかどうか */
 			let crit = Math.random() < Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0) + critUp), 0) + (skillEffects.critUpFixed ?? 0);
 			const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
