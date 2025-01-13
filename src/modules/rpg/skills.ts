@@ -218,7 +218,7 @@ export const skills: Skill[] = [
 	{ name: `連続・毎日ボーナス強化`, short: "連", desc: `連続・毎日ボーナスの上昇量が上がります`, info: `毎日ボーナスの増加量+100% (10 ~ 25投稿↑)`, effect: { continuousBonusUp: 1 } },
 	{ name: `負けそうなら逃げる`, short: "逃", desc: `逃げると負けた事になりません 連続で発動しにくい`, info: `スキルの数まで100%逃走 以降失敗まで発動度に確率半減し続ける\nレイド時は、1ターン距離を取って回復する`, effect: { escape: 1 } },
 	{ name: `気合で頑張る`, short: "気", desc: `パワー・防御が少し上がり、気合耐えの確率が上がります`, info: `ステータス+4% 気合耐え確率+50%`, effect: { atkUp: 0.04, defUp: 0.04, endureUp: 0.5 } },
-	{ name: `すぐ決死の覚悟をする`, short: "決", desc: `決死の覚悟の発動条件が緩くなり、効果量が上がります さらに決死の覚悟発動時、追加でパワーとクリティカル率が上がります`, info: `${serifs.rpg.status.atk}+8% 覚悟発動条件効果量+50% 覚悟発動時${serifs.rpg.status.atk}+4% クリティカル率1.2倍`, effect: { atkUp: 0.08, haisuiUp: 0.5, haisuiAtkUp: 0.04, haisuiCritUp: 0.2 } },
+	{ name: `すぐ決死の覚悟をする`, short: "決", desc: `決死の覚悟の発動条件が緩くなり、効果量が上がります さらに決死の覚悟発動時、追加で与ダメージとクリティカル率が上がります`, info: `与ダメージ+8% 覚悟発動条件効果量+50%\n覚悟発動時与ダメージ+4% クリティカル率1.2倍`, effect: { atkDmgUp: 0.08, haisuiUp: 0.5, haisuiAtkUp: 0.04, haisuiCritUp: 0.2 } },
 	{ name: `投稿数ボーナス量アップ`, short: "投", desc: `投稿数が高ければ高いほどステータスが上昇します`, info: `20投稿につき、ステータス+1% (最大10%)`, effect: { postXUp: 0.01 } },
 	{ name: `強敵と戦うのが好き`, short: "強", desc: `敵が強ければステータスが上昇します`, info: `ステータス+(敵の攻撃 × 敵の防御 / 4)%`, effect: { enemyStatusBonus: 1 } },
 	{ name: `${serifs.rpg.status.pen}+10%`, short: "貫", desc: `敵の防御の影響を減少させます`, info: `敵の防御-10%`, effect: { arpen: 0.1 } },
