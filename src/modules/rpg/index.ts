@@ -1142,6 +1142,7 @@ export default class extends Module {
 			def = def * (1 + (skillEffects.notBattleBonusDef ?? 0));
 		}
 
+		let dmgUp = 1;
 		let critUp = 0;
 
 		// HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
@@ -1149,7 +1150,7 @@ export default class extends Module {
 			if (playerHpPercent <= (1 / 7) * (1 + (skillEffects.haisuiUp ?? 0)) && ((enemyHpPercent * (1 + (skillEffects.haisuiUp ?? 0))) - playerHpPercent) >= 0.5) {
 				buff += 1;
 				message += serifs.rpg.haisui + "\n";
-				atk = Math.round(atk * (1 + (skillEffects.haisuiAtkUp ?? 0)));
+				dmgUp *= (1 + (skillEffects.haisuiAtkUp ?? 0));
 				critUp += (skillEffects.haisuiCritUp ?? 0)
 				const effect = Math.min((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.haisuiUp ?? 0)), 1);
 				atk = atk + Math.round(def * effect);
@@ -1545,7 +1546,7 @@ export default class extends Module {
 			for (let i = 0; i < spd; i++) {
 				const rng = (atkMinRnd + random(data, startCharge, skillEffects, false) * atkMaxRnd);
 				if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`;
-				const dmgBonus = (1 + (skillEffects.atkDmgUp ?? 0)) * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1);
+				const dmgBonus = (1 + (skillEffects.atkDmgUp ?? 0)) * dmgUp * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1);
 				/** クリティカルかどうか */
 				let crit = Math.random() < Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0) + critUp), 0) + (skillEffects.critUpFixed ?? 0);
 				const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
