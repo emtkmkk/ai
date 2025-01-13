@@ -692,7 +692,7 @@ export function aggregateSkillsEffectsSkillX(data: any, skillX: number): SkillEf
 		const skill = _skill.name ? skills.find((x) => x.name === _skill.name) ?? _skill : _skill;
 		const __skill = deepClone(skill);
 		if (__skill.unique) {
-			uniqueX = uniqueX * (1 + (0.05 * (skillX - 1)));
+			uniqueX = uniqueX * (1 + (0.06 * (skillX - 1)));
 		} else {
 			for (const eff in __skill.effect) {
 				__skill.effect[eff] = __skill.effect[eff] * skillX;
