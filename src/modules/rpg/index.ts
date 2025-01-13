@@ -1146,7 +1146,7 @@ export default class extends Module {
 
 		// HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
 		if (!aggregateTokensEffects(data).notLastPower) {
-			if (playerHpPercent <= (1 / 7) * (1 + (skillEffects.haisuiUp ?? 0)) && (enemyHpPercent - playerHpPercent) >= 0.5 / (1 + (skillEffects.haisuiUp ?? 0))) {
+			if (playerHpPercent <= (1 / 7) * (1 + (skillEffects.haisuiUp ?? 0)) && ((enemyHpPercent * (1 + (skillEffects.haisuiUp ?? 0))) - playerHpPercent) >= 0.5) {
 				buff += 1;
 				message += serifs.rpg.haisui + "\n";
 				atk = Math.round(atk * (1 + (skillEffects.haisuiAtkUp ?? 0)));
@@ -1395,7 +1395,7 @@ export default class extends Module {
 		// バフが1つでも付与された場合、改行を追加する
 		if (buff > 0) message += "\n";
 
-		const plusActionX = skillEffects.plusActionX ?? 0;
+		const plusActionX = Math.ceil(skillEffects.plusActionX ?? 0);
 
 		for (let actionX = 0; actionX < plusActionX + 1; actionX++) {
 
