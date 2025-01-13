@@ -1175,7 +1175,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		}
 
 		if (skillEffects.allForOne || aggregateTokensEffects(data).allForOne) {
-			const spdx = getSpdX(spd);
+			const spdx = getSpdX(abort || spd);
 			atk = atk * spdx * (1 + (skillEffects.allForOne ?? 0) * 0.1);
 			if (itemBonus?.atk) itemBonus.atk = itemBonus.atk * spd * (1 + (skillEffects.allForOne ?? 0) * 0.1);
 			spd = 1;
@@ -1184,7 +1184,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		if (warriorFlg) {
 			//** クリティカルかどうか */
 			let crit = Math.random() < 0.5;
-			const dmg = getAtkDmg(data, lv * 4, tp, 1, crit ? warriorCritX : false, enemyDef, enemyMaxHp, 0.5, getVal(enemy.defx, [count]));
+			const dmg = getAtkDmg(data, lv * 5, tp, 1, crit ? warriorCritX : false, enemyDef, enemyMaxHp, 0.5, getVal(enemy.defx, [count]));
 			// メッセージの出力
 			message += (crit ? `**${serifs.rpg.warrior.atk(dmg)}**` : serifs.rpg.warrior.atk(dmg)) + "\n";
 			totalDmg += dmg;
@@ -1348,7 +1348,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	if (warriorFlg) {
 		//** クリティカルかどうか */
 		let crit = Math.random() < 0.5;
-		const dmg = getAtkDmg(data, lv * 4, tp, 1, crit ? warriorCritX : false, enemyDef, enemyMaxHp, 1, getVal(enemy.defx, [count]));
+		const dmg = getAtkDmg(data, lv * 5, tp, 1, crit ? warriorCritX : false, enemyDef, enemyMaxHp, 1, getVal(enemy.defx, [count]));
 		// メッセージの出力
 		message += "\n\n" + (crit ? `**${serifs.rpg.warrior.atk(dmg)}**` : serifs.rpg.warrior.atk(dmg));
 		totalDmg += dmg;
@@ -1367,7 +1367,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		let lastDmg = (1000 + (enemySAtk >= 24 ? enemySAtk / 0.048 : 0)) * Math.max(enemySAtk / enemySDef, 1);
 		let dmg = Math.round(playerHp / (playerMaxHp) * (enemy.maxLastDmg ? Math.min(lastDmg, enemy.maxLastDmg) : lastDmg));
 		dmg = Math.round(dmg * (1 + (skillEffects.finalAttackUp ?? 0)));
-		if (sevenFever) {
+		if (sevenFever >= 7) {
 			if (dmg > 177777) {
 				dmg = dmg >= 77777 ? Math.max(Math.floor((dmg - 77777) / 100000) * 100000, 0) + 77777 : dmg;
 			} if (dmg > 17777) {
@@ -1843,7 +1843,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	
 	if (skillEffects.notBattleBonusDef > 0) {
 		buff += 1;
-		message += `疲れにくい 器用さ+${Math.round(skillEffects.notBattleBonusDef * 25)}%` + `\n`;
+		message += `疲れにくい 器用さ+${Math.ceil(skillEffects.notBattleBonusDef * 25)}%` + `\n`;
 		dex = dex * (1 + ((skillEffects.notBattleBonusDef ?? 0) / 4));
 	} else if (showInfo) {
 		buff += 1;
@@ -1852,7 +1852,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 		
 	if (skillEffects.noAmuletAtkUp > 0) {
 		buff += 1;
-		message += `かるわざ 器用さ+${Math.round(skillEffects.noAmuletAtkUp * 200)}%` + `\n`;
+		message += `かるわざ 器用さ+${Math.ceil(skillEffects.noAmuletAtkUp * 200)}%` + `\n`;
 		dex = dex * (1 + ((skillEffects.noAmuletAtkUp ?? 0) * 2));
 	} else if (showInfo) {
 		buff += 1;
@@ -1861,7 +1861,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	
 	if (skillEffects.plusActionX > 0) {
 		buff += 1;
-		message += `高速RPG 器用さ+${Math.round(skillEffects.plusActionX * 8)}%` + `\n`;
+		message += `高速RPG 器用さ+${Math.ceil(skillEffects.plusActionX * 8)}%` + `\n`;
 		dex = dex * (1 + ((skillEffects.plusActionX ?? 0) * 0.08));
 	} else if (showInfo) {
 		buff += 1;
@@ -1870,7 +1870,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	
 	if (skillEffects.atkRndMin > 0) {
 		buff += 1;
-		message += `安定感 器用さ+${Math.round(skillEffects.atkRndMin * 20)}%` + `\n`;
+		message += `安定感 器用さ+${Math.ceil(skillEffects.atkRndMin * 20)}%` + `\n`;
 		dex = dex * (1 + ((skillEffects.atkRndMin ?? 0) / 5));
 	} else if (showInfo) {
 		buff += 1;
@@ -1888,7 +1888,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	
 	if (skillEffects.itemBoost > 0) {
 		buff += 1;
-		message += `道具効果量 器用さ+${Math.round(skillEffects.itemBoost * (100/5))}%` + `\n`;
+		message += `道具効果量 器用さ+${Math.ceil(skillEffects.itemBoost * (100/5))}%` + `\n`;
 		dex = dex * (1 + ((skillEffects.itemBoost ?? 0) / 5));
 	} else if (showInfo) {
 		buff += 1;
@@ -1897,7 +1897,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	
 	if (skillEffects.mindMinusAvoid > 0) {
 		buff += 1;
-		message += `道具の選択が上手い 器用さ+${Math.round(skillEffects.mindMinusAvoid * (100/3))}%` + `\n`;
+		message += `道具の選択が上手い 器用さ+${Math.ceil(skillEffects.mindMinusAvoid * (100/3))}%` + `\n`;
 		dex = dex * (1 + ((skillEffects.mindMinusAvoid ?? 0) / 3));
 	} else if (showInfo) {
 		buff += 1;
@@ -1929,7 +1929,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 
 	if (skillEffects.abortDown > 0) {
 		buff += 1;
-		message += `連続攻撃完遂率上昇 仕上げ+${Math.floor(skillEffects.abortDown * 25)}%` + `\n`;
+		message += `連続攻撃完遂率上昇 仕上げ+${Math.ceil(skillEffects.abortDown * 25)}%` + `\n`;
 		fix += Math.floor(skillEffects.abortDown / 4)
 	} else if (showInfo) {
 		buff += 1;
@@ -1938,7 +1938,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	
 	if (skillEffects.tenacious > 0) {
 		buff += 1;
-		message += `粘り強さ 仕上げ+${Math.floor(skillEffects.tenacious * 25)}%` + `\n`;
+		message += `粘り強さ 仕上げ+${Math.ceil(skillEffects.tenacious * 25)}%` + `\n`;
 		fix += Math.floor(skillEffects.tenacious / 4)
 	} else if (showInfo) {
 		buff += 1;
@@ -1947,7 +1947,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 
 	if (skillEffects.endureUp > 0) {
 		buff += 1;
-		message += `気合で頑張る 仕上げ+${Math.floor(skillEffects.endureUp * 15)}%` + `\n`;
+		message += `気合で頑張る 仕上げ+${Math.ceil(skillEffects.endureUp * 15)}%` + `\n`;
 		fix += Math.floor(skillEffects.endureUp * 0.15)
 	} else if (showInfo) {
 		buff += 1;
