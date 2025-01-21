@@ -112,7 +112,7 @@ export const shop2Items: ShopItem[] = [
 	{ name: `うねうねした壺`, limit: (data) => (data.jar ?? 0) === 4 && data.shopExp > 2800, price: 1000, desc: `なんかうねうねした感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1, always: true },
 	{ name: `ナノサイズ壺`, limit: (data) => (data.jar ?? 0) === 5 && data.shopExp > 4000, price: 1200, desc: `小さくて見えない感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1, always: true },
 	{ name: `謎の壺`, limit: (data) => (data.jar ?? 0) >= 6 && data.shopExp > 5400, price: (data) => (data.jar ?? 0) * 200, desc: `なんか謎な感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1, always: true },
-	...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique).map((x): Item => ({ name: `${x.name}の教本`, limit: (data) => !data.nextSkill, price: (data, rnd, ai) => skillPrice(ai, x.name, rnd), desc: `購入すると次のスキル変更時に必ず「${x.name}」${x.desc ? `（${x.desc}）` : ""}を習得できる（複製時は対象外）`, type: "item", effect: (data) => { data.nextSkill = x.name } })),
+	...skills.filter((x) => !x.notLearn && !x.moveTo && !x.cantReroll && !x.unique).map((x): Item => ({ name: `${x.name}の教本`, limit: (data) => !data.nextSkill, price: (data, rnd, ai) => skillPrice(ai, x.name, rnd), desc: `購入すると次のスキル変更時に必ず「${x.name}」${x.desc ? `（${x.desc}）` : ""}を習得できる（複製時は対象外）`, type: "item", effect: (data) => { data.nextSkill = x.name } })),
 ];
 
 export const shop2Reply = async (module: rpg, ai: 藍, msg: Message) => {
