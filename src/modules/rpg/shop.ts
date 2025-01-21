@@ -291,7 +291,7 @@ const eventAmulet = (data?) => {
 	const m = new Date().getMonth() + 1;
 	const d = new Date().getDate()
 	const dy = new Date().getDay();
-	if (data.lv <= 255) {
+	if (data.lv >= 255) {
 		if (dy == 0) {
 			return [
 				"雷属性剣攻撃＋",
