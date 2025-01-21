@@ -82,7 +82,7 @@ export const fortuneEffect = (data: any) => {
 export const skillPrice = (_ai: 藍, skillName: Skill["name"], rnd: () => number) => {
 	const skillP = skillPower(_ai, skillName);
 	const filteredSkills = skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly);
-	const skill = skills.filter((x) => x.name === skill.name)
+	const skill = skills.filter((x) => x.name === skillName)
 
 	// totalSkillCountにfilteredSkillsのnameに含まれるskillP.skillNameCountMapに含まれる値の合計を代入
 	const totalSkillCount = filteredSkills.reduce((acc, skill) => acc + (skillP.skillNameCountMap.get(skill.name) || 0), 0);
