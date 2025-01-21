@@ -1091,7 +1091,7 @@ export default class extends Module {
 		let sevenFever = skillEffects.sevenFever ? calcSevenFever([data.lv, data.atk, data.def]) * skillEffects.sevenFever : 0;
 		
 		// 修行の成果
-		const upStats = (data.lv - 384) / 3;
+		const upStats = data.lv > 594 ? 70 + ((data.lv - 594) / 21) : (data.lv - 384) / 3;
 		if (data.lv > 384 && data.enemy.name === endressEnemy(data).name && sevenFever < upStats) {
 			buff += 1;
 			message += serifs.rpg.lvBonus(Math.ceil(upStats)) + "\n";
