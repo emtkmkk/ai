@@ -36,10 +36,28 @@ export function skillCalculate(_ai: 藍 = ai) {
 }
 
 export type SkillEffect = {
-	/** パワーがn%上昇 */
+	/** パワーがn%上昇 （グループ１） */
 	atkUp?: number;
-	/** 防御がn%上昇 */
+	/** パワーがn%上昇 （グループ２） */
+	atkUp2?: number;
+	/** パワーがn%上昇 （グループ３） */
+	atkUp3?: number;
+	/** パワーがn%上昇 （グループ４） */
+	atkUp4?: number;
+	/** パワーがn%上昇 （グループ５） */
+	atkUp5?: number;
+	/** パワーがn%上昇 （グループ６） */
+	atkUp6?: number;
+	/** 防御がn%上昇 （グループ１） */
 	defUp?: number;
+	/** 防御がn%上昇 （グループ２） */
+	defUp2?: number;
+	/** 防御がn%上昇 （グループ３） */
+	defUp3?: number;
+	/** 防御がn%上昇 （グループ４） */
+	defUp4?: number;
+	/** 防御がn%上昇 （グループ５） */
+	defUp5?: number;
 	/** 炎：戦闘時、Lvのn%をダメージに加算 */
 	fire?: number;
 	/** 氷：戦闘時、n%で敵のターンをスキップ */
@@ -68,10 +86,14 @@ export type SkillEffect = {
 	plusActionX?: number;
 	/** -n時間分RPGを先取り */
 	rpgTime?: number;
-	/** 与ダメージをn%上昇 */
+	/** 与ダメージをn%上昇 （グループ１） */
 	atkDmgUp?: number;
-	/** 被ダメージをn%上昇 */
+	/** 与ダメージをn%上昇 （グループ２） */
+	atkDmgUp2?: number;
+	/** 被ダメージをn%上昇（グループ１） */
 	defDmgUp?: number;
+	/** 被ダメージをn%上昇（グループ２） */
+	defDmgUp2?: number;
 	/** 連続ボーナスの効果をn%上昇 */
 	continuousBonusUp?: number;
 	/** 敗北時に逃走を行う */
@@ -221,13 +243,13 @@ export const skills: Skill[] = [
 	{ name: `粘り強い`, short: "粘", desc: `体力が減るほど受けるダメージを軽減します`, info: `ダメージカット25%×(減少HP割合)を得る 最大90%`, effect: { tenacious: 0.25 } },
 	{ name: `高速RPG`, short: "速", desc: `1回のRPGでお互いに2回行動します`, info: `1回のコマンドで2ターン進行する レイド時は、${serifs.rpg.status.atk}+10%`, effect: { plusActionX: 1 } },
 	{ name: `1時間先取りRPG`, short: "先", desc: `1時間早くRPGをプレイする事が出来ます`, info: `1時間早くRPGプレイ可能 ステータス+5%`, effect: { atkUp: 0.05, defUp: 0.05, rpgTime: -1 }, moveTo: "高速RPG" },
-	{ name: `伝説`, short: "★", desc: `パワー・防御が7%上がります`, info: `ステータス+7% 重複しない`, effect: { atkUp: 0.07, defUp: 0.07 }, unique: "legend" },
+	{ name: `伝説`, short: "★", desc: `パワー・防御が7%上がります`, info: `ステータス+7% 重複しない`, effect: { atkUp2: 0.07, defUp2: 0.07 }, unique: "legend" },
 	{ name: `脳筋`, short: "筋", desc: `与えるダメージが上がりますが、受けるダメージも上がります`, info: `${serifs.rpg.dmg.give}+20% ${serifs.rpg.dmg.take}+10%`, effect: { atkDmgUp: 0.2, defDmgUp: 0.1 } },
 	{ name: `慎重`, short: "慎", desc: `与えるダメージが下がりますが、受けるダメージも下がります`, info: `${serifs.rpg.dmg.give}-8% ${serifs.rpg.dmg.take}-20%`, effect: { atkDmgUp: -0.08, defDmgUp: -0.2 } },
 	{ name: `連続・毎日ボーナス強化`, short: "連", desc: `連続・毎日ボーナスの上昇量が上がります`, info: `毎日ボーナスの増加量+100% (10 ~ 25投稿↑)`, effect: { continuousBonusUp: 1 } },
 	{ name: `負けそうなら逃げる`, short: "逃", desc: `逃げると負けた事になりません 連続で発動しにくい`, info: `スキルの数まで100%逃走 以降失敗まで発動度に確率半減し続ける\nレイド時は、1ターン距離を取って回復する`, effect: { escape: 1 } },
-	{ name: `気合で頑張る`, short: "気", desc: `パワー・防御が少し上がり、気合耐えの確率が上がります`, info: `ステータス+4% 気合耐え確率+50%`, effect: { atkUp: 0.04, defUp: 0.04, endureUp: 0.5 } },
-	{ name: `すぐ決死の覚悟をする`, short: "決", desc: `決死の覚悟の発動条件が緩くなり、効果量が上がります さらに決死の覚悟発動時、追加で与ダメージとクリティカル率が上がります`, info: `与ダメージ+8% 覚悟発動条件効果量+50%\n覚悟発動時与ダメージ+4% クリティカル率1.2倍`, effect: { atkDmgUp: 0.08, haisuiUp: 0.5, haisuiAtkUp: 0.04, haisuiCritUp: 0.2 } },
+	{ name: `気合で頑張る`, short: "気", desc: `パワー・防御が少し上がり、気合耐えの確率が上がります`, info: `ステータス+4% 気合耐え確率+50%`, effect: { atkUp3: 0.04, defUp3: 0.04, endureUp: 0.5 } },
+	{ name: `すぐ決死の覚悟をする`, short: "決", desc: `決死の覚悟の発動条件が緩くなり、効果量が上がります さらに決死の覚悟発動時、追加で与ダメージとクリティカル率が上がります`, info: `与ダメージ+8% 覚悟発動条件効果量+50%\n覚悟発動時与ダメージ+4% クリティカル率1.2倍`, effect: { atkDmgUp2: 0.08, haisuiUp: 0.5, haisuiAtkUp: 0.04, haisuiCritUp: 0.2 } },
 	{ name: `投稿数ボーナス量アップ`, short: "投", desc: `投稿数が高ければ高いほどステータスが上昇します`, info: `20投稿につき、ステータス+1% (最大10%)`, effect: { postXUp: 0.01 } },
 	{ name: `強敵と戦うのが好き`, short: "強", desc: `敵が強ければステータスが上昇します`, info: `ステータス+(敵の攻撃 × 敵の防御 / 4)%`, effect: { enemyStatusBonus: 1 } },
 	{ name: `${serifs.rpg.status.pen}+10%`, short: "貫", desc: `敵の防御の影響を減少させます`, info: `敵の防御-10%`, effect: { arpen: 0.1 } },
@@ -251,13 +273,13 @@ export const skills: Skill[] = [
 	{ name: `敵のクリティカル性能減少`, short: "守", desc: `相手のクリティカル率とクリティカルダメージが減少します`, info: `敵のクリティカル率-40% 敵のクリティカルダメージ-40% レイド時は、追加で${serifs.rpg.status.def}+10%`, effect: { enemyCritDown: 0.4, enemyCritDmgDown: 0.4 } },
 	{ name: `負けた時、しっかり反省`, short: "省", desc: `敗北時のボーナスが上昇します ★変更不可`, info: `敗北毎にステータス+2 ★変更不可（変更してもステータスは残るため）`, effect: { loseBonus: 1 }, unique: "loseBonus", cantReroll: true, moveTo: `負けそうなら逃げる` },
 	{ name: `７フィーバー！`, short: "７", desc: `Lv・パワー・防御の値に「7」が含まれている程ステータスアップ`, info: `Lv・パワー・防御の値に「7」が含まれている場合ステータス+7%\n「77」が含まれている場合ステータス+77% 「777」が含まれている場合...`, effect: { sevenFever: 1 } },
-	{ name: `不運チャージ`, short: "Ｃ", desc: `不運だった場合、次回幸運になりやすくなります`, info: `ステータス+5% 低乱数を引いた時、次回以降に高乱数を引きやすくなる`, effect: { atkUp: 0.05, defUp: 0.05, charge: 1 } },
+	{ name: `不運チャージ`, short: "Ｃ", desc: `不運だった場合、次回幸運になりやすくなります`, info: `ステータス+5% 低乱数を引いた時、次回以降に高乱数を引きやすくなる`, effect: { atkUp4: 0.05, defUp4: 0.05, charge: 1 } },
 	{ name: `お守り整備`, short: "整", desc: `お守りの効果が上がり、お守りが壊れにくくなります`, info: `お守り効果+50% お守り耐久+50%`, effect: { amuletBoost: 0.5 }, skillOnly: true },
 	{ name: `値切り術`, short: "値", desc: `ショップのアイテムが少し安くなります`, info: `ショップアイテム全品10%OFF`, effect: { priceOff: 0.1 }, skillOnly: true },
 	{ name: `天国か地獄か`, short: "天", desc: `戦闘開始時に強くなるか弱くなるかどちらかが起こります`, info: `60%でステータス+20% 40%でステータス-20%`, effect: { heavenOrHell: 0.2 } },
-	{ name: `気性が荒い`, short: "荒", desc: `戦闘が得意になりますが、戦闘以外の効率が大きく下がります`, info: `${serifs.rpg.status.atk}+25% 非戦闘時、${serifs.rpg.status.atk}-40%`, effect: { atkUp: 0.25, notBattleBonusAtk: -0.4 }, unique: "mind" },
-	{ name: `気性穏やか`, short: "穏", desc: `戦闘以外の効率がとても上がりますが、戦闘が苦手になります`, info: `${serifs.rpg.status.atk}-25% 非戦闘時、${serifs.rpg.status.atk}+70%`, effect: { atkUp: -0.25, notBattleBonusAtk: 0.7 }, unique: "mind" },
-	{ name: `かるわざ`, short: "軽", desc: `ステータスが上がり、お守りを持っていない時、追加で${serifs.rpg.status.atk}がさらに上がります`, info: `ステータス+5% お守りを持っていない時、追加で${serifs.rpg.status.atk}+4%`, effect: { atkUp: 0.05, defUp: 0.05, noAmuletAtkUp: 0.04 }, skillOnly: true },
+	{ name: `気性が荒い`, short: "荒", desc: `戦闘が得意になりますが、戦闘以外の効率が大きく下がります`, info: `${serifs.rpg.status.atk}+25% 非戦闘時、${serifs.rpg.status.atk}-40%`, effect: { atkUp5: 0.25, notBattleBonusAtk: -0.4 }, unique: "mind" },
+	{ name: `気性穏やか`, short: "穏", desc: `戦闘以外の効率がとても上がりますが、戦闘が苦手になります`, info: `${serifs.rpg.status.atk}-25% 非戦闘時、${serifs.rpg.status.atk}+70%`, effect: { atkUp5: -0.25, notBattleBonusAtk: 0.7 }, unique: "mind" },
+	{ name: `かるわざ`, short: "軽", desc: `ステータスが上がり、お守りを持っていない時、追加で${serifs.rpg.status.atk}がさらに上がります`, info: `ステータス+5% お守りを持っていない時、追加で${serifs.rpg.status.atk}+4%`, effect: { atkUp6: 0.05, defUp5: 0.05, noAmuletAtkUp: 0.04 }, skillOnly: true },
 	{ name: `攻めの守勢`, short: "勢", desc: `通常よりもダメージを防げば防ぐ程、パワーが上がります（ただし７フィーバー！を除きます）`, info: `ダメージ軽減300毎に防御の12.5~40%分のパワーを得ます（７フィーバー！を除く）\nこの効果は最大4回まで発動し、発動した回数が多いほど効果が上がります\nさらにレイド時は発動した回数分、全力の一撃のダメージが上がります このスキルは重複しません`, effect: { guardAtkUp: 0.125 }, unique: "counter" },
 	{ name: `分散型`, short: "散", desc: `同じスキルを持っていない程、ステータスが上がります（お守りは対象外）`, info: `パワー・防御+10% クリティカル率+10% ダメージ軽減+10% 同じスキルを持つ度に全ての効果-4%（お守りは対象外）`, effect: { distributed: 0.1 }, unique: "distributed" },
 ];
@@ -574,8 +596,10 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
 
 	const day = new Date().getDay();
 	
-	aggregatedEffect.atkUp = (1 + (aggregatedEffect.atkUp ?? 0));
-	aggregatedEffect.defUp = (1 + (aggregatedEffect.defUp ?? 0));
+	aggregatedEffect.atkUp = (1 + (aggregatedEffect.atkUp ?? 0)) * (1 + (aggregatedEffect.atkUp2 ?? 0)) * (1 + (aggregatedEffect.atkUp3 ?? 0)) * (1 + (aggregatedEffect.atkUp4 ?? 0)) * (1 + (aggregatedEffect.atkUp5 ?? 0)) * (1 + (aggregatedEffect.atkUp6 ?? 0));
+	aggregatedEffect.defUp = (1 + (aggregatedEffect.defUp ?? 0)) * (1 + (aggregatedEffect.defUp2 ?? 0)) * (1 + (aggregatedEffect.defUp3 ?? 0)) * (1 + (aggregatedEffect.defUp4 ?? 0)) * (1 + (aggregatedEffect.defUp5 ?? 0));
+	aggregatedEffect.atkDmgUp = ((1 + (aggregatedEffect.atkDmgUp ?? 0)) * (1 + (aggregatedEffect.atkDmgUp2 ?? 0))) - 1;
+	aggregatedEffect.defDmgUp = ((1 + (aggregatedEffect.defDmgUp ?? 0)) * (1 + (aggregatedEffect.defDmgUp2 ?? 0))) - 1;
 
 	if (data.itemMedal) {
 		aggregatedEffect.itemEquip = (aggregatedEffect.itemEquip ?? 0) + data.itemMedal * 0.01;
@@ -722,9 +746,12 @@ export function aggregateSkillsEffectsSkillX(data: any, skillX: number): SkillEf
 	});
 
 	const day = new Date().getDay();
+
 	
-	aggregatedEffect.atkUp = (1 + (aggregatedEffect.atkUp ?? 0)) * uniqueX;
-	aggregatedEffect.defUp = (1 + (aggregatedEffect.defUp ?? 0)) * uniqueX;
+	aggregatedEffect.atkUp = (1 + (aggregatedEffect.atkUp ?? 0)) * (1 + (aggregatedEffect.atkUp2 ?? 0)) * (1 + (aggregatedEffect.atkUp3 ?? 0)) * (1 + (aggregatedEffect.atkUp4 ?? 0)) * (1 + (aggregatedEffect.atkUp5 ?? 0)) * (1 + (aggregatedEffect.atkUp6 ?? 0)) * uniqueX;
+	aggregatedEffect.defUp = (1 + (aggregatedEffect.defUp ?? 0)) * (1 + (aggregatedEffect.defUp2 ?? 0)) * (1 + (aggregatedEffect.defUp3 ?? 0)) * (1 + (aggregatedEffect.defUp4 ?? 0)) * (1 + (aggregatedEffect.defUp5 ?? 0)) * uniqueX;
+	aggregatedEffect.atkDmgUp = ((1 + (aggregatedEffect.atkDmgUp ?? 0)) * (1 + (aggregatedEffect.atkDmgUp2 ?? 0))) - 1;
+	aggregatedEffect.defDmgUp = ((1 + (aggregatedEffect.defDmgUp ?? 0)) * (1 + (aggregatedEffect.defDmgUp2 ?? 0))) - 1;
 
 	if (data.itemMedal) {
 		aggregatedEffect.itemEquip = (aggregatedEffect.itemEquip ?? 0) + data.itemMedal * 0.01;
@@ -1120,9 +1147,6 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 	if (skillEffects.fire) {
 		result.push("非戦闘時パワー: +" + showNum(data.lv * 3.75 * skillEffects.fire));
 	}
-	if (skillEffects.haisuiAtkUp) {
-		result.push("覚悟パワー: +" + showNum((skillEffects.haisuiAtkUp ?? 0) * 100) + "%");
-	}
 	def -= 1
 	lDef -= 1
 	if (lDef !== def) {
@@ -1185,6 +1209,10 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 		} else {
 			result.push("与ダメージ減少: " + showNum(dmgBonus * -100) + "%")
 		}
+	}
+	
+	if (skillEffects.haisuiAtkUp) {
+		result.push("覚悟与ダメージ増加: +" + showNum((skillEffects.haisuiAtkUp ?? 0) * 100) + "%");
 	}
 
 	const atkMinRnd = Math.max(0.2 + (skillEffects.atkRndMin ?? 0), 0);
