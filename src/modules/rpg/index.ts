@@ -657,6 +657,7 @@ export default class extends Module {
 
 		if (skillEffects.allForOne || aggregateTokensEffects(data).allForOne) {
 			atk = atk * spd * (1 + (skillEffects.allForOne ?? 0) * 0.1);
+			trueDmg = trueDmg * spd * (1 + (skillEffects.allForOne ?? 0) * 0.1);
 			spd = 1;
 		}
 
