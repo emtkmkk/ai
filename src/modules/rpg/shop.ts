@@ -292,43 +292,43 @@ const eventAmulet = (data?) => {
 	const d = new Date().getDate()
 	const dy = new Date().getDay();
 	if (data.lv <= 255) {
-		if (dy = 0) {
+		if (dy == 0) {
 			return [
 				"雷属性剣攻撃＋",
 				...["高速RPG", "伝説", "連続攻撃完遂率上昇", "気合で頑張る"].sort(() => 0.5 - Math.random()).slice(0, Math.random() < 0.2 ? 3 : 2),
 			]
 		}
-		if (dy = 1) {
+		if (dy == 1) {
 			return [
 				"闇属性剣攻撃＋",
 				...["粘り強い", `${serifs.rpg.status.def}アップ`, "連続・毎日ボーナス強化", `${serifs.rpg.status.pen}+10%`].sort(() => 0.5 - Math.random()).slice(0, Math.random() < 0.2 ? 3 : 2),
 			]
 		}
-		if (dy = 2) {
+		if (dy == 2) {
 			return [
 				"炎属性剣攻撃＋",
 				...[`${serifs.rpg.status.atk}アップ`, "脳筋", "すぐ決死の覚悟をする", "強敵と戦うのが好き"].sort(() => 0.5 - Math.random()).slice(0, Math.random() < 0.2 ? 3 : 2),
 			]
 		}
-		if (dy = 3) {
+		if (dy == 3) {
 			return [
 				"氷属性剣攻撃＋",
 				...["毒属性剣攻撃", "慎重", "負けそうなら逃げる", "敵のクリティカル性能減少"].sort(() => 0.5 - Math.random()).slice(0, Math.random() < 0.1 ? 4 : Math.random() < 0.5 ? 3 : 2),
 			]
 		}
-		if (dy = 4) {
+		if (dy == 4) {
 			return [
 				"風属性剣攻撃＋",
 				...["テキパキこなす", "道具大好き", "道具の扱いが上手い", "道具の選択が上手い"].sort(() => 0.5 - Math.random()).slice(0, Math.random() < 0.2 ? 3 : 2),
 			]
 		}
-		if (dy = 5) {
+		if (dy == 5) {
 			return [
 				"光属性剣攻撃＋",
 				...["油断しない", "７フィーバー！", "天国か地獄か", "不運チャージ"].sort(() => 0.5 - Math.random()).slice(0, Math.random() < 0.2 ? 3 : 2),
 			]
 		}
-		if (dy = 6) {
+		if (dy == 6) {
 			return [
 				"土属性剣攻撃＋",
 				...["疲れにくい", "クリティカル性能上昇", "天国か地獄か", "投稿数ボーナス量アップ"].sort(() => 0.5 - Math.random()).slice(0, Math.random() < 0.2 ? 3 : 2),
