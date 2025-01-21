@@ -189,6 +189,8 @@ export type Skill = {
 	moveTo?: string;
 	/** スキル変更が出来ない場合 */
 	cantReroll?: boolean;
+	/** 自然習得しないスキルの場合 */
+	notLearn?: boolean;
 	/** お守りとして出ない場合 */
 	skillOnly?: boolean;
 };
@@ -205,6 +207,13 @@ export const skills: Skill[] = [
 	{ name: `土属性剣攻撃`, short: "土", desc: `戦闘時、最大ダメージが上昇します`, info: `戦闘時かつ最大ダメージ制限がある場合、その制限を18%増加\n非戦闘時、${serifs.rpg.status.atk}+9%\n土曜日に全ての効果量が66%アップ`, effect: { dart: 0.18 } },
 	{ name: `光属性剣攻撃`, short: "光", desc: `戦闘時、たまに敵の攻撃力を下げます`, info: `戦闘時、18%でダメージカット50%\nそれ以外の場合、${serifs.rpg.status.def}+9%\n金曜日に全ての効果量が66%アップ`, effect: { light: 0.18 } },
 	{ name: `闇属性剣攻撃`, short: "闇", desc: `戦闘時、たまに敵の周辺に高重力領域を発生させます`, info: `戦闘時、9%で敵の現在HPの半分のダメージ（レイドでは150ダメージ）を与える\n行動回数が2回以上の敵に18%で行動回数を1にする\nそれ以外の場合、${serifs.rpg.status.def}+6.3%\n月曜日に全ての効果量が66%アップ`, effect: { dark: 0.09 } },
+	{ name: `炎属性剣攻撃＋`, short: "**炎**", desc: `戦闘時、最低ダメージが大きく上昇します`, info: `戦闘時、Lvの15%がダメージに固定加算\n非戦闘時、${serifs.rpg.status.atk}+Lvの58%\n火曜日に全ての効果量が66%アップ`, effect: { fire: 0.15 }, notLearn: true, skillOnly: true },
+	{ name: `氷属性剣攻撃＋`, short: "**氷**", desc: `戦闘時、たまに敵を凍らせます`, info: `戦闘時、15%で相手のターンをスキップ\n非戦闘時、${serifs.rpg.status.def}+15%\n水曜日に全ての効果量が66%アップ`, effect: { ice: 0.15 }, notLearn: true, skillOnly: true },
+	{ name: `雷属性剣攻撃＋`, short: "**雷**", desc: `戦闘時、連続攻撃をすればダメージが上がります`, info: `(現在攻撃数/最大攻撃数)×30%のダメージ上昇を得る\n日曜日に全ての効果量が66%アップ`, effect: { thunder: 0.3 }, notLearn: true, skillOnly: true },
+	{ name: `風属性剣攻撃＋`, short: "**風**", desc: `戦闘時、たまに行動回数が上がります`, info: `戦闘時、15%で行動回数が2倍\n非戦闘時、${serifs.rpg.status.atk}+15%\n木曜日に全ての効果量が66%アップ`, effect: { spdUp: 0.15 }, notLearn: true, skillOnly: true },
+	{ name: `土属性剣攻撃＋`, short: "**土**", desc: `戦闘時、最大ダメージが上昇します`, info: `戦闘時かつ最大ダメージ制限がある場合、その制限を30%増加\n非戦闘時、${serifs.rpg.status.atk}+15%\n土曜日に全ての効果量が66%アップ`, effect: { dart: 0.3 }, notLearn: true, skillOnly: true },
+	{ name: `光属性剣攻撃＋`, short: "**光**", desc: `戦闘時、たまに敵の攻撃力を下げます`, info: `戦闘時、30%でダメージカット50%\nそれ以外の場合、${serifs.rpg.status.def}+15%\n金曜日に全ての効果量が66%アップ`, effect: { light: 0.3 }, notLearn: true, skillOnly: true },
+	{ name: `闇属性剣攻撃＋`, short: "**闇**", desc: `戦闘時、たまに敵の周辺に高重力領域を発生させます`, info: `戦闘時、15%で敵の現在HPの半分のダメージ（レイドでは150ダメージ）を与える\n行動回数が2回以上の敵に30%で行動回数を1にする\nそれ以外の場合、${serifs.rpg.status.def}+10.5%\n月曜日に全ての効果量が66%アップ`, effect: { dark: 0.15 }, notLearn: true, skillOnly: true },
 	{ name: `毒属性剣攻撃`, short: "毒", desc: `戦闘時、ターン経過ごとに相手が弱体化します`, info: `ターン経過ごとに敵のステータス-5%\nレイドでは特殊な倍率でステータス減少を付与`, effect: { weak: 0.05 } },
 	{ name: `テキパキこなす`, short: "効", desc: `戦闘以外の事の効率が上がります`, info: `非戦闘時、${serifs.rpg.status.atk}+22%`, effect: { notBattleBonusAtk: 0.22 } },
 	{ name: `疲れにくい`, short: "疲", desc: `疲れでダメージを受ける際にそのダメージを軽減します`, info: `ダメージメッセージに疲が入っている場合、${serifs.rpg.status.def}+22%`, effect: { notBattleBonusDef: 0.22 } },
@@ -308,7 +317,7 @@ export const ultimateAmulet = { name: `究極のお守り`, limit: (data) => enh
 export const getSkill = (data) => {
 	const playerSkills = data.skills.map((x) => skills.find((y) => x.name === y.name) ?? x);
 	// フィルタリングされたスキルの配列を作成
-	const filteredSkills = skills.filter((x) => !x.moveTo && (!x.cantReroll || !playerSkills?.some((y) => y.cantReroll)) && !playerSkills?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique));
+	const filteredSkills = skills.filter((x) => !x.notLearn && !x.moveTo && (!x.cantReroll || !playerSkills?.some((y) => y.cantReroll)) && !playerSkills?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique));
 
 	// スキルの合計重みを計算
 	const totalWeight = filteredSkills.reduce((total, skill) => {
@@ -337,7 +346,7 @@ export const getSkill = (data) => {
 export const getRerollSkill = (data, oldSkillName = "") => {
 	const playerSkills = data.skills.map((x) => skills.find((y) => x.name === y.name) ?? x);
 	// フィルタリングされたスキルの配列を作成
-	const filteredSkills = skills.filter((x) => !x.moveTo && !x.cantReroll && x.name != oldSkillName && !playerSkills?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique));
+	const filteredSkills = skills.filter((x) => !x.notLearn && !x.moveTo && !x.cantReroll && x.name != oldSkillName && !playerSkills?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique));
 
 	// スキルの合計重みを計算
 	const totalWeight = filteredSkills.reduce((total, skill) => {
