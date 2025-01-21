@@ -1178,7 +1178,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		if (skillEffects.allForOne || aggregateTokensEffects(data).allForOne) {
 			const spdx = getSpdX(abort || spd);
 			atk = atk * spdx * (1 + (skillEffects.allForOne ?? 0) * 0.1);
-			truedmg = truedmg * spdx * (1 + (skillEffects.allForOne ?? 0) * 0.1);
+			trueDmg = trueDmg * spdx * (1 + (skillEffects.allForOne ?? 0) * 0.1);
 			if (itemBonus?.atk) itemBonus.atk = itemBonus.atk * spd * (1 + (skillEffects.allForOne ?? 0) * 0.1);
 			spd = 1;
 		}
