@@ -463,6 +463,16 @@ export default class extends Module {
 				return { reaction: "love" };
 			}
 		}
+		if (msg.includes(["sReset"])) {
+			const id = /\w{10,}/.exec(msg.extractedText)?.[0];
+			if (id) {
+				const friend = this.ai.lookupFriend(id);
+				if (friend == null) return { reaction: ":mk_hotchicken:" };
+				friend.doc.perModulesData.rpg.lastShopVisited = "";
+				friend.save();
+				return { reaction: "love" };
+			}
+		}
 		if (msg.includes(["tReset"])) {
 			const id = /\w{10,}/.exec(msg.extractedText)?.[0];
 			if (id) {
