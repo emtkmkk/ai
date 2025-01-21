@@ -508,7 +508,7 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
 		const amulet = data.items?.filter((x) => x.type === "amulet")[0];
 		const item = [...shopItems, ultimateAmulet, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem;
 		const skill = amulet.skillName && !Array.isArray(amulet.skillName) ? [skills.find((x) => amulet.skillName === x.name)] : amulet.skillName && Array.isArray(amulet.skillName) ? amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) : undefined;
-		if (amulet.durability) amuletSkill.push(`[お守り] ${amulet.skillName && !Array.isArray(amulet.skillName) ? amulet.skillName : amulet.name} ${aggregateTokensEffects(data).autoRepair && (item.durability ?? 0) >= 2 ? `コイン消費${Math.round((amulet.price ?? 12) / (item.durability ?? 6)) + 1}` : `残耐久${amulet.durability}`}${skillInfo(skill, item.desc, aggregateTokensEffects(data).showSkillBonus)}`);
+		if (amulet.durability) amuletSkill.push(`[お守り] ${amulet.skillName && !Array.isArray(amulet.skillName) ? amulet.skillName : amulet.name} ${aggregateTokensEffects(data).autoRepair && (item.durability ?? 0) >= 2 && amulet.durability <= 1 ? `コイン消費${Math.round((amulet.price ?? 12) / (item.durability ?? 6)) + 1}` : `残耐久${amulet.durability}`}${skillInfo(skill, item.desc, aggregateTokensEffects(data).showSkillBonus)}`);
 	}
 	
 	const skillBorders = [20, 50, 100, 170, 255];
@@ -878,7 +878,7 @@ export function amuletMinusDurability(data: any): string {
 				if (x.type === "amulet") {
 					if (boost <= 0 || Math.random() < (1 / Math.pow(1.5, boost * 2))) {
 						const minusCoin = Math.round((x.price ?? 12) / (item.durability ?? 6)) + 1;
-						if(aggregateTokensEffects(data).autoRepair && (item.durability ?? 0) >= 2 && data.coin > minusCoin) {
+						if(aggregateTokensEffects(data).autoRepair && (item.durability ?? 0) >= 2 && x.durability <= 1 && data.coin > minusCoin) {
 							data.coin -= minusCoin;
 							if (!data.shopExp) data.shopExp = 0;
 							data.shopExp += minusCoin;
