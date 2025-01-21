@@ -58,7 +58,7 @@ export const colors: Color[] = [
 		keyword: "4",
 		unlock: (data) => data.allClear,
 		message: (data) => data.allClear ? `${serifs.rpg.color.unlock} (クリアLv: **${(data.allClear ?? "?")}**)` : `連勝で全ての敵を倒すと解放されます。${data.clearEnemy?.length ? `(現在 **${data.clearEnemy.length}** 連勝中)` : ""}`,
-		enhance: (data) => (data.hardWinCount ?? 0) >= 30,
+		enhance: (data) => Math.max((data.winCount ?? 0) - 120, 0) + (data.hardWinCount ?? 0) * 7 >= 210,
 	},
 	{
 		id: 5,
