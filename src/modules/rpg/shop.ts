@@ -506,7 +506,7 @@ export function shopContextHook(module: Module, key: any, msg: Message, data: an
 						rpgData.shop2Items = rpgData.shop2Items?.filter((x) => data.showShopItems[i].name !== x);
 						module.unsubscribeReply(key);
 					} else {
-						if (!item.limit || item.data.showShopItems[i].price != data.showShopItems[i].price) {
+						if (!item.limit || item.price != data.showShopItems[i].price) {
 							module.unsubscribeReply(key);
 						}
 					}
