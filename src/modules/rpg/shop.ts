@@ -505,15 +505,15 @@ export function shopContextHook(module: Module, key: any, msg: Message, data: an
 						rpgData.shopItems = rpgData.shopItems?.filter((x) => data.showShopItems[i].name !== x);
 						rpgData.shop2Items = rpgData.shop2Items?.filter((x) => data.showShopItems[i].name !== x);
 						module.unsubscribeReply(key);
+					} else {
+						if (!item.limit || item.data.showShopItems[i].price != data.showShopItems[i].price) {
+							module.unsubscribeReply(key);
+						}
 					}
 				} else {
 					rpgData.items.push(data.showShopItems[i]);
 					rpgData.shopItems = rpgData.shopItems?.filter((x) => data.showShopItems[i].name !== x);
 					rpgData.shop2Items = rpgData.shop2Items?.filter((x) => data.showShopItems[i].name !== x);
-					module.unsubscribeReply(key);
-				}
-
-				if (!item.limit || item.data.showShopItems[i].price != data.showShopItems[i].price) {
 					module.unsubscribeReply(key);
 				}
 
