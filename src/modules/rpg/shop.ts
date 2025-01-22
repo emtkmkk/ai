@@ -513,6 +513,10 @@ export function shopContextHook(module: Module, key: any, msg: Message, data: an
 					module.unsubscribeReply(key);
 				}
 
+				if (!item.limit || item.data.showShopItems[i].price != data.showShopItems[i].price) {
+					module.unsubscribeReply(key);
+				}
+
 				if (data.showShopItems[i].orb) {
 					msg.reply((data.showShopItems[i].price ? serifs.rpg.shop.buyItemOrb(data.showShopItems[i].name, rpgData.rerollOrb) : "") + message);
 				} else {
