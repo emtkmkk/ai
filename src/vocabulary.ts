@@ -599,12 +599,40 @@ export const and = [
 	'キーの',
 ];
 
-export function genItem(seedOrRng?: (() => number) | string | number, allowSimpleItem = true: boolean) {
-	rng = seedOrRng
-		? typeof seedOrRng === 'function'
-			? seedOrRng
-			: seedrandom(seedOrRng.toString())
-		: Math.random;
+export function genItem(): string;
+export function genItem(seedOrRng: (() => number) | string | number): string;
+export function genItem(options: {
+  seedOrRng?: (() => number) | string | number;
+  allowSimpleItem?: boolean;
+}): string;
+
+export function genItem(
+  arg?: (() => number) | string | number | {
+    seedOrRng?: (() => number) | string | number;
+    allowSimpleItem?: boolean;
+  }
+): string {
+  let seedOrRng: (() => number) | string | number | undefined;
+  let allowSimpleItem: boolean = true;
+	
+  if (
+    typeof arg === 'function' ||
+    typeof arg === 'string' ||
+    typeof arg === 'number'
+  ) {
+    seedOrRng = arg;
+  } else if (typeof arg === 'object' && arg !== null) {
+    seedOrRng = arg.seedOrRng;
+    if (typeof arg.allowSimpleItem === 'boolean') {
+      allowSimpleItem = arg.allowSimpleItem;
+    }
+  }
+	
+  rng = seedOrRng
+    ? typeof seedOrRng === 'function'
+      ? seedOrRng
+      : seedrandom(seedOrRng.toString())
+    : Math.random;
 
 	let item = '';
 	if (Math.floor(rng() * 20) !== 0 || !allowSimpleItem) item += itemPrefixes[Math.floor(rng() * itemPrefixes.length)];
