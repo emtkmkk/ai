@@ -373,6 +373,8 @@ export default class extends Module {
 					});
 				}
 			}
+			// `ongoingPolls`から削除
+			this.ongoingPolls.findAndRemove({'noteId':noteId});
 			this.ai.post({ // TODO: Extract serif
 				cw: `${title}アンケートの結果発表です！`,
 				text: `結果は${mostVotedChoice.votes}票の「${mostVotedChoice.text}」でした！なるほど～！${isStreak ? '' : mostVotedChoice.votes >= 3 || totalVoted > choices.length ? '覚えておきます！' : ''}${nenmatu ? '来年もいい年になりますように！' : ''}`,
