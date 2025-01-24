@@ -599,7 +599,7 @@ export const and = [
 	'キーの',
 ];
 
-export function genItem(seedOrRng?: (() => number) | string | number) {
+export function genItem(seedOrRng?: (() => number) | string | number, allowSimpleItem = true: boolean) {
 	rng = seedOrRng
 		? typeof seedOrRng === 'function'
 			? seedOrRng
@@ -607,7 +607,7 @@ export function genItem(seedOrRng?: (() => number) | string | number) {
 		: Math.random;
 
 	let item = '';
-	if (Math.floor(rng() * 20) !== 0) item += itemPrefixes[Math.floor(rng() * itemPrefixes.length)];
+	if (Math.floor(rng() * 20) !== 0 || !allowSimpleItem) item += itemPrefixes[Math.floor(rng() * itemPrefixes.length)];
 	item += items[Math.floor(rng() * items.length)];
 	if (Math.floor(rng() * 10) === 0) {
 		let andItem = "";
