@@ -134,7 +134,7 @@ export default class extends Module {
 		// もこだけ条件がゆるく反応しやすいので反応率を2/3に
 		if (includes(note.text, ['もこ', 'niwatori_kun']) && !includes(note.text, ['もこみち', 'おもころ', 'もこう', 'もこれ', 'でもこ']) && (Math.random() < 0.667 || includes(note.text, '無視')) && note.text?.length > 3) {
 			//ランダムに選択される
-			let reactionList = [];
+			let reactionList = [] as string[];
 			if (!includes(note.text, ["顔", "かお"])) {
 				reactionList.push(':mk_chicken_t:');
 			} else if (!includes(note.text, ["ゆっくり"])) {
