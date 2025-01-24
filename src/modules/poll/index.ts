@@ -168,30 +168,32 @@ export default class extends Module {
 			key: poll[0]
 		});
 
+		const genItemOptions = {allowSimpleItem: false};
+
 		let choices = nenmatu ? [
-			genItem(),
-			genItem(),
-			genItem(),
-			genItem(),
-			genItem(),
-			genItem(),
-			genItem(),
-			genItem(),
-			genItem(),
-			genItem(),
+			genItem(genItemOptions),
+			genItem(genItemOptions),
+			genItem(genItemOptions),
+			genItem(genItemOptions),
+			genItem(genItemOptions),
+			genItem(genItemOptions),
+			genItem(genItemOptions),
+			genItem(genItemOptions),
+			genItem(genItemOptions),
+			genItem(genItemOptions),
 		] : [
-			genItem(),
-			genItem(),
-			genItem(),
-			genItem(),
+			genItem(genItemOptions),
+			genItem(genItemOptions),
+			genItem(genItemOptions),
+			genItem(genItemOptions),
 		];
 
 		if (!nenmatu) {
-			if (Math.random() < 0.28 || (exist?.winCount && exist.winCount >= 2)) choices.push(genItem());
-			if (Math.random() < 0.28 || (exist?.winCount && exist.winCount >= 4)) choices.push(genItem());
-			if (Math.random() < 0.28 || (exist?.winCount && exist.winCount >= 6)) choices.push(genItem());
-			if (Math.random() < 0.28 || (exist?.winCount && exist.winCount >= 8)) choices.push(genItem());
-			if (Math.random() < 0.28 || (exist?.winCount && exist.winCount >= 10)) choices.push(genItem());
+			if (Math.random() < 0.28 || (exist?.winCount && exist.winCount >= 2)) choices.push(genItem(genItemOptions));
+			if (Math.random() < 0.28 || (exist?.winCount && exist.winCount >= 4)) choices.push(genItem(genItemOptions));
+			if (Math.random() < 0.28 || (exist?.winCount && exist.winCount >= 6)) choices.push(genItem(genItemOptions));
+			if (Math.random() < 0.28 || (exist?.winCount && exist.winCount >= 8)) choices.push(genItem(genItemOptions));
+			if (Math.random() < 0.28 || (exist?.winCount && exist.winCount >= 10)) choices.push(genItem(genItemOptions));
 			if (poll[0] === '好きな絵文字') {
 				const data = (await this.ai.api('emojis', {})).emojis?.filter((x) => !x.category?.includes("!")).sort(() => Math.random() - 0.5);
 				choices = data.slice(0, choices.length).map((x) => `:${x.name}:`);
