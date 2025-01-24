@@ -40,7 +40,7 @@ export default class extends Module {
 		this.ongoingPolls = this.ai.getCollection('_poll_ongoingPolls', {
 			indices: ['noteId']
 		});
-		this.ongoingPolls.findAndRemove({'expiration':{ $lt: Date.now() });
+		this.ongoingPolls.findAndRemove({'expiration':{ $lt: Date.now() }});
 		
 		setInterval(() => {
 			const hours = new Date().getHours();
