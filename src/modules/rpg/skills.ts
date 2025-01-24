@@ -291,7 +291,7 @@ const ultimateEffect: SkillEffect = {
 	"atkUp3": 0.0036,
 	"atkUp4": 0.0045,
 	"atkUp6": 0.0045,
-	"defUp1": 0.010,
+	"defUp": 0.010,
 	"defUp2": 0.0063,
 	"defUp3": 0.0036,
 	"defUp4": 0.0045,
