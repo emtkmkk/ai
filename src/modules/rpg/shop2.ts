@@ -20,7 +20,7 @@ export const skillPrice = (_ai: 藍, skillName: Skill["name"], rnd: () => number
 
 	const price = Math.max(
 		Math.floor(
-			(12 * (Math.max(isNaN(skillP.skillNameCount) ? 0 : skillP.skillNameCount, 0.5) / (totalSkillCount / filteredSkills.length))) ** 2
+			((skill?.unique ? 30 : 12) * (skill?.notLearn ? 2.5 : (Math.max(isNaN(skillP.skillNameCount) ? 0 : skillP.skillNameCount, 0.5) / (totalSkillCount / filteredSkills.length)))) ** 2
 		), 100
 	);
 
@@ -48,6 +48,7 @@ const resetCantRerollSkill = (data) => {
 }
 //limit: (data) => !data.items.filter((x) => x.name === "平常心のお札").length && !data.bankItems?.filter((x) => x === "平常心のお札").length,
 const canBankItems: ShopItem[] = [
+	{ name: `修繕の札`, price: 500, limit: (data) => enhanceCount(data) >= 9, desc: `持っているとお守りが壊れなくなりますが、本来壊れるタイミングでもこコインを消費します 1回につき減少するコイン数はお守りの購入額/耐久+1です ただし、最大耐久が2以上あるお守りにしか効果を発揮しません`, type: "token", effect: { autoRepair: true }, always: true } as TokenItem,
 	{ name: `乱数透視の札`, price: 50, desc: `所持している間、ダメージの乱数が表示されるようになります`, type: "token", effect: { showRandom: true }, always: true } as TokenItem,
 	{ name: `平常心のお札`, price: 50, desc: `どれだけ体力が低くても決死の覚悟をしなくなる`, type: "token", effect: { notLastPower: true }, always: true } as TokenItem,
 	{ name: `温存のお札`, price: 50, desc: `レイドボス以外でお守りを使わないようになる`, type: "token", effect: { normalModeNotUseAmulet: true }, always: true } as TokenItem,
@@ -55,7 +56,6 @@ const canBankItems: ShopItem[] = [
 	{ name: `運命不変のお札`, price: 300, desc: `持っていると常に与ダメージがランダム変化しなくなる`, type: "token", effect: { notRandom: true }, always: true } as TokenItem,
 	{ name: `しあわせのお札`, price: 300, desc: `レイド時、常にステータスの割合がランダムに一時的に変化する`, type: "token", effect: { fortuneEffect: true }, always: true } as TokenItem,
 	{ name: `超覚醒の札`, price: 50, desc: `持っていると覚醒時の投稿数増加ボーナスを失いますが、投稿数による効果が10%上がります`, type: "token", effect: { hyperMode: true }, always: true } as TokenItem,
-	{ name: `修繕の札`, price: 500, limit: (data) => enhanceCount(data) >= 9, desc: `持っているとお守りが壊れる際に代わりにもこコインを減少させます 1回につき減少するコイン数はお守りの購入額/耐久+1です ただし、最大耐久が2以上あるお守りにしか効果を発揮しません`, type: "token", effect: { autoRepair: true }, always: true } as TokenItem,
 	{ name: `覚醒変更の札（朱）`, price: 50, desc: `覚醒時の行動回数増加と毒アイテム効果軽減を失いますが、代わりにクリティカルダメージが+35%以下の場合、+35%になり、クリティカル率（固定）+8%を得るようになります 4色のうちどれか1つしか発動しません`, type: "token", effect: { notSuperSpeedUp: true, redMode: true }, always: true } as TokenItem,
 	{ name: `覚醒変更の札（橙）`, price: 50, desc: `覚醒時の行動回数増加が半減しますが、代わりにダメージカット+10%を得るようになります 4色のうちどれか1つしか発動しません`, type: "token", effect: { notSuperSpeedUp: true, yellowMode: true }, always: true } as TokenItem,
 	{ name: `覚醒変更の札（蒼）`, price: 50, desc: `覚醒時の行動回数増加を失いますが、代わりにダメージカット+20%を得るようになります 4色のうちどれか1つしか発動しません`, type: "token", effect: { notSuperSpeedUp: true, blueMode: true }, always: true } as TokenItem,
@@ -101,9 +101,9 @@ export const shop2Items: ShopItem[] = [
 	{ name: "高級守りの種", desc: "購入時、パワー2%を防御に移動", price: 5, type: "item", effect: (data) => { data.def = Math.round((data.def ?? 0) + Math.round((data.atk ?? 0) / 50)); data.atk = Math.round((data.atk ?? 0) - Math.round((data.atk ?? 0) / 50)); }, infinite: true, always: true },
 	{ name: "超・守りの種", desc: "購入時、パワー10%を防御に移動", price: 25, type: "item", effect: (data) => { data.def = Math.round((data.def ?? 0) + Math.round((data.atk ?? 0) / 10)); data.atk = Math.round((data.atk ?? 0) - Math.round((data.atk ?? 0) / 10)); }, infinite: true, always: true },
 	{ name: "極・守りの種", desc: "購入時、パワー30%を防御に移動", price: 75, type: "item", effect: (data) => { data.def = Math.round((data.def ?? 0) + Math.round((data.atk ?? 0) * 0.3)); data.atk = Math.round((data.atk ?? 0) - Math.round((data.atk ?? 0) * 0.3)); }, infinite: true, always: true },
-	{ name: "赤の勲章", limit: (data) => (data.atkMedal ?? 0) < 10, desc: "1つ購入する度に恒久的にパワーが+1% 10個まで購入できます", price: (data) => 20 * (1 + Math.floor((data.atkMedal ?? 0) / 2)), orb: true, type: "item", effect: (data) => data.atkMedal = (data.atkMedal ?? 0) + 1, infinite: true, always: true },
-	{ name: "青の勲章", limit: (data) => (data.defMedal ?? 0) < 10, desc: "1つ購入する度に恒久的に最大体力が+1.5% 10個まで購入できます", price: (data) => 20 * (1 + Math.floor((data.defMedal ?? 0) / 2)), orb: true, type: "item", effect: (data) => data.defMedal = (data.defMedal ?? 0) + 1, infinite: true, always: true },
-	{ name: "緑の勲章", limit: (data) => (data.itemMedal ?? 0) < 10, desc: "1つ購入する度に恒久的に全ての道具効果（装備率、効果量、悪・毒アイテム回避）が+1% 10個まで購入できます", price: (data) => 20 * (1 + Math.floor((data.itemMedal ?? 0) / 2)), orb: true, type: "item", effect: (data) => data.itemMedal = (data.itemMedal ?? 0) + 1, infinite: true, always: true },
+	{ name: "赤の勲章", limit: (data) => (data.atkMedal ?? 0) < 10, desc: "1つ購入する度に恒久的にパワーが+1% 1種類につき10個まで購入できます", price: (data) => 20 * (1 + Math.floor((data.atkMedal ?? 0) / 2)), orb: true, type: "item", effect: (data) => data.atkMedal = (data.atkMedal ?? 0) + 1, infinite: true, always: true },
+	{ name: "青の勲章", limit: (data) => (data.defMedal ?? 0) < 10, desc: "1つ購入する度に恒久的に最大体力が+1.5% 1種類につき10個まで購入できます", price: (data) => 20 * (1 + Math.floor((data.defMedal ?? 0) / 2)), orb: true, type: "item", effect: (data) => data.defMedal = (data.defMedal ?? 0) + 1, infinite: true, always: true },
+	{ name: "緑の勲章", limit: (data) => (data.itemMedal ?? 0) < 10, desc: "1つ購入する度に恒久的に全ての道具効果（装備率、効果量、悪・毒アイテム回避）が+1% 1種類につき10個まで購入できます", price: (data) => 20 * (1 + Math.floor((data.itemMedal ?? 0) / 2)), orb: true, type: "item", effect: (data) => data.itemMedal = (data.itemMedal ?? 0) + 1, infinite: true, always: true },
 	{ name: `${config.rpgCoinName}(70枚)`, limit: (data) => (data.atkMedal ?? 0) + (data.defMedal ?? 0) + (data.itemMedal ?? 0) >= 30, desc: "ショップでのアイテム購入などに使用できる通貨です", price: 20, orb: true, type: "item", effect: (data) => data.coin = (data.coin ?? 0) + 70, infinite: true, always: true },
 	{ name: `壺`, limit: (data) => data.lv >= 20 && (data.jar ?? 0) === 0, price: 200, desc: `なんかいい感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1, always: true },
 	{ name: `きれいな壺`, limit: (data) => (data.jar ?? 0) === 1 && data.shopExp > 400, price: 400, desc: `なんかきれいな感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1, always: true },
@@ -112,7 +112,7 @@ export const shop2Items: ShopItem[] = [
 	{ name: `うねうねした壺`, limit: (data) => (data.jar ?? 0) === 4 && data.shopExp > 2800, price: 1000, desc: `なんかうねうねした感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1, always: true },
 	{ name: `ナノサイズ壺`, limit: (data) => (data.jar ?? 0) === 5 && data.shopExp > 4000, price: 1200, desc: `小さくて見えない感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1, always: true },
 	{ name: `謎の壺`, limit: (data) => (data.jar ?? 0) >= 6 && data.shopExp > 5400, price: (data) => (data.jar ?? 0) * 200, desc: `なんか謎な感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1, always: true },
-	...skills.filter((x) => !x.notLearn && !x.moveTo && !x.cantReroll && !x.unique).map((x): Item => ({ name: `${x.name}の教本`, limit: (data) => !data.nextSkill, price: (data, rnd, ai) => skillPrice(ai, x.name, rnd), desc: `購入すると次のスキル変更時に必ず「${x.name}」${x.desc ? `（${x.desc}）` : ""}を習得できる（複製時は対象外）`, type: "item", effect: (data) => { data.nextSkill = x.name } })),
+	...skills.filter((x) => !x.notLearn && !x.moveTo && !x.cantReroll).map((x): Item => ({ name: `${x.name}の教本`, limit: (data) => !data.nextSkill && (!x.unique || !data.skills.filter((y) => y.unique).map((y) => y.unique).includes(x.unique)), price: (data, rnd, ai) => skillPrice(ai, x.name, rnd), desc: `購入すると次のスキル変更時に必ず「${x.name}」${x.desc ? `（${x.desc}）` : ""}を習得できる（複製時は対象外）`, type: "item", effect: (data) => { data.nextSkill = x.name } })),
 ];
 
 export const shop2Reply = async (module: rpg, ai: 藍, msg: Message) => {
