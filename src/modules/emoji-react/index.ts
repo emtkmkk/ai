@@ -124,13 +124,13 @@ export default class extends Module {
 
 		if (includes(note.text, ['ぴざ', 'pizza'])) return react(':itspizzatime:');
 		if (includes(note.text, ['かんぴろばくたー', 'campylobacter'])) return react(':campylobacter_mottenaidesu:');
-		if (includes(note.text, ['つら', 'しんど', '帰りたい', 'かえりたい', 'sad'])) return react(':mkchicken_petthex:');
+		if (includes(note.text, ['つら', 'しんど', '帰りたい', 'かえりたい', 'sad', '泣い'])) return react(':mkchicken_petthex:');
 		if (includes(note.text, ['むいみ', '無意味', 'muimi']) && includes(note.text, ['もの', 'mono', '物'])) return react(':osiina:');
 		if (includes(note.text, ['たからくじ', '宝くじ', 'takarakuji']) && includes(note.text, ['あた', 'ata', '当'])) return react(':201000000000:');
 		if (includes(note.text, ['もこもこ'])) return react(':mokomoko:');
-		if (includes(note.text, ['めつ', '滅', 'metu']) && !includes(note.text, ['滅茶', '滅多'])) return react(':metu:');
+		if (includes(note.text, ['めつ', '滅', 'metu']) && !includes(note.text, ['滅茶', '滅多', '滅レ'])) return react(':metu:');
 		if ((note.text?.includes('伸び') || note.text?.includes('のび') || note.text?.includes('ノビ')) && note.text?.length > 3) return react(':mk_ultrawidechicken:');
-		if (includes(note.text, ['嘘']) && Math.random() < 0.5 && note.text?.length <= 30) return react(':sonnano_uso:');
+		if (includes(note.text, ['嘘']) && Math.random() < 0.5 && note.text?.length <= 30 && !includes(note.text, ['つく', 'つき', '吐き'])) return react(':sonnano_uso:');
 		// もこだけ条件がゆるく反応しやすいので反応率を2/3に
 		if (includes(note.text, ['もこ', 'niwatori_kun']) && !includes(note.text, ['もこみち', 'おもころ', 'もこう', 'もこれ', 'でもこ']) && (Math.random() < 0.667 || includes(note.text, ['無視'])) && note.text?.length > 3) {
 			//ランダムに選択される
