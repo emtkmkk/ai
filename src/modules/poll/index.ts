@@ -22,6 +22,12 @@ export default class extends Module {
 		winCount?: number;
 	}>;
 
+	// 新しく追加するコレクション
+	private ongoingPolls: loki.Collection<{
+		title: string;
+		noteId: string;
+		expiration: number;
+	}>;
 
 	@autobind
 	public install() {
@@ -31,6 +37,12 @@ export default class extends Module {
 		this.pollresultlegend = this.ai.getCollection('_poll_pollresultlegend', {
 			indices: ['userId']
 		});
+		
+		// ongoingPollsコレクションの初期化
+		this.ongoingPolls = this.ai.getCollection('_poll_ongoingPolls', {
+			indices: ['noteId']
+		});
+		
 		setInterval(() => {
 			const hours = new Date().getHours();
 			let rnd = ((hours === 12 || (hours > 17 && hours < 24)) ? 0.25 : 0.05) * this.ai.activeFactor;
@@ -207,6 +219,13 @@ export default class extends Module {
 			}
 		});
 
+		// `ongoingPolls`に登録
+		this.ongoingPolls.insertOne({
+			title: poll[0],
+			noteId: note.id,
+			expiration: Date.now() + duration,
+		});
+
 		// タイマーセット
 		this.setTimeoutWithPersistence(duration + 3000, {
 			title: poll[0],
@@ -241,8 +260,13 @@ export default class extends Module {
 					this.pollresult.remove(exist);
 				}
 			});
-			const pollresult = this.pollresult.find().sort((a, b) => {
-				//連勝数が多い順、同じなら文字列コード順
+
+			// 現在受付中のpollのタイトルを取得
+			const ongoingTitles = this.ongoingPolls.find().map(poll => poll.title);
+
+			// pollresultからongoingTitlesに含まれないものをフィルタリング
+			const pollresult = this.pollresult.find().filter(x => !ongoingTitles.includes(x.key)).sort((a, b) => {
+				// 連勝数が多い順、同じなら文字列コード順
 				if ((a.winCount ?? 1) === (b.winCount ?? 1)) {
 					const isYearA = /^\d{4}/.test(a.key);
 					const isYearB = /^\d{4}/.test(b.key);
@@ -263,6 +287,7 @@ export default class extends Module {
 					return (b.winCount ?? 1) - (a.winCount ?? 1);
 				}
 			});
+
 			const pollresultstr = pollresult.map((x) => x.key + "\n" + x.keyword + (x.winCount && x.winCount > 1 ? "(" + x.winCount + "連勝)" : "")).join('\n\n');
 			msg.reply('私が覚えた答えです！\n```\n' + pollresultstr + '\n```');
 			return { reaction: 'love' };
@@ -270,12 +295,12 @@ export default class extends Module {
 			if (!msg.includes(['/poll']) || msg.user.host || msg.user.username !== config.master) {
 				return false;
 			} else {
-			}
-			const key = /\/poll\s(\S+)$/.exec(msg.text)?.[1];
-			this.log('Manualy poll requested key: ' + (key ?? 'null'));
-			this.post(key);
+				const key = /\/poll\s(\S+)$/.exec(msg.text)?.[1];
+				this.log('Manualy poll requested key: ' + (key ?? 'null'));
+				this.post(key);
 
-			return { reaction: 'love' };
+				return { reaction: 'love' };
+			}
 		}
 	}
 
@@ -289,7 +314,6 @@ export default class extends Module {
 		let totalVoted = 0;
 
 		for (const choice of choices) {
-
 			totalVoted += choice.votes;
 
 			if (mostVotedChoice == null) {
@@ -355,7 +379,7 @@ export default class extends Module {
 				renoteId: noteId,
 			});
 		} else {
-			const choices = mostVotedChoices.map(choice => `「${choice.text}」`).join('と');
+			const choicesStr = mostVotedChoices.map(choice => `「${choice.text}」`).join('と');
 			if (mostVotedChoice.votes >= 3 || totalVoted > choices.length) {
 				const exist = this.pollresult.findOne({
 					key: title
@@ -394,9 +418,11 @@ export default class extends Module {
 					});
 				}
 			}
+			// `ongoingPolls`から削除
+			this.ongoingPolls.removeWhere(poll => poll.noteId === noteId);
 			this.ai.post({ // TODO: Extract serif
 				cw: `${title}アンケートの結果発表です！`,
-				text: `結果は${mostVotedChoice.votes}票の${choices}でした！なるほど～！${mostVotedChoice.votes >= 3 || totalVoted > choices.length ? '覚えておきます！' : ''}${nenmatu ? '来年もいい年になりますように！' : ''}`,
+				text: `結果は${mostVotedChoice.votes}票の${choicesStr}でした！なるほど～！${mostVotedChoice.votes >= 3 || totalVoted > choices.length ? '覚えておきます！' : ''}${nenmatu ? '来年もいい年になりますように！' : ''}`,
 				renoteId: noteId,
 			});
 		}
