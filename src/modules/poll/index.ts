@@ -37,11 +37,10 @@ export default class extends Module {
 		this.pollresultlegend = this.ai.getCollection('_poll_pollresultlegend', {
 			indices: ['userId']
 		});
-		
-		// ongoingPollsコレクションの初期化
 		this.ongoingPolls = this.ai.getCollection('_poll_ongoingPolls', {
 			indices: ['noteId']
 		});
+		this.ongoingPolls.findAndRemove({'expiration':{ $lt: Date.now() });
 		
 		setInterval(() => {
 			const hours = new Date().getHours();
@@ -158,6 +157,7 @@ export default class extends Module {
 			['テーマなし', '特にテーマなしです！適当に答えてください！'],
 			['好きな絵文字', 'みなさんは、この中でどの絵文字が一番好きですか？'],
 			['面白いバナナス', 'みなさんは、この中でどのバナナスが一番面白いと思いますか？'],
+			['最も高価なもの', 'みなさんは、どれがいちばん高価だと思いますか？'],
 		];
 
 		const selectedPolls = key ? polls.filter((x) => x[0].includes(key)) : [];
@@ -419,7 +419,7 @@ export default class extends Module {
 				}
 			}
 			// `ongoingPolls`から削除
-			this.ongoingPolls.removeWhere(poll => poll.noteId === noteId);
+			this.ongoingPolls.findAndRemove({'noteId':noteId});
 			this.ai.post({ // TODO: Extract serif
 				cw: `${title}アンケートの結果発表です！`,
 				text: `結果は${mostVotedChoice.votes}票の${choicesStr}でした！なるほど～！${mostVotedChoice.votes >= 3 || totalVoted > choices.length ? '覚えておきます！' : ''}${nenmatu ? '来年もいい年になりますように！' : ''}`,
