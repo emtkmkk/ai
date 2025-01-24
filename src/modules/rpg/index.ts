@@ -1807,8 +1807,8 @@ export default class extends Module {
 		}
 
 		if ((data.maxEndress ?? -1) >= 99 && data.enemy.name === endressEnemy(data).name && Math.random() < 0.8) {
-			if (calcSevenFever([data.atk]) > calcSevenFever([data.def]) atkUp = 0;
-			if (calcSevenFever([data.atk]) < calcSevenFever([data.def]) atkUp = totalUp;
+			if (calcSevenFever([data.atk]) > calcSevenFever([data.def])) atkUp = 0;
+			if (calcSevenFever([data.atk]) < calcSevenFever([data.def])) atkUp = totalUp;
 		}
 		data.atk = (data.atk ?? 0) + atkUp;
 		data.def = (data.def ?? 0) + totalUp - atkUp;
