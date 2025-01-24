@@ -132,16 +132,17 @@ export default class extends Module {
 		if ((note.text?.includes('伸び') || note.text?.includes('のび') || note.text?.includes('ノビ')) && note.text?.length > 3) return react(':mk_ultrawidechicken:');
 		if (includes(note.text, ['嘘']) && Math.random() < 0.5 && note.text?.length <= 30) return react(':sonnano_uso:');
 		// もこだけ条件がゆるく反応しやすいので反応率を2/3に
-		if (includes(note.text, ['もこ', 'niwatori_kun']) && !includes(note.text, ['もこみち', 'おもころ', 'もこう', 'もこれ', 'でもこ']) && Math.random() < 0.667 && note.text?.length > 3) {
-			//3種類からランダムに選択される
-			const rnd = Math.random() * 3;
-			if (rnd < 1) {
-				return react(':mk_chicken_t:');
-			} else if (rnd < 2) {
-				return react(':mk_yukkuriface:');
-			} else {
-				return react(':mk_lowpoly:');
+		if (includes(note.text, ['もこ', 'niwatori_kun']) && !includes(note.text, ['もこみち', 'おもころ', 'もこう', 'もこれ', 'でもこ']) && (Math.random() < 0.667 || includes(note.text, '無視')) && note.text?.length > 3) {
+			//ランダムに選択される
+			let reactionList = [];
+			if (!includes(note.text, ["顔", "かお"])) {
+				reactionList.push(':mk_chicken_t:');
+			} else if (!includes(note.text, ["ゆっくり"])) {
+				reactionList.push(':mk_yukkuriface:');
+			} else if (!includes(note.text, ["ロー"]) || !includes(note.text, ["ポリ"])) {
+				reactionList.push(':mk_lowpoly:');
 			}
+			if (reactionList.length > 0) return react(reactionList[Math.floor(reactionList.length * Math.random())]);
 		}
 	}
 }
