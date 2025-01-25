@@ -260,7 +260,7 @@ export const skills: Skill[] = [
 	{ name: `${serifs.rpg.dmg.take}${serifs.rpg.status.rndP}`, short: "不", desc: `敵から受ける最小ダメージを減少させます`, info: `敵の乱数幅 20~180 -> 0~180 (%) 乱数系と重複しない`, effect: { defRndMin: -0.2, defRndMax: 0 }, unique: "rnd" },
 	{ name: `準備を怠らない`, short: "備", desc: `ターン1にて、必ず良い効果がある武器か防具を装備します`, info: `ターン1装備率+100% ターン1悪アイテム率-100% レイド限定で、ターン1道具最低効果量上昇 重複しない`, effect: { firstTurnItem: 1, firstTurnMindMinusAvoid: 1, firstTurnItemChoice: 0.5 }, unique: "firstTurnItem" },
 	{ name: `道具大好き`, short: "道", desc: `道具の使用率が上がります`, info: `アイテム装備率+50%`, effect: { itemEquip: 0.5 } },
-	{ name: `道具大好き＋`, short: "**道**", desc: `道具の使用率が大きく上がります`, info: `アイテム装備率+90%`, effect: { itemEquip: 0.9 } },
+	{ name: `道具大好き＋`, short: "**道**", desc: `道具の使用率が大きく上がります`, info: `アイテム装備率+90%`, effect: { itemEquip: 0.9 }, notLearn: true, skillOnly: true },
 	{ name: `道具の扱いが上手い`, short: "扱", desc: `道具の効果量が上がります`, info: `アイテム効果量+40% アイテム悪効果軽減+40%`, effect: { itemBoost: 0.4 } },
 	{ name: `武器が大好き`, short: "武", desc: `武器を装備しやすくなり、武器の効果量が上がります`, info: `武器装備率3倍 武器効果量+60% 種類大好き系と重複しない`, effect: { weaponSelect: 2, weaponBoost: 0.6 }, unique: "itemSelect" },
 	{ name: `防具が大好き`, short: "防", desc: `防具を装備しやすくなり、防具の効果量が上がります`, info: `防具装備率3倍 防具効果量+60% 種類大好き系と重複しない`, effect: { armorSelect: 2, armorBoost: 0.6 }, unique: "itemSelect" },
