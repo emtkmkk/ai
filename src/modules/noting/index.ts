@@ -61,9 +61,11 @@ export default class extends Module {
 		];
 
 		let note;
+		let channel;
 
 		if (Math.random() < 0.333) {
 			if (config.randomPostLocalOnly) localOnly = true;
+			if (config.randomPostChannel) channel = config.randomPostChannel;
 			this.ai.decActiveFactor(0.005);
 			note = notes[Math.floor(Math.random() * notes.length)];
 		} else {
@@ -81,6 +83,7 @@ export default class extends Module {
 		this.ai.post({
 			text: typeof note === 'function' ? note() : note,
 			localOnly,
+			...(channel ? { channelId: channel } : {}),
 		});
 	}
 }
