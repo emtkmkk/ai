@@ -19,6 +19,8 @@ type Config = {
 	instanceName?: string;
 	/** 全公開での投稿を禁止？ */
 	postNotPublic?: boolean;
+	/** 主に使用する公開範囲 */
+	defaultVisibility?: string;
 	/** ランダムポストでローカルのみを使用？ */
 	randomPostLocalOnly?: boolean;
 	/** ランダムポストで投稿するチャンネル */
@@ -54,6 +56,7 @@ config.apiUrl = config.host + '/api';
 
 // 設定が存在しない場合はデフォルトを設定
 if (!config.instanceName) config.instanceName = "もこきー";
+if (!config.defaultVisibility) config.defaultVisibility = "public";
 if (!config.postNotPublic !== false) config.postNotPublic = true;
 if (!config.randomPostLocalOnly !== false) config.randomPostLocalOnly = true;
 if (!config.birthdayPostLocalOnly !== false) config.randomPostLocalOnly = true;

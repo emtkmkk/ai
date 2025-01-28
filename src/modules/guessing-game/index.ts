@@ -157,6 +157,7 @@ export default class extends Module {
 			try {
 				this.ai.post({
 					text: acct(msg.user) + ' ' + text,
+					visibility: "public",
 					replyId: exist.triggerId,
 				});
 			} catch (err) {

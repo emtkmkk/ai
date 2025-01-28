@@ -3,6 +3,7 @@ import Module from '@/module';
 import Friend, { FriendDoc } from '@/friend';
 import { acct } from '@/utils/acct';
 import serifs from '@/serifs';
+import config from '@/config';
 
 export default class extends Module {
 	public readonly name = 'welcome';
@@ -47,7 +48,8 @@ export default class extends Module {
 					setTimeout(() => {
 						this.ai.api('notes/create', {
 							renoteId: note.id,
-							localOnly: true
+							localOnly: true,
+							...(config.birthdayPostChannel ? {channelId: config.birthdayPostChannel} : {}),
 						});
 					}, 3000);
 

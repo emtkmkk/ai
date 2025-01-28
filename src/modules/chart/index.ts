@@ -40,6 +40,7 @@ export default class extends Module {
 		const nenmatu = new Date().getMonth() === 11 && new Date().getDate() === 31;
 		this.ai.post({
 			text: nenmatu ? serifs.chart.nenmatuPost : serifs.chart.post,
+			visibility: "public",
 			fileIds: [fileNotes.id, fileUsers.id]
 		});
 		this.ai.decActiveFactor(0.015);
