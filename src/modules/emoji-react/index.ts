@@ -8,6 +8,7 @@ import Stream from '@/stream';
 import includes from '@/utils/includes';
 import config from '@/config';
 import { mecab } from '@/modules/keyword/mecab';
+import { hankakuToZenkaku, katakanaToHiragana } from '@/utils/japanese';
 
 export default class extends Module {
 	public readonly name = 'emoji-react';
@@ -25,7 +26,8 @@ export default class extends Module {
 	public async checkMecab(text: string, word: string | string[]): Promise<boolean> {
 		const tokens = await mecab(text, config.mecab, config.mecabDic, config.mecabCustom);
 		if (typeof word === "string") word = [word];
-		const keywordsInThisNote = tokens.filter(token => token[3] !== '人名' && (word as string[]).some(w => token[0]?.includes(w)));
+		word = word.map(word => katakanaToHiragana(word).toLowerCase());
+		const keywordsInThisNote = tokens.filter(token => token[0] && token[3] !== '人名' && (word as string[]).some(w => katakanaToHiragana(hankakuToZenkaku(token[0])).toLowerCase().includes(w)));
 		return keywordsInThisNote.length > 0
 	}
 
@@ -138,7 +140,7 @@ export default class extends Module {
 		if (includes(note.text, ['たからくじ', '宝くじ', 'takarakuji']) && includes(note.text, ['あた', 'ata', '当'])) return react(':201000000000:');
 		if (includes(note.text, ['もこもこ'])) return react(':mokomoko:');
 		if (includes(note.text, ['めつ', '滅', 'metu']) && !includes(note.text, ['滅茶', '滅多', '滅レ'])) return react(':metu:');
-		if ((note.text?.includes('伸び') || note.text?.includes('のび') || note.text?.includes('ノビ')) && note.text?.length > 3 && (await this.checkMecab(note.text, ['のび','ノビ','伸び']))) return react(':mk_ultrawidechicken:');
+		if ((note.text?.includes('伸び') || note.text?.includes('のび') || note.text?.includes('ノビ')) && note.text?.length > 3 && (await this.checkMecab(note.text, ['のび','伸び']))) return react(':mk_ultrawidechicken:');
 		if (includes(note.text, ['嘘']) && Math.random() < 0.5 && note.text?.length <= 30 && !includes(note.text, ['つく', 'つき', '吐き', '吐く'])) return react(':sonnano_uso:');
 		if (includes(note.text, ['もこ', 'niwatori_kun']) && note.text?.length > 3 && (includes(note.text, ['niwatori_kun']) || await this.checkMecab(note.text, 'もこ'))) {
 			//ランダムに選択される
