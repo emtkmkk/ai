@@ -6,6 +6,8 @@ import { Note } from '@/misskey/note';
 import Module from '@/module';
 import Stream from '@/stream';
 import includes from '@/utils/includes';
+import config from '@/config';
+import { mecab } from '@/modules/keyword/mecab';
 
 export default class extends Module {
 	public readonly name = 'emoji-react';
@@ -18,6 +20,13 @@ export default class extends Module {
 		this.htl.on('note', this.onNote);
 
 		return {};
+	}
+
+	public async checkMecab(text: string, word: string | string[]): Promise<boolean> {
+		const tokens = await mecab(text, config.mecab, config.mecabDic, config.mecabCustom);
+		if (typeof word === "string") word = [word];
+		const keywordsInThisNote = tokens.filter(token => token[3] !== '人名' && word.some(w => token[0]?.includes(w)));
+		return keywordsInThisNote.length > 0
 	}
 
 	@autobind
@@ -77,7 +86,7 @@ export default class extends Module {
 
 		if (includes(note.text, ['taikin', '退勤', 'たいきん', 'しごおわ'])) return react(':otukaresama:');
 		if (includes(note.text, ['おはよ', 'ohayo', 'pokita', 'おきた', '起きた', 'おっは', 'ぽきた']) && note.text?.length <= 30 && !includes(note.text, ['が起きた', 'がおきた'])) return react(':mk_oha:');
-		if (includes(note.text, ['おやす', 'oyasu', 'poyasimi', '寝る', 'ぽやしみ']) && note.text?.length <= 30 && !includes(note.text, ['ちゃんねる'])) return react(':oyasumi2:');
+		if (includes(note.text, ['おやす', 'oyasu', 'poyasimi', 'ぽやしみ']) && note.text?.length <= 30 && !includes(note.text, ['ちゃんねる'])) return react(':oyasumi2:');
 
 		if (Math.random() > this.ai.activeFactor * 1.2) return;
 
@@ -129,10 +138,9 @@ export default class extends Module {
 		if (includes(note.text, ['たからくじ', '宝くじ', 'takarakuji']) && includes(note.text, ['あた', 'ata', '当'])) return react(':201000000000:');
 		if (includes(note.text, ['もこもこ'])) return react(':mokomoko:');
 		if (includes(note.text, ['めつ', '滅', 'metu']) && !includes(note.text, ['滅茶', '滅多', '滅レ'])) return react(':metu:');
-		if ((note.text?.includes('伸び') || note.text?.includes('のび') || note.text?.includes('ノビ')) && note.text?.length > 3) return react(':mk_ultrawidechicken:');
-		if (includes(note.text, ['嘘']) && Math.random() < 0.5 && note.text?.length <= 30 && !includes(note.text, ['つく', 'つき', '吐き'])) return react(':sonnano_uso:');
-		// もこだけ条件がゆるく反応しやすいので反応率を2/3に
-		if (includes(note.text, ['もこ', 'niwatori_kun']) && !includes(note.text, ['もこみち', 'おもころ', 'もこう', 'もこれ', 'でもこ']) && (Math.random() < 0.667 || includes(note.text, ['無視'])) && note.text?.length > 3) {
+		if ((note.text?.includes('伸び') || note.text?.includes('のび') || note.text?.includes('ノビ')) && note.text?.length > 3 && (await this.checkMecab(note.text, ['のび','ノビ','伸び']))) return react(':mk_ultrawidechicken:');
+		if (includes(note.text, ['嘘']) && Math.random() < 0.5 && note.text?.length <= 30 && !includes(note.text, ['つく', 'つき', '吐き', '吐く'])) return react(':sonnano_uso:');
+		if (includes(note.text, ['もこ', 'niwatori_kun']) && note.text?.length > 3 && (includes(note.text, ['niwatori_kun']) || await this.checkMecab(note.text, 'もこ'))) {
 			//ランダムに選択される
 			let reactionList = [] as string[];
 			if (!includes(note.text, ["顔", "かお"])) {
