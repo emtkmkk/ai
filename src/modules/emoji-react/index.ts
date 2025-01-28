@@ -25,7 +25,7 @@ export default class extends Module {
 	public async checkMecab(text: string, word: string | string[]): Promise<boolean> {
 		const tokens = await mecab(text, config.mecab, config.mecabDic, config.mecabCustom);
 		if (typeof word === "string") word = [word];
-		const keywordsInThisNote = tokens.filter(token => token[3] !== '人名' && word.some(w => token[0]?.includes(w)));
+		const keywordsInThisNote = tokens.filter(token => token[3] !== '人名' && (word as string[]).some(w => token[0]?.includes(w)));
 		return keywordsInThisNote.length > 0
 	}
 
