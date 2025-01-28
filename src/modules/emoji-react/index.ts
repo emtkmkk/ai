@@ -139,7 +139,7 @@ export default class extends Module {
 
 		if (includes(note.text, ['ぴざ', 'pizza'])) return react(':itspizzatime:');
 		if (includes(note.text, ['かんぴろばくたー', 'campylobacter'])) return react(':campylobacter_mottenaidesu:');
-		if ((includes(note.text, ['帰りたい', 'かえりたい'])) || (includes(note.text, ['つら', 'しんど', 'sad', '泣い']) && (await this.checkMecab(note.text, ['つら', 'しんど', 'sad', '泣い'])))) return react(':mkchicken_petthex:');
+		if ((includes(note.text, ['帰りたい', 'かえりたい'])) || (includes(note.text, ['つら', 'しんど', 'sad', '泣い']) && (await this.checkMecab(note.text, ['つら', 'しんど', 'sad', 'sadrain', '泣い'])))) return react(':mkchicken_petthex:');
 		if (includes(note.text, ['むいみ', '無意味', 'muimi']) && includes(note.text, ['もの', 'mono', '物'])) return react(':osiina:');
 		if (includes(note.text, ['たからくじ', '宝くじ', 'takarakuji']) && includes(note.text, ['あた', 'ata', '当'])) return react(':201000000000:');
 		if (includes(note.text, ['もこもこ', 'mokomoko'])) return react(':mokomoko:');
