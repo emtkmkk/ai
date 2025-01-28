@@ -21,6 +21,12 @@ type Config = {
 	postNotPublic?: boolean;
 	/** ランダムポストでローカルのみを使用？ */
 	randomPostLocalOnly?: boolean;
+	/** ランダムポストで投稿するチャンネル */
+	randomPostChannel?: string;
+	/** 誕生日祝いでローカルのみを使用？ */
+	birthdayPostLocalOnly?: boolean;
+	/** 誕生日祝いで投稿するチャンネル */
+	birthdayPostChannel?: string;
 	/** RPGでの主人公の名前 */
 	rpgHeroName?: string;
 	/** RPGでの通貨の名前 */
@@ -50,6 +56,7 @@ config.apiUrl = config.host + '/api';
 if (!config.instanceName) config.instanceName = "もこきー";
 if (!config.postNotPublic !== false) config.postNotPublic = true;
 if (!config.randomPostLocalOnly !== false) config.randomPostLocalOnly = true;
+if (!config.birthdayPostLocalOnly !== false) config.randomPostLocalOnly = true;
 if (!config.rpgHeroName) config.rpgHeroName = "もこチキ";
 if (!config.rpgCoinName) config.rpgCoinName = "もこコイン";
 if (!config.rpgCoinShortName) config.rpgCoinShortName = "コイン";

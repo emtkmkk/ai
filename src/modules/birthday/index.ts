@@ -4,6 +4,7 @@ import Friend from '@/friend';
 import serifs from '@/serifs';
 import { acct } from '@/utils/acct';
 import getDate from '@/utils/get-date';
+import config from '@/config';
 
 function zeroPadding(num: number, length: number): string {
 	return ('0000000000' + num).slice(-length);
@@ -64,7 +65,8 @@ export default class extends Module {
 			if (!friend.doc?.user?.host && friend.love >= 20) {
 				this.ai.post({
 					text: serifs.birthday.happyBirthdayLocal(friend.name, acct(friend.doc.user)),
-					localOnly: true,
+					localOnly: config.birthdayPostLocalOnly,
+					...(config.birthdayPostChannel ? {channelId: config.birthdayPostChannel} : {}),
 				});
 			} else {
 				this.ai.sendMessage(friend.userId, {
