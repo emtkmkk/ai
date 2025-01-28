@@ -27,7 +27,11 @@ export default class extends Module {
 		const tokens = await mecab(text, config.mecab, config.mecabDic, config.mecabCustom);
 		if (typeof word === "string") word = [word];
 		word = word.map(word => katakanaToHiragana(word).toLowerCase());
-		const keywordsInThisNote = tokens.filter(token => token[0] && token[3] !== '人名' && (word as string[]).some(w => katakanaToHiragana(hankakuToZenkaku(token[0])).toLowerCase().includes(w)));
+		const keywordsInThisNote = tokens.filter(token => token[0] && token[3] !== '人名' && (word as string[]).some(w => {
+				const token0 = katakanaToHiragana(hankakuToZenkaku(token[0])).toLowerCase()
+				return token0.startsWith(w) || token0.endsWith(w);
+			}
+		));
 		return keywordsInThisNote.length > 0
 	}
 
@@ -135,10 +139,10 @@ export default class extends Module {
 
 		if (includes(note.text, ['ぴざ', 'pizza'])) return react(':itspizzatime:');
 		if (includes(note.text, ['かんぴろばくたー', 'campylobacter'])) return react(':campylobacter_mottenaidesu:');
-		if (includes(note.text, ['つら', 'しんど', '帰りたい', 'かえりたい', 'sad', '泣い'])) return react(':mkchicken_petthex:');
+		if ((includes(note.text, ['帰りたい', 'かえりたい'])) || (includes(note.text, ['つら', 'しんど', 'sad', '泣い']) && (await this.checkMecab(note.text, ['つら', 'しんど', 'sad', '泣い'])))) return react(':mkchicken_petthex:');
 		if (includes(note.text, ['むいみ', '無意味', 'muimi']) && includes(note.text, ['もの', 'mono', '物'])) return react(':osiina:');
 		if (includes(note.text, ['たからくじ', '宝くじ', 'takarakuji']) && includes(note.text, ['あた', 'ata', '当'])) return react(':201000000000:');
-		if (includes(note.text, ['もこもこ'])) return react(':mokomoko:');
+		if (includes(note.text, ['もこもこ', 'mokomoko'])) return react(':mokomoko:');
 		if (includes(note.text, ['めつ', '滅', 'metu']) && !includes(note.text, ['滅茶', '滅多', '滅レ'])) return react(':metu:');
 		if ((note.text?.includes('伸び') || note.text?.includes('のび') || note.text?.includes('ノビ')) && note.text?.length > 3 && (await this.checkMecab(note.text, ['のび','伸び']))) return react(':mk_ultrawidechicken:');
 		if (includes(note.text, ['嘘']) && Math.random() < 0.5 && note.text?.length <= 30 && !includes(note.text, ['つく', 'つき', '吐き', '吐く'])) return react(':sonnano_uso:');
