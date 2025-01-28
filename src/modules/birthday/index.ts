@@ -65,6 +65,7 @@ export default class extends Module {
 			if (!friend.doc?.user?.host && friend.love >= 20) {
 				this.ai.post({
 					text: serifs.birthday.happyBirthdayLocal(friend.name, acct(friend.doc.user)),
+					visibility: "public",
 					localOnly: config.birthdayPostLocalOnly,
 					...(config.birthdayPostChannel ? {channelId: config.birthdayPostChannel} : {}),
 				});
