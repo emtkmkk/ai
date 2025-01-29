@@ -151,8 +151,8 @@ export default class extends Module {
 		// 90% → 5分 or 10分
 		let limitMinutes = Math.random() < 0.1 && this.ai.activeFactor >= 0.75 ? Math.random() < 0.5 && !triggerUserId ? 1 : 2 : Math.random() < 0.5 ? 5 : 10;
 
-		if ((this.ai.activeFactor >= 1 && Math.random() < 0.01) || flg?.includes('lng')) {
-			limitMinutes *= 72;
+		if ((this.ai.activeFactor >= 1 && Math.random() < 0.001 && new Date().getHours() < 14) || flg?.includes('lng')) {
+			limitMinutes *= 48;
 		}
 
 		// 機嫌が低い場合、受付時間を延長
