@@ -151,6 +151,10 @@ export default class extends Module {
 		// 90% → 5分 or 10分
 		let limitMinutes = Math.random() < 0.1 && this.ai.activeFactor >= 0.75 ? Math.random() < 0.5 && !triggerUserId ? 1 : 2 : Math.random() < 0.5 ? 5 : 10;
 
+		if ((this.ai.activeFactor >= 1 && Math.random() < 0.01) || flg?.includes('lng')) {
+			limitMinutes *= 72;
+		}
+
 		// 機嫌が低い場合、受付時間を延長
 		if (this.ai.activeFactor < 0.75) {
 			limitMinutes = Math.floor(1 / (1 - Math.min((1 - this.ai.activeFactor) * 1.2 * (0.7 + Math.random() * 0.3), 0.8)) * limitMinutes / 5) * 5;
@@ -226,6 +230,7 @@ export default class extends Module {
 
 			if (!msg.user.host && msg.user.username === config.master && msg.includes(['inf'])) flg = "inf";
 			if (!msg.user.host && msg.user.username === config.master && msg.includes(['med'])) flg += " med";
+			if (!msg.user.host && msg.user.username === config.master && msg.includes(['lng'])) flg += " lng";
 		}
 
 		//TODO : このへんのセリフをserifに移行する
