@@ -1841,7 +1841,7 @@ export default class extends Module {
 					if (!data.checkFreeDistributed) data.checkFreeDistributed = true;
 				}
 
-				if (skill.unique && uniques.has(skill.unique)) {
+				if ((skill.unique && uniques.has(skill.unique)) || skill.notLearn) {
 					oldSkillName = skill.name;
 					data.skills = data.skills.filter((x: Skill) => x.name !== oldSkillName);
 				} else {
