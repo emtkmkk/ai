@@ -1163,7 +1163,7 @@ export default class extends Module {
 				message += serifs.rpg.haisui + "\n";
 				dmgUp *= (1 + (skillEffects.haisuiAtkUp ?? 0));
 				critUp += (skillEffects.haisuiCritUp ?? 0)
-				const effect = Math.min((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.haisuiUp ?? 0)), 1);
+				const effect = Math.min((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.haisuiUp ?? 0)), 0.99);
 				atk = atk + Math.round(def * effect);
 				def = Math.round(def * (1 - effect));
 			}
