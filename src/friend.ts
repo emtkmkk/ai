@@ -16,6 +16,7 @@ export type FriendDoc = {
 	lastLoveIncrementedAt?: string;
 	todayLoveIncrements?: number;
 	lastLoveIncrementedTime?: string;
+	lastRPGTime?: string;
 	cooldownLoveIncrementKey?: string[];
 	perModulesData?: any;
 	married?: boolean;
@@ -159,6 +160,9 @@ export default class Friend {
 		if (this.doc.lastLoveIncrementedAt != today) {
 			this.doc.todayLoveIncrements = 0;
 		}
+		
+		// RPGに関連する好感度増加は1日に1回
+		if (key.includes("hero") && this.doc.lastRPGTime && this.doc.lastRPGTime == today) return;
 
 		const now = new Date();
 
@@ -176,7 +180,7 @@ export default class Friend {
 				this.doc.cooldownLoveIncrementKey.push(key);
 			}
 		}
-
+		
 		// 100を超えるまでは1日に上げられる親愛度は最大15
 		if (key != "merge" && this.doc.lastLoveIncrementedAt == today && ((this.doc.love || 0) < 100 && (this.doc.todayLoveIncrements || 0) >= 15)) return;
 
@@ -203,6 +207,9 @@ export default class Friend {
 			this.doc.lastLoveIncrementedAt = today;
 			this.doc.todayLoveIncrements = (this.doc.todayLoveIncrements || 0) + amount;
 			this.doc.todayLoveIncrements = parseFloat((this.doc.todayLoveIncrements || 0).toFixed(2));
+		}
+		if (key.includes("hero")) {
+			this.doc.lastRPGTime = today;
 		}
 		this.save();
 
