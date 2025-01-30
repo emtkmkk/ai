@@ -160,6 +160,8 @@ export default class Friend {
 		if (this.doc.lastLoveIncrementedAt != today) {
 			this.doc.todayLoveIncrements = 0;
 		}
+
+		if (key?.includes("mk_chicken_t") || key?.includes("hero")) key = "hero";
 		
 		// RPGに関連する好感度増加は1日に1回
 		if (key?.includes("hero") && this.doc.lastRPGTime && this.doc.lastRPGTime == today) return;
