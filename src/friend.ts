@@ -162,7 +162,7 @@ export default class Friend {
 		}
 		
 		// RPGに関連する好感度増加は1日に1回
-		if (key.includes("hero") && this.doc.lastRPGTime && this.doc.lastRPGTime == today) return;
+		if (key?.includes("hero") && this.doc.lastRPGTime && this.doc.lastRPGTime == today) return;
 
 		const now = new Date();
 
@@ -208,7 +208,7 @@ export default class Friend {
 			this.doc.todayLoveIncrements = (this.doc.todayLoveIncrements || 0) + amount;
 			this.doc.todayLoveIncrements = parseFloat((this.doc.todayLoveIncrements || 0).toFixed(2));
 		}
-		if (key.includes("hero")) {
+		if (key?.includes("hero")) {
 			this.doc.lastRPGTime = today;
 		}
 		this.save();
