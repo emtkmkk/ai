@@ -810,7 +810,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		}
 
 		if (skillEffects.berserk) {
-			const berserkDmg = Math.min(Math.floor((playerMaxHp) * (skillEffects.berserk ?? 0)), playerHp - 1);
+			const berserkDmg = Math.min(Math.floor((playerMaxHp * Math.min(playerHpPercent * 2, 1)) * (skillEffects.berserk ?? 0)), playerHp - 1);
 			playerHp -= berserkDmg;
 			playerHpPercent = playerHp / (playerMaxHp);
 			if (berserkDmg > 0) {
