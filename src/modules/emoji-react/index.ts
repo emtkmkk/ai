@@ -151,9 +151,11 @@ export default class extends Module {
 			let reactionList = [] as string[];
 			if (!includes(note.text, ["顔", "かお"])) {
 				reactionList.push(':mk_chicken_t:');
-			} else if (!includes(note.text, ["ゆっくり"])) {
+			} 
+			if (!includes(note.text, ["ゆっくり"])) {
 				reactionList.push(':mk_yukkuriface:');
-			} else if (!includes(note.text, ["ロー"]) && !includes(note.text, ["ポリ"])) {
+			} 
+			if (!includes(note.text, ["ロー"]) && !includes(note.text, ["ポリ"])) {
 				reactionList.push(':mk_lowpoly:');
 			}
 			if (reactionList.length > 0) return react(reactionList[Math.floor(reactionList.length * Math.random())]);
