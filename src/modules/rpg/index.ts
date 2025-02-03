@@ -604,10 +604,10 @@ export default class extends Module {
 				spd += 1
 				skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.1
 			} else if (aggregateTokensEffects(data).greenMode) {
-				skillEffects.itemEquip = (skillEffects.itemEquip ?? 0) + 0.1;
-				skillEffects.itemBoost = (skillEffects.itemBoost ?? 0) + 0.1;
-				skillEffects.mindMinusAvoid = (skillEffects.mindMinusAvoid ?? 0) + 0.1;
-				skillEffects.poisonAvoid = (skillEffects.poisonAvoid ?? 0) + 0.1;
+				skillEffects.itemEquip = ((1 + (skillEffects.itemEquip ?? 0)) * 1.15) - 1;
+				skillEffects.itemBoost = ((1 + (skillEffects.itemBoost ?? 0)) * 1.15) - 1;
+				skillEffects.mindMinusAvoid = ((1 + (skillEffects.mindMinusAvoid ?? 0)) * 1.15) - 1;
+				skillEffects.poisonAvoid = ((1 + (skillEffects.poisonAvoid ?? 0)) * 1.15) - 1;
 			}
 		}
 		
@@ -1076,11 +1076,11 @@ export default class extends Module {
 				skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.1
 				if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`行動回数+1！\nダメージカット+10%！\n${customStr}`) + `\n`;
 			} else if (aggregateTokensEffects(data).greenMode) {
-				skillEffects.itemEquip = (skillEffects.itemEquip ?? 0) + 0.1;
-				skillEffects.itemBoost = (skillEffects.itemBoost ?? 0) + 0.1;
-				skillEffects.mindMinusAvoid = (skillEffects.mindMinusAvoid ?? 0) + 0.1;
-				skillEffects.poisonAvoid = (skillEffects.poisonAvoid ?? 0) + 0.1;
-				if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`全アイテム効果+10%！\n${customStr}`) + `\n`;
+				skillEffects.itemEquip = ((1 + (skillEffects.itemEquip ?? 0)) * 1.15) - 1;
+				skillEffects.itemBoost = ((1 + (skillEffects.itemBoost ?? 0)) * 1.15) - 1;
+				skillEffects.mindMinusAvoid = ((1 + (skillEffects.mindMinusAvoid ?? 0)) * 1.15) - 1;
+				skillEffects.poisonAvoid = ((1 + (skillEffects.poisonAvoid ?? 0)) * 1.15) - 1;
+				if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`全アイテム効果+15%！\n${customStr}`) + `\n`;
 			}
 
 		}

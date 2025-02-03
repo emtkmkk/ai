@@ -60,7 +60,7 @@ const canBankItems: ShopItem[] = [
 	{ name: `覚醒変更の札（朱）`, price: 50, desc: `覚醒時の行動回数増加と毒アイテム効果軽減を失いますが、代わりにクリティカルダメージが+35%以下の場合、+35%になり、クリティカル率（固定）+8%を得るようになります 4色のうちどれか1つしか発動しません`, type: "token", effect: { notSuperSpeedUp: true, redMode: true }, always: true } as TokenItem,
 	{ name: `覚醒変更の札（橙）`, price: 50, desc: `覚醒時の行動回数増加が半減しますが、代わりにダメージカット+10%を得るようになります 4色のうちどれか1つしか発動しません`, type: "token", effect: { notSuperSpeedUp: true, yellowMode: true }, always: true } as TokenItem,
 	{ name: `覚醒変更の札（蒼）`, price: 50, desc: `覚醒時の行動回数増加を失いますが、代わりにダメージカット+20%を得るようになります 4色のうちどれか1つしか発動しません`, type: "token", effect: { notSuperSpeedUp: true, blueMode: true }, always: true } as TokenItem,
-	{ name: `覚醒変更の札（翠）`, price: 50, desc: `覚醒時の行動回数増加を失いますが、代わりに全ての道具効果+10%を得るようになります 4色のうちどれか1つしか発動しません`, type: "token", effect: { notSuperSpeedUp: true, greenMode: true }, always: true } as TokenItem,
+	{ name: `覚醒変更の札（翠）`, price: 50, desc: `覚醒時の行動回数増加を失いますが、代わりに全ての道具効果+15%を得るようになります 4色のうちどれか1つしか発動しません`, type: "token", effect: { notSuperSpeedUp: true, greenMode: true }, always: true } as TokenItem,
 ]
 
 const bankItemsDesc2 = {
