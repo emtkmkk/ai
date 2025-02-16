@@ -879,7 +879,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			if (enemy.pLToR) {
 				let isPlus = Math.random() < 0.5;
 				const items = rpgItems.filter((x) => isPlus ? x.mind > 0 : x.mind < 0);
-				item = items[Math.floor(Math.random() * items.length)];
+				item = { ...items[Math.floor(Math.random() * items.length)] };
 			} else {
 				let types = ["weapon", "armor"];
 				for (let i = 0; i < (skillEffects.weaponSelect ?? 0); i++) {
@@ -908,10 +908,10 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 				if ((type === "weapon" && !(isBattle && isPhysical)) || (type === "armor" && isTired) || enemy.pLToR) {
 					let isPlus = Math.random() < (0.5 + (skillEffects.mindMinusAvoid ?? 0) + (count === 1 ? skillEffects.firstTurnMindMinusAvoid ?? 0 : 0));
 					const items = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind < 0) && (count !== 1 || !skillEffects.firstTurnItemChoice || x.mind >= (skillEffects.firstTurnItemChoice * 100)));
-					item = items[Math.floor(Math.random() * items.length)];
+					item = { ...items[Math.floor(Math.random() * items.length)] };
 				} else {
 					const items = rpgItems.filter((x) => x.type === type && x.effect > 0 && (count !== 1 || !skillEffects.firstTurnItemChoice || x.effect >= (skillEffects.firstTurnItemChoice * 100)));
-					item = items[Math.floor(Math.random() * items.length)];
+					item = { ...items[Math.floor(Math.random() * items.length)] };
 				}
 			}
 			const mindMsg = (mind) => {
