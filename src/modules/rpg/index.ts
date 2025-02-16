@@ -530,16 +530,10 @@ export default class extends Module {
 
 			games[games.length - 1].attackers.forEach(x => {
 				const doc = this.ai.lookupFriend(x.user.id)?.doc;
-				const enemyName = ":mk_crystal:"
-				if (!doc?.perModulesData?.rpg?.raidScore?.[enemyName]) return;
-				doc.perModulesData.rpg.raidScore[enemyName] = 0;
+				const enemyName = ":mk_hero:"
+				if (!doc?.perModulesData?.rpg?.raidScore?.[enemyName] != 8443) return;
+				doc.perModulesData.rpg.raidScore[enemyName] = 4159;
 			});
-			const rpgData = ai.moduleData.findOne({ type: 'rpg' });
-			if (rpgData) {
-				rpgData.raidScore[":mk_crystal:"] = 0;
-				rpgData.raidScoreDate[":mk_crystal:"] = getDate();
-				ai.moduleData.update(rpgData);
-			}
 			return { reaction: "love" };
 		}
 		return { reaction: "hmm" };
