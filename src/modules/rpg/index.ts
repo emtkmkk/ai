@@ -1206,10 +1206,10 @@ export default class extends Module {
 				if ((type === "weapon" && !(isBattle && isPhysical)) || (type === "armor" && isTired) || data.enemy.pLToR) {
 					let isPlus = Math.random() < (0.5 + (skillEffects.mindMinusAvoid ?? 0) + (count === 1 ? skillEffects.firstTurnMindMinusAvoid ?? 0 : 0));
 					const items = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind < 0));
-					item = items[Math.floor(Math.random() * items.length)];
+					item = { ...items[Math.floor(Math.random() * items.length)] };
 				} else {
 					const items = rpgItems.filter((x) => x.type === type && x.effect > 0);
-					item = items[Math.floor(Math.random() * items.length)];
+					item = { ...items[Math.floor(Math.random() * items.length)] };
 				}
 			}
 			const mindMsg = (mind) => {
