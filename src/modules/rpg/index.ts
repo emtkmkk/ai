@@ -1177,7 +1177,7 @@ export default class extends Module {
 			if (data.enemy.pLToR) {
 				let isPlus = Math.random() < 0.5;
 				const items = rpgItems.filter((x) => isPlus ? x.mind > 0 : x.mind < 0);
-				item = items[Math.floor(Math.random() * items.length)];
+				item = { ...items[Math.floor(Math.random() * items.length)] };
 			} else {
 				let types = ["weapon", "armor"];
 				for (let i = 0; i < (skillEffects.weaponSelect ?? 0); i++) {
