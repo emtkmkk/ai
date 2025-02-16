@@ -531,7 +531,7 @@ export default class extends Module {
 			games[games.length - 1].attackers.forEach(x => {
 				const doc = this.ai.lookupFriend(x.user.id)?.doc;
 				const enemyName = ":mk_hero:"
-				if (!doc?.perModulesData?.rpg?.raidScore?.[enemyName] != 8443) return;
+				if (doc?.perModulesData?.rpg?.raidScore?.[enemyName] != 8443) return;
 				doc.perModulesData.rpg.raidScore[enemyName] = 4159;
 			});
 			return { reaction: "love" };
