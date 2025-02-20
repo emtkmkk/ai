@@ -205,7 +205,7 @@ export default class extends Module {
 					choices.push(this.ai.makeBananasu(""));
 				}
 			}
-			if (exist?.keyword) {
+			if (exist?.keyword && exist?.keyword.length > 3) {
 				const randomIndex = Math.floor(Math.random() * (choices.length + 1));
 				choices.splice(randomIndex, 0, exist.keyword);
 			}
