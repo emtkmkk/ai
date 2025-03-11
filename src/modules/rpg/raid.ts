@@ -310,6 +310,9 @@ function finish(raid: Raid) {
 		if (!friend) return;
 		const data = friend.getPerModulesData(module_);
 		data.coin = Math.max((data.coin ?? 0) + (score ?? 4), data.coin);
+		const winCount = sortAttackers.filter((y) => x.dmg > y.dmg).length;
+		const loseCount = sortAttackers.filter((y) => x.dmg < y.dmg).length;
+		data.raidAdjust = (data.raidAdjust ?? 0) + (winCount - loseCount);
 		friend.setPerModulesData(module_, data);
 	});
 
@@ -590,6 +593,11 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	}
 	atk = Math.round(atk * (0.75 + bonusX));
 	def = Math.round(def * (0.75 + bonusX));
+
+	if (data.raidAdjust > 0) {
+		atk = Math.round(atk * (1 / (1 + (data.raidAdjust * 0.005))));
+		def = Math.round(def * (1 / (1 + (data.raidAdjust * 0.005))));
+	}
 
 	/** 敵の最大HP */
 	let enemyMaxHp = 100000;
