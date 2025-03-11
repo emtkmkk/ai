@@ -462,11 +462,30 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		skillEffects = aggregateSkillsEffects(data);
 	}
 
+	const skillsStr = getSkillsShortName(data);
+
+	let amuletGetFlg = false;
+
+	if (data.lv >= 20) {
+		if (data.noAmuletCount == null) data.noAmuletCount = 18;
+		if (!skillEffects.noAmuletAtkUp && !skillsStr.amulet && Math.random() < 0.1 + (data.noAmuletCount * 0.05)) {
+			amuletGetFlg = true;
+			data.noAmuletCount = 0;
+			data.items.push({ name: `古びた謎のお守り`, price: 1, desc: `貰ったお守り。よくわからないが不思議な力を感じる…… 持っていると何かいい事があるかもしれない。`, type: "amulet", effect: { stockRandomEffect: 1 }, durability: 1, short: "？", isUsed: (data) => data.raid, isMinusDurability: (data) => data.stockRandomCount <= 0 });
+			// スキル効果を再度読み込み
+			if (enemy.skillX) {
+				skillEffects = aggregateSkillsEffectsSkillX(data, enemy.skillX);
+			} else {
+				skillEffects = aggregateSkillsEffects(data);
+			}
+		} else if (!skillEffects.noAmuletAtkUp && !skillsStr.amulet) {
+			data.noAmuletCount = (data.noAmuletCount ?? 0) + 1;
+		}
+	}
+
 	const stockRandomResult = stockRandom(data, skillEffects);
 
 	skillEffects = stockRandomResult.skillEffects;
-
-	const skillsStr = getSkillsShortName(data);
 
 	/** 現在の敵と戦ってるターン数。 敵がいない場合は1 */
 	let count = 1;
@@ -538,12 +557,17 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	/** バフを得た数。行数のコントロールに使用 */
 	let buff = 0;
 
+	if (amuletGetFlg) {
+		message += serifs.rpg.giveAmulet + `\n\n`;
+	}
+
 	if (enemy.skillX && lv >= 20) {
 		message += serifs.rpg.skillX(enemy.skillX) + `\n\n`;
 	}
 
 	if (stockRandomResult.activate) {
 		message += serifs.rpg.skill.stockRandom + `\n\n`;
+		skillsStr.amulet = `[${stockRandomResult.activateStr}]`;
 	}
 
 	if (enemy.forcePostCount) {

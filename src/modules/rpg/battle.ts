@@ -125,6 +125,7 @@ export function fortune(_atk, _def, effect = 0) {
 export function stockRandom(data, skillEffects) {
 
 	let activate = false;
+	let activateStr = "";
 
 	if (skillEffects?.stockRandomEffect) {
 
@@ -133,6 +134,7 @@ export function stockRandom(data, skillEffects) {
 		if (Math.random() < probability) {
 			activate = true;
 			let effectPoint = data.stockRandomCount > 5 ? 20 + (data.stockRandomCount - 5) * 2 : data.stockRandomCount * 4;
+			activateStr = effectPoint > 20 ? "！".repeat(Math.floor((effectPoint - 11) / 10)) : "！";
 			let attackUpFlg = false;
 			if (!data.maxStock || data.maxStock < data.stockRandomCount) data.maxStock = data.stockRandomCount;
 			data.stockRandomCount = 0;
@@ -283,6 +285,7 @@ export function stockRandom(data, skillEffects) {
 
 	return {
 		activate,
+		activateStr,
 		skillEffects
 	};
 }

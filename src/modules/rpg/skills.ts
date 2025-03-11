@@ -122,6 +122,8 @@ export type SkillEffect = {
 	firstTurnMindMinusAvoid?: number;
 	/** 最初のターンの道具の最低効果量をn*100以上にする */
 	firstTurnItemChoice?: number;
+	/** 最初のターンは二刀流が可能になる 発動率は通常のn% */
+	firstTurnDoubleItem?: number;
 	/** アイテム使用率がn%上昇 */
 	itemEquip?: number;
 	/** アイテム効果がn%上昇 デメリットがn%減少 */
@@ -258,7 +260,7 @@ export const skills: Skill[] = [
 	{ name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndP}`, short: "乱", desc: `乱数幅が20~180 -> 5~225になります クリティカル率も上がります`, info: `乱数幅 20~180 -> 5~225 (%) 期待値 115% クリティカル率+2% 乱数系と重複しない`, effect: { atkRndMin: -0.15, atkRndMax: 0.6, critUpFixed: 0.02 }, unique: "rnd" },
 	{ name: `${serifs.rpg.dmg.take}${serifs.rpg.status.rndM}`, short: "安", desc: `敵から受ける最大ダメージを減少させます`, info: `敵の乱数幅 20~180 -> 20~160 (%) 乱数系と重複しない`, effect: { defRndMin: 0, defRndMax: -0.2 }, unique: "rnd" },
 	{ name: `${serifs.rpg.dmg.take}${serifs.rpg.status.rndP}`, short: "不", desc: `敵から受ける最小ダメージを減少させます`, info: `敵の乱数幅 20~180 -> 0~180 (%) 乱数系と重複しない`, effect: { defRndMin: -0.2, defRndMax: 0 }, unique: "rnd" },
-	{ name: `準備を怠らない`, short: "備", desc: `ターン1にて、必ず良い効果がある武器か防具を装備します`, info: `ターン1装備率+100% ターン1悪アイテム率-100% レイド限定で、ターン1道具最低効果量上昇 重複しない`, effect: { firstTurnItem: 1, firstTurnMindMinusAvoid: 1, firstTurnItemChoice: 0.5 }, unique: "firstTurnItem" },
+	{ name: `準備を怠らない`, short: "備", desc: `ターン1にて、必ず良い効果がある武器か防具を装備します`, info: `ターン1装備率+100% ターン1悪アイテム率-100% レイド限定で、ターン1道具最低効果量上昇 重複しない`, effect: { firstTurnItem: 1, firstTurnMindMinusAvoid: 1, firstTurnItemChoice: 0.5, firstTurnDoubleItem: 1 }, unique: "firstTurnItem" },
 	{ name: `道具大好き`, short: "道", desc: `道具の使用率が上がります`, info: `アイテム装備率+50%`, effect: { itemEquip: 0.5 } },
 	{ name: `道具大好き＋`, short: "**道**", desc: `道具の使用率が大きく上がります`, info: `アイテム装備率+90%`, effect: { itemEquip: 0.9 }, notLearn: true, skillOnly: true },
 	{ name: `道具の扱いが上手い`, short: "扱", desc: `道具の効果量が上がります`, info: `アイテム効果量+40% アイテム悪効果軽減+40%`, effect: { itemBoost: 0.4 } },
@@ -1114,7 +1116,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 	}
 
 	if (skillEffects.dark) {
-		resultS.push("戦闘時行動回数低下率: "+ showNum((skillEffects.dark ?? 0) * 2 * 100) + "%");
+		resultS.push("戦闘時敵行動回数低下率: "+ showNum((skillEffects.dark ?? 0) * 2 * 100) + "%");
 		resultS.push("戦闘時固定ダメージ付与率: "+ showNum((skillEffects.dark ?? 0) * 100) + "%");
 		nbDef *= 1 + (skillEffects.dark ?? 0) * 0.3;
 	}
@@ -1307,13 +1309,13 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 		result.push("アイテム装備率: +" + showNum((skillEffects.itemEquip ?? 0) * 100) + "%");
 	}
 	if (skillEffects.weaponSelect) {
-		result.push("武器選択率: +" + showNum((skillEffects.weaponSelect ?? 0) * 100) + "%");
+		result.push("武器選択率: +" + showNum((((1 + (skillEffects.weaponSelect ?? 0) / 4 + (skillEffects.weaponSelect ?? 0)) / (1/4)) - 1) * 100) + "%");
 	}
 	if (skillEffects.armorSelect) {
-		result.push("防具選択率: +" + showNum((skillEffects.armorSelect ?? 0) * 100) + "%");
+		result.push("防具選択率: +" + showNum((((1 + (skillEffects.armorSelect ?? 0) / 4 + (skillEffects.armorSelect ?? 0)) / (1/4)) - 1) * 100) + "%");
 	}
 	if (skillEffects.foodSelect) {
-		result.push("食べ物選択率: +" + showNum((skillEffects.foodSelect ?? 0) * 100) + "%");
+		result.push("食べ物選択率: +" + showNum((((1 + (skillEffects.foodSelect ?? 0) / 4 + (skillEffects.foodSelect ?? 0)) / (1/4)) - 1) * 100) + "%");
 	}
 	if (skillEffects.poisonAvoid) {
 		result.push("毒食べ物回避率: " + showNum((skillEffects.poisonAvoid ?? 0) * 100) + "%");

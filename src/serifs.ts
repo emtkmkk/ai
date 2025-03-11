@@ -531,6 +531,7 @@ export default {
 		oomisoka: "大晦日チャレンジ開始！\n体力が1になった！",
 		oomisokaEnd: (score, num) => `大晦日チャレンジ結果！\n評価: ★${score}\n${config.rpgCoinName}を${num}枚ゲット！`,
 		skillX: (num) => `$[x2 :mk_wizard:]\n\n力をそなたに与えよう……\n\n強化魔法で${config.rpgHeroName}のスキルの\n効果が${num}倍になった！`,
+		giveAmulet: `$[x2 :mk_fighter:]\n\nこれをお主にやろう。\nついさっきそこで拾ったんじゃ。\n\n古びた謎のお守りを貰った！`,
 		draw: "あいこになった！\nお互いにダメージなし！",
 		allStageClear: `気が付いたら、ここは最初に旅を始めた場所だった。\nどうやら旅をしすぎて\n世界を1周してしまったようだ。\n\n**ステージ100クリアおめでとう！**\n${config.rpgCoinName}を1,000枚獲得しました！\n「長き旅の思い出」を入手しました！`,
 		warrior: {
