@@ -467,11 +467,11 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	let amuletGetFlg = false;
 
 	if (data.lv >= 20) {
-		if (data.noAmuletCount == null) data.noAmuletCount = 18;
-		if (!skillEffects.noAmuletAtkUp && !skillsStr.amulet && Math.random() < 0.1 + (data.noAmuletCount * 0.05)) {
+		if (data.noAmuletCount == null) data.noAmuletCount = 0;
+		if (!skillEffects.noAmuletAtkUp && !skillsStr.amulet && Math.random() < 0.1 + ((data.noAmuletCount + 18) * 0.05)) {
 			amuletGetFlg = true;
-			data.noAmuletCount = 0;
-			data.items.push({ name: `古びた謎のお守り`, price: 1, desc: `貰ったお守り。よくわからないが不思議な力を感じる…… 持っていると何かいい事があるかもしれない。`, type: "amulet", effect: { stockRandomEffect: 1 }, durability: 1, short: "？", isUsed: (data) => data.raid, isMinusDurability: (data) => data.stockRandomCount <= 0 });
+			data.noAmuletCount = -18;
+			data.items.push({ name: `謎のお守り`, price: 1, desc: `貰ったお守り。よくわからないが不思議な力を感じる…… 持っていると何かいい事があるかもしれない。`, type: "amulet", effect: { stockRandomEffect: 1 }, durability: 1, short: "？" });
 			// スキル効果を再度読み込み
 			if (enemy.skillX) {
 				skillEffects = aggregateSkillsEffectsSkillX(data, enemy.skillX);
