@@ -1838,6 +1838,13 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	// 所持しているスキル１つ度に、器用さ＋３
 	dex += (data.skills?.length ?? 0) * 3;
 	
+	if ((data.hatogurumaExp ?? 0) > 1) {
+		buff += 1;
+		const expBonus = Math.min(0.3, data.hatogurumaExp / 100);
+		message += `経験 器用さ+${Math.round(expBonus * 100)}%` + `\n`;
+		dex = dex * (1 + expBonus);
+	}
+	
 	if (skillEffects.notBattleBonusAtk >= 0.7) {
 		buff += 1;
 		message += `気性穏やか 器用さ+${Math.round(skillEffects.notBattleBonusAtk * 100)}%` + `\n`;
@@ -1966,6 +1973,20 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 
 	// バフが1つでも付与された場合、改行を追加する
 	if (buff > 0) message += "\n";
+	buff = 0;
+
+	if (dex < 150 && Math.random() < 0.1) {
+		buff += 1;
+		message += `${config.rpgHeroName}は調子が良さそうだ！\n器用さ+${Math.round((150 - dex) * 0.3)}%！` + `\n`;
+		dex += Math.round((150 - dex) * 0.3)
+	} else if (fix < 0.75 && Math.random() < 0.1) {
+		buff += 1;
+		message += `${config.rpgHeroName}は集中している！\n仕上げ+${Math.round((0.75 - fix) * 0.3 * 100)}%！` + `\n`;
+		fix += (0.75 - fix) * 0.3;
+	}
+
+	// バフが1つでも付与された場合、改行を追加する
+	if (buff > 0) message += "\n";
 
   if (dex < 3) dex = 3;
 	
@@ -2016,6 +2037,8 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	else imageMsg = "伝説に残るであろう"
 	
 	message += `${imageMsg}鳩車を作って提出した！` + `\n\n`
+
+	data.hatogurumaExp = (data.hatogurumaExp ?? 0) + ((100 - totalDmg) / 100)
 
 	if (!data.raidScore) data.raidScore = {};
 	if (!data.raidScore[enemy.name] || data.raidScore[enemy.name] < totalDmg) {
