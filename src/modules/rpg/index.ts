@@ -1733,8 +1733,8 @@ export default class extends Module {
 						data.escape = 0;
 						// 敗北で能力上昇ボーナス
 						bonus += Math.floor(2 * (1 + (skillEffects.loseBonus ?? 0)));
-						data.atk = (data.atk ?? 0) + bonus;
-						data.def = (data.def ?? 0) + bonus;
+						//data.atk = (data.atk ?? 0) + bonus;
+						//data.def = (data.def ?? 0) + bonus;
 					}
 					// 食いしばり成功率を上げる
 					data.endure = (data.endure ?? 0) + 1;
@@ -1778,6 +1778,12 @@ export default class extends Module {
 		}
 
 		if (totalUp > (data.maxStatusUp ?? 7)) data.maxStatusUp = totalUp;
+
+		if (bonus) {
+			atkUp += Math.round(bonus);
+			totalUp += Math.round(bonus * 2);
+      bonus = 0;
+		}
 
 		if (skillEffects.statusBonus && skillEffects.statusBonus > 0 && data.lv % Math.max(2 / skillEffects.statusBonus, 1) === 0) {
 			const upBonus = Math.ceil(skillEffects.statusBonus / 2);
