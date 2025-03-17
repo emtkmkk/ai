@@ -1168,8 +1168,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 				const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
 				/** ダメージ */
 				let dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [count]));
-				let noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [count]));
-				let normalDmg = getEnemyDmg(_data, lv * 3.75, tp, 1, enemy.alwaysCrit ? 1 : false, enemyAtk, rng, getVal(enemy.atkx, [count]));
+				let noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, enemy.alwaysCrit ? 1 : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [count]));
+				let normalDmg = getEnemyDmg(_data, lv * 3.75, tp, 1, enemy.alwaysCrit ? 1 : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [count]));
 				let addMessage = "";
 				const rawDmg = dmg;
 				if (sevenFever) {
@@ -1241,7 +1241,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
 			/** ダメージ */
 			let dmg = getAtkDmg(data, atk, tp, 1, crit ? critDmg : false, enemyDef, enemyMaxHp, rng * dmgBonus, getVal(enemy.defx, [count])) + Math.round(trueDmg * turnDmgX);
-			let noItemDmg = getAtkDmg(data, atk - itemBonus.atk, tp, 1, crit, enemyDef, enemyMaxHp, rng * dmgBonus, getVal(enemy.defx, [count])) + Math.round(trueDmg * turnDmgX);
+			let noItemDmg = getAtkDmg(data, atk - itemBonus.atk, tp, 1, crit ? critDmg : false, enemyDef, enemyMaxHp, rng * dmgBonus, getVal(enemy.defx, [count])) + Math.round(trueDmg * turnDmgX);
 			if (sevenFever) {
 				const num = 7 * Math.max(Math.ceil((skillEffects.sevenFever || 1) * turnDmgX), 1);
 				dmg = Math.ceil(dmg / num) * num;
