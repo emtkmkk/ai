@@ -635,7 +635,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
 	if (verboseLog) {
 		buff += 1;
-		message += `ステータス: \nA: ${formatNumber(atk)} \nD: ${formatNumber(def)} \nS: ${formatNumber(spd)} (${getSpdX(spd) * 100}%)\n`;
+		message += `ステータス: \nA: ${formatNumber(atk)} (x${formatNumber(atk / (lv * 3.5))})\nD: ${formatNumber(def)} (x${formatNumber(def / (lv * 3.5))})\nS: ${formatNumber(spd)} (${getSpdX(spd) * 100}%)\n`;
 	}
 
 	// 敵のステータスを計算
@@ -675,12 +675,12 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	}
 
 	if (data.raidAdjust > 0) {
-		atk = Math.round(atk * (1 / (1 + (data.raidAdjust * 0.005))));
-		def = Math.round(def * (1 / (1 + (data.raidAdjust * 0.005))));
+		atk = Math.round(atk * (1 / (1 + (data.raidAdjust * 0.0025))));
+		def = Math.round(def * (1 / (1 + (data.raidAdjust * 0.0025))));
 	}
 	if (verboseLog) {
 		buff += 1;
-		message += `連勝補正: ${displayDifference((1 / (1 + (data.raidAdjust * 0.005))))} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
+		message += `連勝補正: ${displayDifference((1 / (1 + (data.raidAdjust * 0.0025))))} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
 	}
 
 	/** 敵の最大HP */
@@ -754,7 +754,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			spd = spd + up;
 			if (verboseLog) {
 				buff += 1;
-				message += `覚醒: Spd+${up} (${formatNumber(spd)})\n`;
+				message += `覚醒: Spd+${up} (${formatNumber(spd)} (${getSpdX(spd) * 100}%))\n`;
 			}
 		}
 		if (aggregateTokensEffects(data).redMode) {
@@ -780,7 +780,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`行動回数+${up}！\nダメージカット+10%！\n${customStr}`) + `\n`;
 			if (verboseLog) {
 				buff += 1;
-				message += `覚醒: Spd+${up} DDmg-10%\n(${formatNumber(spd)} / ${formatNumber(skillEffects.defDmgUp * 100)}%)\n`;
+				message += `覚醒: Spd+${up} DDmg-10%\n(${formatNumber(spd)} (${getSpdX(spd) * 100}%) / ${formatNumber(skillEffects.defDmgUp * 100)}%)\n`;
 			}
 		} else if (aggregateTokensEffects(data).greenMode) {
 			skillEffects.itemEquip = ((1 + (skillEffects.itemEquip ?? 0)) * 1.15) - 1;
@@ -857,7 +857,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		spd = spd + spdUp;
 		if (verboseLog) {
 			buff += 1;
-			message += `風戦闘: S+${spdUp} (${formatNumber(spd)})\n`;
+			message += `風戦闘: S+${spdUp} (${formatNumber(spd)} (${getSpdX(spd) * 100}%))\n`;
 		}
 	} else if (!(isBattle && isPhysical)) {
 		// 非戦闘時は速度は上がらないが、パワーに還元される
@@ -916,7 +916,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	if (enemyDef < enemyMinDef) enemyDef = enemyMinDef;
 	if (verboseLog) {
 		buff += 1;
-		message += `貫スキル効果: -${formatNumber(Math.min(downDef, maxDownDef) / lv * 3.5)}  (${formatNumber(enemyDef / (lv * 3.5))})\n`;
+		message += `貫スキル効果: -x${formatNumber(Math.min(downDef, maxDownDef) / lv * 3.5)} (x${formatNumber(enemyDef / (lv * 3.5))})\n`;
 	}
 
 	// バフが1つでも付与された場合、改行を追加する
@@ -985,7 +985,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		itemBonus = { atk: 0, def: 0 };
 
 		if (verboseLog) {
-			buff += 1;			message += `ターン開始時ステータス:\nA: ${formatNumber(atk)} \nD: ${formatNumber(def)} \nS: ${formatNumber(spd)} (${getSpdX(spd) * 100}%)\nHP%: ${formatNumber(playerHpPercent * 100)}%\nターン開始時敵ステータス:\nA: x${formatNumber(enemyAtk / (lv * 3.5))}\nD: x${formatNumber(enemyDef / (lv * 3.5))} \nHP%: ${
+			buff += 1;
+			message += `ターン開始時ステータス:\nA: ${formatNumber(atk)}  (x${formatNumber(atk / (lv * 3.5))})\nD: ${formatNumber(def)}  (x${formatNumber(def / (lv * 3.5))})\nS: ${formatNumber(spd)} (${getSpdX(spd) * 100}%)\nHP%: ${formatNumber(playerHpPercent * 100)}%\nターン開始時敵ステータス:\nA: x${formatNumber(enemyAtk / (lv * 3.5))}\nD: x${formatNumber(enemyDef / (lv * 3.5))} \nHP%: ${
 formatNumber(enemyHpPercent * 100)}%\n`;
 		}
 
@@ -1043,7 +1044,7 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 			if (enemyDef < enemyMinDef) enemyDef = enemyMinDef;
 			if (verboseLog) {
 				buff += 1;
-				message += `毒スキル効果: EA-${displayDifference(1 - weakX)} (x${formatNumber(enemyAtk / (lv * 3.5))} / x${formatNumber(enemyDef / (lv * 3.5))})\n`;
+				message += `毒スキル効果: ${displayDifference(1 - weakX)} (x${formatNumber(enemyAtk / (lv * 3.5))} / x${formatNumber(enemyDef / (lv * 3.5))})\n`;
 			}
 		}
 
@@ -1469,7 +1470,7 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 			if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`;
 			const turnDmgX = (i < 2 ? 1 : i < 3 ? 0.5 : i < 4 ? 0.25 : 0.125);
 			const dmgBonus = ((Math.max(1 + (skillEffects.atkDmgUp ?? 0) * dmgUp, atkMinusMin)) * turnDmgX) + (skillEffects.thunder ? (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 0);
-			if (verboseLog && (dmgBonus < 0.99 || dmgBonus > 1.01)) {
+			if (verboseLog && (dmgBonus < 0.999 || dmgBonus > 1.001)) {
 				buff += 1;
 				message += `ボーナス: A${displayDifference(dmgBonus)}\n`;
 			}
