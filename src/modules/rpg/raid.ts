@@ -1638,8 +1638,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			playerHp += heal;
 			if (verboseLog) {
 				buff += 1;
-				message += `勢スキル状態: ${Math.floor(totalResistDmg)} / 1200\n`;
-				message += `勢スキル効果: HP+${formatNumber(heal)}\n`;
+				message += `\n\n勢スキル状態: ${Math.floor(totalResistDmg)} / 1200\n`;
+				message += `\n勢スキル効果: HP+${formatNumber(heal)}\n`;
 			}
 		}
 		const enemySAtk = Math.max((_enemyAtk / (lv * 3.5)) * (getVal(enemy.atkx, [6]) ?? 3), 0.01);
@@ -1659,7 +1659,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		}
 		if (verboseLog) {
 			buff += 1;
-			message += `ラストアタック: HP${Math.floor(playerHp / playerMaxHp * 100)}% / 最大${(enemy.maxLastDmg ? Math.min(lastDmg, enemy.maxLastDmg) : lastDmg)}\n`;
+			message += `\nラストアタック: HP${Math.floor(playerHp / playerMaxHp * 100)}% / 最大${(enemy.maxLastDmg ? Math.min(lastDmg, enemy.maxLastDmg) : lastDmg)}\n`;
 		}
 		message += "\n\n" + serifs.rpg.finalAttack(dmg) + `\n\n` + serifs.rpg.timeUp(enemy.name, (playerMaxHp)) + "\n\n" + enemy.losemsg;
 		totalDmg += dmg;
@@ -1669,7 +1669,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		message += "\n\n" + serifs.rpg.skill.charge;
 		if (verboseLog) {
 			buff += 1;
-			message += `現在のチャージ: ${Math.round(data.charge * 100)}\n`;
+			message += `\n現在のチャージ: ${Math.round(data.charge * 100)}\n`;
 		}
 	} else if (data.charge < 0) {
 		data.charge = 0;
