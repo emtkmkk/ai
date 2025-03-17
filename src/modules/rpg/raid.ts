@@ -918,7 +918,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	const downDef = Math.max(atk * arpenX, enemyDef * arpenX);
 	enemyDef -= downDef;
 	if (enemyDef < enemyMinDef) enemyDef = enemyMinDef;
-	if (verboseLog) {
+	if (verboseLog && Math.min(downDef, maxDownDef) > 3.5) {
 		buff += 1;
 		message += `貫スキル効果: -x${formatNumber(Math.min(downDef, maxDownDef) / (lv * 3.5))} (x${formatNumber(enemyDef / (lv * 3.5))})\n`;
 	}
@@ -1507,9 +1507,10 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 			if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`;
 			const turnDmgX = (i < 2 ? 1 : i < 3 ? 0.5 : i < 4 ? 0.25 : 0.125);
 			const dmgBonus = ((Math.max(1 + (skillEffects.atkDmgUp ?? 0) * dmgUp, atkMinusMin)) * turnDmgX) + (skillEffects.thunder ? (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 0);
-			if (verboseLog && (dmgBonus < 0.999 || dmgBonus > 1.001)) {
+			const rawDmgBonus = dmgBonus / turnDmgX;
+			if (verboseLog && (rawDmgBonus < 0.999 || rawDmgBonus > 1.001)) {
 				buff += 1;
-				message += `合計与ダメージ: ${displayDifference(dmgBonus)}\n`;
+				message += `合計与ダメージ: ${displayDifference(rawDmgBonus)}\n`;
 			}
 			//** クリティカルかどうか */
 			let crit = Math.random() < Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0) + critUp), 0) + (skillEffects.critUpFixed ?? 0);
@@ -1640,7 +1641,7 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 				}
 				// HPが0で食いしばりが可能な場合、食いしばる
 				const endure = (0.1 + (endureCount * 0.1)) - (count * 0.05);
-				if (verboseLog && playerHp <= 0 && !enemy.notEndure) {
+				if (verboseLog && playerHp <= 0 && !enemy.notEndure && endure > 0) {
 					buff += 1;
 					message += `食いしばり率: ${formatNumber(endure * 100)}%\n`;
 				}
@@ -1651,7 +1652,7 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 				}
 				if (verboseLog && skillEffects.escape && actionX + 1 < plusActionX && playerHp <= 0 && !enemy.notEndure) {
 					buff += 1;
-					message += `逃スキル情報: HPが0 ~ ${Math.ceil((playerMaxHp) * (skillEffects.escape / -16))}で発動 (現在HP: ${Math.floor(playerHp)})\n`;
+					message += `逃スキル: HPが0 ~ ${Math.ceil((playerMaxHp) * (skillEffects.escape / -16))}で発動\n(現在HP: ${Math.floor(playerHp)})\n`;
 				}
 				if (skillEffects.escape && actionX + 1 < plusActionX && playerHp <= 0 && playerHp >= (playerMaxHp) * (skillEffects.escape / -16) && !enemy.notEndure) {
 					message += "やられそうになったので、\n一旦距離を取り、1ターン分回復に徹した！\n";
@@ -1720,7 +1721,7 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 			buff += 1;
 			message += `\nラストアタック: HP${Math.floor(playerHp / playerMaxHp * 100)}% / 最大${(enemy.maxLastDmg ? Math.min(lastDmg, enemy.maxLastDmg) : lastDmg)}`;
 		}
-		message += "\n\n" + serifs.rpg.finalAttack(dmg) + `\n\n` + serifs.rpg.timeUp(enemy.name, (playerMaxHp)) + "\n\n" + enemy.losemsg;
+		message += "\n\n" + serifs.rpg.finalAttack(dmg) + `\n\n` + (isTired ? serifs.rpg.timeUp2 : serifs.rpg.timeUp(enemy.name, (playerMaxHp))) + "\n\n" + enemy.losemsg;
 		totalDmg += dmg;
 	}
 

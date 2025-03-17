@@ -450,6 +450,7 @@ export default {
 		finish2: (enemyName, score) => `${enemyName}コンテストへの参加ありがとうございます！\n参加賞としてみなさんに${config.rpgCoinName}を${score}枚プレゼントします！\n「RPG ショップ」で買い物してくださいね！\nまたお願いします！`,
 		finalAttack: (dmg) => `${config.rpgHeroName}の全力の一撃！\n${dmg}ポイントのダメージを与えた！`,
 		timeUp: (enemyName, maxHp) => `${enemyName}の最後の一撃！\n${config.rpgHeroName}は${"9".repeat(String(maxHp).length)}ポイントのダメージ！`,
+		timeUp2: `${config.rpgHeroName}は全力を出してヘトヘトだ！`,
 		totalDmg: (dmg) => `合計 ${dmg.toLocaleString()} ダメージを与えた！`,
 		hiScore: (old: number, dmg: number) => `自己ベスト更新！\n${old.toLocaleString()} -> **${dmg.toLocaleString()}**`,
 		GlobalHiScore: (old: number, date, dmg: number) => `ベストダメージ更新！\n${old.toLocaleString()}(${date}) -> **${dmg.toLocaleString()}**`,
