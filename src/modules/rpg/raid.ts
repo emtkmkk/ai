@@ -1522,6 +1522,10 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			} else if (!(isBattle && isPhysical && !isTired)) {
 				// 非戦闘時は氷の効果はないが、防御に還元される
 				def = def * (1 + (skillEffects.ice ?? 0));
+				if (verboseLog) {
+					buff += 1;
+					message += `氷非戦闘: D${displayDifference((1 + (skillEffects.ice ?? 0)))} (${formatNumber(def)})\n`;
+				}
 			}
 			// 光属性剣攻撃
 			if ((isBattle && isPhysical && !isTired) && Math.random() < (skillEffects.light ?? 0)) {
@@ -1530,6 +1534,10 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			} else if (!(isBattle && isPhysical && !isTired)) {
 				// 非戦闘時は光の効果はないが、防御に還元される
 				def = def * (1 + (skillEffects.light ?? 0) * 0.5);
+				if (verboseLog) {
+					buff += 1;
+					message += `光非戦闘: D${displayDifference((1 + (skillEffects.light ?? 0) * 0.5))} (${formatNumber(def)})\n`;
+				}
 			}
 			// 闇属性剣攻撃
 			if (enemy.spd && enemy.spd >= 2 && Math.random() < (skillEffects.dark ?? 0) * 2) {
@@ -1542,6 +1550,10 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			} else if (!(isBattle && isPhysical)) {
 				// 非戦闘時は闇の効果はないが、防御に還元される
 				def = def * (1 + (skillEffects.dark ?? 0) * 0.3);
+				if (verboseLog) {
+					buff += 1;
+					message += `闇非戦闘: D${displayDifference((1 + (skillEffects.dark ?? 0) * 0.3))} (${formatNumber(def)})\n`;
+				}
 			}
 			// 敵のターンが既に終了していない場合
 			/** 受けた最大ダメージ */
