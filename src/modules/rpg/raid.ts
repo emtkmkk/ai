@@ -2028,7 +2028,7 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 			}
 		}
 		//** クリティカルかどうか */
-			let crit = dmg >= 2000;
+		let crit = dmg >= 2000;
 		// メッセージの出力
 		message += "\n\n" + (crit ? `**${enemy.atkmsg(dmg)}**` : enemy.atkmsg(dmg));
 		totalDmg += dmg;
@@ -2117,6 +2117,8 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 		reaction: 'confused'
 	};
 	data.raid = true;
+	let verboseLog = false;
+	if (msg.includes(['-v'])) verboseLog = true;
 	const colorData = colors.map((x) => x.unlock(data));
 	
 	// 所持しているスキル効果を読み込み
@@ -2181,6 +2183,11 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 
 	// 所持しているスキル１つ度に、器用さ＋３
 	dex += (data.skills?.length ?? 0) * 3;
+
+	if (verboseLog) {
+		buff += 1;
+		message += `基本器用さ: ${dex}\n`;
+	}
 	
 	if ((data.hatogurumaExp ?? 0) > 1) {
 		buff += 1;
@@ -2332,7 +2339,12 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	// バフが1つでも付与された場合、改行を追加する
 	if (buff > 0) message += "\n";
 
-  if (dex < 3) dex = 3;
+	if (dex < 3) dex = 3;
+	if (fix > 0.75) fix = 0.75;
+
+	if (verboseLog && buff > 0) {
+		message += `器用さ: ${dex} 仕上げ: ${fix * 100}\n\n`;
+	}
 	
   let plus = 0.1;
   let life = dex < 100 ? 15 / (100/dex) : 15;
@@ -2349,8 +2361,6 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 		life -= 1;
 	}
   }
-
-  	if (fix > 0.75) fix = 0.75;
 
 	const score = (dex / 4) * plus * (0.97 + (Math.random() * 0.06));
 
