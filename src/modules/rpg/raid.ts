@@ -676,13 +676,13 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		message += `調子補正: ${displayDifference((0.75 + bonusX))} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
 	}
 
-	if (data.raidAdjust > 0) {
+	if (data.raidAdjust > 0 && Math.random() < 0.9) {
 		atk = Math.round(atk * (1 / (1 + (data.raidAdjust * 0.002))));
 		def = Math.round(def * (1 / (1 + (data.raidAdjust * 0.002))));
-	}
-	if (verboseLog) {
-		buff += 1;
-		message += `連勝補正: ${displayDifference((1 / (1 + (data.raidAdjust * 0.002))))} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
+		if (verboseLog) {
+			buff += 1;
+			message += `連勝補正: ${displayDifference((1 / (1 + (data.raidAdjust * 0.002))))} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
+		}
 	}
 
 	/** 敵の最大HP */
