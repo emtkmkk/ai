@@ -312,7 +312,7 @@ function finish(raid: Raid) {
 		data.coin = Math.max((data.coin ?? 0) + (score ?? 4), data.coin);
 		const winCount = sortAttackers.filter((y) => x.dmg > y.dmg).length;
 		const loseCount = sortAttackers.filter((y) => x.dmg < y.dmg).length;
-		data.raidAdjust = (data.raidAdjust ?? 0) + (winCount - loseCount);
+		data.raidAdjust = (data.raidAdjust ?? 0) + Math.round(winCount - (loseCount * 0.7));
 		friend.setPerModulesData(module_, data);
 	});
 
@@ -603,11 +603,11 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	}
 
 	const formatNumber = (num: number): string => {
-		// 1000未満の場合、少数点第1桁で四捨五入して返す
-		if (num < 1000) {
+		// 10000未満の場合、少数点第1桁で四捨五入して返す
+		if (num < 10000) {
 		  const rounded = Math.round(num * 10) / 10;
 		  return rounded.toString();
-		} else if (num < 1_000_000) {
+		} else if (num < 10_000_000) {
 			const result = num / 1000;
 			return result < 10 ? result.toFixed(1) + 'k' : Math.floor(result).toString() + 'k';
 		} else {
@@ -616,8 +616,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		}
 	};
 	const displayDifference = (num: number): string => {
-		// 0.99より大きく1.01より小さい場合は0%
-		if (num > 0.99 && num < 1.01) {
+		// 0.999より大きく1.001より小さい場合は0%
+		if (num > 0.999 && num < 1.001) {
 			return "0%";
 		}
 		
@@ -646,7 +646,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
 	if (verboseLog) {
 		buff += 1;
-		message += `敵ステータス: \nA: x${formatNumber(enemyAtk / lv * 3.5)}\nD: x${formatNumber(enemyDef / lv * 3.5)} \n`;
+		message += `敵ステータス: \nA: x${formatNumber(enemyAtk / (lv * 3.5))}\nD: x${formatNumber(enemyDef / (lv * 3.5))} \n`;
 	}
 	
 	if (skillEffects.fortuneEffect || aggregateTokensEffects(data).fortuneEffect) {
@@ -754,7 +754,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			spd = spd + up;
 			if (verboseLog) {
 				buff += 1;
-				message += `覚醒 ${data.superCount}回目: Spd+${up} (${formatNumber(spd)})`;
+				message += `覚醒: Spd+${up} (${formatNumber(spd)})\n`;
 			}
 		}
 		if (aggregateTokensEffects(data).redMode) {
@@ -764,14 +764,14 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			data.superCount = (data.superCount ?? 0) + 1;
 			if (verboseLog) {
 				buff += 1;
-				message += `覚醒 ${data.superCount}回目: FCrit+8% CritDmg+35%\n(${formatNumber(skillEffects.critUpFixed * 100)}% / ${formatNumber(skillEffects.atkDmgUp * 100)}%)`;
+				message += `覚醒: FCrit+8% CritDmg+35%\n(${formatNumber(skillEffects.critUpFixed * 100)}% / ${formatNumber(skillEffects.atkDmgUp * 100)}%)`;
 			}
 		} else if (aggregateTokensEffects(data).blueMode) {
 			skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.2
 			if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`ダメージカット+20%！\n${customStr}`) + `\n`;
 			if (verboseLog) {
 				buff += 1;
-				message += `覚醒 ${data.superCount}回目: DDmg-20% (${formatNumber(skillEffects.defDmgUp * 100)}%)`;
+				message += `覚醒: DDmg-20% (${formatNumber(skillEffects.defDmgUp * 100)}%)\n`;
 			}
 		} else if (aggregateTokensEffects(data).yellowMode) {
 			const up = Math.max(spd + 1, Math.round(getSpd(getSpdX(spd) * 1.1))) - spd;
@@ -780,7 +780,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`行動回数+${up}！\nダメージカット+10%！\n${customStr}`) + `\n`;
 			if (verboseLog) {
 				buff += 1;
-				message += `覚醒 ${data.superCount}回目: Spd+${up} DDmg-10%\n(${formatNumber(spd)} / ${formatNumber(skillEffects.defDmgUp * 100)}%)`;
+				message += `覚醒: Spd+${up} DDmg-10%\n(${formatNumber(spd)} / ${formatNumber(skillEffects.defDmgUp * 100)}%)\n`;
 			}
 		} else if (aggregateTokensEffects(data).greenMode) {
 			skillEffects.itemEquip = ((1 + (skillEffects.itemEquip ?? 0)) * 1.15) - 1;
@@ -790,7 +790,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`全アイテム効果+15%！\n${customStr}`) + `\n`;
 			if (verboseLog) {
 				buff += 1;
-				message += `覚醒 ${data.superCount}回目: Item+15%\n(${formatNumber(skillEffects.itemEquip * 100)}% / ${formatNumber(skillEffects.itemBoost * 100)}% / ${formatNumber(skillEffects.mindMinusAvoid * 100)}% / ${formatNumber(skillEffects.poisonAvoid * 100)}%)`;
+				message += `覚醒: Item+15%\n(${formatNumber(skillEffects.itemEquip * 100)}% / ${formatNumber(skillEffects.itemBoost * 100)}% / ${formatNumber(skillEffects.mindMinusAvoid * 100)}% / ${formatNumber(skillEffects.poisonAvoid * 100)}%)\n`;
 			}
 		}
 	}
@@ -840,7 +840,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		def = Math.ceil(def * (1 + (bonus / 100)) / 7) * 7;
 		if (verboseLog) {
 			buff += 1;
-			message += `７スキル効果: AD${displayDifference((1 + (bonus / 100)) / 7)} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
+			message += `７スキル効果: AD${displayDifference((1 + (bonus / 100)))} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
 		}
 	}
 
@@ -916,7 +916,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	if (enemyDef < enemyMinDef) enemyDef = enemyMinDef;
 	if (verboseLog) {
 		buff += 1;
-		message += `貫スキル効果: -${formatNumber(Math.min(downDef, maxDownDef) / lv * 3.5)}  (${formatNumber(enemyDef / lv * 3.5)})\n`;
+		message += `貫スキル効果: -${formatNumber(Math.min(downDef, maxDownDef) / lv * 3.5)}  (${formatNumber(enemyDef / (lv * 3.5))})\n`;
 	}
 
 	// バフが1つでも付与された場合、改行を追加する
@@ -985,8 +985,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		itemBonus = { atk: 0, def: 0 };
 
 		if (verboseLog) {
-			buff += 1;
-			message += `ターン開始時ステータス:\nA: ${formatNumber(atk)} \nD: ${formatNumber(def)} \nS: ${formatNumber(spd)} (${getSpdX(spd) * 100}%)\nHP%: ${formatNumber(playerHpPercent * 100)}%\nターン開始時敵ステータス:\nA: x${formatNumber(enemyAtk / lv * 3.5)}\nD: x${formatNumber(enemyDef / lv * 3.5)} \nHP%: ${formatNumber(enemyHpPercent * 100)}%\n`;
+			buff += 1;			message += `ターン開始時ステータス:\nA: ${formatNumber(atk)} \nD: ${formatNumber(def)} \nS: ${formatNumber(spd)} (${getSpdX(spd) * 100}%)\nHP%: ${formatNumber(playerHpPercent * 100)}%\nターン開始時敵ステータス:\nA: x${formatNumber(enemyAtk / (lv * 3.5))}\nD: x${formatNumber(enemyDef / (lv * 3.5))} \nHP%: ${
+formatNumber(enemyHpPercent * 100)}%\n`;
 		}
 
 		if (skillEffects.slowStart) {
@@ -1043,7 +1043,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			if (enemyDef < enemyMinDef) enemyDef = enemyMinDef;
 			if (verboseLog) {
 				buff += 1;
-				message += `毒スキル効果: ${displayDifference(weakX)} (x${formatNumber(enemyAtk / lv * 3.5)} / x${formatNumber(enemyDef / lv * 3.5)})\n`;
+				message += `毒スキル効果: EA-${displayDifference(1 - weakX)} (x${formatNumber(enemyAtk / (lv * 3.5))} / x${formatNumber(enemyDef / (lv * 3.5))})\n`;
 			}
 		}
 
