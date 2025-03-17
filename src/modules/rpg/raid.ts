@@ -705,6 +705,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	let enemyHpPercent = 1;
 	/** 使用したアイテム */
 	let item;
+	/** 使用したアイテム2 */
+	let item2;
 	/** アイテムによって増加したステータス */
 	let itemBonus = { atk: 0, def: 0 };
 
@@ -979,6 +981,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		}
 
 		item = undefined;
+		item2 = undefined;
 		atk = _atk;
 		def = _def;
 		spd = _spd;
@@ -1087,6 +1090,10 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 			buff += 1;
 			message += `アイテム装備率: ${Math.round(Math.min(itemEquip * (1 + (skillEffects.itemEquip ?? 0)), 1) * 100)}%\n`;
 		}
+		if (verboseLog && count === 1 && skillEffects.firstTurnDoubleItem) {
+			buff += 1;
+			message += `アイテム二刀流率: ${Math.round(Math.min(itemEquip * (1 + (skillEffects.itemEquip ?? 0)), 1) * 100)}%\n`;
+		}
 		if (rpgItems.length && ((count === 1 && skillEffects.firstTurnItem) || Math.random() < itemEquip * (1 + (skillEffects.itemEquip ?? 0)))) {
 			//アイテム
 			buff += 1;
@@ -1103,7 +1110,7 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 				for (let i = 0; i < (skillEffects.armorSelect ?? 0); i++) {
 					types.push("armor");
 				}
-				if ((count !== 1 || enemy.pLToR) && !skillEffects.lowHpFood && playerHpPercent < 0.99) {
+				if ((count !== 1 || enemy.pLToR) && !skillEffects.lowHpFood && playerHpPercent < 0.95) {
 					types.push("medicine");
 					types.push("poison");
 					for (let i = 0; i < (skillEffects.foodSelect ?? 0); i++) {
@@ -1111,7 +1118,7 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 						types.push("poison");
 					}
 				}
-				if ((count !== 1 || enemy.pLToR) && skillEffects.lowHpFood && Math.random() < skillEffects.lowHpFood * playerHpPercent) {
+				if ((count !== 1 || enemy.pLToR) && skillEffects.lowHpFood && playerHpPercent < 0.95 && Math.random() < skillEffects.lowHpFood * playerHpPercent) {
 					if (skillEffects.lowHpFood && playerHpPercent < 0.5) message += serifs.rpg.skill.lowHpFood;
 					types = ["medicine", "poison"];
 					if (Math.random() < skillEffects.lowHpFood * playerHpPercent) types = ["medicine"];
@@ -1128,7 +1135,25 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 					const items = rpgItems.filter((x) => x.type === type && x.effect > 0 && (count !== 1 || !skillEffects.firstTurnItemChoice || x.effect >= (skillEffects.firstTurnItemChoice * 100)));
 					item = { ...items[Math.floor(Math.random() * items.length)] };
 				}
+				if (count === 1 && skillEffects.firstTurnDoubleItem && Math.random() < itemEquip * (1 + (skillEffects.itemEquip ?? 0))) {
+					if ((type === "weapon" && !(isBattle && isPhysical)) || (type === "armor" && isTired) || enemy.pLToR) {
+						let isPlus = Math.random() < (0.5 + (skillEffects.mindMinusAvoid ?? 0) + (count === 1 ? skillEffects.firstTurnMindMinusAvoid ?? 0 : 0));
+						const items = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind < 0));
+						item2 = { ...items[Math.floor(Math.random() * items.length)] };
+					} else {
+						const items = rpgItems.filter((x) => x.type === type && x.effect > 0);
+						item2 = { ...items[Math.floor(Math.random() * items.length)] };
+					}
+					item.effect = item.effect + item2.effect;
+					item.mind = item.mind + item2.mind;
+					if (item.name === item2.name) {
+						item.effect = item.effect + item2.effect;
+						item.mind = item.mind + item2.mind;
+					}
+				}
 			}
+			const rawEffect = item.effect;
+			const rawMind = item.mind;
 			const mindMsg = (mind) => {
 				if (mind >= 100) {
 					message += `${config.rpgHeroName}の気合が特大アップ！\n`;
@@ -1148,8 +1173,6 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 					message += `アイテム効果: ${Math.round(item.mind)}%${rawMind != item.mind ? ` (${displayDifference(item.mind / rawMind)})` : ""} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
 				}
 			};
-			const rawEffect = item.effect;
-			const rawMind = item.mind;
 			if (item.type !== "poison") {
 				item.effect = Math.round(item.effect * (1 + (skillEffects.itemBoost ?? 0)));
 				if (item.type === "weapon") item.effect = Math.round(item.effect * (1 + (skillEffects.weaponBoost ?? 0)));
@@ -1168,6 +1191,9 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 			switch (item.type) {
 				case "weapon":
 					message += `${item.name}を取り出し、装備した！\n`;
+					if (item2?.name) {
+						message += `さらに、${item2.name}を取り出し、装備した！\n`;
+					}
 					if (!(isBattle && isPhysical)) {
 						mindMsg(item.mind);
 						if (item.mind < 0 && isSuper) item.mind = item.mind / 2;
@@ -1195,6 +1221,9 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 					break;
 				case "armor":
 					message += `${item.name}を取り出し、装備した！\n`;
+					if (item2?.name) {
+						message += `さらに、${item2.name}を取り出し、装備した！\n`;
+					}
 					if (isTired) {
 						mindMsg(item.mind);
 						if (item.mind < 0 && isSuper) item.mind = item.mind / 2;
@@ -1224,7 +1253,7 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 					message += `${item.name}を取り出し、食べた！\n`;
 					if (enemy.pLToR) {
 						mindMsg(item.mind);
-						if (item.mind < 0 && isSuper && !aggregateTokensEffects(data).redMode) item.mind = item.mind / 2;
+						if (item.mind < 0 && isSuper) item.mind = item.mind / 2;
 						itemBonus.atk = atk * (item.mind * 0.0025);
 						itemBonus.def = def * (item.mind * 0.0025);
 						atk = atk + itemBonus.atk;
@@ -1262,13 +1291,13 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 					message += `${item.name}を取り出し、食べた！\n`;
 					if (enemy.pLToR) {
 						mindMsg(item.mind);
-						if (item.mind < 0 && isSuper && !aggregateTokensEffects(data).redMode) item.mind = item.mind / 2;
+						if (item.mind < 0 && isSuper) item.mind = item.mind / 2;
 						itemBonus.atk = atk * (item.mind * 0.0025);
 						itemBonus.def = def * (item.mind * 0.0025);
 						atk = atk + itemBonus.atk;
 						def = def + itemBonus.def;
 					} else {
-						const dmg = Math.round(playerHp * (item.effect * 0.003) * (isSuper ? 0.5 : 1));
+						const dmg = Math.round(playerHp * (item.effect * 0.003) * (isSuper && !aggregateTokensEffects(data).redMode ? 0.5 : 1));
 						playerHp -= dmg;
 						if (item.effect >= 70 && dmg > 0) {
 							message += `${config.rpgHeroName}はかなり調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`;
@@ -1480,7 +1509,7 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 			const dmgBonus = ((Math.max(1 + (skillEffects.atkDmgUp ?? 0) * dmgUp, atkMinusMin)) * turnDmgX) + (skillEffects.thunder ? (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 0);
 			if (verboseLog && (dmgBonus < 0.999 || dmgBonus > 1.001)) {
 				buff += 1;
-				message += `ボーナス: A${displayDifference(dmgBonus)}\n`;
+				message += `与ダメージ: ${displayDifference(dmgBonus)}\n`;
 			}
 			//** クリティカルかどうか */
 			let crit = Math.random() < Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0) + critUp), 0) + (skillEffects.critUpFixed ?? 0);
