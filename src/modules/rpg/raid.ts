@@ -1424,7 +1424,7 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 				const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
 				if (verboseLog && (defDmgX < 0.999 || defDmgX > 1.001)) {
 					buff += 1;
-					message += `D: ${formatNumber(def)} (x${formatNumber(def / (lv * 3.5))})`;
+					message += `D: ${formatNumber(def)} (x${formatNumber(def / (lv * 3.5))})\n`;
 					message += `合計被ダメージ: ${displayDifference(defDmgX)}\n`;
 				}
 				/** ダメージ */
@@ -1496,7 +1496,7 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 
 		if (verboseLog) {
 			buff += 1;
-			message += `A: ${formatNumber(atk)} (x${formatNumber(atk / (lv * 3.5))})`;
+			message += `A: ${formatNumber(atk)} (x${formatNumber(atk / (lv * 3.5))})\n`;
 			message += `クリ率: ${formatNumber((Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0) + critUp), 0) + (skillEffects.critUpFixed ?? 0)) * 100)}%\n`;
 		}
 
@@ -1606,7 +1606,7 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 					const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
 					if (verboseLog && (defDmgX < 0.999 || defDmgX > 1.001)) {
 						buff += 1;
-						message += `D: ${formatNumber(def)} (x${formatNumber(def / (lv * 3.5))})`;
+						message += `D: ${formatNumber(def)} (x${formatNumber(def / (lv * 3.5))})\n`;
 						message += `合計被ダメージ: ${displayDifference(defDmgX)}\n`;
 					}
 					/** ダメージ */
