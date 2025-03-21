@@ -341,7 +341,7 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
 
 	const _data = msg.friend.getPerModulesData(module_);
 	if (!_data.lv) {
-		msg.reply("RPGモードを先に1回プレイしてください！");
+		msg.reply(`レイドボスへの参加表明ありがとうございます！\nレイドボスに参加するには、通常のRPGモードを先に1回プレイする必要があります！（私にRPGと話しかけてください！）\nその後にもう一度先ほどの投稿に対して話しかけていただければ、レイドボスに参加できます！`);
 		return {
 			reaction: 'hmm'
 		};
@@ -603,7 +603,10 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	}
 
 	const formatNumber = (num: number): string => {
-		if (num < 1000) {
+		if (num > 0 && num < 0.05) {
+			const rounded = Math.round(num * 100) / 100;
+			return rounded.toString();
+		} else if (num < 1000) {
 			const rounded = Math.round(num * 10) / 10;
 			return rounded.toString();
 		} else if (num < 10000) {
