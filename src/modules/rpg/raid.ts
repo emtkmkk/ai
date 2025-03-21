@@ -688,6 +688,131 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		}
 	}
 
+	// 魔法処理の為の関数
+	const checkMagic = (phase, argTriggerData = {} as any) => {
+		if (!data?.magic) return;
+		
+		const triggerData = {
+			atk,
+			def,
+			spd,
+			eAtk: enemyAtk,
+			eDef: enemyDef,
+			hp: playerHp,
+			hpp: playerHpPercent,
+			debuff: enemy?.fire,
+			predictedDmg: (argTriggerData?.predictedDmg) ?? 0,
+		};
+	
+		const useMagics = data.magic.filter((m) => m.phase === phase && (m.trigger(triggerData) || Math.random() < 0.08));
+	
+		for (const magic of useMagics) {
+			message += `「${magic.name}」の魔法を唱えた！\n`;
+			if (verboseLog) {
+				message += `　効果詳細:\n`;
+			}
+	
+			for (const effect in magic.effect) {
+				const val = magic.effect[effect];
+	
+				switch (effect) {
+					case "trueDmg":
+						if (verboseLog) {
+							message += `　　貫通ダメージ: ${val}\n`;
+						}
+						message += enemy.atkmsg(val) + "\n";
+						totalDmg += val;
+						break;
+					case "eAtkX":
+						if (verboseLog) {
+							message += `　　敵攻撃補正: ${val}\n`;
+						}
+						enemyAtk *= val;
+						break;
+					case "freeze":
+						if (verboseLog) {
+							message += `　　凍結率: ${val}\n`;
+						}
+						enemyTurnFinished = true;
+						break;
+					case "eDmgX":
+						if (verboseLog) {
+							message += `　　敵攻撃補正: ${val}\n`;
+						}
+						enemyAtkX *= val;
+						break;
+					case "dmg":
+						const dmg = getAtkDmg(data, val, tp, 1, false, enemyDef, enemyMaxHp, 1, getVal(enemy.defx, [count]));
+						message += enemy.atkmsg(dmg) + "\n";
+						totalDmg += dmg;
+						break;
+					case "spd":
+						if (verboseLog) {
+							message += `　　速度増加: ${val}\n`;
+						}
+						spd += val;
+						break;
+					case "turnPlus":
+						if (verboseLog) {
+							message += `　　ターン増加: ${val}\n`;
+						}
+						plusActionX += val;
+						break;
+					case "fixedCrit":
+						if (verboseLog) {
+							message += `　　クリティカル増加: ${val}\n`;
+						}
+						skillEffects.critUpFixed = (skillEffects.critUpFixed ?? 0) + val;
+						break;
+					case "cleanse":
+						if (verboseLog) {
+							message += `　　デバフ解除\n`;
+						}
+						enemy.fire = 0;
+						break;
+					case "itemGet":
+						if (verboseLog) {
+							message += `　　アイテム確定\n`;
+						}
+						itemBoost = val;
+						break;
+					case "minEffect":
+						if (verboseLog) {
+							message += `　　最低効果量: ${val}\n`;
+						}
+						itemMinEffect = val;
+						break;
+					case "atkUp":
+						if (verboseLog) {
+							message += `　　パワーアップ: ${val}\n`;
+						}
+						atk *= (1 + val);
+						break;
+					case "defUp":
+						if (verboseLog) {
+							message += `　　防御アップ: ${val}\n`;
+						}
+						def *= (1 + val);
+						break;
+					case "heal":
+						if (verboseLog) {
+							message += `　　回復: ${val}\n`;
+						}
+						playerHp += Math.min(Math.round(playerMaxHp * val), playerMaxHp - playerHp);
+						break;
+					case "barrier":
+						if (verboseLog) {
+							message += `　　バリア: ${val}\n`;
+						}
+						playerHp += Math.round(playerMaxHp * val);
+						break;
+					default:
+						console.warn(`Unknown effect: ${effect}`);
+				}
+			}
+		}
+	};
+
 	/** 敵の最大HP */
 	let enemyMaxHp = 100000;
 	/** 敵のHP */
@@ -712,6 +837,9 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	let item2;
 	/** アイテムによって増加したステータス */
 	let itemBonus = { atk: 0, def: 0 };
+	let enemyAtkX = 1;
+	let itemBoost = 0;
+	let itemMinEffect = 0;
 
 	/** これって戦闘？ */
 	let isBattle = enemy.atkmsg(0).includes("ダメージ");
@@ -814,6 +942,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		message += serifs.rpg.warrior.get + `\n\n`;
 		mark = ":mk_warrior:";
 	}
+
+	checkMagic("Start");
 
 	if (skillEffects.heavenOrHell) {
 		if (Math.random() < 0.6) {
@@ -959,7 +1089,10 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	const _enemyAtk = enemyAtk;
 	const _enemyDef = enemyDef;
 
-	const plusActionX = 5;
+	/** 敵のターンが既に完了したかのフラグ */
+	let enemyTurnFinished = false;
+
+	let plusActionX = 5;
 
 	let totalResistDmg = 0;
 
@@ -991,12 +1124,18 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		enemyAtk = _enemyAtk;
 		enemyDef = _enemyDef;
 		itemBonus = { atk: 0, def: 0 };
+		enemyTurnFinished = false;
+		enemyAtkX = 1;
+		itemBoost = 0;
+		itemMinEffect = 0;
 
 		if (verboseLog) {
 			buff += 1;
 			message += `ターン開始時ステータス:\nA: ${formatNumber(atk)} (x${formatNumber(atk / (lv * 3.5))})\nD: ${formatNumber(def)} (x${formatNumber(def / (lv * 3.5))})\nS: ${formatNumber(spd)} (${getSpdX(spd) * 100}%)\nHP%: ${formatNumber(playerHpPercent * 100)}%\nターン開始時敵ステータス:\nA: x${formatNumber(enemyAtk / (lv * 3.5))} D: x${formatNumber(enemyDef / (lv * 3.5))} \nHP%: ${
 formatNumber(enemyHpPercent * 100)}%\n`;
 		}
+
+		checkMagic("TurnStart");
 
 		if (skillEffects.slowStart) {
 			const n = (skillEffects.slowStart ?? 0)
@@ -1088,7 +1227,7 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 			}
 		}
 
-		const itemEquip = 0.4 + ((1 - playerHpPercent) * 0.6);
+		const itemEquip = 0.4 + ((1 - playerHpPercent) * 0.6) + itemBoost;
 		if (verboseLog && !(count === 1 && skillEffects.firstTurnItem)) {
 			buff += 1;
 			message += `アイテム装備率: ${Math.round(Math.min(itemEquip * (1 + (skillEffects.itemEquip ?? 0)), 1) * 100)}%\n`;
@@ -1130,12 +1269,13 @@ formatNumber(enemyHpPercent * 100)}%\n`;
          			types = types.filter((x) => x!== "poison");
 				}
 				const type = types[Math.floor(Math.random() * types.length)];
+				const mEffect = Math.max((count !== 1 ? 0 : skillEffects.firstTurnItemChoice), itemMinEffect);
 				if ((type === "weapon" && !(isBattle && isPhysical)) || (type === "armor" && isTired) || enemy.pLToR) {
 					let isPlus = Math.random() < (0.5 + (skillEffects.mindMinusAvoid ?? 0) + (count === 1 ? skillEffects.firstTurnMindMinusAvoid ?? 0 : 0));
-					const items = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind < 0) && (count !== 1 || !skillEffects.firstTurnItemChoice || x.mind >= (skillEffects.firstTurnItemChoice * 100)));
+					const items = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind < 0) && (!mEffect || x.mind >= (mEffect * 100)));
 					item = { ...items[Math.floor(Math.random() * items.length)] };
 				} else {
-					const items = rpgItems.filter((x) => x.type === type && x.effect > 0 && (count !== 1 || !skillEffects.firstTurnItemChoice || x.effect >= (skillEffects.firstTurnItemChoice * 100)));
+					const items = rpgItems.filter((x) => x.type === type && x.effect > 0 && (!mEffect || x.effect >= (mEffect * 100)));
 					item = { ...items[Math.floor(Math.random() * items.length)] };
 				}
 				if (count === 1 && skillEffects.firstTurnDoubleItem && Math.random() < itemEquip * (1 + (skillEffects.itemEquip ?? 0))) {
@@ -1409,9 +1549,6 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 		// 予測最大ダメージは最大ダメージ制限を超えない
 		if (maxdmg && predictedDmg > maxdmg) predictedDmg = maxdmg;
 
-		/** 敵のターンが既に完了したかのフラグ */
-		let enemyTurnFinished = false;
-
 		let endureCount = 1 + (skillEffects.endureUp ?? 0) * 2;
 
 		const _data = { ...data, enemy, count };
@@ -1471,6 +1608,8 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 				}
 			}
 		}
+
+		checkMagic("Attack", {predictedDmg});
 
 		if (skillEffects.allForOne || aggregateTokensEffects(data).allForOne) {
 			const spdx = getSpdX(abort || spd);
@@ -1550,12 +1689,13 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 			}
 		}
 
+		checkMagic("AfterAttack", {predictedDmg});
+
 		// 勝利処理
 		if (enemyHp <= 0) {
 			message += "\n" + enemy.winmsg + "\n\n" + serifs.rpg.win;
 			break;
 		} else {
-			let enemyAtkX = 1;
 			// 攻撃後発動スキル効果
 			// 氷属性剣攻撃
 			if ((isBattle && isPhysical && !isTired) && Math.random() < (skillEffects.ice ?? 0)) {
@@ -1597,6 +1737,9 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 					message += `闇非戦闘: D${displayDifference((1 + (skillEffects.dark ?? 0) * 0.3))} (${formatNumber(def)})\n`;
 				}
 			}
+
+			checkMagic("Defense", {predictedDmg});
+
 			// 敵のターンが既に終了していない場合
 			/** 受けた最大ダメージ */
 			let maxDmg = 0;
@@ -1642,6 +1785,7 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 					if (dmg > maxDmg) maxDmg = dmg;
 					if (enemy.fire && count > (data.thirdFire ?? 0)) data.thirdFire = count;
 				}
+				checkMagic("AfterDefense", {predictedDmg});
 				// HPが0で食いしばりが可能な場合、食いしばる
 				const endure = (0.1 + (endureCount * 0.1)) - (count * 0.05);
 				if (verboseLog && playerHp <= 0 && !enemy.notEndure && endure > 0) {
@@ -1668,6 +1812,7 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 				}
 				if (maxDmg > (data.superMuscle ?? 0) && playerHp > 0) data.superMuscle = maxDmg;
 			}
+			checkMagic("TurnEnd", {predictedDmg});
 			// 敗北処理
 			if (playerHp <= 0) {
 				message += "\n" + enemy.losemsg;
@@ -1693,6 +1838,7 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 		totalDmg += dmg;
 		warriorTotalDmg += dmg;
 	}
+	checkMagic("End");
 	if (playerHp > 0) {
 		if (skillEffects.guardAtkUp && totalResistDmg >= 300) {
 			totalResistDmg = Math.min(totalResistDmg, 1200)
