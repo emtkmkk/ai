@@ -153,7 +153,7 @@ export const shopItems: ShopItem[] = [
 	{ name: `謎のお守り`, price: 20, desc: `すこし不思議な力を感じる……`, type: "amulet", effect: { stockRandomEffect: 1 }, durability: 1, short: "？", isUsed: (data) => data.raid, isMinusDurability: (data) => data.stockRandomCount <= 0 } as AmuletItem,
 	{ name: `虹色のお守り`, limit: (data) => data.skills?.length > 2, price: 20, desc: `曜日に関係なく、全ての属性剣が強化状態になります 耐久10 使用時耐久減少`, type: "amulet", effect: { rainbow: 1 }, durability: 10, short: "🌈", isUsed: (data) => true } as AmuletItem,
 	{ name: `わかばのお守り`, limit: (data) => data.skills?.length < 4, price: (data) => Math.max(Math.min(data.coin, 10), 1), desc: `もこチキの持っているスキルが5個より少ない場合（もこチキのレベルが低い場合）、少ないスキル1つにつき約6%分パワー・防御が上がります 特定条件でさらにパワー・防御が+12%されます 耐久20`, type: "amulet", effect: { beginner: 0.06 }, durability: 20, short: "🔰", isUsed: (data) => true } as AmuletItem,
-	{ name: `魔力のお守り`, limit: (data) => !data.items.filter((x) => x.name === "魔法のお守り").length, price: 40, desc: `持っていると魔力を溜め込めるようになる (魔力最大値+3・チャージ+2) 耐久20 使用時耐久減少`, type: "amulet", effect: { magicMax: 3, magicCharge: 2 }, durability: 20, short: "魔", isUsed: (data) => true } as AmuletItem,
+	{ name: `魔力のお守り`, limit: (data) => false && !data.items.filter((x) => x.name === "魔法のお守り").length, price: 40, desc: `持っていると魔力を溜め込めるようになる (魔力最大値+3・チャージ+2) 耐久20 使用時耐久減少`, type: "amulet", effect: { magicMax: 3, magicCharge: 2 }, durability: 20, short: "魔", isUsed: (data) => true } as AmuletItem,
 	{ name: `ダイジェストフィルム`, limit: (data) => data.lv >= 255 && !data.allClear && (data.clearHistory?.length ?? 0) - (data.clearEnemy?.length ?? 0) > 0, price: (data) => (data.clearHistory?.length ?? 0) - (data.clearEnemy?.length ?? 0) * 1, desc: `購入時、これまで倒した事のある敵全てに連勝中である事にします`, type: "item", effect: (data) => { data.clearEnemy = data.clearHistory; } },
 	{ name: `⚠時間圧縮ボタン`, limit: (data) => data.lv < 254 && data.maxLv > 254 && data.info === 3 && data.clearHistory.includes(":mk_chickenda_gtgt:"), price: lvBoostPrice, desc: `購入時、周囲の時間を圧縮！${config.rpgHeroName}がLv254に急成長します（⚠注意！戦闘を行う事なくレベルを上げる為、戦闘勝利数などの統計は一切増加しません！さらに、RPGおかわりの権利があと1回まで減少します！一度購入すると元には戻せません！）`, type: "item", effect: lvBoostEffect, always: true },
 	...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly).map((x): AmuletItem => ({ name: `${x.name}のお守り`, price: (data, rnd, ai) => skillPrice(ai, x.name, rnd), desc: `持っているとスキル「${x.name}」を使用できる${x.desc ? `（${x.desc}）` : ""} 耐久6 使用時耐久減少`, type: "amulet", effect: x.effect, durability: 6, skillName: x.name, short: x.short, isUsed: (data) => true })),
@@ -302,7 +302,7 @@ const eventAmulet = (data?) => {
 		}
 		if (dy == 1) {
 			return [
-				"闇属性剣攻撃＋",
+				Math.random() < 0.5 ? "闇属性剣攻撃＋" : "暴食の力",
 				...["粘り強い", `${serifs.rpg.status.def}アップ`, "連続・毎日ボーナス強化", `${serifs.rpg.status.pen}+10%`].sort(() => 0.5 - Math.random()).slice(0, Math.random() < 0.2 ? 3 : 2),
 			]
 		}
@@ -314,25 +314,25 @@ const eventAmulet = (data?) => {
 		}
 		if (dy == 3) {
 			return [
-				"氷属性剣攻撃＋",
+				Math.random() < 0.5 ? "氷属性剣攻撃＋" : "傲慢の力",
 				...["毒属性剣攻撃", "慎重", "負けそうなら逃げる", "敵のクリティカル性能減少"].sort(() => 0.5 - Math.random()).slice(0, Math.random() < 0.1 ? 4 : Math.random() < 0.5 ? 3 : 2),
 			]
 		}
 		if (dy == 4) {
 			return [
-				"風属性剣攻撃＋",
+				Math.random() < 0.5 ? "風属性剣攻撃＋" : `強欲の力`,
 				...["テキパキこなす", "道具大好き", "道具の扱いが上手い", "道具の選択が上手い"].sort(() => 0.5 - Math.random()).slice(0, Math.random() < 0.2 ? 3 : 2),
 			]
 		}
 		if (dy == 5) {
 			return [
-				"光属性剣攻撃＋",
+				Math.random() < 0.5 ? "光属性剣攻撃＋" : `怠惰の力`,
 				...["油断しない", "７フィーバー！", "天国か地獄か", "不運チャージ"].sort(() => 0.5 - Math.random()).slice(0, Math.random() < 0.2 ? 3 : 2),
 			]
 		}
 		if (dy == 6) {
 			return [
-				"土属性剣攻撃＋",
+				Math.random() < 0.5 ? "土属性剣攻撃＋" : `憤怒の力`,
 				...["疲れにくい", "クリティカル性能上昇", "天国か地獄か", "投稿数ボーナス量アップ"].sort(() => 0.5 - Math.random()).slice(0, Math.random() < 0.2 ? 3 : 2),
 			]
 		}

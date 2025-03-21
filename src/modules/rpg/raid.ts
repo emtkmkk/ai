@@ -679,12 +679,23 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		message += `調子補正: AD${displayDifference((0.75 + bonusX))} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
 	}
 
-	if (data.raidAdjust > 0 && Math.random() < 0.9) {
-		atk = Math.round(atk * (1 / (1 + (data.raidAdjust * 0.001))));
-		def = Math.round(def * (1 / (1 + (data.raidAdjust * 0.001))));
-		if (verboseLog) {
-			buff += 1;
-			message += `連勝補正: AD${displayDifference((1 / (1 + (data.raidAdjust * 0.001))))} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
+	if (data.raidAdjust > 0 && skillEffects.pride) {
+		if (Math.random() < 0.8) {
+			atk = Math.round(atk * (1 / (1 + (data.raidAdjust * 0.0005))));
+			def = Math.round(def * (1 / (1 + (data.raidAdjust * 0.0005))));
+			if (verboseLog) {
+				buff += 1;
+				message += `連勝補正: AD${displayDifference((1 / (1 + (data.raidAdjust * 0.0005))))} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
+			}
+		}
+	} else {
+		if (data.raidAdjust > 0 && Math.random() < 0.9) {
+			atk = Math.round(atk * (1 / (1 + (data.raidAdjust * 0.001))));
+			def = Math.round(def * (1 / (1 + (data.raidAdjust * 0.001))));
+			if (verboseLog) {
+				buff += 1;
+				message += `連勝補正: AD${displayDifference((1 / (1 + (data.raidAdjust * 0.001))))} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
+			}
 		}
 	}
 
@@ -856,6 +867,11 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	}
 
 	let totalDmg = 0;
+
+	if (skillEffects.wrath) {
+		playerHp = Math.round(playerHp / 2);
+		skillEffects.critDmgUp = (skillEffects.critDmgUp ?? 0) + 0.4;
+	}
 
 	if (aggregateTokensEffects(data).oomisoka && new Date().getMonth() === 11 && new Date().getDate() === 31) {
 		message += serifs.rpg.oomisoka + "\n";
@@ -1083,7 +1099,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		}
 	}
 
-	const _atk = atk;
+	let _atk = atk;
 	const _def = def;
 	const _spd = spd;
 	const _enemyAtk = enemyAtk;
@@ -1133,6 +1149,17 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			buff += 1;
 			message += `ターン開始時ステータス:\nA: ${formatNumber(atk)} (x${formatNumber(atk / (lv * 3.5))})\nD: ${formatNumber(def)} (x${formatNumber(def / (lv * 3.5))})\nS: ${formatNumber(spd)} (${getSpdX(spd) * 100}%)\nHP%: ${formatNumber(playerHpPercent * 100)}%\nターン開始時敵ステータス:\nA: x${formatNumber(enemyAtk / (lv * 3.5))} D: x${formatNumber(enemyDef / (lv * 3.5))} \nHP%: ${
 formatNumber(enemyHpPercent * 100)}%\n`;
+		}
+
+		let slothFlg = false;
+
+		if (skillEffects.sloth && Math.random() < 0.3) {
+			_atk *= 1.5;
+			atk = Math.ceil(atk * 0.001);
+			buff += 1;
+			message += "怠惰が発動した！このターンは力がでない！\n";
+			slothFlg = true;
+			if (verboseLog) message += `怠惰: A-99.9% (${formatNumber(atk)})\n`;
 		}
 
 		checkMagic("TurnStart");
@@ -1196,22 +1223,24 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 		}
 
 		// spdが低い場合、確率でspdが+1。
-		if (spd === 2 && Math.random() < 0.2) {
-			buff += 1;
-			message += serifs.rpg.spdUp + "\n";
-			spd = 3;
-		}
-		if (spd === 1 && Math.random() < 0.6) {
-			buff += 1;
-			message += serifs.rpg.spdUp + "\n";
-			spd = 2;
+		if (!slothFlg) {
+			if (spd === 2 && Math.random() < 0.2) {
+				buff += 1;
+				message += serifs.rpg.spdUp + "\n";
+				spd = 3;
+			}
+			if (spd === 1 && Math.random() < 0.6) {
+				buff += 1;
+				message += serifs.rpg.spdUp + "\n";
+				spd = 2;
+			}
 		}
 
 		let dmgUp = 1;
 		let critUp = 0;
 
 		// HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
-		if (!aggregateTokensEffects(data).notLastPower) {
+		if (!aggregateTokensEffects(data).notLastPower && !slothFlg) {
 			if (playerHpPercent <= (1 / 7) * (1 + (skillEffects.haisuiUp ?? 0)) && ((enemyHpPercent * (1 + (skillEffects.haisuiUp ?? 0))) - playerHpPercent) >= 0.5) {
 				buff += 1;
 				message += serifs.rpg.haisui + "\n";
@@ -1227,7 +1256,7 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 			}
 		}
 
-		const itemEquip = 0.4 + ((1 - playerHpPercent) * 0.6) + itemBoost;
+		const itemEquip = 0.4 + ((1 - playerHpPercent) * 0.6) + itemBoost + (skillEffects.greed ? 1 : 0) * (slothFlg ? 0 : 1);
 		if (verboseLog && !(count === 1 && skillEffects.firstTurnItem)) {
 			buff += 1;
 			message += `アイテム装備率: ${Math.round(Math.min(itemEquip * (1 + (skillEffects.itemEquip ?? 0)), 1) * 100)}%\n`;
@@ -1246,18 +1275,34 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 				item = { ...items[Math.floor(Math.random() * items.length)] };
 			} else {
 				let types = ["weapon", "armor"];
-				for (let i = 0; i < (skillEffects.weaponSelect ?? 0); i++) {
-					types.push("weapon");
-				}
-				for (let i = 0; i < (skillEffects.armorSelect ?? 0); i++) {
-					types.push("armor");
-				}
-				if ((count !== 1 || enemy.pLToR) && !skillEffects.lowHpFood && playerHpPercent < 0.95) {
-					types.push("medicine");
-					types.push("poison");
+				if (skillEffects.greed) {
+					types = [];
+					for (let i = 0; i < (skillEffects.weaponSelect ?? 0); i++) {
+						types.push("weapon");
+					}
+					for (let i = 0; i < (skillEffects.armorSelect ?? 0); i++) {
+						types.push("armor");
+					}
 					for (let i = 0; i < (skillEffects.foodSelect ?? 0); i++) {
 						types.push("medicine");
 						types.push("poison");
+					}
+				}
+				if (!skillEffects.greed || !types.length) {
+					types = ["weapon", "armor"];
+					for (let i = 0; i < (skillEffects.weaponSelect ?? 0); i++) {
+						types.push("weapon");
+					}
+					for (let i = 0; i < (skillEffects.armorSelect ?? 0); i++) {
+						types.push("armor");
+					}
+					if ((count !== 1 || enemy.pLToR) && !skillEffects.lowHpFood && playerHpPercent < 0.95) {
+						types.push("medicine");
+						types.push("poison");
+						for (let i = 0; i < (skillEffects.foodSelect ?? 0); i++) {
+							types.push("medicine");
+							types.push("poison");
+						}
 					}
 				}
 				if ((count !== 1 || enemy.pLToR) && skillEffects.lowHpFood && playerHpPercent < 0.95 && Math.random() < skillEffects.lowHpFood * playerHpPercent) {
@@ -1316,6 +1361,14 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 					message += `アイテム効果: ${Math.round(item.mind)}%${rawMind != item.mind ? ` (${displayDifference(item.mind / rawMind)})` : ""} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
 				}
 			};
+			if (skillEffects.greed) {
+				if (Math.random() < 0.35) {
+					item.effect = Math.round(item.effect / 2);
+					if (item.mind > 0) {
+						item.mind = Math.round(item.mind / 2);
+					}
+				}
+			}
 			if (item.type !== "poison") {
 				item.effect = Math.round(item.effect * (1 + (skillEffects.itemBoost ?? 0)));
 				if (item.type === "weapon") item.effect = Math.round(item.effect * (1 + (skillEffects.weaponBoost ?? 0)));
@@ -1429,6 +1482,12 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 							}
 						}
 					}
+					if (skillEffects.gluttony) {
+						_atk *= 1.1;
+						atk *= 1.1;
+						buff += 1;
+						if (verboseLog) message += `暴食: A+10% (${formatNumber(atk)})\n`;
+					}
 					break;
 				case "poison":
 					message += `${item.name}を取り出し、食べた！\n`;
@@ -1453,6 +1512,12 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 							buff += 1;
 							message += `アイテム効果: ${Math.round(item.effect)}%${rawEffect != item.effect ? ` (${displayDifference(item.effect / rawEffect)})` : ""}\n`;
 						}
+					}
+					if (skillEffects.gluttony) {
+						_atk *= 1.2;
+						atk *= 1.2;
+						buff += 1;
+						if (verboseLog) message += `暴食: A+20% (${formatNumber(atk)})\n`;
 					}
 					break;
 				default:
@@ -1769,6 +1834,14 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 						dmg = Math.max(dmg - sevenFever, 0);
 						if (minusDmg) addMessage += `(７フィーバー: -${minusDmg})\n`;
 						noItemDmg = Math.max(noItemDmg - sevenFever, 0);
+					}
+					if (skillEffects.pride) {
+						if (dmg <= (playerMaxHp / 10)) {
+							_atk *= 1.15;
+						}
+						if (dmg >= ((playerMaxHp / 10) * 3)) {
+							dmg *= 2;
+						}
 					}
 					playerHp -= dmg;
 					message += (crit ? `**${enemy.defmsg(dmg)}**` : enemy.defmsg(dmg)) + "\n";
