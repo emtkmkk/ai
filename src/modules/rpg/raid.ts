@@ -1256,7 +1256,7 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 			}
 		}
 
-		const itemEquip = 0.4 + ((1 - playerHpPercent) * 0.6) + itemBoost + (skillEffects.greed ? 1 : 0) * (slothFlg ? 0 : 1);
+		const itemEquip = (0.4 + ((1 - playerHpPercent) * 0.6) + itemBoost + (skillEffects.greed ? 1 : 0)) * (slothFlg ? 0 : 1);
 		if (verboseLog && !(count === 1 && skillEffects.firstTurnItem)) {
 			buff += 1;
 			message += `アイテム装備率: ${Math.round(Math.min(itemEquip * (1 + (skillEffects.itemEquip ?? 0)), 1) * 100)}%\n`;
