@@ -312,7 +312,7 @@ function finish(raid: Raid) {
 		data.coin = Math.max((data.coin ?? 0) + (score ?? 4), data.coin);
 		const winCount = sortAttackers.filter((y) => x.dmg > y.dmg).length;
 		const loseCount = sortAttackers.filter((y) => x.dmg < y.dmg).length;
-		data.raidAdjust = (data.raidAdjust ?? 0) + Math.round(winCount - (loseCount * 0.7));
+		data.raidAdjust = (data.raidAdjust ?? 0) + Math.round(winCount - (loseCount * (1/3)));
 		friend.setPerModulesData(module_, data);
 	});
 
@@ -668,7 +668,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	// 数取りボーナスに上限がついたため、その分の補填を全員に付与
 	// ID毎に決められた得意曜日に従って最大75%分のステータスバフ
 	const day = new Date().getDay();
-	let bonusX = (day === 6 || day === 0 ? 1 : (Math.floor(seedrandom("" + msg.user.id + Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) + ai.account.id)() * 5 + day) % 5) * 0.1875) + (Math.random() < 0.01 ? 0.3 : 0) + (Math.random() < 0.01 ? 0.3 : 0);
+	let bonusX = (day === 6 || day === 0 ? 1 : (Math.floor(seedrandom("" + msg.user.id + Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) + ai.account.id)() * 5 + day) % 5) * 0.25) + (Math.random() < 0.01 ? 0.3 : 0) + (Math.random() < 0.01 ? 0.3 : 0);
 	while (Math.random() < 0.01) {
 		bonusX += 0.3;
 	}
@@ -679,7 +679,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		message += `調子補正: AD${displayDifference((0.75 + bonusX))} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
 	}
 
-	if (data.raidAdjust > 0 && skillEffects.pride) {
+	if (data.raidAdjust > 0 && bonusX < 1 && skillEffects.pride) {
 		if (Math.random() < 0.8) {
 			atk = Math.round(atk * (1 / (1 + (data.raidAdjust * 0.0005))));
 			def = Math.round(def * (1 / (1 + (data.raidAdjust * 0.0005))));
@@ -689,7 +689,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			}
 		}
 	} else {
-		if (data.raidAdjust > 0 && Math.random() < 0.9) {
+		if (data.raidAdjust > 0 && bonusX < 1 && Math.random() < 0.9) {
 			atk = Math.round(atk * (1 / (1 + (data.raidAdjust * 0.001))));
 			def = Math.round(def * (1 / (1 + (data.raidAdjust * 0.001))));
 			if (verboseLog) {
