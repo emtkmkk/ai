@@ -1323,7 +1323,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 		result.push("アイテム装備率: +" + showNum((skillEffects.itemEquip ?? 0) * 100) + "%");
 	}
 	if (skillEffects.weaponSelect) {
-		result.push("武器選択率: +" + showNum(((((1 + (skillEffects.weaponSelect ?? 0)) / (4 + (skillEffects.weaponSelect ?? 0)))) / (1/4)) - 1) * 100) + "%");
+		result.push("武器選択率: +" + showNum(((((1 + (skillEffects.weaponSelect ?? 0)) / (4 + (skillEffects.weaponSelect ?? 0))) / (1/4)) - 1) * 100) + "%");
 	}
 	if (skillEffects.armorSelect) {
 		result.push("防具選択率: +" + showNum(((((1 + (skillEffects.armorSelect ?? 0)) / (4 + (skillEffects.armorSelect ?? 0))) / (1/4)) - 1) * 100) + "%");
