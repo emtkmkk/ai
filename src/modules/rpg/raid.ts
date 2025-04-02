@@ -1374,13 +1374,13 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 					}
 					if ((type === "weapon" && !(isBattle && isPhysical)) || (type === "armor" && isTired) || enemy.pLToR) {
 						if (item.mind <= data.stockItem.mind) {
-							item = data.stockItem;
+							item = { ...data.stockItem };
 						} else {
 							data.stockItem = { ...item };
 						}
 					} else {
 						if (item.effect <= data.stockItem.effect) {
-							item = data.stockItem;
+							item = { ...data.stockItem };
 						} else {
 							data.stockItem = { ...item };
 						}
