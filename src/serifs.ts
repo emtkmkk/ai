@@ -442,7 +442,7 @@ export default {
 	rpg: {
 		remind: (me, hours) => `<center>$[x2 ${me}]\n\n${hours}時です！\nRPGモードの時間ですよ～\n\n毎日3回プレイして、\n私を強くしてください！\n\n「RPG」と話しかけてね\n（ここに返信でも大丈夫ですよ！）</center>`,
 		intro: (enemyName, time) => `<center>$[x3 ${enemyName}]\n\nすごく大きい敵がやってきました！\n\nTLのみなさんで倒しましょう！\n\nこの投稿に「参加」と返信して、\nあなたの${config.rpgHeroName}と戦いましょう！\n(RPGモードのプレイが1回以上必要です)\n\n$[unixtime.countdown ${time}]</center>`,
-		onagare: (enemyName) => `${enemyName}は暴れまわったのち、帰っていきました……`,
+		onagare: (enemyName) => `${enemyName}は暴れまわったのち、帰っていきました……\n討伐隊の評判が大きく下がりました……`,
 		onagare2: (enemyName) => `${enemyName}コンテストの参加者はいませんでした……`,
 		finishCw: (enemyName) => `${enemyName}討伐戦の結果発表です！`,
 		finishCw2: (enemyName) => `${enemyName}コンテストの結果発表です！`,

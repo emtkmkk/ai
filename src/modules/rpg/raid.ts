@@ -204,11 +204,13 @@ function finish(raid: Raid) {
 	raids.update(raid);
 
 	module_.log('raid finished');
+	/** RPGモジュールのデータ */
+	const rpgData = ai.moduleData.findOne({ type: 'rpg' });
 
 	// 攻撃者がいない場合
 	if (!raid.attackers?.filter((x) => x.dmg > 1).length) {
 		ai.decActiveFactor((raid.finishedAt.valueOf() - raid.startedAt.valueOf()) / (60 * 1000 * 100));
-
+		rpgData.raidReputations = [];
 		ai.post({
 			text: raid.enemy.power ? serifs.rpg.onagare(raid.enemy.name) : serifs.rpg.onagare2(raid.enemy.name),
 			renoteId: raid.postId
@@ -274,9 +276,37 @@ function finish(raid: Raid) {
 		results.push(`${score && scoreRaw ? `\n評価: ${"★".repeat(score)}\n★${Math.floor(scoreRaw)} ${Math.floor((scoreRaw % 1) * 8) !== 0 ? `$[bg.color=ffff90 ${":blank:".repeat(Math.floor((scoreRaw % 1) * 8))}]` : ""}$[bg.color=ff9090 ${":blank:".repeat(8 - Math.floor((scoreRaw % 1) * 8))}] ★${Math.floor(scoreRaw) + 1}` : ""}`);
 	}
 
-	/** RPGモジュールのデータ */
-	const rpgData = ai.moduleData.findOne({ type: 'rpg' });
+	let bonusCoin = 1;
+
 	if (rpgData) {
+		if (score && raid.enemy.power) {
+			if (!rpgData.raidReputations) {
+				rpgData.raidReputations = [];
+			}
+			const sum1 = rpgData.raidReputations.length > 0 ? rpgData.raidReputations.reduce((acc, cur) => acc + cur, 0) : 0;
+			const reputation1 = rpgData.raidReputations.length > 0 ? sum1 / rpgData.raidReputations.length : 0;
+
+			rpgData.raidReputations.unshift(scoreRaw);
+
+			if (rpgData.raidReputations.length >= 13) {
+				rpgData.raidReputations.pop();
+			}
+
+			const sum2 = rpgData.raidReputations.reduce((acc, cur) => acc + cur, 0);
+			const reputation2 = sum2 / rpgData.raidReputations.length;
+
+			bonusCoin = Math.max(1, reputation2 / 4);
+
+			if (reputation1 == 0) {
+				results.push(`討伐隊の評判値: ${Math.floor(reputation2 * 16.75 * (1.5 ^ reputation2)).toLocaleString()} ↑アップ！`);
+			} else {
+				results.push(`討伐隊の評判値: ${Math.floor(reputation1 * 16.75 * (1.5 ^ reputation1)).toLocaleString()} → ${Math.floor(reputation2 * 16.75 * (1.5 ^ reputation2)).toLocaleString()} ${reputation1 < reputation2 ? "↑アップ！" : reputation1 > reputation2 ? "↓ダウン…" : ""}`);
+			}
+
+			if (score != Math.floor((score ?? 4) * bonusCoin)) {
+				results.push(`評判値ボーナス！ もこコイン+${Math.floor((score ?? 4) * bonusCoin) - score}枚`);
+			}
+		}
 		if (!rpgData.raidScore) rpgData.raidScore = {};
 		if (!rpgData.raidScoreDate) rpgData.raidScoreDate = {};
 		if (!rpgData.raidScore[raid.enemy.name] || rpgData.raidScore[raid.enemy.name] < total) {
@@ -303,13 +333,13 @@ function finish(raid: Raid) {
 		friend.setPerModulesData(module_, data);
 	}
 
-	const text = results.join('\n') + '\n\n' + (score ? serifs.rpg.finish(raid.enemy.name, score) : serifs.rpg.finish2(raid.enemy.name, 4));
+	const text = results.join('\n') + '\n\n' + (score ? serifs.rpg.finish(raid.enemy.name, Math.floor((score ?? 4) * bonusCoin)) : serifs.rpg.finish2(raid.enemy.name, 4));
 
 	sortAttackers.forEach((x) => {
 		const friend = ai.lookupFriend(x.user.id);
 		if (!friend) return;
 		const data = friend.getPerModulesData(module_);
-		data.coin = Math.max((data.coin ?? 0) + (score ?? 4), data.coin);
+		data.coin = Math.max((data.coin ?? 0) + Math.floor((score ?? 4) * bonusCoin), data.coin);
 		const winCount = sortAttackers.filter((y) => x.dmg > y.dmg).length;
 		const loseCount = sortAttackers.filter((y) => x.dmg < y.dmg).length;
 		data.raidAdjust = (data.raidAdjust ?? 0) + Math.round(winCount - (loseCount * (1/3)));
