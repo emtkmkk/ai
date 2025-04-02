@@ -177,7 +177,7 @@ function getRandomSkills(ai, num) {
 
 		// ランダム値に基づいてスキルを選択
 		for (let skill of filteredSkills) {
-			const skillCount = !skill.cantReroll ? (skillNameCountMap.get(skill.name) || 0) : (totalSkillCount / (skills.filter((x) => !x.moveTo).length));
+			const skillCount = !skill.cantReroll && !skill.notLearn ? (skillNameCountMap.get(skill.name) || 0) : (totalSkillCount / (skills.filter((x) => !x.moveTo).length));
 			const weight = 1 / (1 + skillCount); // 出現回数に応じて重みを計算
 
 			if (randomValue < weight) {
