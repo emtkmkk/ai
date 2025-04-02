@@ -851,6 +851,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	let enemyAtkX = 1;
 	let itemBoost = 0;
 	let itemMinEffect = 0;
+	let atkDmgBonus = 1;
 
 	/** これって戦闘？ */
 	let isBattle = enemy.atkmsg(0).includes("ダメージ");
@@ -1147,8 +1148,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
 		if (verboseLog) {
 			buff += 1;
-			message += `ターン開始時ステータス:\nA: ${formatNumber(atk)} (x${formatNumber(atk / (lv * 3.5))})\nD: ${formatNumber(def)} (x${formatNumber(def / (lv * 3.5))})\nS: ${formatNumber(spd)} (${getSpdX(spd) * 100}%)\nHP%: ${formatNumber(playerHpPercent * 100)}%\nターン開始時敵ステータス:\nA: x${formatNumber(enemyAtk / (lv * 3.5))} D: x${formatNumber(enemyDef / (lv * 3.5))} \nHP%: ${
-formatNumber(enemyHpPercent * 100)}%\n`;
+			message += `ターン開始時ステータス:\nA: ${formatNumber(atk)} (x${formatNumber(atk / (lv * 3.5))})\nD: ${formatNumber(def)} (x${formatNumber(def / (lv * 3.5))})\nS: ${formatNumber(spd)} (${getSpdX(spd) * 100}%)\nHP%: ${formatNumber(playerHpPercent * 100)}%\n${atkDmgBonus > 1 ? `Dmg: ${displayDifference(atkDmgBonus)}\n` : ""}ターン開始時敵ステータス:\nA: x${formatNumber(enemyAtk / (lv * 3.5))} D: x${formatNumber(enemyDef / (lv * 3.5))} \nHP%: ${
+formatNumber(enemyHpPercent * 100)}%\n\n`;
 		}
 
 		let slothFlg = false;
@@ -1233,6 +1234,24 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 				buff += 1;
 				message += serifs.rpg.spdUp + "\n";
 				spd = 2;
+			}
+		}
+
+		if (!enemy.abort && skillEffects.abortDown) {
+			// 効果がない場合は、パワーに還元される
+			atk = atk * (1 + skillEffects.abortDown * (1 / 3));
+			if (verboseLog) {
+				buff += 1;
+				message += `遂スキル効果: A${displayDifference(1 + skillEffects.abortDown * (1 / 3))} (${formatNumber(atk)})\n`;
+			}
+		}
+	
+	if (skillEffects.dart && !(isBattle && isPhysical && maxdmg)) {
+			// 効果がない場合非戦闘時は、パワーに還元される
+			atk = atk * (1 + skillEffects.dart * 0.5);
+			if (verboseLog) {
+				buff += 1;
+				message += `土スキル効果: A${displayDifference(1 + skillEffects.dart * 0.5)} (${formatNumber(atk)})\n`;
 			}
 		}
 
@@ -1483,8 +1502,7 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 						}
 					}
 					if (skillEffects.gluttony) {
-						_atk *= 1.1;
-						atk *= 1.1;
+						atkDmgBonus *= 1.1;
 						buff += 1;
 						if (verboseLog) message += `暴食: A+10% (${formatNumber(atk)})\n`;
 					}
@@ -1514,8 +1532,7 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 						}
 					}
 					if (skillEffects.gluttony) {
-						_atk *= 1.2;
-						atk *= 1.2;
+						atkDmgBonus *= 1.2;
 						buff += 1;
 						if (verboseLog) message += `暴食: A+20% (${formatNumber(atk)})\n`;
 					}
@@ -1540,13 +1557,6 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 			buff += 1;
 			message += serifs.rpg.skill.dart + "\n";
 			maxdmg = maxdmg * (1 + skillEffects.dart);
-		} else if (skillEffects.dart && !(isBattle && isPhysical && maxdmg)) {
-			// 効果がない場合非戦闘時は、パワーに還元される
-			atk = atk * (1 + skillEffects.dart * 0.5);
-			if (verboseLog) {
-				buff += 1;
-				message += `土スキル効果: A${displayDifference(1 + skillEffects.dart * 0.5)} (${formatNumber(atk)})\n`;
-			}
 		}
 
 		let trueDmg = 0;
@@ -1583,15 +1593,6 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 			if (enemy.abort && Math.random() < enemy.abort * (1 - (skillEffects.abortDown ?? 0))) {
 				abort = i;
 				break;
-			}
-		}
-
-		if (!enemy.abort && skillEffects.abortDown) {
-			// 効果がない場合は、パワーに還元される
-			atk = atk * (1 + skillEffects.abortDown * (1 / 3));
-			if (verboseLog) {
-				buff += 1;
-				message += `遂スキル効果: A${displayDifference(1 + skillEffects.abortDown * (1 / 3))} (${formatNumber(atk)})\n`;
 			}
 		}
 
@@ -1680,11 +1681,20 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 			const spdx = getSpdX(abort || spd);
 			atk = atk * spdx * (1 + (skillEffects.allForOne ?? 0) * 0.1);
 			trueDmg = trueDmg * spdx * (1 + (skillEffects.allForOne ?? 0) * 0.1);
-			if (itemBonus?.atk) itemBonus.atk = itemBonus.atk * spd * (1 + (skillEffects.allForOne ?? 0) * 0.1);
+			if (itemBonus?.atk) itemBonus.atk = itemBonus.atk * spdx * (1 + (skillEffects.allForOne ?? 0) * 0.1);
 			spd = 1;
 			if (verboseLog && spdx > 1) {
 				buff += 1;
 				message += `全身全霊: A${displayDifference(spdx)} S=1 (${formatNumber(atk)})\n`;
+			}
+		}
+
+		if (atkDmgBonus > 1) {
+			atk = Math.round(atk * atkDmgBonus);
+			if (itemBonus?.atk) itemBonus.atk = itemBonus.atk * atkDmgBonus;
+			if (verboseLog && atkDmgBonus > 1) {
+				buff += 1;
+				message += `ボーナス: A${displayDifference(atkDmgBonus)} (${formatNumber(atk)})\n`;
 			}
 		}
 
@@ -1769,7 +1779,7 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 			} else if (!(isBattle && isPhysical && !isTired)) {
 				// 非戦闘時は氷の効果はないが、防御に還元される
 				def = def * (1 + (skillEffects.ice ?? 0));
-				if (verboseLog) {
+				if (verboseLog && (skillEffects.ice ?? 0) > 0) {
 					buff += 1;
 					message += `氷非戦闘: D${displayDifference((1 + (skillEffects.ice ?? 0)))} (${formatNumber(def)})\n`;
 				}
@@ -1781,7 +1791,7 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 			} else if (!(isBattle && isPhysical && !isTired)) {
 				// 非戦闘時は光の効果はないが、防御に還元される
 				def = def * (1 + (skillEffects.light ?? 0) * 0.5);
-				if (verboseLog) {
+				if (verboseLog && (skillEffects.light ?? 0) > 0) {
 					buff += 1;
 					message += `光非戦闘: D${displayDifference((1 + (skillEffects.light ?? 0) * 0.5))} (${formatNumber(def)})\n`;
 				}
@@ -1797,7 +1807,7 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 			} else if (!(isBattle && isPhysical)) {
 				// 非戦闘時は闇の効果はないが、防御に還元される
 				def = def * (1 + (skillEffects.dark ?? 0) * 0.3);
-				if (verboseLog) {
+				if (verboseLog && (skillEffects.dark ?? 0) > 0) {
 					buff += 1;
 					message += `闇非戦闘: D${displayDifference((1 + (skillEffects.dark ?? 0) * 0.3))} (${formatNumber(def)})\n`;
 				}
@@ -1837,7 +1847,7 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 					}
 					if (skillEffects.pride) {
 						if (dmg <= (playerMaxHp / 10)) {
-							_atk *= 1.15;
+							atkDmgBonus *= 1.15;
 						}
 						if (dmg >= ((playerMaxHp / 10) * 3)) {
 							dmg *= 2;
@@ -1941,7 +1951,7 @@ formatNumber(enemyHpPercent * 100)}%\n`;
 		}
 		if (verboseLog) {
 			buff += 1;
-			message += `\nラストアタック: HP${Math.floor(playerHp / playerMaxHp * 100)}% / 最大${(enemy.maxLastDmg ? Math.min(lastDmg, enemy.maxLastDmg) : lastDmg)}`;
+			message += `\nラストアタック: HP${Math.floor(playerHp / playerMaxHp * 100)}% / 最大${Math.round((enemy.maxLastDmg ? Math.min(lastDmg, enemy.maxLastDmg) : lastDmg))}`;
 		}
 		message += "\n\n" + serifs.rpg.finalAttack(dmg) + `\n\n` + (isTired ? serifs.rpg.timeUp2 : serifs.rpg.timeUp(enemy.name, (playerMaxHp))) + "\n\n" + enemy.losemsg;
 		totalDmg += dmg;
