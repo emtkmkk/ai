@@ -1246,6 +1246,10 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 			}
 		}
 	
+	// 敵に最大ダメージ制限がある場合、ここで計算
+	/** 1ターンに与えられる最大ダメージ量 */
+	let maxdmg = enemy.maxdmg ? enemyMaxHp * enemy.maxdmg : undefined;
+	
 	if (skillEffects.dart && !(isBattle && isPhysical && maxdmg)) {
 			// 効果がない場合非戦闘時は、パワーに還元される
 			atk = atk * (1 + skillEffects.dart * 0.5);
@@ -1547,11 +1551,6 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 				}
 			}
 		}
-
-		// 敵に最大ダメージ制限がある場合、ここで計算
-		/** 1ターンに与えられる最大ダメージ量 */
-		let maxdmg = enemy.maxdmg ? enemyMaxHp * enemy.maxdmg : undefined;
-
 		// 土属性剣攻撃
 		if (skillEffects.dart && isBattle && isPhysical && maxdmg) {
 			buff += 1;
