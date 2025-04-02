@@ -1376,13 +1376,13 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 						if (item.mind <= data.stockItem.mind) {
 							item = { ...data.stockItem };
 						} else {
-							data.stockItem = { ...item };
+							if (type === "weapon" || type === "armor") data.stockItem = { ...item };
 						}
 					} else {
 						if (item.effect <= data.stockItem.effect) {
 							item = { ...data.stockItem };
 						} else {
-							data.stockItem = { ...item };
+							if (type === "weapon" || type === "armor") data.stockItem = { ...item };
 						}
 					}
 				} else {
