@@ -167,7 +167,7 @@ function getRandomSkills(ai, num) {
 
 	// スキルの合計重みを計算
 	let totalWeight = filteredSkills.reduce((total, skill) => {
-		const skillCount = !skill.cantReroll ? (skillNameCountMap.get(skill.name) || 0) : (totalSkillCount / (skills.filter((x) => !x.moveTo).length));
+		const skillCount = !skill.cantReroll && !skill.notLearn ? (skillNameCountMap.get(skill.name) || 0) : (totalSkillCount / (skills.filter((x) => !x.moveTo).length));
 		return total + 1 / (1 + skillCount); // 出現回数に応じて重みを計算
 	}, 0);
 
@@ -296,7 +296,7 @@ const eventAmulet = (data?) => {
 	if (data.lv >= 255) {
 		if (dy == 0) {
 			return [
-				"雷属性剣攻撃＋",
+				Math.random() < 0.5 ? "雷属性剣攻撃＋" : "嫉妬の力",
 				...["高速RPG", "伝説", "連続攻撃完遂率上昇", "気合で頑張る"].sort(() => 0.5 - Math.random()).slice(0, Math.random() < 0.2 ? 3 : 2),
 			]
 		}
@@ -412,8 +412,12 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 			getShopItems(),
 			getShopItems(),
 			eventAmulet(data) || getShopItems(),
-			data.lastBreakItem && Math.random() < 0.95 ? data.lastBreakItem : getShopItems(),
+			data.lastBreakItem && Math.random() < 1 ? data.lastBreakItem : getShopItems(),
 			determineOutcome(ai, data, getShopItems),
+			data.shopExp > 2000 ? determineOutcome(ai, data, getShopItems) : undefined,
+			data.shopExp > 6000 ? determineOutcome(ai, data, getShopItems) : undefined,
+			data.shopExp > 10000 ? determineOutcome(ai, data, getShopItems) : undefined,
+			data.shopExp > 20000 ? determineOutcome(ai, data, getShopItems) : undefined,
 		].filter(Boolean);
 		data.lastShopVisited = getDate();
 		data.lastBreakItem = null;

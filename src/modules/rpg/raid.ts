@@ -1279,7 +1279,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 			}
 		}
 
-		const itemEquip = (0.4 + ((1 - playerHpPercent) * 0.6) + itemBoost + (skillEffects.greed ? 1 : 0)) * (slothFlg ? 0 : 1);
+		const itemEquip = (0.4 + ((1 - playerHpPercent) * 0.6) + itemBoost) * (slothFlg ? 0 : 1);
 		if (verboseLog && !(count === 1 && skillEffects.firstTurnItem)) {
 			buff += 1;
 			message += `アイテム装備率: ${Math.round(Math.min(itemEquip * (1 + (skillEffects.itemEquip ?? 0)), 1) * 100)}%\n`;
@@ -1298,34 +1298,18 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 				item = { ...items[Math.floor(Math.random() * items.length)] };
 			} else {
 				let types = ["weapon", "armor"];
-				if (skillEffects.greed) {
-					types = [];
-					for (let i = 0; i < (skillEffects.weaponSelect ?? 0); i++) {
-						types.push("weapon");
-					}
-					for (let i = 0; i < (skillEffects.armorSelect ?? 0); i++) {
-						types.push("armor");
-					}
+				for (let i = 0; i < (skillEffects.weaponSelect ?? 0); i++) {
+					types.push("weapon");
+				}
+				for (let i = 0; i < (skillEffects.armorSelect ?? 0); i++) {
+					types.push("armor");
+				}
+				if ((count !== 1 || enemy.pLToR) && !skillEffects.lowHpFood && playerHpPercent < 0.95) {
+					types.push("medicine");
+					types.push("poison");
 					for (let i = 0; i < (skillEffects.foodSelect ?? 0); i++) {
 						types.push("medicine");
 						types.push("poison");
-					}
-				}
-				if (!skillEffects.greed || !types.length) {
-					types = ["weapon", "armor"];
-					for (let i = 0; i < (skillEffects.weaponSelect ?? 0); i++) {
-						types.push("weapon");
-					}
-					for (let i = 0; i < (skillEffects.armorSelect ?? 0); i++) {
-						types.push("armor");
-					}
-					if ((count !== 1 || enemy.pLToR) && !skillEffects.lowHpFood && playerHpPercent < 0.95) {
-						types.push("medicine");
-						types.push("poison");
-						for (let i = 0; i < (skillEffects.foodSelect ?? 0); i++) {
-							types.push("medicine");
-							types.push("poison");
-						}
 					}
 				}
 				if ((count !== 1 || enemy.pLToR) && skillEffects.lowHpFood && playerHpPercent < 0.95 && Math.random() < skillEffects.lowHpFood * playerHpPercent) {
@@ -1346,6 +1330,33 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 					const items = rpgItems.filter((x) => x.type === type && x.effect > 0 && (!mEffect || x.effect >= (mEffect * 100)));
 					item = { ...items[Math.floor(Math.random() * items.length)] };
 				}
+				if (skillEffects.greed) {
+					data.stockItem.effect = Math.ceil(data.stockItem.effect * (2/3));
+					data.stockItem.mind = Math.ceil(data.stockItem.mind * (2/3));
+					const match = data.stockItem.name.match(/-(\d+)$/);
+					if (match && match.index !== undefined) {
+					  const number = parseInt(match[1], 10);
+					  const newNumber = number + 1;
+					  data.stockItem.name = data.stockItem.name.slice(0, match.index) + '-' + newNumber;
+					} else {
+					  data.stockItem.name = data.stockItem.name + '-1';
+					}
+					if ((type === "weapon" && !(isBattle && isPhysical)) || (type === "armor" && isTired) || enemy.pLToR) {
+						if (item.mind >= data.stockItem.mind) {
+							item = data.stockItem;
+						} else {
+							data.stockItem = item;
+						}
+					} else {
+						if (item.effect >= data.stockItem.effect) {
+							item = data.stockItem;
+						} else {
+							data.stockItem = item;
+						}
+					}
+				} else {
+					data.stockItem = undefined;
+				}
 				if (count === 1 && skillEffects.firstTurnDoubleItem && Math.random() < itemEquip * (1 + (skillEffects.itemEquip ?? 0))) {
 					if ((type === "weapon" && !(isBattle && isPhysical)) || (type === "armor" && isTired) || enemy.pLToR) {
 						let isPlus = Math.random() < (0.5 + (skillEffects.mindMinusAvoid ?? 0) + (count === 1 ? skillEffects.firstTurnMindMinusAvoid ?? 0 : 0));
@@ -1363,6 +1374,25 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 					}
 				}
 			}
+		}
+		if (skillEffects.greed) {
+			if (data.stockItem && !item) {
+				data.stockItem.effect = Math.ceil(data.stockItem.effect * (2/3));
+				data.stockItem.mind = Math.ceil(data.stockItem.mind * (2/3));
+				const match = data.stockItem.name.match(/-(\d+)$/);
+				if (match && match.index !== undefined) {
+				  const number = parseInt(match[1], 10);
+				  const newNumber = number + 1;
+				  data.stockItem.name = data.stockItem.name.slice(0, match.index) + '-' + newNumber;
+				} else {
+				  data.stockItem.name = data.stockItem.name + '-1';
+				}
+				item = data.stockItem;
+			}
+		} else {
+			data.stockItem = undefined;
+		}
+		if (item) {
 			const rawEffect = item.effect;
 			const rawMind = item.mind;
 			const mindMsg = (mind) => {
@@ -1384,14 +1414,6 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 					message += `アイテム効果: ${Math.round(item.mind)}%${rawMind != item.mind ? ` (${displayDifference(item.mind / rawMind)})` : ""} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
 				}
 			};
-			if (skillEffects.greed) {
-				if (Math.random() < 0.35) {
-					item.effect = Math.round(item.effect / 2);
-					if (item.mind > 0) {
-						item.mind = Math.round(item.mind / 2);
-					}
-				}
-			}
 			if (item.type !== "poison") {
 				item.effect = Math.round(item.effect * (1 + (skillEffects.itemBoost ?? 0)));
 				if (item.type === "weapon") item.effect = Math.round(item.effect * (1 + (skillEffects.weaponBoost ?? 0)));
@@ -1656,6 +1678,14 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 					if (itemBonus.def && noItemDmg - dmg > 1) {
 						message += `(道具効果: -${noItemDmg - dmg})\n`;
 					}
+					if (skillEffects.pride) {
+						if (dmg <= (playerMaxHp / 10)) {
+							atkDmgBonus *= 1.15;
+						}
+						if (dmg >= ((playerMaxHp / 10) * 3)) {
+							dmg *= 2;
+						}
+					}
 					if (warriorFlg && playerHp <= 0) {
 						playerHp += dmg;
 						message += serifs.rpg.warrior.lose + "\n";
@@ -1809,6 +1839,27 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 				if (verboseLog && (skillEffects.dark ?? 0) > 0) {
 					buff += 1;
 					message += `闇非戦闘: D${displayDifference((1 + (skillEffects.dark ?? 0) * 0.3))} (${formatNumber(def)})\n`;
+				}
+			}
+
+			if (enemy && skillEffects.envy) {
+				const targetScore = (1024 / ((enemy?.power ?? 30) / 30)) * 2^4;
+				const rate = (1 - (0.7 * Math.max(1 - (totalDmg / targetScore), 0)))
+				if (rate < 1) {
+					enemyAtkX = enemyAtkX * rate;
+					if (verboseLog) {
+						buff += 1;
+						message += `嫉妬: 被ダメージ${displayDifference(rate)}\n`;
+					}
+				} else {
+					const score = enemy ? Math.max(Math.log2((totalDmg * 20) / (1024 / ((enemy.power ?? 30) / 30))) + 1, 1) : undefined;
+					if (score && score > 5) {
+						enemyAtkX = enemyAtkX * (1 + (score-5) * 0.1);
+						if (verboseLog) {
+							buff += 1;
+							message += `嫉妬: 被ダメージ${displayDifference((1 + (score-5) * 0.1))}\n`;
+						}
+					}
 				}
 			}
 
@@ -2426,7 +2477,6 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 		message += `経験 器用さ+${Math.round(expBonus * 100)}%` + `\n`;
 		dex = dex * (1 + expBonus);
 	}
-	
 	if (skillEffects.notBattleBonusAtk >= 0.7) {
 		buff += 1;
 		message += `気性穏やか 器用さ+${Math.round(skillEffects.notBattleBonusAtk * 100)}%` + `\n`;
@@ -2573,8 +2623,8 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	if (dex < 3) dex = 3;
 	if (fix > 0.75) fix = 0.75;
 
-	if (verboseLog && buff > 0) {
-		message += `器用さ: ${dex} 仕上げ: ${fix * 100}\n\n`;
+	if (verboseLog) {
+		message += `器用さ: ${Math.round(dex)} 仕上げ: ${Math.round(fix * 100)}\n\n`;
 	}
 	
   let plus = 0.1;

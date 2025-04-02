@@ -216,6 +216,7 @@ export type Skill = {
 	effect: SkillEffect;
 	/** ユニークキー 同じキーを持っているスキルは入手不可 */
 	unique?: string;
+	amuletUnique?: string;
 	/** 移動先 スキル名を変更した際に */
 	moveTo?: string;
 	/** スキル変更が出来ない場合 */
@@ -292,11 +293,12 @@ export const skills: Skill[] = [
 	{ name: `かるわざ`, short: "軽", desc: `ステータスが上がり、お守りを持っていない時、追加で${serifs.rpg.status.atk}がさらに上がります`, info: `ステータス+6% お守りを持っていない時、追加で${serifs.rpg.status.atk}+6%`, effect: { atkUp6: 0.06, defUp5: 0.06, noAmuletAtkUp: 0.06 }, skillOnly: true },
 	{ name: `攻めの守勢`, short: "勢", desc: `通常よりもダメージを防げば防ぐ程、パワーが上がります（ただし７フィーバー！を除きます）`, info: `ダメージ軽減300毎に防御の12.5~40%分のパワーを得ます（７フィーバー！を除く）\nこの効果は最大4回まで発動し、発動した回数が多いほど効果が上がります\nさらにレイド時は発動した回数分、全力の一撃のダメージが上がります このスキルは重複しません`, effect: { guardAtkUp: 0.125 }, unique: "counter" },
 	{ name: `分散型`, short: "散", desc: `同じスキルを持っていない程、ステータスが上がります（お守りは対象外）`, info: `パワー・防御+10% クリティカル率+10% ダメージ軽減+10% 同じスキルを持つ度に全ての効果-4%（お守りは対象外）`, effect: { distributed: 0.1 }, unique: "distributed" },
-	{ name: `傲慢の力`, short: "**傲**", desc: `敵が弱いほど与ダメージが大きく上昇します`, info: "最大体力の10%以下のダメージを受ける度に、その戦いの間常に与ダメージ+15%\nただし、最大体力の30%以上のダメージを受けた場合、そのダメージは2倍になる\nさらに連勝補正の減少を半減させ、たまに無効化する", effect: { pride: 0.15 }, notLearn: true, },
-	{ name: `強欲の力`, short: "**欲**", desc: `大好きな種類の道具を毎ターン必ず持てますが、道具の効果が低くなる場合があります`, info: "アイテム装備率MAX 大好き系のスキルの選択率MAX 道具効果がランダムで最大-50%", effect: { greed: 0.5 }, notLearn: true},
-	{ name: `憤怒の力`, short: "**憤**", desc: `体力が半減した状態でスタートしますが、クリティカルダメージが大きく上昇します`, info: "体力半減でスタート クリティカルダメージ+40%", effect: { wrath: 0.4 }, notLearn: true},
-	{ name: `暴食の力`, short: "**暴**", desc: `何かを食べる度に与ダメージが上がります さらに食べる程効果が上がります 食べてはいけない物を食べた場合にさらに効果が上がります`, info: "何かを食べる度、その戦いの間常に与ダメージ+10% 毒を食べた場合与ダメージ+20%", effect: { gluttony: 0.2 }, notLearn: true},
-	{ name: `怠惰の力`, short: "**怠**", desc: `時々怠けて行動をしなくなりますが、怠けた後は強くなります`, info: "30%で怠ける 怠ける度に、その戦いの間常に与ダメージ+50%", effect: { sloth: 0.5 }, notLearn: true},
+	{ name: `傲慢の力`, short: "**傲**", desc: `敵が弱いほど与ダメージが大きく上昇します`, info: "最大体力の10%以下のダメージを受ける度に、その戦いの間常に与ダメージ+15%\nただし、最大体力の30%以上のダメージを受けた場合、そのダメージは2倍になる\nさらに連勝補正の減少を半減させ、たまに無効化する", effect: { pride: 0.15 }, notLearn: true, amuletUnique: "sin"},
+	{ name: `強欲の力`, short: "**欲**", desc: `前に装備した武器・防具を次にその能力を上回るものが手に入るまで装備するようになりますが、使いまわした装備は徐々に力を失います……`, info: "", effect: { greed: 0.5 }, notLearn: true, amuletUnique: "sin"},
+	{ name: `憤怒の力`, short: "**憤**", desc: `体力が半減した状態でスタートしますが、クリティカルダメージが大きく上昇します`, info: "体力半減でスタート クリティカルダメージ+40%", effect: { wrath: 0.4 }, notLearn: true, amuletUnique: "sin"},
+	{ name: `暴食の力`, short: "**暴**", desc: `何かを食べる度に与ダメージが上がります さらに食べる程効果が上がります 食べてはいけない物を食べた場合にさらに効果が上がります`, info: "何かを食べる度、その戦いの間常に与ダメージ+10% 毒を食べた場合与ダメージ+20%", effect: { gluttony: 0.2 }, notLearn: true, amuletUnique: "sin"},
+	{ name: `怠惰の力`, short: "**怠**", desc: `時々怠けて行動をしなくなりますが、怠けた後は強くなります`, info: "30%で怠ける 怠ける度に、その戦いの間常に与ダメージ+50%", effect: { sloth: 0.5 }, notLearn: true, amuletUnique: "sin"},
+	{ name: `嫉妬の力`, short: "**嫉**", desc: `レイドで与えたダメージが低い間、ダメージを大きくカットします`, info: "レイドでのダメージ評価が低い間、被ダメージを最大70%カットします\n評価が高くなった場合、被ダメージが★1につき+10%", effect: { envy: 1 }, notLearn: true, amuletUnique: "sin"},
 ];
 
 const ultimateEffect: SkillEffect = {
@@ -1321,13 +1323,13 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 		result.push("アイテム装備率: +" + showNum((skillEffects.itemEquip ?? 0) * 100) + "%");
 	}
 	if (skillEffects.weaponSelect) {
-		result.push("武器選択率: +" + showNum((((1 + (skillEffects.weaponSelect ?? 0) / 4 + (skillEffects.weaponSelect ?? 0)) / (1/4)) - 1) * 100) + "%");
+		result.push("武器選択率: +" + showNum(((((1 + (skillEffects.weaponSelect ?? 0)) / (4 + (skillEffects.weaponSelect ?? 0)))) / (1/4)) - 1) * 100) + "%");
 	}
 	if (skillEffects.armorSelect) {
-		result.push("防具選択率: +" + showNum((((1 + (skillEffects.armorSelect ?? 0) / 4 + (skillEffects.armorSelect ?? 0)) / (1/4)) - 1) * 100) + "%");
+		result.push("防具選択率: +" + showNum(((((1 + (skillEffects.armorSelect ?? 0)) / (4 + (skillEffects.armorSelect ?? 0))) / (1/4)) - 1) * 100) + "%");
 	}
 	if (skillEffects.foodSelect) {
-		result.push("食べ物選択率: +" + showNum((((1 + (skillEffects.foodSelect ?? 0) / 4 + (skillEffects.foodSelect ?? 0)) / (1/4)) - 1) * 100) + "%");
+		result.push("食べ物選択率: +" + showNum(((((1 + (skillEffects.foodSelect ?? 0)) / (4 + (skillEffects.foodSelect ?? 0))) / (1/4)) - 1) * 100) + "%");
 	}
 	if (skillEffects.poisonAvoid) {
 		result.push("毒食べ物回避率: " + showNum((skillEffects.poisonAvoid ?? 0) * 100) + "%");
