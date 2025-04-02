@@ -1361,7 +1361,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 					item = { ...items[Math.floor(Math.random() * items.length)] };
 				}
 				if (skillEffects.greed) {
-					if (!data.stockItem) data.stockItem = item;
+					if (!data.stockItem) data.stockItem = { ...item };
 					data.stockItem.effect = Math.ceil(data.stockItem.effect * (2/3));
 					data.stockItem.mind = Math.ceil(data.stockItem.mind * (2/3));
 					const match = data.stockItem.name.match(/-(\d+)$/);
@@ -1376,13 +1376,13 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 						if (item.mind >= data.stockItem.mind) {
 							item = data.stockItem;
 						} else {
-							data.stockItem = item;
+							data.stockItem = { ...item };
 						}
 					} else {
 						if (item.effect >= data.stockItem.effect) {
 							item = data.stockItem;
 						} else {
-							data.stockItem = item;
+							data.stockItem = { ...item };
 						}
 					}
 				} else {
@@ -1418,7 +1418,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 				} else {
 				  data.stockItem.name = data.stockItem.name + '-1';
 				}
-				item = data.stockItem;
+				item = { ...data.stockItem };
 			}
 		} else {
 			data.stockItem = undefined;
