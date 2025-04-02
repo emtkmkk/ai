@@ -1361,6 +1361,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 					item = { ...items[Math.floor(Math.random() * items.length)] };
 				}
 				if (skillEffects.greed) {
+					if (!data.stockItem) data.stockItem = item;
 					data.stockItem.effect = Math.ceil(data.stockItem.effect * (2/3));
 					data.stockItem.mind = Math.ceil(data.stockItem.mind * (2/3));
 					const match = data.stockItem.name.match(/-(\d+)$/);
