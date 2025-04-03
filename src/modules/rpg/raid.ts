@@ -709,7 +709,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		message += `調子補正: AD${displayDifference((0.75 + bonusX))} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
 	}
 
-	if (data.raidAdjust > 0 && bonusX < 1 && skillEffects.pride) {
+	if (false && data.raidAdjust > 0 && bonusX < 1 && skillEffects.pride) {
 		if (Math.random() < 0.8) {
 			atk = Math.round(atk * (1 / (1 + (data.raidAdjust * 0.0005))));
 			def = Math.round(def * (1 / (1 + (data.raidAdjust * 0.0005))));
