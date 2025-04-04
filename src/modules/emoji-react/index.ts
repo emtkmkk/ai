@@ -160,5 +160,6 @@ export default class extends Module {
 			}
 			if (reactionList.length > 0) return react(reactionList[Math.floor(reactionList.length * Math.random())]);
 		}
+		if (includes(note.text, ['hato'])) return react(':real_hato_kokekokko:');
 	}
 }
