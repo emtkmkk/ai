@@ -295,7 +295,7 @@ function finish(raid: Raid) {
 			const sum2 = rpgData.raidReputations.reduce((acc, cur) => acc + cur, 0);
 			const reputation2 = sum2 / rpgData.raidReputations.length;
 
-			bonusCoin = Math.max(1, Math.floor(reputation2 * 16.75 * (1.5 ^ reputation2)) / 527);
+			bonusCoin = Math.min(Math.max(1, Math.floor(reputation2 * 16.75 * (1.5 ^ reputation2)) / 527), 11);
 
 			if (reputation1 == 0) {
 				results.push(`討伐隊の評判値: ${Math.floor(reputation2 * 16.75 * (1.5 ^ reputation2)).toLocaleString()} ↑アップ！`);
