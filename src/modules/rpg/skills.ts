@@ -1411,7 +1411,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 	 (1 + ((skillEffects.critUpFixed ?? 0) * (1 + (skillEffects.critDmgUp ?? 0) * 2))) *
 	 ( 
 		1 +
-		(0.25 * (1 + (skillEffects.critUp ?? 0)) * (1 + (skillEffects.haisuiCritUp ?? 0)) * (1 + (skillEffects.critDmgUp ?? 0) * 2)) - 
+		(0.25 * (1 + (skillEffects.critUp ?? 0)) * (1 + (skillEffects.haisuiCritUp ?? 0)) * (1 + ((skillEffects.critDmgUp ?? 0) + (skillEffects.wrath ? 0.4 : 0)) * 2)) - 
 		(0.25 * (1 + ((skillEffects.critDmgUp ?? 0) + (skillEffects.wrath ? 0.4 : 0)) * 2))
 	 ) *
 	 (1 + ((skillEffects.finalAttackUp ?? 0) / 7)) *
