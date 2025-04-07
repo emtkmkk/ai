@@ -1302,7 +1302,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 		result.push("クリティカル率（固定）: +" + showNum((skillEffects.critUpFixed ?? 0) * 100) + "%");
 	}
 	if (skillEffects.critDmgUp) {
-		result.push("クリティカルダメージ: +" + showNum(((skillEffects.critDmgUp ?? 0) + ((1 + (skillEffects.critDmgUp ?? 0)) * (skillEffects.wrath ? 0.4 : 0))) * 100) + "%");
+		result.push("クリティカルダメージ: +" + showNum(((skillEffects.critDmgUp ?? 0) + (skillEffects.wrath ? 0.4 : 0)) * 100) + "%");
 	}
 	if (skillEffects.enemyCritDown) {
 		result.push("敵クリティカル率: -" + showNum(((skillEffects.enemyCritDown ?? 0)) * 100) + "%");
@@ -1412,7 +1412,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 	 ( 
 		1 +
 		(0.25 * (1 + (skillEffects.critUp ?? 0)) * (1 + (skillEffects.haisuiCritUp ?? 0)) * (1 + (skillEffects.critDmgUp ?? 0) * 2)) - 
-		(0.25 * (1 + (skillEffects.critDmgUp ?? 0) * 2))
+		(0.25 * (1 + ((skillEffects.critDmgUp ?? 0) + (skillEffects.wrath ? 0.4 : 0)) * 2))
 	 ) *
 	 (1 + ((skillEffects.finalAttackUp ?? 0) / 7)) *
 	 (1 + (Math.min(0.4 * (skillEffects.itemEquip ?? 0) + (skillEffects.firstTurnItem ? (1/6) : 0), 1) * ((1 + (skillEffects.weaponSelect ?? 0)) / (4 + (skillEffects.weaponSelect ?? 0) - (skillEffects.poisonAvoid ?? 0))) * (0.25 * (1 + itemAtk))))
