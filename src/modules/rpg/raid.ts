@@ -726,7 +726,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			}
 		}
 	} else {
-		if (data.raidAdjust > 0 && bonusX < 1 && Math.random() < 0.9) {
+		if (false && data.raidAdjust > 0 && bonusX < 1 && Math.random() < 0.9) {
 			atk = Math.round(atk * (1 / (1 + (data.raidAdjust * 0.001))));
 			def = Math.round(def * (1 / (1 + (data.raidAdjust * 0.001))));
 			if (verboseLog) {
