@@ -498,12 +498,15 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
 	let amuletGetFlg = false;
 
+	let wakabaFlg = false;
+
 	if (data.lv >= 20) {
 		if (data.noAmuletCount == null) data.noAmuletCount = 0;
 		if (!skillEffects.noAmuletAtkUp && !skillsStr.amulet && Math.random() < 0.1 + ((data.noAmuletCount + 18) * 0.05)) {
 			amuletGetFlg = true;
 			data.noAmuletCount = -18;
 			if (data.skills?.length < 2 || (data.skills?.length < 3 && Math.random() < 0.5)) {
+				wakabaFlg = true;
 				data.items.push({ name: `わかばのお守り`, price: 1, desc: `もこチキの持っているスキルが5個より少ない場合（もこチキのレベルが低い場合）、少ないスキル1つにつき約6%分パワー・防御が上がります 特定条件でさらにパワー・防御が+12%されます 耐久20`, type: "amulet", effect: { beginner: 0.06 }, durability: 20, short: "🔰" });
 			} else {
 				data.items.push({ name: `謎のお守り`, price: 1, desc: `貰ったお守り。よくわからないが不思議な力を感じる…… 持っていると何かいい事があるかもしれない。`, type: "amulet", effect: { stockRandomEffect: 1 }, durability: 1, short: "？" });
@@ -602,7 +605,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 
 	if (amuletGetFlg) {
 		message += serifs.rpg.giveAmulet + `\n\n`;
-		skillsStr.amulet = `[？]`;
+		skillsStr.amulet = wakabaFlg ? '[🔰]' : `[？]`;
 	}
 
 	if (enemy.skillX && lv >= 20) {
@@ -702,7 +705,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	// 数取りボーナスに上限がついたため、その分の補填を全員に付与
 	// ID毎に決められた得意曜日に従って最大75%分のステータスバフ
 	const day = new Date().getDay();
-	let bonusX = (day === 6 || day === 0 ? 1 : (Math.floor(seedrandom("" + msg.user.id + Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) + ai.account.id)() * 5 + day) % 5) * 0.25) + (Math.random() < 0.01 ? 0.3 : 0) + (Math.random() < 0.01 ? 0.3 : 0);
+	let bonusX = (day === 6 || day === 0 || stockRandomResult.activate ? 1 : (Math.floor(seedrandom("" + msg.user.id + Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) + ai.account.id)() * 5 + day) % 5) * 0.25) + (Math.random() < 0.01 ? 0.3 : 0) + (Math.random() < 0.01 ? 0.3 : 0);
 	while (Math.random() < 0.01) {
 		bonusX += 0.3;
 	}
