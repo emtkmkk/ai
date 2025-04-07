@@ -295,7 +295,7 @@ function finish(raid: Raid) {
 			const sum2 = rpgData.raidReputations.reduce((acc, cur) => acc + cur, 0);
 			const reputation2 = sum2 / rpgData.raidReputations.length;
 
-			bonusCoin = Math.max(1, reputation2 / 4);
+			bonusCoin = Math.max(1, Math.floor(reputation2 * 16.75 * (1.5 ^ reputation2)) / 527);
 
 			if (reputation1 == 0) {
 				results.push(`討伐隊の評判値: ${Math.floor(reputation2 * 16.75 * (1.5 ^ reputation2)).toLocaleString()} ↑アップ！`);
@@ -503,7 +503,11 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		if (!skillEffects.noAmuletAtkUp && !skillsStr.amulet && Math.random() < 0.1 + ((data.noAmuletCount + 18) * 0.05)) {
 			amuletGetFlg = true;
 			data.noAmuletCount = -18;
-			data.items.push({ name: `謎のお守り`, price: 1, desc: `貰ったお守り。よくわからないが不思議な力を感じる…… 持っていると何かいい事があるかもしれない。`, type: "amulet", effect: { stockRandomEffect: 1 }, durability: 1, short: "？" });
+			if (data.skills?.length < 2 || (data.skills?.length < 3 && Math.random() < 0.5)) {
+				data.items.push({ name: `わかばのお守り`, price: 1, desc: `もこチキの持っているスキルが5個より少ない場合（もこチキのレベルが低い場合）、少ないスキル1つにつき約6%分パワー・防御が上がります 特定条件でさらにパワー・防御が+12%されます 耐久20`, type: "amulet", effect: { beginner: 0.06 }, durability: 20, short: "🔰" });
+			} else {
+				data.items.push({ name: `謎のお守り`, price: 1, desc: `貰ったお守り。よくわからないが不思議な力を感じる…… 持っていると何かいい事があるかもしれない。`, type: "amulet", effect: { stockRandomEffect: 1 }, durability: 1, short: "？" });
+			}
 			// スキル効果を再度読み込み
 			if (enemy.skillX) {
 				skillEffects = aggregateSkillsEffectsSkillX(data, enemy.skillX);
@@ -1636,7 +1640,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 
 		if (verboseLog && enemy.abort) {
 			buff += 1;
-			message += `連続攻撃中断率: ${enemy.abort * (1 - (skillEffects.abortDown ?? 0)) * 100}}%\n`;
+			message += `連続攻撃中断率: ${enemy.abort * (1 - (skillEffects.abortDown ?? 0)) * 100}%\n`;
 		}
 		
 
@@ -1774,7 +1778,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 		if (verboseLog) {
 			buff += 1;
 			message += `A: ${formatNumber(atk)} (x${formatNumber(atk / (lv * 3.5))})\n`;
-			message += `クリ率: ${formatNumber((Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0) + critUp), 0) + (skillEffects.critUpFixed ?? 0)) * 100)}%\n`;
+			message += `クリティカル率: ${formatNumber((Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0) + critUp), 0) + (skillEffects.critUpFixed ?? 0)) * 100)}%\n`;
 		}
 
 		// 自身攻撃の処理
@@ -1890,6 +1894,18 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 							buff += 1;
 							message += `嫉妬: 被ダメージ${displayDifference((1 + (score-5) * 0.1))}\n`;
 						}
+					}
+				}
+			}
+
+			if (enemy && skillEffects.beginner && count <= 4 && data.skills?.length && data.skills?.length <= 3) {
+				const targetScore = (1024 / ((enemy?.power ?? 30) / 30)) * 2^3;
+				const rate = (1 - ((data.skills?.length >= 4 ? 0 : data.skills?.length >= 3 ? 0.3 : data.skills?.length >= 2 ? 0.6 : 0.9) * Math.max(1 - (totalDmg / targetScore), 0)));
+				if (rate < 1) {
+					enemyAtkX = enemyAtkX * rate;
+					if (verboseLog) {
+						buff += 1;
+						message += `わかばの加護: 被ダメージ${displayDifference(rate)}\n`;
 					}
 				}
 			}
