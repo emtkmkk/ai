@@ -1088,6 +1088,10 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 		atk *= (1 + (skillEffects.enemyBuff ?? 0) / 20);
 		def *= (1 + (skillEffects.enemyBuff ?? 0) / 20);
 	}
+	
+	if (skillEffects.wrath) {
+		resultS.push("開始時体力半減");
+	}
 
 	if (skillEffects.berserk) {
 		resultS.push("毎ターン体力減少: "+ showNum(skillEffects.berserk * 100) + "%");
@@ -1298,7 +1302,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 		result.push("クリティカル率（固定）: +" + showNum((skillEffects.critUpFixed ?? 0) * 100) + "%");
 	}
 	if (skillEffects.critDmgUp) {
-		result.push("クリティカルダメージ: +" + showNum((skillEffects.critDmgUp ?? 0) * 100) + "%");
+		result.push("クリティカルダメージ: +" + showNum(((skillEffects.critDmgUp ?? 0) + ((1 + (skillEffects.critDmgUp ?? 0)) * (skillEffects.wrath ? 0.4 : 0))) * 100) + "%");
 	}
 	if (skillEffects.enemyCritDown) {
 		result.push("敵クリティカル率: -" + showNum(((skillEffects.enemyCritDown ?? 0)) * 100) + "%");
