@@ -278,7 +278,7 @@ export const skills: Skill[] = [
 	{ name: `なんでも口に入れない`, short: "捨", desc: `良くないものを食べなくなることがあります`, info: `毒食べ物を50%で捨てる 100%以上になると悪アイテム率減少に変換`, effect: { poisonAvoid: 0.5 }, moveTo: "道具の選択が上手い" },
 	{ name: `道具の選択が上手い`, short: "選", desc: `道具の効果量がすこし上がり、悪いアイテムを選びにくくなり、良くないものを食べなくなる事があります`, info: `道具効果量+15% 悪アイテム率-15% 毒食べ物を40%で捨てる 100%以上になると悪アイテム率減少に変換`, effect: { itemBoost: 0.15, mindMinusAvoid: 0.15, poisonAvoid: 0.4 } },
 	{ name: `お腹が空いてから食べる`, short: "空", desc: `体力が減ったら食べ物を食べやすくなり、食べ物の効果量が少し上がります`, info: `体力が減少すれば食べ物を食べるようになり、毒食べ物の確率が下がる 食べ物効果量+20% 毒食べ物ダメージ-20%`, effect: { lowHpFood: 1, foodBoost: 0.2, poisonResist: 0.2 }, unique: "lowHpFood" },
-	{ name: `たまにたくさん成長`, short: "成", desc: `たまにステータスが多く増加します ★変更不可`, info: `Lvアップ毎になにかのステータス+1 ★変更不可（変更してもステータスは残るため）`, effect: { statusBonus: 2 }, unique: "status", cantReroll: true },
+	{ name: `たまにたくさん成長`, short: "成", desc: `たまにステータスが多く増加します ★変更不可`, info: `Lvアップ毎になにかのステータス+1 ★変更不可（変更してもステータスは残るため）`, effect: { statusBonus: 2 }, unique: "status", cantReroll: true, moveTo: `テキパキこなす` },
 	{ name: `連続攻撃完遂率上昇`, short: "遂", desc: `連続攻撃を相手に止められにくくなります`, info: `連続攻撃中断率-32% 効果がない場合、${serifs.rpg.status.atk}+10%`, effect: { abortDown: 0.32 } },
 	{ name: `クリティカル性能上昇`, short: "急", desc: `クリティカル率とクリティカルダメージが上昇します`, info: `クリティカル率1.2倍&+3% クリティカルダメージ+20%`, effect: { critUp: 0.2, critUpFixed: 0.03, critDmgUp: 0.2 } },
 	{ name: `敵のクリティカル性能減少`, short: "守", desc: `相手のクリティカル率とクリティカルダメージが減少します`, info: `敵のクリティカル率-40% 敵のクリティカルダメージ-40% レイド時は、追加で${serifs.rpg.status.def}+10%`, effect: { enemyCritDown: 0.4, enemyCritDmgDown: 0.4 } },
