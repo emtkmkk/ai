@@ -1848,11 +1848,14 @@ export default class extends Module {
 					if (skill.unique) uniques.add(skill.unique);
 				}
 				if (skill.moveTo) {
-					const moveToSkill = skills.find((x) => x.name === skill.moveTo);
+					let moveToSkill = skills.find((x) => x.name === skill.moveTo);
 					if (moveToSkill) {
 						if (skill.effect?.statusBonus) {
 							data.atk = Math.round(data.atk * (7.2 / 8));
 							data.def = Math.round(data.def * (7.2 / 8));
+							if (countDuplicateSkillNames(data.skills) === 0 && data.skills.every((x) => x.name !== "分散型")) {
+								moveToSkill = skills.find((x) => x.name === "分散型");
+							}
 						}
 						oldSkillName = skill.name;
 						data.skills = data.skills.filter((x: Skill) => x.name !== oldSkillName);
