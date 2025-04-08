@@ -1854,7 +1854,8 @@ export default class extends Module {
 							data.atk = Math.round(data.atk * (7.2 / 8));
 							data.def = Math.round(data.def * (7.2 / 8));
 							if (countDuplicateSkillNames(data.skills) === 0 && data.skills.every((x) => x.name !== "分散型")) {
-								moveToSkill = skills.find((x) => x.name === "分散型");
+								const dSkill = skills.find((x) => x.name === "分散型")
+								if (dSkill) moveToSkill = dSkill;
 							}
 						}
 						oldSkillName = skill.name;
