@@ -201,6 +201,7 @@ export type SkillEffect = {
 	lust?: number;
 	gluttony?: number;
 	sloth?: number;
+	noCrit?: number;
 };
 
 export type Skill = {
@@ -264,7 +265,7 @@ export const skills: Skill[] = [
 	{ name: `強敵と戦うのが好き`, short: "強", desc: `敵が強ければステータスが上昇します`, info: `ステータス+(敵の攻撃 × 敵の防御 / 4)%`, effect: { enemyStatusBonus: 1 } },
 	{ name: `${serifs.rpg.status.pen}+10%`, short: "貫", desc: `敵の防御の影響を減少させます`, info: `敵の防御-12%`, effect: { arpen: 0.12 } },
 	{ name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndM}4`, short: "４", desc: `乱数幅が20~180 -> 60~160 (%) になります`, info: `乱数幅 20~180 -> 60~160 (%) 期待値 110% 乱数系と重複しない`, effect: { atkRndMin: 0.4, atkRndMax: -0.2 }, unique: "rnd", moveTo: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndM}5` },
-	{ name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndM}5`, short: "５", desc: `クリティカルが発生しなくなりますが、高いダメージがとても出やすくなります`, info: `乱数幅 20~180 -> 90~135 (%) 期待値 112% クリティカルの期待値分、ダメージ上昇 乱数系と重複しない`, effect: { atkRndMin: 0.7, atkRndMax: -0.45 }, unique: "rnd" },
+	{ name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndM}5`, short: "５", desc: `クリティカルが発生しなくなりますが、高いダメージがとても出やすくなります`, info: `乱数幅 20~180 -> 90~135 (%) 期待値 112% クリティカルの期待値分、ダメージ上昇 乱数系と重複しない`, effect: { atkRndMin: 0.7, atkRndMax: -0.45, noCrit: 1 }, unique: "rnd" },
 	{ name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndP}`, short: "乱", desc: `乱数幅が20~180 -> 5~225になります クリティカル率も上がります`, info: `乱数幅 20~180 -> 5~225 (%) 期待値 115% クリティカル率+2% 乱数系と重複しない`, effect: { atkRndMin: -0.15, atkRndMax: 0.6, critUpFixed: 0.02 }, unique: "rnd" },
 	{ name: `${serifs.rpg.dmg.take}${serifs.rpg.status.rndM}`, short: "安", desc: `敵から受ける最大ダメージを減少させます`, info: `敵の乱数幅 20~180 -> 20~160 (%) 乱数系と重複しない`, effect: { defRndMin: 0, defRndMax: -0.2 }, unique: "rnd" },
 	{ name: `${serifs.rpg.dmg.take}${serifs.rpg.status.rndP}`, short: "不", desc: `敵から受ける最小ダメージを減少させます`, info: `敵の乱数幅 20~180 -> 0~180 (%) 乱数系と重複しない`, effect: { defRndMin: -0.2, defRndMax: 0 }, unique: "rnd" },
