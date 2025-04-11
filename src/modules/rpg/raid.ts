@@ -1801,7 +1801,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 			const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
 			if (skillEffects.noCrit) {
 				crit = false;
-				const noCritBonus = 1 + ((Math.min(Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0) + critUp), 0) + (skillEffects.critUpFixed ?? 0)), 1) * ((2 * critDmg) - 1));
+				const noCritBonus = 1 + (Math.min((Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0) + critUp), 0) + (skillEffects.critUpFixed ?? 0)), 1) * ((2 * critDmg) - 1));
 				dmgBonus *= noCritBonus
 				if (verboseLog && (noCritBonus < 0.999 || noCritBonus > 1.001)) {
 					buff += 1;
