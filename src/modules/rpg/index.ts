@@ -1557,7 +1557,7 @@ export default class extends Module {
 				const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
 				if (skillEffects.noCrit) {
 					crit = false;
-					dmgBonus *= 1 + ((Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0) + critUp), 0) + (skillEffects.critUpFixed ?? 0)) * (2 * critDmg))
+					dmgBonus *= 1 + ((Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0) + critUp), 0) + (skillEffects.critUpFixed ?? 0)) * ((2 * critDmg) - 1))
 				}
 				/** ダメージ */
 				let dmg = getAtkDmg(data, atk, tp, count, crit ? critDmg : false, enemyDef, enemyMaxHp, rng * dmgBonus) + trueDmg;
