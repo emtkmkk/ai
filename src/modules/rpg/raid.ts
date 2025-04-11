@@ -1790,7 +1790,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 			const rng = (atkMinRnd + random(data, startCharge, skillEffects, false) * atkMaxRnd);
 			if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`;
 			const turnDmgX = (i < 2 ? 1 : i < 3 ? 0.5 : i < 4 ? 0.25 : 0.125);
-			const dmgBonus = ((Math.max(1 + (skillEffects.atkDmgUp ?? 0) * dmgUp, atkMinusMin)) * turnDmgX) + (skillEffects.thunder ? (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 0);
+			let dmgBonus = ((Math.max(1 + (skillEffects.atkDmgUp ?? 0) * dmgUp, atkMinusMin)) * turnDmgX) + (skillEffects.thunder ? (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 0);
 			const rawDmgBonus = dmgBonus / turnDmgX;
 			if (verboseLog && (rawDmgBonus < 0.999 || rawDmgBonus > 1.001)) {
 				buff += 1;
@@ -1799,6 +1799,15 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 			//** クリティカルかどうか */
 			let crit = Math.random() < Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0) + critUp), 0) + (skillEffects.critUpFixed ?? 0);
 			const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
+			if (skillEffects.noCrit) {
+				crit = false;
+				const noCritBonus = 1 + ((Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0) + critUp), 0) + (skillEffects.critUpFixed ?? 0)) * (2 * critDmg));
+				dmgBonus *= noCritBonus
+				if (verboseLog && (noCritBonus < 0.999 || noCritBonus > 1.001)) {
+					buff += 1;
+					message += `５スキル効果: ${displayDifference(noCritBonus)}\n`;
+				}
+			}
 			/** ダメージ */
 			let dmg = getAtkDmg(data, atk, tp, 1, crit ? critDmg : false, enemyDef, enemyMaxHp, rng * dmgBonus, getVal(enemy.defx, [count])) + Math.round(trueDmg * turnDmgX);
 			let noItemDmg = getAtkDmg(data, atk - itemBonus.atk, tp, 1, crit ? critDmg : false, enemyDef, enemyMaxHp, rng * dmgBonus, getVal(enemy.defx, [count])) + Math.round(trueDmg * turnDmgX);
