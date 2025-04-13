@@ -295,12 +295,12 @@ function finish(raid: Raid) {
 			const sum2 = rpgData.raidReputations.reduce((acc, cur) => acc + cur, 0);
 			const reputation2 = sum2 / rpgData.raidReputations.length;
 
-			bonusCoin = Math.min(Math.max(1, Math.floor(reputation2 * 16.75 * (1.5 ^ reputation2)) / 527), 11);
+			bonusCoin = Math.min(Math.max(1, Math.floor(reputation2 * 16.75 * (1.5 ** reputation2)) / 527), 11);
 
 			if (reputation1 == 0) {
-				results.push(`討伐隊の評判値: ${Math.floor(reputation2 * 16.75 * (1.5 ^ reputation2)).toLocaleString()} ↑アップ！`);
+				results.push(`討伐隊の評判値: ${Math.floor(reputation2 * 16.75 * (1.5 ** reputation2)).toLocaleString()} ↑アップ！`);
 			} else {
-				results.push(`討伐隊の評判値: ${Math.floor(reputation1 * 16.75 * (1.5 ^ reputation1)).toLocaleString()} → ${Math.floor(reputation2 * 16.75 * (1.5 ^ reputation2)).toLocaleString()} ${reputation1 < reputation2 ? "↑アップ！" : reputation1 > reputation2 ? "↓ダウン…" : ""}`);
+				results.push(`討伐隊の評判値: ${Math.floor(reputation1 * 16.75 * (1.5 ** reputation1)).toLocaleString()} → ${Math.floor(reputation2 * 16.75 * (1.5 ** reputation2)).toLocaleString()} ${reputation1 < reputation2 ? "↑アップ！" : reputation1 > reputation2 ? "↓ダウン…" : ""}`);
 			}
 
 			if (score != Math.floor((score ?? 4) * bonusCoin)) {
