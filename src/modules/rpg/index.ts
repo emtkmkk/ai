@@ -9,9 +9,9 @@ import { endressEnemy, enemys, Enemy, raidEnemys } from './enemys';
 import { rpgItems } from './items';
 import { aggregateTokensEffects, shopContextHook, shopReply } from './shop';
 import { shop2Reply } from './shop2';
-import { skills, Skill, SkillEffect, getSkill, skillReply, skillCalculate, aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, countDuplicateSkillNames } from './skills';
+import { skills, Skill, SkillEffect, getSkill, skillReply, skillCalculate, aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, countDuplicateSkillNames, skillBorders } from './skills';
 import { start, Raid, raidInstall, raidContextHook, raidTimeoutCallback } from './raid';
-import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatus, getPostCount, getPostX, getVal, random } from './utils';
+import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatus, getPostCount, getPostX, getVal, random, preLevelUpProcess } from './utils';
 import { calculateStats } from './battle';
 import Friend from '@/friend';
 import config from '@/config';
@@ -721,10 +721,10 @@ export default class extends Module {
 		const isMaxLevel = data.lv >= rpgData.maxLv;
 
 		let needCoin = 10;
-		if ((rpgData.maxLv - data.lv) >= 200) needCoin -= 1;
+		if ((rpgData.maxLv - data.lv) >= 200) needCoin -= 2;
 		if ((rpgData.maxLv - data.lv) >= 150) needCoin -= 2;
-		if ((rpgData.maxLv - data.lv) >= 100) needCoin -= 2;
-		if ((rpgData.maxLv - data.lv) >= 50) needCoin -= 2;
+		if ((rpgData.maxLv - data.lv) >= 100) needCoin -= 4;
+		//if ((rpgData.maxLv - data.lv) >= 50) needCoin -= 2;
 
 		// プレイ済でないかのチェック
 		if (data.lastPlayedAt === nowTimeStr || data.lastPlayedAt === nextTimeStr) {
@@ -1818,81 +1818,11 @@ export default class extends Module {
 		data.def = (data.def ?? 0) + totalUp - atkUp;
 		data.exp = 0;
 
+
 		/** 追加表示メッセージ */
-		let addMessage = "";
+		let addMessage = preLevelUpProcess(data);
 
-		if ((data.info ?? 0) < 1 && ((100 + lv * 3) + ((data.winCount ?? 0) * 5)) >= 300) {
-			data.info = 1;
-			addMessage += `\n` + serifs.rpg.info;
-		}
-
-		let oldSkillName = "";
-
-		if (data.skills?.length) {
-			const uniques = new Set();
-			for (const _skill of data.skills as Skill[]) {
-				const skill = skills.find((x) => x.name === _skill.name) ?? _skill;
-
-				if (!data.checkFreeDistributed && data.skills?.length === 5 && (data.totalRerollOrb ?? 0) === (data.rerollOrb ?? 0) && !data.freeDistributed && countDuplicateSkillNames(data.skills) === 0 && data.skills.every((x) => x.name !== "分散型")) {
-					const moveToSkill = skills.find((x) => x.name === "分散型");
-					if (moveToSkill) {
-						oldSkillName = data.skills[4].name;
-						data.skills[4] = moveToSkill;
-						data.freeDistributed = true;
-						addMessage += `\n` + serifs.rpg.moveToSkill(oldSkillName, moveToSkill.name);
-					}
-				} else {
-					if (!data.checkFreeDistributed) data.checkFreeDistributed = true;
-				}
-
-				if ((skill.unique && uniques.has(skill.unique)) || skill.notLearn) {
-					oldSkillName = skill.name;
-					data.skills = data.skills.filter((x: Skill) => x.name !== oldSkillName);
-				} else {
-					if (skill.unique) uniques.add(skill.unique);
-				}
-				if (skill.moveTo) {
-					let moveToSkill = skills.find((x) => x.name === skill.moveTo);
-					if (moveToSkill) {
-						if (skill.effect?.statusBonus) {
-							data.atk = Math.round(data.atk * (7.2 / 8));
-							data.def = Math.round(data.def * (7.2 / 8));
-							if (countDuplicateSkillNames(data.skills) === 0 && data.skills.every((x) => x.name !== "分散型")) {
-								const dSkill = skills.find((x) => x.name === "分散型")
-								if (dSkill) moveToSkill = dSkill;
-							}
-						}
-						oldSkillName = skill.name;
-						data.skills = data.skills.filter((x: Skill) => x.name !== oldSkillName);
-						data.skills.push(moveToSkill);
-						addMessage += `\n` + serifs.rpg.moveToSkill(oldSkillName, moveToSkill.name);
-					}
-				}
-			}
-		}
-
-		const skillBorders = [20, 50, 100, 170, 255];
-		const skillCounts = skillBorders.filter((x) => data.lv >= x).length;
-
-		if ((data.skills ?? []).length < skillCounts) {
-			if (!data.skills) data.skills = [];
-			let skill;
-			if ((data.skills ?? []).length === 4 && skillCounts === 5 && countDuplicateSkillNames(data.skills) === 0 && data.skills.every((x) => x.name !== "分散型")) {
-				skill = skills.find((x) => x.name === "分散型");
-				data.freeDistributed = true;
-				data.checkFreeDistributed = true;
-			} else {
-				skill = getSkill(data)
-			}
-			data.skills.push(skill);
-			if (oldSkillName) {
-				addMessage += `\n` + serifs.rpg.moveToSkill(oldSkillName, skill.name);
-			} else {
-				addMessage += `\n` + serifs.rpg.newSkill(skill.name);
-			}
-		}
-
-		if (!msg.includes(Array.isArray(serifs.rpg.command.onemore) ? serifs.rpg.command.onemore : [serifs.rpg.command.onemore])) data.coinGetCount += 1;
+		if (!msg.includes(Array.isArray(serifs.rpg.command.onemore) ? serifs.rpg.command.onemore : [serifs.rpg.command.onemore])) data.coinGetCount += 1 + (Math.random() < 0.5 ? 1 : 0);
 		if (data.coinGetCount >= 5) {
 			data.coin += 5;
 			data.coinGetCount -= 5;

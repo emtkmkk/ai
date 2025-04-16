@@ -6,9 +6,9 @@ import rpg from './index';
 import { colors } from './colors';
 import { endressEnemy, Enemy, RaidEnemy, raidEnemys } from './enemys';
 import { rpgItems } from './items';
-import { aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, getSkillsShortName, aggregateSkillsEffectsSkillX } from './skills';
+import { aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, getSkillsShortName, aggregateSkillsEffectsSkillX, countDuplicateSkillNames } from './skills';
 import { aggregateTokensEffects } from './shop';
-import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatusDmg, getPostCount, getPostX, getVal, random, getRaidPostX } from './utils';
+import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatusDmg, getPostCount, getPostX, getVal, random, getRaidPostX, preLevelUpProcess } from './utils';
 import { calculateStats, fortune, stockRandom } from './battle';
 import serifs from '@/serifs';
 import getDate from '@/utils/get-date';
@@ -2118,13 +2118,20 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 
 	const rpgData = ai.moduleData.findOne({ type: 'rpg' });
 	if (data.lv + 1 < rpgData.maxLv) {
-		data.exp = (data.exp ?? 0) + 1;
-		if (data.exp >= 3) {
-			message += "\n\n" + serifs.rpg.expPoint(data.exp);
+		if (rpgData.maxLv >= 900 && data.lv < 255) {
+			data.exp = (data.exp ?? 0) + 5;
+			message += "\n\n" + serifs.rpg.expPointFast;
+		} else {
+			data.exp = (data.exp ?? 0) + 1;
+			if (data.exp >= 3) {
+				message += "\n\n" + serifs.rpg.expPoint(data.exp);
+			}
 		}
 	}
 
 	if (data.exp >= 5 && (data.lv > 255 || data.lv + 1 < rpgData.maxLv)) {
+
+		let addMessage = preLevelUpProcess(data);
 
 		// レベルアップ処理
 		data.lv = (data.lv ?? 1) + 1;
@@ -2159,6 +2166,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 			`  ${serifs.rpg.status.lv} : ${data.lv ?? 1} (+1)`,
 			`  ${serifs.rpg.status.atk} : ${data.atk ?? 0} (+${atkUp})`,
 			`  ${serifs.rpg.status.def} : ${data.def ?? 0} (+${totalUp - atkUp})`,
+			addMessage,
 		].filter(Boolean).join("\n");
 
 	}

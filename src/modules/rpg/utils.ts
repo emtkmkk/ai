@@ -6,7 +6,7 @@ import serifs from '@/serifs';
 import rpg from './index';
 import { colorReply, colors } from './colors';
 import { aggregateTokensEffects, shopItems } from './shop';
-import { ultimateAmulet } from './skills';
+import { countDuplicateSkillNames, getSkill, Skill, skillBorders, skills, ultimateAmulet } from './skills';
 import config from '@/config';
 
 export function initializeData(module: rpg, msg) {
@@ -433,4 +433,80 @@ export function numberCharConvert(input: number): string | null {
     } else {
         return null; // 無効な入力の場合（負の数や36以上の数値など）
     }
+}
+
+export function preLevelUpProcess(data): string {
+    /** 追加表示メッセージ */
+    let addMessage = "";
+
+    if ((data.info ?? 0) < 1 && ((100 + data.lv * 3) + ((data.winCount ?? 0) * 5)) >= 300) {
+        data.info = 1;
+        addMessage += `\n` + serifs.rpg.info;
+    }
+
+    let oldSkillName = "";
+
+    if (data.skills?.length) {
+        const uniques = new Set();
+        for (const _skill of data.skills as Skill[]) {
+            const skill = skills.find((x) => x.name === _skill.name) ?? _skill;
+
+            if (!data.checkFreeDistributed && data.skills?.length === 5 && (data.totalRerollOrb ?? 0) === (data.rerollOrb ?? 0) && !data.freeDistributed && countDuplicateSkillNames(data.skills) === 0 && data.skills.every((x) => x.name !== "分散型")) {
+                const moveToSkill = skills.find((x) => x.name === "分散型");
+                if (moveToSkill) {
+                    oldSkillName = data.skills[4].name;
+                    data.skills[4] = moveToSkill;
+                    data.freeDistributed = true;
+                    addMessage += `\n` + serifs.rpg.moveToSkill(oldSkillName, moveToSkill.name);
+                }
+            } else {
+                if (!data.checkFreeDistributed) data.checkFreeDistributed = true;
+            }
+
+            if ((skill.unique && uniques.has(skill.unique)) || skill.notLearn) {
+                oldSkillName = skill.name;
+                data.skills = data.skills.filter((x: Skill) => x.name !== oldSkillName);
+            } else {
+                if (skill.unique) uniques.add(skill.unique);
+            }
+            if (skill.moveTo) {
+                let moveToSkill = skills.find((x) => x.name === skill.moveTo);
+                if (moveToSkill) {
+                    if (skill.effect?.statusBonus) {
+                        data.atk = Math.round(data.atk * (7.2 / 8));
+                        data.def = Math.round(data.def * (7.2 / 8));
+                        if (countDuplicateSkillNames(data.skills) === 0 && data.skills.every((x) => x.name !== "分散型")) {
+                            const dSkill = skills.find((x) => x.name === "分散型")
+                            if (dSkill) moveToSkill = dSkill;
+                        }
+                    }
+                    oldSkillName = skill.name;
+                    data.skills = data.skills.filter((x: Skill) => x.name !== oldSkillName);
+                    data.skills.push(moveToSkill);
+                    addMessage += `\n` + serifs.rpg.moveToSkill(oldSkillName, moveToSkill.name);
+                }
+            }
+        }
+    }
+    
+    const skillCounts = skillBorders.filter((x) => data.lv >= x).length;
+
+    if ((data.skills ?? []).length < skillCounts) {
+        if (!data.skills) data.skills = [];
+        let skill;
+        if ((data.skills ?? []).length === 4 && skillCounts === 5 && countDuplicateSkillNames(data.skills) === 0 && data.skills.every((x) => x.name !== "分散型")) {
+            skill = skills.find((x) => x.name === "分散型");
+            data.freeDistributed = true;
+            data.checkFreeDistributed = true;
+        } else {
+            skill = getSkill(data)
+        }
+        data.skills.push(skill);
+        if (oldSkillName) {
+            addMessage += `\n` + serifs.rpg.moveToSkill(oldSkillName, skill.name);
+        } else {
+            addMessage += `\n` + serifs.rpg.newSkill(skill.name);
+        }
+    }
+    return addMessage;
 }

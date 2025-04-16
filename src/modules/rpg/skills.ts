@@ -302,6 +302,8 @@ export const skills: Skill[] = [
 	{ name: `嫉妬の力`, short: "**嫉**", desc: `レイドで与えたダメージが低い間、ダメージを大きくカットします`, info: "レイドでのダメージ評価が低い間、被ダメージを最大70%カットします\n評価が高くなった場合、被ダメージが★1につき+10%", effect: { envy: 1 }, notLearn: true, amuletUnique: "sin"},
 ];
 
+export const skillBorders = [20, 50, 100, 170, 255];
+
 const ultimateEffect: SkillEffect = {
 	"atkUp": 0.010,
 	"atkUp2": 0.0063,
