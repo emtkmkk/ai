@@ -2118,7 +2118,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 
 	const rpgData = ai.moduleData.findOne({ type: 'rpg' });
 	if (data.lv + 1 < rpgData.maxLv) {
-		if (rpgData.maxLv >= 900 && data.lv < 255) {
+		if (data.lv < 255) {
 			data.exp = (data.exp ?? 0) + 5;
 			message += "\n\n" + serifs.rpg.expPointFast;
 		} else {
