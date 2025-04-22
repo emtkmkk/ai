@@ -54,7 +54,7 @@ export default class extends Module {
 						}
 			}
 
-			const opt = replyNote.visibility == 'followers' || replyNote.visibility == 'specified' ? { visibility: 'public', references: [msg.replyId] } : { visibility: 'public', renote: msg.replyId };
+			const opt = msg.replyNote.visibility == 'followers' || msg.replyNote.visibility == 'specified' ? { visibility: 'public', references: [msg.replyId] } : { visibility: 'public', renote: msg.replyId };
 			const rng = seedrandom(msg.replyId + ":f");
 			const v = rng();
 			if (v < 0.5) {
