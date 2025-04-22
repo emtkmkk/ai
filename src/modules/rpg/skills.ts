@@ -745,6 +745,7 @@ export function aggregateSkillsEffectsSkillX(data: any, skillX: number): SkillEf
 					} else {
 						adjustedEffect[key] = effect[key];
 					}
+					adjustedEffect.amuletPower = (adjustedEffect.amuletPower ?? 0) + (1 * multiplier);
 				}
 				return { effect: adjustedEffect };
 			};
