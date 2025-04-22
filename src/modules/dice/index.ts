@@ -42,6 +42,12 @@ export default class extends Module {
 		}
 		
 		if (msg.replyId && includes(msg.extractedText, ['ファクト']) && includes(msg.extractedText, ['チェック'])) {
+			if (msg.replyNote.uri) {
+						const replyUser = await this.ai.api('users/show', {
+							userId: msg.replyNote.userId
+						});
+						if (!replyUser.isFollowed) msg.reply("もこチキをフォローしていないリモートユーザにはファクトチェックできません！", { visibility: 'specified' });
+			}
 			const rng = seedrandom(msg.replyId + ":f");
 			const v = rng();
 			if (v < 0.5) {
