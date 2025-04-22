@@ -47,6 +47,9 @@ export default class extends Module {
 							userId: msg.replyNote.userId
 						});
 						if (!replyUser.isFollowed) msg.reply("もこチキをフォローしていないリモートユーザにはファクトチェックできません！", { visibility: 'specified' });
+						return {
+							reaction: ':mk_hotchicken:'
+						};
 			}
 			const rng = seedrandom(msg.replyId + ":f");
 			const v = rng();
