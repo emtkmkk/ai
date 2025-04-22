@@ -46,7 +46,7 @@ export default class extends Module {
 						const replyUser = await this.ai.api('users/show', {
 							userId: msg.replyNote.userId
 						});
-						if (!replyUser.isFollowed) msg.reply("もこチキをフォローしていないリモートユーザにはファクトチェックできません！", { visibility: 'specified' });
+						if (!replyUser.isFollowed && !replyUser.isFollowing) msg.reply("私をフォローしていないリモートユーザにはファクトチェックできません！", { visibility: 'specified' });
 						return {
 							reaction: ':mk_hotchicken:'
 						};
