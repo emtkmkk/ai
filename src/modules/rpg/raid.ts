@@ -2437,14 +2437,6 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 
 		if (totalUp > (data.maxStatusUp ?? 7)) data.maxStatusUp = totalUp;
 
-		if (skillEffects.statusBonus && skillEffects.statusBonus > 0 && data.lv % Math.max(2 / skillEffects.statusBonus, 1) === 0) {
-			const upBonus = Math.ceil(skillEffects.statusBonus / 2);
-			for (let i = 0; i < upBonus; i++) {
-				totalUp += 1;
-				if (Math.random() < 0.5) atkUp += 1;
-			}
-		}
-
 		while (data.lv >= 3 && data.atk + data.def + totalUp < (data.lv - 1) * 7) {
 			totalUp += 1;
 			if (Math.random() < 0.5) atkUp += 1;
@@ -2855,14 +2847,6 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 		}
 
 		if (totalUp > (data.maxStatusUp ?? 7)) data.maxStatusUp = totalUp;
-
-		if (skillEffects.statusBonus && skillEffects.statusBonus > 0 && data.lv % Math.max(2 / skillEffects.statusBonus, 1) === 0) {
-			const upBonus = Math.ceil(skillEffects.statusBonus / 2);
-			for (let i = 0; i < upBonus; i++) {
-				totalUp += 1;
-				if (Math.random() < 0.5) atkUp += 1;
-			}
-		}
 
 		while (data.lv >= 3 && data.atk + data.def + totalUp < (data.lv - 1) * 7) {
 			totalUp += 1;
