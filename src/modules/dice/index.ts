@@ -46,16 +46,16 @@ export default class extends Module {
 			const v = rng();
 			if (v < 0.5) {
 				if (v < 0.25) {
-					msg.reply("この投稿は多分本当、部分的に本当", { visibility: 'public', renoteId: msg.replyId });
+					msg.reply("この投稿は多分本当、部分的に本当", { visibility: 'public', renote: msg.replyId });
 				} else {
-					msg.reply("この投稿は正しいかも", { visibility: 'public', renoteId: msg.replyId });
+					msg.reply("この投稿は正しいかも", { visibility: 'public', renote: msg.replyId });
 				}
 
 			} else {
 				if (v > 0.75) {
-					msg.reply("この投稿は多分嘘、部分的に嘘", { visibility: 'public', renoteId: msg.replyId });
+					msg.reply("この投稿は多分嘘、部分的に嘘", { visibility: 'public', renote: msg.replyId });
 				} else {
-					msg.reply("この投稿は嘘かも", { visibility: 'public', renoteId: msg.replyId });
+					msg.reply("この投稿は嘘かも", { visibility: 'public', renote: msg.replyId });
 				}
 			}
 			return {
