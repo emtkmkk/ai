@@ -86,6 +86,7 @@ export default class Message {
 		visibility?: string;
 		visibilityForce?: boolean;
 		localOnly?: boolean;
+		references?: string[];
 	}) {
 		if (text == null) return;
 
@@ -104,7 +105,8 @@ export default class Message {
 			visibility: opts?.visibility ?? 'home',
 			visibilityForce: opts?.visibilityForce,
 			localOnly: opts?.localOnly || false,
-			...(opts?.visibility === 'specified' ? { visibleUserIds: [this.userId], } : {})
+			...(opts?.visibility === 'specified' ? { visibleUserIds: [this.userId], } : {}),
+			references: opts?.references,
 		});
 	}
 
