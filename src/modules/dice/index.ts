@@ -2,6 +2,7 @@ import autobind from 'autobind-decorator';
 import Module from '@/module';
 import Message from '@/message';
 import serifs from '@/serifs';
+import * as seedrandom from 'seedrandom';
 
 export default class extends Module {
 	public readonly name = 'dice';
@@ -15,18 +16,20 @@ export default class extends Module {
 
 	@autobind
 	private async mentionHook(msg: Message) {
-		if (msg.text == null) return false;
+		if (msg.extractedText == null) return false;
 
-		if (msg.text.endsWith("ですか？") || msg.text.endsWith("ますか？") || msg.text.endsWith("ですよね？")) {
-			if (Math.random() < 0.5) {
-				if (Math.random() < 0.25) {
+		if (msg.extractedText.endsWith("ですか？") || msg.extractedText.endsWith("ますか？") || msg.extractedText.endsWith("ですよね？")) {
+			const rng = seedrandom(msg.extractedText.trim() + ":q");
+			const v = rng();
+			if (v < 0.5) {
+				if (v < 0.25) {
 					msg.reply("多分はい、部分的にはい", { visibility: 'public' });
 				} else {
 					msg.reply("はい", { visibility: 'public' });
 				}
 
 			} else {
-				if (Math.random() < 0.25) {
+				if (v > 0.75) {
 					msg.reply("多分いいえ、部分的にいいえ", { visibility: 'public' });
 				} else {
 					msg.reply("いいえ", { visibility: 'public' });
@@ -36,8 +39,30 @@ export default class extends Module {
 				reaction: 'love'
 			};
 		}
+		
+		if (msg.replyId && includes(msg.extractedText, ['ファクト']) && includes(msg.extractedText, ['チェック'])) {
+			const rng = seedrandom(msg.replyId + ":f");
+			const v = rng();
+			if (v < 0.5) {
+				if (v < 0.25) {
+					msg.reply("この投稿は多分本当、部分的に本当", { visibility: 'public' });
+				} else {
+					msg.reply("この投稿は正しいかも", { visibility: 'public' });
+				}
 
-		const query = msg.text.match(/([0-9]+)[dD]([0-9]+)/);
+			} else {
+				if (v > 0.75) {
+					msg.reply("この投稿は多分嘘、部分的に嘘", { visibility: 'public' });
+				} else {
+					msg.reply("この投稿は嘘かも", { visibility: 'public' });
+				}
+			}
+			return {
+				reaction: 'love'
+			};
+		}
+
+		const query = msg.extractedText.match(/([0-9]+)[dD]([0-9]+)/);
 
 		if (query == null) return false;
 
