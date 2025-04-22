@@ -1004,19 +1004,19 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 			message += serifs.rpg.skill.heaven + "\n";
 			buff += 1;
 			atk = atk * (1 + skillEffects.heavenOrHell);
-			def = def * (1 + skillEffects.heavenOrHell);
+			def = def * (1 + (skillEffects.heavenOrHell * 1.5));
 			if (verboseLog) {
 				buff += 1;
-				message += `天スキル効果: AD${displayDifference((1 + skillEffects.heavenOrHell))} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
+				message += `天スキル効果: A${displayDifference((1 + skillEffects.heavenOrHell))} D${displayDifference((1 + (skillEffects.heavenOrHell * 1.5)))} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
 			}
 		} else {
 			message += serifs.rpg.skill.hell + "\n";
 			buff += 1;
 			atk = atk / (1 + skillEffects.heavenOrHell);
-			def = def / (1 + skillEffects.heavenOrHell);
+			def = def / (1 + (skillEffects.heavenOrHell * 0.75)) ;
 			if (verboseLog) {
 				buff += 1;
-				message += `地スキル効果: AD${displayDifference(1 / (1 + skillEffects.heavenOrHell))} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
+				message += `地スキル効果: A${displayDifference(1 / (1 + skillEffects.heavenOrHell))} D${displayDifference((1 + (skillEffects.heavenOrHell * 0.75)))} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
 			}
 		}
 	}
@@ -1062,14 +1062,14 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	// 非戦闘なら非戦闘時スキルが発動
 	if (!isBattle) {
 		atk = atk * (1 + (skillEffects.notBattleBonusAtk ?? 0));
-		if (verboseLog) {
+		if (verboseLog && skillEffects.notBattleBonusAtk) {
 			buff += 1;
 			message += `非戦闘: A${displayDifference(1 + (skillEffects.notBattleBonusAtk ?? 0))} (${formatNumber(atk)})\n`;
 		}
 	}
 	if (isTired) {
 		def = def * (1 + (skillEffects.notBattleBonusDef ?? 0));
-		if (verboseLog) {
+		if (verboseLog && skillEffects.notBattleBonusDef) {
 			buff += 1;
 			message += `疲スキル効果: D${displayDifference(1 + (skillEffects.notBattleBonusDef ?? 0))} (${formatNumber(def)})\n`;
 		}
