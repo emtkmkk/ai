@@ -57,9 +57,9 @@ config.apiUrl = config.host + '/api';
 // 設定が存在しない場合はデフォルトを設定
 if (!config.instanceName) config.instanceName = "もこきー";
 if (!config.defaultVisibility) config.defaultVisibility = "public";
-if (!config.postNotPublic !== false) config.postNotPublic = true;
-if (!config.randomPostLocalOnly !== false) config.randomPostLocalOnly = true;
-if (!config.birthdayPostLocalOnly !== false) config.randomPostLocalOnly = true;
+if (config.postNotPublic !== false) config.postNotPublic = true;
+if (config.randomPostLocalOnly !== false) config.randomPostLocalOnly = true;
+if (config.birthdayPostLocalOnly !== false) config.randomPostLocalOnly = true;
 if (!config.rpgHeroName) config.rpgHeroName = "もこチキ";
 if (!config.rpgCoinName) config.rpgCoinName = "もこコイン";
 if (!config.rpgCoinShortName) config.rpgCoinShortName = "コイン";
