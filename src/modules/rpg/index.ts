@@ -1083,11 +1083,11 @@ export default class extends Module {
 			if (Math.random() < 0.6) {
 				message += serifs.rpg.skill.heaven + "\n";
 				atk = atk * (1 + skillEffects.heavenOrHell);
-				def = def * (1 + skillEffects.heavenOrHell);
+				def = def * (1 + (skillEffects.heavenOrHell * 1.5));
 			} else {
 				message += serifs.rpg.skill.hell + "\n";
 				atk = atk / (1 + skillEffects.heavenOrHell);
-				def = def / (1 + skillEffects.heavenOrHell);
+				def = def / (1 + (skillEffects.heavenOrHell * 0.75)) ;
 			}
 		}
 
