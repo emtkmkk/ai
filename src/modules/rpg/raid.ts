@@ -2326,7 +2326,7 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 		if (count === 1 || rnd) {
 			if (rnd) attackCount += 1;
 			/** ダメージ */
-			let dmg = Math.round(Math.round((500 * Math.max(attackCount, 1) * (1 + dmgup) * (1.5 ** drawCount)))/250) * 250);
+			let dmg = Math.round(Math.round(500 * Math.max(attackCount, 1) * (1 + dmgup) * (1.5 ** drawCount) / 250) * 250);
 			drawCount = 0;
 			//** クリティカルかどうか */
 			let crit = dmg >= 2000;
@@ -2370,7 +2370,7 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 	if (playerHp > 0) {
 		attackCount += 1;
 		/** ダメージ */
-		let dmg = Math.round(Math.round((500 * Math.max(attackCount, 1) * (1 + dmgup) * (1.5 ** drawCount)))/250) * 250);
+		let dmg = Math.round(Math.round(500 * Math.max(attackCount, 1) * (1 + dmgup) * (1.5 ** drawCount) / 250) * 250);
 		if (attackCount >= 7) {
 			while (Math.random() < (1/3)) {
 				dmg += 1000;
