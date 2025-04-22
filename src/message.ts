@@ -106,7 +106,7 @@ export default class Message {
 			visibilityForce: opts?.visibilityForce,
 			localOnly: opts?.localOnly || false,
 			...(opts?.visibility === 'specified' ? { visibleUserIds: [this.userId], } : {}),
-			references: opts?.references,
+			referenceIds: opts?.references,
 		});
 	}
 
