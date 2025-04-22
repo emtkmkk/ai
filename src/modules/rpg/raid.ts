@@ -2118,7 +2118,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 
 	const rpgData = ai.moduleData.findOne({ type: 'rpg' });
 	if (data.lv + 1 < rpgData.maxLv) {
-		if (data.lv < 255) {
+		if (data.lv < 254) {
 			data.exp = (data.exp ?? 0) + 5;
 			message += "\n\n" + serifs.rpg.expPointFast;
 		} else {
@@ -2129,7 +2129,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 		}
 	}
 
-	if (data.exp >= 5 && (data.lv > 255 || data.lv + 1 < rpgData.maxLv)) {
+	if (data.exp >= 5 && data.lv != 254 && (data.lv > 255 || data.lv + 1 < rpgData.maxLv)) {
 
 		let addMessage = preLevelUpProcess(data);
 
@@ -2326,7 +2326,7 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 		if (count === 1 || rnd) {
 			if (rnd) attackCount += 1;
 			/** ダメージ */
-			let dmg = Math.round(500 * Math.max(attackCount, 1) * (1 + dmgup + (drawCount * 0.5)));
+			let dmg = Math.round(Math.round((500 * Math.max(attackCount, 1) * (1 + dmgup) * (1.5 ** drawCount)))/250) * 250);
 			drawCount = 0;
 			//** クリティカルかどうか */
 			let crit = dmg >= 2000;
@@ -2370,7 +2370,7 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 	if (playerHp > 0) {
 		attackCount += 1;
 		/** ダメージ */
-		let dmg = Math.round(500 * attackCount * (1 + dmgup + (drawCount * 0.5)));
+		let dmg = Math.round(Math.round((500 * Math.max(attackCount, 1) * (1 + dmgup) * (1.5 ** drawCount)))/250) * 250);
 		if (attackCount >= 7) {
 			while (Math.random() < (1/3)) {
 				dmg += 1000;
@@ -2407,6 +2407,61 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 			message += "\n\n" + serifs.rpg.oomisokaEnd(score.toFixed(2), Math.ceil(score * 8));
 			data.coin += Math.ceil(score * 8);
 		}
+	}
+
+	const rpgData = ai.moduleData.findOne({ type: 'rpg' });
+	if (data.lv + 1 < rpgData.maxLv) {
+		if (data.lv < 254) {
+			data.exp = (data.exp ?? 0) + 5;
+			message += "\n\n" + serifs.rpg.expPointFast;
+		} else {
+			data.exp = (data.exp ?? 0) + 1;
+			if (data.exp >= 3) {
+				message += "\n\n" + serifs.rpg.expPoint(data.exp);
+			}
+		}
+	}
+
+	if (data.exp >= 5 && data.lv != 254 && (data.lv > 255 || data.lv + 1 < rpgData.maxLv)) {
+
+		let addMessage = preLevelUpProcess(data);
+
+		// レベルアップ処理
+		data.lv = (data.lv ?? 1) + 1;
+		let atkUp = (2 + Math.floor(Math.random() * 4));
+		let totalUp = 7;
+		while (Math.random() < 0.335) {
+			totalUp += 1;
+			if (Math.random() < 0.5) atkUp += 1;
+		}
+
+		if (totalUp > (data.maxStatusUp ?? 7)) data.maxStatusUp = totalUp;
+
+		if (skillEffects.statusBonus && skillEffects.statusBonus > 0 && data.lv % Math.max(2 / skillEffects.statusBonus, 1) === 0) {
+			const upBonus = Math.ceil(skillEffects.statusBonus / 2);
+			for (let i = 0; i < upBonus; i++) {
+				totalUp += 1;
+				if (Math.random() < 0.5) atkUp += 1;
+			}
+		}
+
+		while (data.lv >= 3 && data.atk + data.def + totalUp < (data.lv - 1) * 7) {
+			totalUp += 1;
+			if (Math.random() < 0.5) atkUp += 1;
+		}
+
+		data.atk = (data.atk ?? 0) + atkUp;
+		data.def = (data.def ?? 0) + totalUp - atkUp;
+		data.exp = 0;
+
+		message += [
+			`\n\n${serifs.rpg.lvUp}`,
+			`  ${serifs.rpg.status.lv} : ${data.lv ?? 1} (+1)`,
+			`  ${serifs.rpg.status.atk} : ${data.atk ?? 0} (+${atkUp})`,
+			`  ${serifs.rpg.status.def} : ${data.def ?? 0} (+${totalUp - atkUp})`,
+			addMessage,
+		].filter(Boolean).join("\n");
+
 	}
 
 	data.raid = false;
@@ -2544,6 +2599,24 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 		message += `経験 器用さ+${Math.round(expBonus * 100)}%` + `\n`;
 		dex = dex * (1 + expBonus);
 	}
+
+	const atkDmgUp = skillEffects.atkDmgUp - skillEffects.defDmgUp;
+	const atkUp = skillEffects.atkUp - skillEffects.defUp;
+		
+	const atkX = 
+		(atkDmgUp && atkDmgUp > 0 ? (1 / (1 + (atkDmgUp ?? 0))) : 1) *
+		(atkUp && atkUp > 0 ? (1 / (1 + (atkUp ?? 0))) : 1) *
+		(color.reverseStatus ? (0.75 + (data.atk / (data.atk + data.def)) * 0.5) : (0.75 + (data.def / (data.atk + data.def)) * 0.5))
+	
+	if (atkX < 1) {
+		buff += 1;
+		message += `有り余るパワー 器用さ-${Math.floor((1 - atkX) * 100)}%` + `\n`;
+		dex = dex * atkX;
+	} else if (showInfo) {
+		buff += 1;
+		message += `パワー 適切` + `\n`;
+	}
+	
 	if (skillEffects.notBattleBonusAtk >= 0.7) {
 		buff += 1;
 		message += `気性穏やか 器用さ+${Math.round(skillEffects.notBattleBonusAtk * 100)}%` + `\n`;
@@ -2555,6 +2628,12 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	} else if (showInfo && !skillEffects.notBattleBonusAtk) {
 		buff += 1;
 		message += `テキパキこなすまたは気性穏やか なし` + `\n`;
+	}
+
+	if ((skillEffects.notBattleBonusAtk ?? 0) < 0) {
+		buff += 1;
+		message += `気性が荒い 器用さ-${Math.min(25, Math.floor((skillEffects.notBattleBonusAtk * -1) * 100))}%` + `\n`;
+		dex = dex * Math.max(0.75, (1 + skillEffects.notBattleBonusAtk));
 	}
 	
 	if (skillEffects.notBattleBonusDef > 0) {
@@ -2620,27 +2699,10 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 		message += `道具の選択が上手い なし` + `\n`;
 	}
 
-	const atkDmgUp = skillEffects.atkDmgUp - skillEffects.defDmgUp;
-	const atkUp = skillEffects.atkUp - skillEffects.defUp;
-		
-	const atkX = 
-		(atkDmgUp && atkDmgUp > 0 ? (1 / (1 + (atkDmgUp ?? 0))) : 1) *
-		(atkUp && atkUp > 0 ? (1 / (1 + (atkUp ?? 0))) : 1) *
-		(color.reverseStatus ? (0.75 + (data.atk / (data.atk + data.def)) * 0.5) : (0.75 + (data.def / (data.atk + data.def)) * 0.5))
-	
-	if (atkX < 1) {
+	if (skillEffects.amuletPower > 1) {
 		buff += 1;
-		message += `有り余るパワー 器用さ-${Math.floor((1 - atkX) * 100)}%` + `\n`;
-		dex = dex * atkX;
-	} else if (showInfo) {
-		buff += 1;
-		message += `パワー 適切` + `\n`;
-	}
-
-	if ((skillEffects.notBattleBonusAtk ?? 0) < 0) {
-		buff += 1;
-		message += `気性が荒い 器用さ-${Math.min(25, Math.floor((skillEffects.notBattleBonusAtk * -1) * 100))}%` + `\n`;
-		dex = dex * Math.max(0.75, (1 + skillEffects.notBattleBonusAtk));
+		message += `お守りパワー 器用さ+${Math.ceil((skillEffects.amuletPower-1) * 3)}%` + `\n`;
+		dex = dex * (1 + ((skillEffects.amuletPower-1) * 0.03));
 	}
 
 	if (skillEffects.abortDown > 0) {
@@ -2763,6 +2825,62 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 
 	if (amuletmsg) {
 		message += "\n\n" + amuletmsg;
+	}
+
+	
+	const rpgData = ai.moduleData.findOne({ type: 'rpg' });
+	if (data.lv + 1 < rpgData.maxLv) {
+		if (data.lv < 254) {
+			data.exp = (data.exp ?? 0) + 5;
+			message += "\n\n" + serifs.rpg.expPointFast;
+		} else {
+			data.exp = (data.exp ?? 0) + 1;
+			if (data.exp >= 3) {
+				message += "\n\n" + serifs.rpg.expPoint(data.exp);
+			}
+		}
+	}
+
+	if (data.exp >= 5 && data.lv != 254 && (data.lv > 255 || data.lv + 1 < rpgData.maxLv)) {
+
+		let addMessage = preLevelUpProcess(data);
+
+		// レベルアップ処理
+		data.lv = (data.lv ?? 1) + 1;
+		let atkUp = (2 + Math.floor(Math.random() * 4));
+		let totalUp = 7;
+		while (Math.random() < 0.335) {
+			totalUp += 1;
+			if (Math.random() < 0.5) atkUp += 1;
+		}
+
+		if (totalUp > (data.maxStatusUp ?? 7)) data.maxStatusUp = totalUp;
+
+		if (skillEffects.statusBonus && skillEffects.statusBonus > 0 && data.lv % Math.max(2 / skillEffects.statusBonus, 1) === 0) {
+			const upBonus = Math.ceil(skillEffects.statusBonus / 2);
+			for (let i = 0; i < upBonus; i++) {
+				totalUp += 1;
+				if (Math.random() < 0.5) atkUp += 1;
+			}
+		}
+
+		while (data.lv >= 3 && data.atk + data.def + totalUp < (data.lv - 1) * 7) {
+			totalUp += 1;
+			if (Math.random() < 0.5) atkUp += 1;
+		}
+
+		data.atk = (data.atk ?? 0) + atkUp;
+		data.def = (data.def ?? 0) + totalUp - atkUp;
+		data.exp = 0;
+
+		message += [
+			`\n\n${serifs.rpg.lvUp}`,
+			`  ${serifs.rpg.status.lv} : ${data.lv ?? 1} (+1)`,
+			`  ${serifs.rpg.status.atk} : ${data.atk ?? 0} (+${atkUp})`,
+			`  ${serifs.rpg.status.def} : ${data.def ?? 0} (+${totalUp - atkUp})`,
+			addMessage,
+		].filter(Boolean).join("\n");
+
 	}
 
 	data.raid = false;
