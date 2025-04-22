@@ -48,25 +48,27 @@ export default class extends Module {
 						});
 						if (!replyUser.isFollowed && !replyUser.isFollowing) {
 							msg.reply("私をフォローしていないリモートユーザにはファクトチェックできません！", { visibility: 'specified' });
-						return {
-							reaction: ':mk_hotchicken:'
-						};
+							return {
+								reaction: ':mk_hotchicken:'
+							};
 						}
 			}
+
+			const opt = replyNote.visibility == 'followers' || replyNote.visibility == 'specified' ? { visibility: 'public', references: [msg.replyId] } : { visibility: 'public', renote: msg.replyId };
 			const rng = seedrandom(msg.replyId + ":f");
 			const v = rng();
 			if (v < 0.5) {
 				if (v < 0.25) {
-					msg.reply("この投稿は多分本当、部分的に本当", { visibility: 'public', renote: msg.replyId });
+					msg.reply("この投稿は多分本当、部分的に本当", opt);
 				} else {
-					msg.reply("この投稿は正しいかも", { visibility: 'public', renote: msg.replyId });
+					msg.reply("この投稿は正しいかも", opt);
 				}
 
 			} else {
 				if (v > 0.75) {
-					msg.reply("この投稿は多分嘘、部分的に嘘", { visibility: 'public', renote: msg.replyId });
+					msg.reply("この投稿は多分嘘、部分的に嘘", opt);
 				} else {
-					msg.reply("この投稿は嘘かも", { visibility: 'public', renote: msg.replyId });
+					msg.reply("この投稿は嘘かも", opt);
 				}
 			}
 			return {
