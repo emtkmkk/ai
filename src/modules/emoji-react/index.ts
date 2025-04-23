@@ -85,7 +85,7 @@ export default class extends Module {
 			friend.doc.todayReactCount = 0;
 			friend.doc.lastReactAt = today;
 		}
-		if (friend.doc.todayReactCount > 3) {
+		if (friend.doc.todayReactCount && friend.doc.todayReactCount > 3) {
 			if (Math.random > 0.7 ** Math.floor((friend.doc.todayReactCount - 2) / 2)) {
 				return;
 			}
