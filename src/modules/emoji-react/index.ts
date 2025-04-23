@@ -9,6 +9,7 @@ import includes from '@/utils/includes';
 import config from '@/config';
 import { mecab } from '@/modules/keyword/mecab';
 import { hankakuToZenkaku, katakanaToHiragana } from '@/utils/japanese';
+import getDate from '@/utils/get-date';
 
 export default class extends Module {
 	public readonly name = 'emoji-react';
@@ -56,6 +57,19 @@ export default class extends Module {
 		// 公開範囲フォロワーの場合、50%でリアクションしない
 		if (note.visibility === 'followers' && Math.random() < 0.5) return;
 
+		// 一日に反応した数が多ければ、反応率を下げる
+		const today = getDate();
+		
+		if (this.doc.lastReactAt != today) {
+			this.doc.todayReactCount = 0;
+			this.doc.lastReactAt = today;
+		}
+		if (this.doc.todayReactCount > 3) {
+			if (Math.random > 0.7 ** Math.floor((this.doc.todayReactCount - 2) / 2)) {
+				return;
+			}
+		}
+
 		const react = async (reaction: string, immediate = false) => {
 			if (!immediate) {
 				// 絵文字をつけるまでの時間は3.5 ~ 6.5秒でゆらぎをつける
@@ -88,6 +102,8 @@ export default class extends Module {
 				noteId: note.id,
 				reaction: reaction
 			});
+      this.doc.todayReactCount = (this.doc.todayReactCount ?? 0) + 1;
+
 		};
 
 		if (includes(note.text, ['taikin', '退勤', 'たいきん', 'しごおわ'])) return react(':otukaresama:');
