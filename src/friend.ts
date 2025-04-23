@@ -18,6 +18,8 @@ export type FriendDoc = {
 	lastLoveIncrementedTime?: string;
 	lastRPGTime?: string;
 	cooldownLoveIncrementKey?: string[];
+	todayReactCount?: number;
+	lastReactAt?: string;
 	perModulesData?: any;
 	married?: boolean;
 	transferCode?: string;
