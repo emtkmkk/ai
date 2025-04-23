@@ -57,19 +57,6 @@ export default class extends Module {
 		// 公開範囲フォロワーの場合、50%でリアクションしない
 		if (note.visibility === 'followers' && Math.random() < 0.5) return;
 
-		// 一日に反応した数が多ければ、反応率を下げる
-		const today = getDate();
-		
-		if (this.doc.lastReactAt != today) {
-			this.doc.todayReactCount = 0;
-			this.doc.lastReactAt = today;
-		}
-		if (this.doc.todayReactCount > 3) {
-			if (Math.random > 0.7 ** Math.floor((this.doc.todayReactCount - 2) / 2)) {
-				return;
-			}
-		}
-
 		const react = async (reaction: string, immediate = false) => {
 			if (!immediate) {
 				// 絵文字をつけるまでの時間は3.5 ~ 6.5秒でゆらぎをつける
@@ -91,6 +78,20 @@ export default class extends Module {
 				// 最大 100 (★7) で 20%
 				const friend = this.ai.lookupFriend(note.user.id);
 				if (friend) {
+					// 一日に反応した数が多ければ、反応率を下げる
+		const today = getDate();
+		
+		if (friend.doc.lastReactAt != today) {
+			friend.doc.todayReactCount = 0;
+			friend.doc.lastReactAt = today;
+		}
+		if (friend.doc.todayReactCount > 3) {
+			if (Math.random > 0.7 ** Math.floor((friend.doc.todayReactCount - 2) / 2)) {
+				return;
+			}
+		}
+					friend.doc.todayReactCount = (friend.doc.todayReactCount ?? 0) + 1;
+
 					waitTime = Math.round(waitTime * (1 - (0.002 * Math.min(friend.love, 100))));
 				}
 
@@ -102,8 +103,6 @@ export default class extends Module {
 				noteId: note.id,
 				reaction: reaction
 			});
-      this.doc.todayReactCount = (this.doc.todayReactCount ?? 0) + 1;
-
 		};
 
 		if (includes(note.text, ['taikin', '退勤', 'たいきん', 'しごおわ'])) return react(':otukaresama:');
