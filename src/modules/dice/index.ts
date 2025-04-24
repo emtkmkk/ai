@@ -41,7 +41,7 @@ export default class extends Module {
 			};
 		}
 		
-		if (msg.replyId && includes(msg.extractedText, ['ファクト']) && includes(msg.extractedText, ['チェック'])) {
+		if (msg.replyId && msg.replyNote.userId != ai.account.id && includes(msg.extractedText, ['ファクト']) && includes(msg.extractedText, ['チェック'])) {
 			if (msg.replyNote.uri) {
 						const replyUser = await this.ai.api('users/show', {
 							userId: msg.replyNote.userId
@@ -55,20 +55,28 @@ export default class extends Module {
 			}
 
 			const opt = msg.replyNote.visibility == 'followers' || msg.replyNote.visibility == 'specified' ? { visibility: 'public', references: [msg.replyId] } : { visibility: 'public', renote: msg.replyId };
+			
+			if (msg.replyNote.userId == ai.account.id) {
+				msg.reply("\nこの投稿はもちろん、正しいです！どうして疑うんですか？", opt);
+				return {
+					reaction: 'love'
+				};
+			}
+			
 			const rng = seedrandom(msg.replyId + ":f");
 			const v = rng();
 			if (v < 0.5) {
 				if (v < 0.25) {
-					msg.reply("この投稿は多分本当、部分的に本当", opt);
+					msg.reply("\nこの投稿は多分正しい、部分的に正しい", opt);
 				} else {
-					msg.reply("この投稿は正しいかも", opt);
+					msg.reply("\nこの投稿は正しいかも", opt);
 				}
 
 			} else {
 				if (v > 0.75) {
-					msg.reply("この投稿は多分嘘、部分的に嘘", opt);
+					msg.reply("\nこの投稿は多分嘘、部分的に嘘", opt);
 				} else {
-					msg.reply("この投稿は嘘かも", opt);
+					msg.reply("\nこの投稿は嘘かも", opt);
 				}
 			}
 			return {
