@@ -603,8 +603,8 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
 					} else {
 						adjustedEffect[key] = effect[key];
 					}
-					adjustedEffect.amuletPower = (adjustedEffect.amuletPower ?? 0) + (1 * multiplier);
 				}
+				adjustedEffect.amuletPower = (adjustedEffect.amuletPower ?? 0) + ((amulet.skillName && Array.isArray(amulet.skillName) ? amulet.skillName.length : 1) * multiplier);
 				return { effect: adjustedEffect };
 			};
 				console.log("effect: " + JSON.stringify(adjustEffect(item.effect, boost)));
@@ -745,8 +745,8 @@ export function aggregateSkillsEffectsSkillX(data: any, skillX: number): SkillEf
 					} else {
 						adjustedEffect[key] = effect[key];
 					}
-					adjustedEffect.amuletPower = (adjustedEffect.amuletPower ?? 0) + (1 * multiplier);
 				}
+				adjustedEffect.amuletPower = (adjustedEffect.amuletPower ?? 0) + ((amulet.skillName && Array.isArray(amulet.skillName) ? amulet.skillName.length : 1) * multiplier);
 				return { effect: adjustedEffect };
 			};
 				console.log("effect: " + JSON.stringify(adjustEffect(item.effect, boost)));
