@@ -1,3 +1,4 @@
+import 藍 from '@/ai';
 import autobind from 'autobind-decorator';
 import Module from '@/module';
 import Message from '@/message';
@@ -41,7 +42,7 @@ export default class extends Module {
 			};
 		}
 		
-		if (msg.replyId && msg.replyNote.userId != ai.account.id && includes(msg.extractedText, ['ファクト']) && includes(msg.extractedText, ['チェック'])) {
+		if (msg.replyId && msg.replyNote.userId != this.ai.account.id && includes(msg.extractedText, ['ファクト']) && includes(msg.extractedText, ['チェック'])) {
 			if (msg.replyNote.uri) {
 						const replyUser = await this.ai.api('users/show', {
 							userId: msg.replyNote.userId
@@ -56,7 +57,7 @@ export default class extends Module {
 
 			const opt = msg.replyNote.visibility == 'followers' || msg.replyNote.visibility == 'specified' ? { visibility: 'public', references: [msg.replyId] } : { visibility: 'public', renote: msg.replyId };
 			
-			if (msg.replyNote.userId == ai.account.id) {
+			if (msg.replyNote.userId == this.ai.account.id) {
 				msg.reply("\nこの投稿はもちろん、正しいです！どうして疑うんですか？", opt);
 				return {
 					reaction: 'love'
