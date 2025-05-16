@@ -336,7 +336,7 @@ export default {
 	},
 
 	today: {
-		msg: (arg) => `${arg.aisatu}\n今日は${arg.date}、${arg.youbi}です！\n\n今日についての情報です！\n${arg.info}\n\n今日も一日頑張りましょう！`,
+		msg: (arg) => `${arg.aisatu}\n${arg.date}、${arg.youbi}です！\n\n今日についての情報です！\n${arg.info}\n\n今日も一日頑張りましょう！`,
 	},
 
 	/**
