@@ -91,7 +91,7 @@ export default class TodayModule extends Module {
 		if (info.tensyabiflg) eventsSet.add('天赦日');
 		if (info.daimyoubiflg) eventsSet.add('大明日');
 		if (info.rokuyou) eventsSet.add(`六曜: ${info.rokuyou}`);
-		if (now.getMonth() + 1 * now.getDate()) eventsSet.add(`月×日: ${(now.getMonth() + 1 * now.getDate()).toLocaleString()}`);
+		if (now.getMonth() + 1 * now.getDate()) eventsSet.add(`月×日: ${((now.getMonth() + 1) * now.getDate()).toLocaleString()}`);
 
 		// Set → Array に戻してメッセージ化
 		const events = Array.from(eventsSet);
