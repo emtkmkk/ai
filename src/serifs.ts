@@ -335,6 +335,10 @@ export default {
 		fail: (ans, maxtry, history) => `不正解です、${maxtry}回以内に当てられませんでした…… 秘密の数は「${ans}」でした。 (履歴: ${history})`,
 	},
 
+	today: {
+		msg: (arg) => `${arg.aisatu}\n今日は${arg.date}、${arg.youbi}です！\n\n今日についての情報です！\n${arg.info}\n\n今日も一日頑張りましょう！`,
+	},
+
 	/**
 	 * 数取りゲーム
 	 */

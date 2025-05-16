@@ -27,7 +27,7 @@ import TimerModule from './modules/timer';
 import DiceModule from './modules/dice';
 import ServerModule from './modules/server';
 import FollowModule from './modules/follow';
-import ValentineModule from './modules/valentine';
+import TodayModule from './modules/today';
 import MazeModule from './modules/maze';
 import ChartModule from './modules/chart';
 import SleepReportModule from './modules/sleep-report';
@@ -83,7 +83,7 @@ promiseRetry(retry => {
 		new ServerModule(),
 		new FollowModule(),
 		new BirthdayModule(),
-		//new ValentineModule(),
+		new TodayModule(),
 		new KeywordModule(),
 		new MazeModule(),
 		new ChartModule(),
