@@ -1349,6 +1349,15 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 						types.push("poison");
 					}
 				}
+				if ((skillEffects.weaponSelect ?? 0) >= 1) {
+					types = ["weapon"]
+				}
+				if ((skillEffects.armorSelect ?? 0) >= 1) {
+					types = ["armor"]
+				}
+				if ((skillEffects.foodSelect ?? 0) >= 1) {
+					types = ["medicine", "poison"];
+				}
 				if ((count !== 1 || enemy.pLToR) && skillEffects.lowHpFood && playerHpPercent < 0.95 && Math.random() < skillEffects.lowHpFood * playerHpPercent) {
 					if (skillEffects.lowHpFood && playerHpPercent < 0.5) message += serifs.rpg.skill.lowHpFood;
 					types = ["medicine", "poison"];

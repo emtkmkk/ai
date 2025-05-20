@@ -1188,6 +1188,16 @@ export default class extends Module {
 						types.push("poison");
 					}
 				}
+				
+				if ((skillEffects.weaponSelect ?? 0) >= 1) {
+					types = ["weapon"]
+				}
+				if ((skillEffects.armorSelect ?? 0) >= 1) {
+					types = ["armor"]
+				}
+				if ((skillEffects.foodSelect ?? 0) >= 1) {
+					types = ["medicine", "poison"];
+				}
 				if ((count !== 1 || data.enemy.pLToR) && skillEffects.lowHpFood && Math.random() < skillEffects.lowHpFood * playerHpPercent) {
 					if (playerHpPercent < 0.5) message += serifs.rpg.skill.lowHpFood;
 					types = ["medicine", "poison"];

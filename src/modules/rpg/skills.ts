@@ -275,9 +275,9 @@ export const skills: Skill[] = [
 	{ name: `道具大好き`, short: "道", desc: `道具の使用率が上がります`, info: `アイテム装備率+50%`, effect: { itemEquip: 0.5 } },
 	{ name: `道具大好き＋`, short: "**道**", desc: `道具の使用率が大きく上がります`, info: `アイテム装備率+90%`, effect: { itemEquip: 0.9 }, notLearn: true, skillOnly: true },
 	{ name: `道具の扱いが上手い`, short: "扱", desc: `道具の効果量が上がります`, info: `アイテム効果量+40% アイテム悪効果軽減+40%`, effect: { itemBoost: 0.4 } },
-	{ name: `武器が大好き`, short: "武", desc: `武器を装備しやすくなり、武器の効果量が上がります`, info: `武器装備率3倍 武器効果量+70% 種類大好き系と重複しない`, effect: { weaponSelect: 2, weaponBoost: 0.7 }, unique: "itemSelect" },
-	{ name: `防具が大好き`, short: "防", desc: `防具を装備しやすくなり、防具の効果量が上がります`, info: `防具装備率3倍 防具効果量+70% ${serifs.rpg.status.atk}+4% 種類大好き系と重複しない`, effect: { atkUpBonus: 1, armorSelect: 2, armorBoost: 0.7 }, unique: "itemSelect" },
-	{ name: `食いしんぼう`, short: "食", desc: `食べ物を食べやすくなり、食べ物の効果量が上がります`, info: `食べ物使用率3倍 食べ物効果量+70% 毒食べ物ダメージ-60% ${serifs.rpg.status.atk}+4% 種類大好き系と重複しない`, effect: { atkUpBonus: 1, foodSelect: 2, foodBoost: 0.7, poisonResist: 0.6 }, unique: "itemSelect" },
+	{ name: `武器が大好き`, short: "武", desc: `武器のみを装備するようになり、武器の効果量が上がります`, info: `防具・食べ物を使用しない 武器効果量+70% 種類大好き系と重複しない`, effect: { weaponSelect: 2, weaponBoost: 0.7 }, unique: "itemSelect" },
+	{ name: `防具が大好き`, short: "防", desc: `防具のみを装備するようになり、防具の効果量が上がります`, info: `武器・食べ物を使用しない 防具効果量+70% ${serifs.rpg.status.atk}+4% 種類大好き系と重複しない`, effect: { atkUpBonus: 1, armorSelect: 2, armorBoost: 0.7 }, unique: "itemSelect" },
+	{ name: `食いしんぼう`, short: "食", desc: `食べ物のみを装備するようになり、食べ物の効果量が上がります`, info: `武器・防具を使用しない 食べ物効果量+70% 毒食べ物ダメージ-60% ${serifs.rpg.status.atk}+4% 種類大好き系と重複しない`, effect: { atkUpBonus: 1, foodSelect: 2, foodBoost: 0.7, poisonResist: 0.6 }, unique: "itemSelect" },
 	{ name: `なんでも口に入れない`, short: "捨", desc: `良くないものを食べなくなることがあります`, info: `毒食べ物を50%で捨てる 100%以上になると悪アイテム率減少に変換`, effect: { poisonAvoid: 0.5 }, moveTo: "道具の選択が上手い" },
 	{ name: `道具の選択が上手い`, short: "選", desc: `道具の効果量がすこし上がり、悪いアイテムを選びにくくなり、良くないものを食べなくなる事があります`, info: `道具効果量+15% 悪アイテム率-15% 毒食べ物を40%で捨てる 100%以上になると悪アイテム率減少に変換`, effect: { itemBoost: 0.15, mindMinusAvoid: 0.15, poisonAvoid: 0.4 } },
 	{ name: `お腹が空いてから食べる`, short: "空", desc: `体力が減ったら食べ物を食べやすくなり、食べ物の効果量が少し上がります`, info: `体力が減少すれば食べ物を食べるようになり、毒食べ物の確率が下がる 食べ物効果量+20% 毒食べ物ダメージ-20% ${serifs.rpg.status.atk}+4% `, effect: { atkUpBonus: 1, lowHpFood: 1, foodBoost: 0.2, poisonResist: 0.2 }, unique: "lowHpFood" },
@@ -301,7 +301,7 @@ export const skills: Skill[] = [
 	{ name: `憤怒の力`, short: "**憤**", desc: `体力が半減した状態でスタートしますが、クリティカルダメージが大きく上昇します`, info: "体力半減でスタート クリティカルダメージ+40%", effect: { wrath: 0.4 }, notLearn: true, amuletUnique: "sin"},
 	{ name: `暴食の力`, short: "**暴**", desc: `何かを食べる度に与ダメージが上がります さらに食べる程効果が上がります 食べてはいけない物を食べた場合にさらに効果が上がります`, info: "何かを食べる度、その戦いの間常に与ダメージ+10% 毒を食べた場合与ダメージ+20%", effect: { gluttony: 0.2 }, notLearn: true, amuletUnique: "sin"},
 	{ name: `怠惰の力`, short: "**怠**", desc: `時々怠けて行動をしなくなりますが、怠けた後は強くなります`, info: "30%で怠ける 怠ける度に、その戦いの間常に与ダメージ+50%", effect: { sloth: 0.5 }, notLearn: true, amuletUnique: "sin"},
-	{ name: `嫉妬の力`, short: "**嫉**", desc: `レイドで与えたダメージが低い間、ダメージを大きくカットします`, info: "レイドでのダメージ評価が低い間、被ダメージを最大70%カットします\n評価が高くなった場合、被ダメージが★1につき+10%", effect: { envy: 1 }, notLearn: true, amuletUnique: "sin"},
+	{ name: `嫉妬の力`, short: "**嫉**", desc: `レイドで与えたダメージが低い間、ダメージを大きくカットします`, info: "レイドでのダメージ評価が低い間、被ダメージを最大70%カットします\n評価が高くなった場合、被ダメージが★1につき+10%", effect: { envy: 1 }, notLearn: true, amuletUnique: "sin"},{ name: `水属性剣攻撃`, short: "水", desc: `戦闘時、たまに敵を凍らせます`, info: `戦闘時、9%で相手のターンをスキップ\n非戦闘時、${serifs.rpg.status.def}+9%\n水曜日にここまでに記載された効果の効果量が66%アップ\n${serifs.rpg.status.atk}+4%`, effect: { atkUpBonus: 1, ice: 0.09 } },
 ];
 
 export const skillBorders = [20, 50, 100, 170, 255];
@@ -1335,13 +1335,16 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 		result.push("アイテム装備率: +" + showNum((skillEffects.itemEquip ?? 0) * 100) + "%");
 	}
 	if (skillEffects.weaponSelect) {
-		result.push("武器選択率: +" + showNum(((((1 + (skillEffects.weaponSelect ?? 0)) / (4 + (skillEffects.weaponSelect ?? 0))) / (1/4)) - 1) * 100) + "%");
+		result.push("武器のみを使用");
+		//result.push("武器選択率: +" + showNum(((((1 + (skillEffects.weaponSelect ?? 0)) / (4 + (skillEffects.weaponSelect ?? 0))) / (1/4)) - 1) * 100) + "%");
 	}
 	if (skillEffects.armorSelect) {
-		result.push("防具選択率: +" + showNum(((((1 + (skillEffects.armorSelect ?? 0)) / (4 + (skillEffects.armorSelect ?? 0))) / (1/4)) - 1) * 100) + "%");
+		result.push("防具のみを使用");
+		//result.push("防具選択率: +" + showNum(((((1 + (skillEffects.armorSelect ?? 0)) / (4 + (skillEffects.armorSelect ?? 0))) / (1/4)) - 1) * 100) + "%");
 	}
 	if (skillEffects.foodSelect) {
-		result.push("食べ物選択率: +" + showNum(((((1 + (skillEffects.foodSelect ?? 0)) / (4 + (skillEffects.foodSelect ?? 0))) / (1/4)) - 1) * 100) + "%");
+		result.push("食べ物のみを使用");
+		//result.push("食べ物選択率: +" + showNum(((((1 + (skillEffects.foodSelect ?? 0)) / (4 + (skillEffects.foodSelect ?? 0))) / (1/4)) - 1) * 100) + "%");
 	}
 	if (skillEffects.poisonAvoid) {
 		result.push("毒食べ物回避率: " + showNum((skillEffects.poisonAvoid ?? 0) * 100) + "%");
