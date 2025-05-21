@@ -432,7 +432,7 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 
 	const _shopItems = (data.shopItems as (string | string[])[]).map((x) => Array.isArray(x) ? mergeSkillAmulet(ai, rnd, x.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) : shopItems.find((y) => x === y.name) ?? undefined).filter((x) => x != null) as ShopItem[];
 
-	const showShopItems = _shopItems.filter((x) => (!x.limit || x.limit(data, () => 0)) && !(x.type === "amulet" && data.items?.some((y) => y.type === "amulet"))).concat(shopItems.filter((x) => (!x.limit || x.limit(data, () => 0)) && !(x.type === "amulet" && data.items?.some((y) => y.type === "amulet")) && x.always)).slice(0, 35)
+	const showShopItems = _shopItems.filter((x) => (!x.limit || x.limit(data, () => 0)) &&  (aggregateTokensEffects(data).alwaysAmulet || !(x.type === "amulet" && data.items?.some((y) => y.type === "amulet")))).concat(shopItems.filter((x) => (!x.limit || x.limit(data, () => 0)) && (aggregateTokensEffects(data).alwaysAmulet || !(x.type === "amulet" && data.items?.some((y) => y.type === "amulet"))) && x.always)).slice(0, 35)
 		.map((x) => {
 			let _x = deepClone(x);
 			const price = Math.ceil(getVal(x.price, [data, rnd, ai]) * (x.noDiscount ? 1 : (1 - (skillEffects.priceOff ?? 0))));
@@ -517,6 +517,9 @@ export function shopContextHook(module: Module, key: any, msg: Message, data: an
 						}
 					}
 				} else {
+					if (data.showShopItems[i].type === "amulet") {
+						rpgData.items = rpgData.items?.filter((x) => x.type !== "amulet")
+					}
 					rpgData.items.push(data.showShopItems[i]);
 					rpgData.shopItems = rpgData.shopItems?.filter((x) => data.showShopItems[i].name !== x);
 					rpgData.shop2Items = rpgData.shop2Items?.filter((x) => data.showShopItems[i].name !== x);

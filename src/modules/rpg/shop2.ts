@@ -56,6 +56,7 @@ const canBankItems: ShopItem[] = [
 	{ name: `全身全霊のお札`, price: 300, desc: `持っていると常に行動回数が1回になるが、すごく重い一撃を放てる`, type: "token", effect: { allForOne: true }, always: true } as TokenItem,
 	{ name: `運命不変のお札`, price: 300, desc: `持っていると常に与ダメージがランダム変化しなくなる`, type: "token", effect: { notRandom: true }, always: true } as TokenItem,
 	{ name: `しあわせのお札`, price: 300, desc: `レイド時、常にステータスの割合がランダムに一時的に変化する`, type: "token", effect: { fortuneEffect: true }, always: true } as TokenItem,
+	{ name: `お守り確認の札`, price: 5, desc: `持っていると通常ショップにてお守りを持っている状態でもお守りが並ぶようになります`, type: "token", effect: { alwaysAmulet: true }, always: true } as TokenItem,
 	{ name: `超覚醒の札`, price: 50, desc: `持っていると覚醒時の投稿数増加ボーナスを失いますが、投稿数による効果が10%上がります`, type: "token", effect: { hyperMode: true }, always: true } as TokenItem,
 	{ name: `覚醒変更の札（朱）`, price: 50, desc: `覚醒時の行動回数増加と毒アイテム効果軽減を失いますが、代わりにクリティカルダメージが+35%以下の場合、+35%になり、クリティカル率（固定）+8%を得るようになります 4色のうちどれか1つしか発動しません`, type: "token", effect: { notSuperSpeedUp: true, redMode: true }, always: true } as TokenItem,
 	{ name: `覚醒変更の札（橙）`, price: 50, desc: `覚醒時の行動回数増加が半減しますが、代わりにダメージカット+10%を得るようになります 4色のうちどれか1つしか発動しません`, type: "token", effect: { notSuperSpeedUp: true, yellowMode: true }, always: true } as TokenItem,
@@ -138,7 +139,7 @@ export const shop2Reply = async (module: rpg, ai: 藍, msg: Message) => {
 		data.items = data.items?.filter((x) => x.type !== "amulet")
 	}
 
-	let filteredShopItems = shop2Items.filter((x) => (!x.limit || x.limit(data, rnd)) && !(x.type === "amulet" && (data.lv < 20 || data.items?.some((y) => y.type === "amulet"))) && !x.always);
+	let filteredShopItems = shop2Items.filter((x) => (!x.limit || x.limit(data, rnd)) && (aggregateTokensEffects(data).alwaysAmulet || !(x.type === "amulet" && (data.lv < 20 || data.items?.some((y) => y.type === "amulet")))) && !x.always);
 
 	if (data.lastShop2Visited !== getDate() || !data.shop2Items?.length) {
 
