@@ -397,7 +397,7 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 	const maxLv = ai.moduleData.findOne({ type: 'rpg' })?.maxLv ?? 1;
 	data.maxLv = maxLv;
 
-	let filteredShopItems = shopItems.filter((x) => (!x.limit || x.limit(data, rnd)) && !(x.type === "amulet" && (data.lv < 20 || data.items?.some((y) => y.type === "amulet"))) && !x.always);
+	let filteredShopItems = shopItems.filter((x) => (!x.limit || x.limit(data, rnd)) && (aggregateTokensEffects(data).alwaysAmulet || !(x.type === "amulet" && (data.lv < 20 || data.items?.some((y) => y.type === "amulet")))) && !x.always);
 
 	if (data.lastShopVisited !== getDate() || !data.shopItems?.length) {
 
