@@ -4,8 +4,15 @@ import { aggregateTokensEffects } from "./shop";
 
 export function calculateStats(data, msg, skillEffects, color, maxBonus = 100) {
 	const stbonus = (((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) + ((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0))) / 2;
-	let atk = Math.max(5 + (data.atk ?? 0) + Math.floor(Math.min(stbonus * ((100 + (data.atk ?? 0)) / 100), (data.atk ?? 0) * maxBonus)), 10);
-	let def = Math.max(5 + (data.def ?? 0) + Math.floor(Math.min(stbonus * ((100 + (data.def ?? 0)) / 100), (data.def ?? 0) * maxBonus)), 10);
+	let dataAtk = (data.atk ?? 0)
+	let dataDef = (data.def ?? 0)
+	if (maxBonus < 1 && dataAtk + dataDef > data.lv * 8) {
+		const statusX = data.lv * 8 / (dataAtk + dataDef);
+		dataAtk = Math.ceil(dataAtk * statusX);
+		dataDef = Math.ceil(dataDef * statusX);
+	}
+	let atk = Math.max(5 + dataAtk + Math.floor(Math.min(stbonus * ((100 + dataAtk) / 100), (data.atk ?? 0) * maxBonus)), 10);
+	let def = Math.max(5 + dataDef + Math.floor(Math.min(stbonus * ((100 + dataDef) / 100), (data.def ?? 0) * maxBonus)), 10);
 	let spd = Math.floor((msg.friend.love ?? 0) / 100) + 1;
 
 	if (data.maxSpd < spd) data.maxSpd = spd;
