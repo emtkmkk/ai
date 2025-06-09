@@ -1174,6 +1174,10 @@ export default class extends Module {
 			}
 		}
 
+		if (enemy.fire && skillEffects.water) {
+			dmgUp *= (1 + (skillEffects.water ?? 0));
+		}
+
 		const itemEquip = 0.4 + ((1 - playerHpPercent) * 0.6);
 		if (rpgItems.length && ((count === 1 && skillEffects.firstTurnItem) || Math.random() < itemEquip * (1 + (skillEffects.itemEquip ?? 0)))) {
 			//アイテム
@@ -1522,6 +1526,10 @@ export default class extends Module {
 
 			/** 敵のターンが既に完了したかのフラグ */
 			let enemyTurnFinished = false;
+
+			if (count === 1 && data.enemy.fire && skillEffects.water) {
+				data.enemy.fire /= (1 + (skillEffects.water ?? 0) * 3);
+			}
 
 			// 敵先制攻撃の処理
 			// spdが1ではない、または戦闘ではない場合は先制攻撃しない

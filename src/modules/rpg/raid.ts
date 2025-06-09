@@ -1316,6 +1316,14 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 			}
 		}
 
+		if (enemy.fire && skillEffects.water) {
+			dmgUp *= (1 + (skillEffects.water ?? 0));
+				if (verboseLog) {
+					buff += 1;
+					message += `水スキル効果: 与ダメージ${displayDifference((1 + (skillEffects.water ?? 0)))}\n`;
+				}
+		}
+
 		const itemEquip = (0.4 + ((1 - playerHpPercent) * 0.6) + itemBoost) * (slothFlg ? 0 : 1);
 		if (verboseLog && !(count === 1 && skillEffects.firstTurnItem)) {
 			buff += 1;
@@ -1686,6 +1694,11 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 		let endureCount = 1 + (skillEffects.endureUp ?? 0) * 2;
 
 		const _data = { ...data, enemy, count };
+
+		
+		if (_data.enemy.fire && skillEffects.water) {
+			_data.enemy.fire /= (1 + (skillEffects.water ?? 0) * 3);
+		}
 
 		// 敵先制攻撃の処理
 		// spdが1ではない、または戦闘ではない場合は先制攻撃しない
