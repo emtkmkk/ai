@@ -1174,7 +1174,7 @@ export default class extends Module {
 			}
 		}
 
-		if (enemy.fire && skillEffects.water) {
+		if (data.enemy.fire && skillEffects.water) {
 			dmgUp *= (1 + (skillEffects.water ?? 0));
 		}
 
