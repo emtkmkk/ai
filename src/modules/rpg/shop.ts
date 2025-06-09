@@ -315,7 +315,7 @@ const eventAmulet = (data?) => {
 		if (dy == 3) {
 			return [
 				Math.random() < 0.5 ? "氷属性剣攻撃＋" : "傲慢の力",
-				...["毒属性剣攻撃", "慎重", "負けそうなら逃げる", "敵のクリティカル性能減少"].sort(() => 0.5 - Math.random()).slice(0, Math.random() < 0.1 ? 4 : Math.random() < 0.5 ? 3 : 2),
+				...["水属性剣攻撃", "毒属性剣攻撃", "慎重", "負けそうなら逃げる", "敵のクリティカル性能減少"].sort(() => 0.5 - Math.random()).slice(0, Math.random() < 0.1 ? 4 : Math.random() < 0.5 ? 3 : 2),
 			]
 		}
 		if (dy == 4) {
