@@ -76,6 +76,7 @@ export type SkillEffect = {
 	dark?: number;
 	/** 毒：1ターンごとに敵のステータスn%低下 */
 	weak?: number;
+	water?: number;
 	/** 非戦闘時にパワーn%上昇 */
 	notBattleBonusAtk?: number;
 	/** 非戦闘時に防御n%上昇 */
@@ -296,12 +297,13 @@ export const skills: Skill[] = [
 	{ name: `かるわざ`, short: "軽", desc: `ステータスが上がり、お守りを持っていない時、追加で${serifs.rpg.status.atk}がさらに上がります`, info: `ステータス+6% お守りを持っていない時、追加で${serifs.rpg.status.atk}+6%`, effect: { atkUp6: 0.06, defUp5: 0.06, noAmuletAtkUp: 0.06 }, skillOnly: true },
 	{ name: `攻めの守勢`, short: "勢", desc: `通常よりもダメージを防げば防ぐ程、パワーが上がります（ただし７フィーバー！を除きます）`, info: `ダメージ軽減300毎に防御の12.5~40%分のパワーを得ます（７フィーバー！を除く）\nこの効果は最大4回まで発動し、発動した回数が多いほど効果が上がります\nさらにレイド時は発動した回数分、全力の一撃のダメージが上がります\n${serifs.rpg.status.atk}+4% このスキルは重複しません`, effect: { atkUpBonus: 1, guardAtkUp: 0.125 }, unique: "counter" },
 	{ name: `分散型`, short: "散", desc: `同じスキルを持っていない程、ステータスが上がります（お守りは対象外）`, info: `パワー・防御+10% クリティカル率+10% ダメージ軽減+10% 同じスキルを持つ度に全ての効果-4%（お守りは対象外）`, effect: { distributed: 0.1 }, unique: "distributed" },
-	{ name: `傲慢の力`, short: "**傲**", desc: `敵が弱いほど与ダメージが大きく上昇します`, info: "最大体力の10%以下のダメージを受ける度に、その戦いの間常に与ダメージ+15%\nただし、最大体力の30%以上のダメージを受けた場合、そのダメージは2倍になる\nさらに連勝補正の減少を半減させ、たまに無効化する", effect: { pride: 0.15 }, notLearn: true, amuletUnique: "sin"},
+	{ name: `傲慢の力`, short: "**傲**", desc: `敵が弱いほど与ダメージが大きく上昇します`, info: "最大体力の10%以下のダメージを受ける度に、その戦いの間常に与ダメージ+15%\nただし、最大体力の30%以上のダメージを受けた場合、そのダメージは2倍になる", effect: { pride: 0.15 }, notLearn: true, amuletUnique: "sin"},
 	{ name: `強欲の力`, short: "**欲**", desc: `前に装備した武器・防具を次にその能力を上回るものが手に入るまで装備するようになりますが、使いまわした装備は徐々に力を失います……`, info: "", effect: { greed: 0.5 }, notLearn: true, amuletUnique: "sin"},
 	{ name: `憤怒の力`, short: "**憤**", desc: `体力が半減した状態でスタートしますが、クリティカルダメージが大きく上昇します`, info: "体力半減でスタート クリティカルダメージ+40%", effect: { wrath: 0.4 }, notLearn: true, amuletUnique: "sin"},
 	{ name: `暴食の力`, short: "**暴**", desc: `何かを食べる度に与ダメージが上がります さらに食べる程効果が上がります 食べてはいけない物を食べた場合にさらに効果が上がります`, info: "何かを食べる度、その戦いの間常に与ダメージ+10% 毒を食べた場合与ダメージ+20%", effect: { gluttony: 0.2 }, notLearn: true, amuletUnique: "sin"},
 	{ name: `怠惰の力`, short: "**怠**", desc: `時々怠けて行動をしなくなりますが、怠けた後は強くなります`, info: "30%で怠ける 怠ける度に、その戦いの間常に与ダメージ+50%", effect: { sloth: 0.5 }, notLearn: true, amuletUnique: "sin"},
-	{ name: `嫉妬の力`, short: "**嫉**", desc: `レイドで与えたダメージが低い間、ダメージを大きくカットします`, info: "レイドでのダメージ評価が低い間、被ダメージを最大70%カットします\n評価が高くなった場合、被ダメージが★1につき+10%", effect: { envy: 1 }, notLearn: true, amuletUnique: "sin"},{ name: `水属性剣攻撃`, short: "水", desc: `戦闘時、たまに敵を凍らせます`, info: `戦闘時、9%で相手のターンをスキップ\n非戦闘時、${serifs.rpg.status.def}+9%\n水曜日にここまでに記載された効果の効果量が66%アップ\n${serifs.rpg.status.atk}+4%`, effect: { atkUpBonus: 1, ice: 0.09 } },
+	{ name: `嫉妬の力`, short: "**嫉**", desc: `レイドで与えたダメージが低い間、ダメージを大きくカットします`, info: "レイドでのダメージ評価が低い間、被ダメージを最大70%カットします\n評価が高くなった場合、被ダメージが★1につき+10%", effect: { envy: 1 }, notLearn: true, amuletUnique: "sin"},
+	{ name: `水属性剣攻撃`, short: "水", desc: `炎属性の敵に対して、非常に有効です さらに、氷属性と雷属性の力を高めます`, info: `炎属性の敵に対し与ダメージ+18%かつ火炎ダメージのダメージカット+54%\n水曜日にここまでに記載された効果の効果量が66%アップ\n氷属性剣攻撃と雷属性剣攻撃の効果が+25%`, effect: { water: 0.18 } },
 ];
 
 export const skillBorders = [20, 50, 100, 170, 255];
@@ -676,6 +678,13 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
 	}
 	if ((day == 6 || aggregatedEffect.rainbow) && aggregatedEffect.dart) {
 		aggregatedEffect.dart *= 5 / 3;
+	}
+	if (aggregatedEffect.water) {
+		aggregatedEffect.ice = (aggregatedEffect.ice ?? 0) * (1 + (aggregatedEffect.water * 1.4));
+		aggregatedEffect.thunder = (aggregatedEffect.thunder ?? 0) * (1 + (aggregatedEffect.water * 1.4));
+	}
+	if ((day == 3 || aggregatedEffect.rainbow) && aggregatedEffect.water) {
+		aggregatedEffect.water *= 5 / 3;
 	}
 
 	if (aggregatedEffect.distributed) {
