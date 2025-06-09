@@ -610,10 +610,9 @@ export default class extends Module {
 			}
 		}
 		
-
 		message += [
 			`${serifs.rpg.nowStatus}`,
-			`${serifs.rpg.status.atk} : ${Math.round(atk)}`,
+			`${serifs.rpg.status.atk}/Lv : ${Math.round(atk / data.lv * 100) / 100}`,
 			`${serifs.rpg.status.post} : ${Math.round(postCount - (isSuper ? 200 : 0))}`,
 			"★".repeat(Math.floor(tp)) + "☆".repeat(Math.max(5 - Math.floor(tp), 0)) + "\n\n"
 		].filter(Boolean).join("\n");
@@ -629,6 +628,13 @@ export default class extends Module {
 		edef -= Math.max(atk * arpenX, edef * arpenX);
 		if (edef < enemyMinDef) edef = enemyMinDef;
 
+		// 天国と地獄は20%の効果で計算
+		atk = atk * (1 + ((skillEffects.heavenOrHell ?? 0) * 0.2));
+		// 風魔法
+		atk = atk * (1 + ((skillEffects.spdUp ?? 0)));
+		//アイテムボーナス
+		atk = atk + ((data.lv * 4) * Math.min(((skillEffects.firstTurnItem ? 0.9 : 0.4) * (1 + (skillEffects.itemEquip ?? 0))), 1) * (1 + (skillEffects.itemBoost ?? 0)) * (1 + (skillEffects.weaponBoost ?? 0)));
+		
 		atk = atk * (1 + ((skillEffects.critUpFixed ?? 0) * (1 + (skillEffects.critDmgUp ?? 0))));
 		atk = atk * (1 + (skillEffects.dart ?? 0) * 0.5);
 		atk = atk * (1 + (skillEffects.abortDown ?? 0) * (1 / 3));
