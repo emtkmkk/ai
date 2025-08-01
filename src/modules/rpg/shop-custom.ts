@@ -86,7 +86,7 @@ export const shopCustomContextHook = (module: rpg, ai: 藍, key: any, msg: Messa
 
     if (index === 0) {
         if (!currentSkills.length) return { reaction: 'hmm' };
-        const price = calcAmuletPrice(ai, currentSkills);
+        const price = Math.ceil(calcAmuletPrice(ai, currentSkills) * 1.3);
         const amulet = {
             ...mergeSkills(ai, currentSkills),
             price
