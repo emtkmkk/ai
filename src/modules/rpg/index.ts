@@ -83,7 +83,7 @@ export default class extends Module {
 		}
                 if (msg.includes(Array.isArray(serifs.rpg.command.shop) ? serifs.rpg.command.shop : [serifs.rpg.command.shop]) && msg.includes(Array.isArray(serifs.rpg.command.shopCustom) ? serifs.rpg.command.shopCustom : [serifs.rpg.command.shopCustom])) {
                         const data = initializeData(this, msg);
-                        if ((!msg.user.host && msg.user.username === config.master) || data.items.filter((x) => x.name === "ショップカスタム入場の札").length) {
+                        if ((!msg.user.host && msg.user.username === config.master) || data.items.filter((x) => x.name === "カスタムショップ入場の札").length) {
                                 // カスタムショップモード
                                 return shopCustomReply(this, this.ai, msg);
                         }
