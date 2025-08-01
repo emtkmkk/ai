@@ -1993,7 +1993,7 @@ export default class extends Module {
                 }
 
                const index = data.index;
-               const skillName = data.options[parseInt(num) - 1];
+               const skillName = data.options[num - 1];
                const skill = skills.find(x => x.name === skillName);
                if (!skill || !canLearnSkillNow(rpgData, skill)) {
                        msg.reply('そのスキルは習得できません！', { visibility: 'specified' });
