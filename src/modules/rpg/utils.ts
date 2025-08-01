@@ -14,6 +14,7 @@ export function initializeData(module: rpg, msg) {
     if (!data.clearEnemy) data.clearEnemy = [data.preEnemy ?? ""].filter(Boolean);
     if (!data.clearHistory) data.clearHistory = data.clearEnemy;
     if (!data.items) data.items = [];
+    if (!data.tempAmulet) data.tempAmulet = [];
     if (!data.coin) data.coin = 0;
 		if (data.shopExp < 200 && data.jar === 1) data.shopExp = 200;
 		if (data.shopExp < 600 && data.jar === 2) data.shopExp = 600;
