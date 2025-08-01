@@ -10,7 +10,7 @@ import { rpgItems } from './items';
 import { aggregateTokensEffects, shopContextHook, shopReply } from './shop';
 import { shopCustomReply, shopCustomContextHook } from './shop-custom';
 import { shop2Reply } from './shop2';
-import { skills, Skill, SkillEffect, getSkill, skillReply, skillCalculate, aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, countDuplicateSkillNames, skillBorders } from './skills';
+import { skills, Skill, SkillEffect, getSkill, skillReply, skillCalculate, aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, countDuplicateSkillNames, skillBorders, canLearnSkillNow } from './skills';
 import { start, Raid, raidInstall, raidContextHook, raidTimeoutCallback } from './raid';
 import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatus, getPostCount, getPostX, getVal, random, preLevelUpProcess } from './utils';
 import { calculateStats } from './battle';
@@ -81,21 +81,21 @@ export default class extends Module {
 				return shop2Reply(this, this.ai, msg);
 			}
 		}
-                if (msg.includes(Array.isArray(serifs.rpg.command.shop) ? serifs.rpg.command.shop : [serifs.rpg.command.shop]) && msg.includes(Array.isArray(serifs.rpg.command.shopCustom) ? serifs.rpg.command.shopCustom : [serifs.rpg.command.shopCustom])) {
-                        const data = initializeData(this, msg);
-                        if ((!msg.user.host && msg.user.username === config.master) || data.items.filter((x) => x.name === "カスタムショップ入場の札").length) {
-                                // カスタムショップモード
-                                return shopCustomReply(this, this.ai, msg);
-                        }
-                }
-                if (msg.includes(Array.isArray(serifs.rpg.command.shop) ? serifs.rpg.command.shop : [serifs.rpg.command.shop])) {
-                        // ショップモード
-                        return shopReply(this, this.ai, msg);
-                }
-                if (msg.includes(Array.isArray(serifs.rpg.command.skill) ? serifs.rpg.command.skill : [serifs.rpg.command.skill])) {
-                        // スキルモード
-                        return skillReply(this, this.ai, msg);
-                }
+    if (msg.includes(Array.isArray(serifs.rpg.command.shop) ? serifs.rpg.command.shop : [serifs.rpg.command.shop]) && msg.includes(Array.isArray(serifs.rpg.command.shopCustom) ? serifs.rpg.command.shopCustom : [serifs.rpg.command.shopCustom])) {
+            const data = initializeData(this, msg);
+            if ((!msg.user.host && msg.user.username === config.master) || data.items.filter((x) => x.name === "カスタムショップ入場の札").length) {
+                    // カスタムショップモード
+                    return shopCustomReply(this, this.ai, msg);
+            }
+    }
+    if (msg.includes(Array.isArray(serifs.rpg.command.shop) ? serifs.rpg.command.shop : [serifs.rpg.command.shop])) {
+            // ショップモード
+            return shopReply(this, this.ai, msg);
+    }
+    if (msg.includes(Array.isArray(serifs.rpg.command.skill) ? serifs.rpg.command.skill : [serifs.rpg.command.skill])) {
+            // スキルモード
+            return skillReply(this, this.ai, msg);
+    }
 		if (msg.includes([serifs.rpg.command.rpg]) && msg.includes(Array.isArray(serifs.rpg.command.trial) ? serifs.rpg.command.trial : [serifs.rpg.command.trial])) {
 			// 木人モード
 			return this.handleTrialCommands(msg);
@@ -118,17 +118,20 @@ export default class extends Module {
 
 	@autobind
 	private async contextHook(key: any, msg: Message, data: any) {
-		if (typeof key === "string" && key.startsWith("replayOkawari:")) {
-			return this.replayOkawariHook(key, msg, data);
-		}
-                if (typeof key === "string" && key.startsWith("shopBuy:")) {
-                        return shopContextHook(this, key, msg, data);
-                }
-                if (typeof key === "string" && key.startsWith("shopCustom:")) {
-                        return shopCustomContextHook(this, this.ai, key, msg, data);
-                }
-                return raidContextHook(key, msg, data);
-        }
+          if (typeof key === "string" && key.startsWith("replayOkawari:")) {
+            return this.replayOkawariHook(key, msg, data);
+          }
+          if (typeof key === "string" && key.startsWith("shopBuy:")) {
+                  return shopContextHook(this, key, msg, data);
+          }
+          if (typeof key === "string" && key.startsWith("shopCustom:")) {
+                  return shopCustomContextHook(this, this.ai, key, msg, data);
+          }
+          if (typeof key === "string" && key.startsWith("selectSkill:")) {
+                  return this.selectSkillHook(key, msg, data);
+          }
+          return raidContextHook(key, msg, data);
+  }
 
 	@autobind
 	private timeoutCallback(data) {
@@ -1934,7 +1937,7 @@ export default class extends Module {
 	}
 
 	@autobind
-	private replayOkawariHook(key: any, msg: Message, data: any) {
+        private replayOkawariHook(key: any, msg: Message, data: any) {
 		this.log("replayOkawari");
 		if (key.replace("replayOkawari:", "") !== msg.userId) {
 			this.log(msg.userId + " : " + key.replace("replayOkawari:", ""));
@@ -1959,8 +1962,50 @@ export default class extends Module {
 				this.subscribeReply("replayOkawari:" + msg.userId, reply.id);
 			});
 			return { reaction: 'hmm' };
-		}
-	}
+                }
+        }
+
+        @autobind
+        private selectSkillHook(key: any, msg: Message, data: any) {
+                if (key.replace("selectSkill:", "") !== msg.userId) {
+                        return { reaction: 'hmm' };
+                }
+
+                const rpgData = msg.friend.getPerModulesData(this);
+                if (!rpgData) return { reaction: 'hmm' };
+
+               const num = ["1", "2", "3", "4", "0"].find(n => msg.includes([n]));
+               if (!num) {
+                       msg.reply('番号で選んでください', { visibility: 'specified' }).then(reply => {
+                               this.subscribeReply(key, reply.id, data);
+                       });
+                       return { reaction: 'hmm' };
+               }
+
+                this.unsubscribeReply(key);
+
+                if (num === "0") {
+                        msg.reply('変更を取りやめました', { visibility: 'specified' });
+                        return { reaction: ':mk_muscleok:' };
+                }
+
+               const index = data.index;
+               const skillName = data.options[parseInt(num) - 1];
+               const skill = skills.find(x => x.name === skillName);
+               if (!skill || !canLearnSkillNow(rpgData, skill)) {
+                       msg.reply('そのスキルは習得できません', { visibility: 'specified' });
+                       return { reaction: 'hmm' };
+               }
+
+               rpgData.skills[index] = skill;
+               if (num === "4") {
+                       rpgData.nextSkill = null;
+               }
+               msg.reply(`\n` + serifs.rpg.moveToSkill(data.oldSkillName, skill.name) + `\n効果: ${skill.desc}` + (aggregateTokensEffects(rpgData).showSkillBonus && skill.info ? `\n詳細効果: ${skill.info}` : ''), { visibility: 'specified' });
+               msg.friend.setPerModulesData(this, rpgData);
+               skillCalculate(this.ai);
+               return { reaction: 'love' };
+        }
 
 	@autobind
 	private async rpgAccountListAdd() {
