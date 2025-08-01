@@ -48,19 +48,19 @@ export const shopCustomReply = async (module: rpg, ai: 藍, msg: Message) => {
 
     const list = show.map((sk, i) => {
         const price = partPrice(ai, currentSkills, sk);
-        return `[${i + 1}] ${sk.name} ${price}枚\n${aggregateTokensEffects(data).showSkillBonus && sk.info ? `\n${sk.info}` : sk.desc ? `\n${sk.desc}` : ""}`;
+        return `[${i + 1}] ${sk.name}のパーツ ${price}枚${aggregateTokensEffects(data).showSkillBonus && sk.info ? `\n${sk.info}` : sk.desc ? `\n${sk.desc}` : ""}`;
     });
     if (currentSkills.length > 0) {
         list.unshift(`[0] 完成させる！`);
     }
 
-    const current = currentSkills.length ? `現在のパーツ: ${currentSkills.map((x) => x.name).join(', ')}` : 'まだ何も選んでいません';
+    const current = currentSkills.length ? `現在のパーツ: [${currentSkills.map((x) => x.short).join('')}]` : '現在のパーツ: []';
 
     const reply = await msg.reply([
-        serifs.rpg.shop.welcome(data.coin),
+        serifs.rpg.shop.welcome3(data.coin),
         current,
         ...list
-    ].join('\n'), { visibility: 'specified' });
+    ].join('\n\n'), { visibility: 'specified' });
 
     module.subscribeReply('shopCustom:' + msg.userId, reply.id, { skills: show.map(x => x.name) });
     msg.friend.setPerModulesData(module, data);
