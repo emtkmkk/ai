@@ -160,7 +160,7 @@ export const shopItems: ShopItem[] = [
 	...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly && !x.notShop).map((x): AmuletItem => ({ name: `${x.name}のお守り`, price: (data, rnd, ai) => skillPrice(ai, x.name, rnd), desc: `持っているとスキル「${x.name}」を使用できる${x.desc ? `（${x.desc}）` : ""} 耐久6 使用時耐久減少`, type: "amulet", effect: x.effect, durability: 6, skillName: x.name, short: x.short, isUsed: (data) => true })),
 ];
 
-function getRandomSkills(ai, num) {
+export function getRandomSkills(ai, num) {
 	let filteredSkills = skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly && !x.notShop);
 	const { skillNameCountMap, totalSkillCount } = skillCalculate(ai);
 
