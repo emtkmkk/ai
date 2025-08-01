@@ -1970,22 +1970,25 @@ export default class extends Module {
                 if (key.replace("selectSkill:", "") !== msg.userId) {
                         return { reaction: 'hmm' };
                 }
+				if (msg.extractedText.length >= 3) return false;
 
                 const rpgData = msg.friend.getPerModulesData(this);
                 if (!rpgData) return { reaction: 'hmm' };
 
-               const num = ["1", "2", "3", "4", "0"].find(n => msg.includes([n]));
-               if (!num) {
-                       msg.reply('番号で選んでください', { visibility: 'specified' }).then(reply => {
-                               this.subscribeReply(key, reply.id, data);
-                       });
+				const match = msg.extractedText.replace(/[０-９]/g, m => '０１２３４５６７８９'.indexOf(m).toString()).match(/[0-9]+/);
+				if (match == null) {
+					return {
+						reaction: 'hmm',
+					};
+				}
+				const num = parseInt(match[0]);
+               if (!num || num > data.options.length) {
                        return { reaction: 'hmm' };
                }
 
                 this.unsubscribeReply(key);
 
-                if (num === "0") {
-                        msg.reply('変更を取りやめました', { visibility: 'specified' });
+                if (num === 0) {
                         return { reaction: ':mk_muscleok:' };
                 }
 
@@ -1993,12 +1996,12 @@ export default class extends Module {
                const skillName = data.options[parseInt(num) - 1];
                const skill = skills.find(x => x.name === skillName);
                if (!skill || !canLearnSkillNow(rpgData, skill)) {
-                       msg.reply('そのスキルは習得できません', { visibility: 'specified' });
+                       msg.reply('そのスキルは習得できません！', { visibility: 'specified' });
                        return { reaction: 'hmm' };
                }
 
                rpgData.skills[index] = skill;
-               if (num === "4") {
+               if (num === 4) {
                        rpgData.nextSkill = null;
                }
                msg.reply(`\n` + serifs.rpg.moveToSkill(data.oldSkillName, skill.name) + `\n効果: ${skill.desc}` + (aggregateTokensEffects(rpgData).showSkillBonus && skill.info ? `\n詳細効果: ${skill.info}` : ''), { visibility: 'specified' });
