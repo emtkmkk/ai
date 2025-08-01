@@ -88,7 +88,7 @@ export default class extends Module {
                 if (msg.includes(Array.isArray(serifs.rpg.command.shop) ? serifs.rpg.command.shop : [serifs.rpg.command.shop]) && msg.includes(Array.isArray(serifs.rpg.command.shopCustom) ? serifs.rpg.command.shopCustom : [serifs.rpg.command.shopCustom])) {
                         const data = initializeData(this, msg);
                         if ((!msg.user.host && msg.user.username === config.master) || data.items.filter((x) => x.name === "ショップカスタム入場の札").length) {
-                                // ショップカスタムモード
+                                // カスタムショップモード
                                 return shopCustomReply(this, this.ai, msg);
                         }
                 }
@@ -249,6 +249,9 @@ export default class extends Module {
 		if (data.items) {
 			if (data.items.filter((x) => x.name === "裏ショップ入場の札").length) {
 				helpMessage.push(serifs.rpg.help.shop2);
+			}
+			if (data.items.filter((x) => x.name === "カスタムショップ入場の札").length) {
+				helpMessage.push(serifs.rpg.help.shopCustom);
 			}
 			helpMessage.push(serifs.rpg.help.item);
 		}

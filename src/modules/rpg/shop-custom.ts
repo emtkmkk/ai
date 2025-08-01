@@ -44,14 +44,14 @@ export const shopCustomReply = async (module: rpg, ai: 藍, msg: Message) => {
     const currentSkills = data.tempAmulet.map((x) => skills.find((y) => y.name === x)).filter(Boolean) as Skill[];
 
     const candidates = skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !data.tempAmulet.includes(x.name));
-    const show = candidates.sort(() => rnd() - 0.5).slice(0, 3);
+    const show = candidates.sort(() => rnd() - 0.5).slice(0, 9);
 
     const list = show.map((sk, i) => {
         const price = partPrice(ai, currentSkills, sk);
-        return `[${i + 1}] ${sk.name} ${price}枚`;
+        return `[${i + 1}] ${sk.name} ${price}枚\n${aggregateTokensEffects(data).showSkillBonus && sk.info ? `\n${sk.info}` : skill.desc ? `\n${sk.desc}` : ""}`;
     });
     if (currentSkills.length > 0) {
-        list.unshift(`[0] 完成する`);
+        list.unshift(`[0] 完成させる！`);
     }
 
     const current = currentSkills.length ? `現在のパーツ: ${currentSkills.map((x) => x.name).join(', ')}` : 'まだ何も選んでいません';
@@ -71,7 +71,7 @@ export const shopCustomReply = async (module: rpg, ai: 藍, msg: Message) => {
 export const shopCustomContextHook = (module: Module, key: any, msg: Message, data: any) => {
     if (key.replace('shopCustom:', '') !== msg.userId) return { reaction: 'hmm' };
     const index = parseInt(msg.text);
-    const rpgData = initializeData(module as unknown as rpg, msg);
+    const rpgData = initializeData(module, msg);
     if (isNaN(index)) return { reaction: 'hmm' };
 
     if (!rpgData.tempAmulet) rpgData.tempAmulet = [];
@@ -79,9 +79,9 @@ export const shopCustomContextHook = (module: Module, key: any, msg: Message, da
 
     if (index === 0) {
         if (!currentSkills.length) return { reaction: 'hmm' };
-        const price = calcAmuletPrice(module.ai as unknown as 藍, currentSkills);
+        const price = calcAmuletPrice(module.ai, currentSkills);
         const amulet = {
-            ...mergeSkills(module.ai as unknown as 藍, currentSkills),
+            ...mergeSkills(module.ai, currentSkills),
             price
         };
         if (rpgData.items.some((x) => x.type === 'amulet')) {
@@ -89,23 +89,24 @@ export const shopCustomContextHook = (module: Module, key: any, msg: Message, da
         }
         rpgData.items.push(amulet);
         rpgData.tempAmulet = [];
-        msg.friend.setPerModulesData(module as unknown as rpg, rpgData);
-        msg.reply(`お守りを作成しました: ${amulet.name}`);
+        msg.friend.setPerModulesData(module, rpgData);
+        msg.reply(`お守りを作成しました！ ${amulet.name}`);
         return { reaction: 'love' };
     }
 
     const skillName = data.skills[index - 1];
     const skill = skills.find((x) => x.name === skillName);
     if (!skill) return { reaction: 'hmm' };
-    const cost = partPrice(module.ai as unknown as 藍, currentSkills, skill);
+    const cost = partPrice(module.ai, currentSkills, skill);
     if ((rpgData.coin ?? 0) < cost) {
         msg.reply(serifs.rpg.shop.notEnoughCoin);
         return { reaction: 'hmm' };
     }
     rpgData.coin -= cost;
+    rpgData.shopExp += cost;
     rpgData.tempAmulet.push(skill.name);
-    msg.friend.setPerModulesData(module as unknown as rpg, rpgData);
-    return shopCustomReply(module as unknown as rpg, module.ai as unknown as 藍, msg);
+    msg.friend.setPerModulesData(module, rpgData);
+    return shopCustomReply(module, module.ai, msg);
 };
 
 function mergeSkills(ai: 藍, skillList: Skill[]) {
