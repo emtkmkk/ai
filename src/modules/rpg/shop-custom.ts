@@ -70,7 +70,14 @@ export const shopCustomReply = async (module: rpg, ai: 藍, msg: Message) => {
 
 export const shopCustomContextHook = (module: rpg, ai: 藍, key: any, msg: Message, data: any) => {
     if (key.replace('shopCustom:', '') !== msg.userId) return { reaction: 'hmm' };
-    const index = parseInt(msg.text);
+	if (msg.extractedText.length >= 3) return false;
+    const match = msg.extractedText.replace(/[０-９]/g, m => '０１２３４５６７８９'.indexOf(m).toString()).match(/[0-9]+/);
+	if (match == null) {
+        return {
+            reaction: 'hmm',
+        };
+    }
+    const index = parseInt(match[0]);
     const rpgData = initializeData(module, msg);
     if (isNaN(index)) return { reaction: 'hmm' };
 
