@@ -125,7 +125,7 @@ export default class extends Module {
                         return shopContextHook(this, key, msg, data);
                 }
                 if (typeof key === "string" && key.startsWith("shopCustom:")) {
-                        return shopCustomContextHook(this, key, msg, data);
+                        return shopCustomContextHook(this, this.ai, key, msg, data);
                 }
                 return raidContextHook(key, msg, data);
         }
