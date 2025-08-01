@@ -81,16 +81,16 @@ export default class extends Module {
 				return shop2Reply(this, this.ai, msg);
 			}
 		}
-                if (msg.includes(Array.isArray(serifs.rpg.command.shop) ? serifs.rpg.command.shop : [serifs.rpg.command.shop])) {
-                        // ショップモード
-                        return shopReply(this, this.ai, msg);
-                }
                 if (msg.includes(Array.isArray(serifs.rpg.command.shop) ? serifs.rpg.command.shop : [serifs.rpg.command.shop]) && msg.includes(Array.isArray(serifs.rpg.command.shopCustom) ? serifs.rpg.command.shopCustom : [serifs.rpg.command.shopCustom])) {
                         const data = initializeData(this, msg);
                         if ((!msg.user.host && msg.user.username === config.master) || data.items.filter((x) => x.name === "ショップカスタム入場の札").length) {
                                 // カスタムショップモード
                                 return shopCustomReply(this, this.ai, msg);
                         }
+                }
+                if (msg.includes(Array.isArray(serifs.rpg.command.shop) ? serifs.rpg.command.shop : [serifs.rpg.command.shop])) {
+                        // ショップモード
+                        return shopReply(this, this.ai, msg);
                 }
                 if (msg.includes(Array.isArray(serifs.rpg.command.skill) ? serifs.rpg.command.skill : [serifs.rpg.command.skill])) {
                         // スキルモード
