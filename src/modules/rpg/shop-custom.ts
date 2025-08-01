@@ -43,7 +43,7 @@ export const shopCustomReply = async (module: rpg, ai: 藍, msg: Message) => {
 
     const currentSkills = data.tempAmulet.map((x) => skills.find((y) => y.name === x)).filter(Boolean) as Skill[];
 
-    const candidates = skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !data.tempAmulet.includes(x.name));
+    const candidates = skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly && !data.tempAmulet.includes(x.name));
     const show = candidates.sort(() => rnd() - 0.5).slice(0, 9);
 
     const list = show.map((sk, i) => {
