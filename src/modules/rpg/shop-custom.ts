@@ -69,7 +69,7 @@ export const shopCustomReply = async (module: rpg, ai: 藍, msg: Message) => {
     return { reaction: 'love' };
 };
 
-export const shopCustomContextHook = (module: Module, key: any, msg: Message, data: any) => {
+export const shopCustomContextHook = (module: Module, ai: 藍, key: any, msg: Message, data: any) => {
     if (key.replace('shopCustom:', '') !== msg.userId) return { reaction: 'hmm' };
     const index = parseInt(msg.text);
     const rpgData = initializeData(module, msg);
@@ -80,9 +80,9 @@ export const shopCustomContextHook = (module: Module, key: any, msg: Message, da
 
     if (index === 0) {
         if (!currentSkills.length) return { reaction: 'hmm' };
-        const price = calcAmuletPrice(module.ai, currentSkills);
+        const price = calcAmuletPrice(ai, currentSkills);
         const amulet = {
-            ...mergeSkills(module.ai, currentSkills),
+            ...mergeSkills(ai, currentSkills),
             price
         };
         if (rpgData.items.some((x) => x.type === 'amulet')) {
@@ -98,7 +98,7 @@ export const shopCustomContextHook = (module: Module, key: any, msg: Message, da
     const skillName = data.skills[index - 1];
     const skill = skills.find((x) => x.name === skillName);
     if (!skill) return { reaction: 'hmm' };
-    const cost = partPrice(module.ai, currentSkills, skill);
+    const cost = partPrice(ai, currentSkills, skill);
     if ((rpgData.coin ?? 0) < cost) {
         msg.reply(serifs.rpg.shop.notEnoughCoin);
         return { reaction: 'hmm' };
@@ -107,7 +107,7 @@ export const shopCustomContextHook = (module: Module, key: any, msg: Message, da
     rpgData.shopExp += cost;
     rpgData.tempAmulet.push(skill.name);
     msg.friend.setPerModulesData(module, rpgData);
-    return shopCustomReply(module, module.ai, msg);
+    return shopCustomReply(module, ai, msg);
 };
 
 function mergeSkills(ai: 藍, skillList: Skill[]) {
