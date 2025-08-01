@@ -2,7 +2,7 @@ import Message from "@/message";
 import Module from "@/module";
 import serifs from "@/serifs";
 import 藍 from '@/ai';
-import { aggregateTokensEffects, AmuletItem, ShopItem, shopItems, mergeSkillAmulet } from './shop';
+import { aggregateTokensEffects, AmuletItem, ShopItem, shopItems, mergeSkillAmulet, getRandomSkills } from './shop';
 import { deepClone, getColor } from './utils';
 import { colors, enhanceCount } from './colors';
 import config from "@/config";
@@ -425,7 +425,15 @@ export const getRerollSkill = (data, oldSkillName = "") => {
 		randomValue -= weight; // ランダム値を減少させる
 	}
 
-	return filteredSkills[0]; // ここに来るのはおかしいよ
+       return filteredSkills[0]; // ここに来るのはおかしいよ
+};
+
+export const canLearnSkillNow = (data, skill: Skill) => {
+       const playerSkills = data.skills.map((x) => skills.find((y) => x.name === y.name) ?? x);
+       if (skill.notLearn || skill.moveTo || skill.cantReroll) return false;
+       if (playerSkills.filter((y) => y.unique).map((y) => y.unique).includes(skill.unique)) return false;
+       if (skill.name === "分散型" && (countDuplicateSkillNames(data.skills) !== 0 || data.skills.some((x) => x.name === "分散型"))) return false;
+       return true;
 };
 
 const skillInfo = (skills: Skill[] | undefined, desc: string, infoFlg = false) => {
@@ -438,7 +446,7 @@ const skillInfo = (skills: Skill[] | undefined, desc: string, infoFlg = false) =
 };
 
 /** スキルに関しての情報を返す */
-export const skillReply = (module: Module, ai: 藍, msg: Message) => {
+export const skillReply = async (module: Module, ai: 藍, msg: Message) => {
 
 	// データを読み込み
 	const data = msg.friend.getPerModulesData(module);
@@ -501,41 +509,50 @@ export const skillReply = (module: Module, ai: 藍, msg: Message) => {
 		};
 	}
 
-	if (msg.includes([serifs.rpg.command.change])) {
-		if (!data.rerollOrb || data.rerollOrb <= 0) return { reaction: 'confused' };
-		for (let i = 0; i < data.skills.length; i++) {
-			if (msg.includes([String(i + 1)])) {
-				if (!playerSkills[i].cantReroll) {
-					const oldSkillName = playerSkills[i].name;
-					if (data.nextSkill && skills.find((x) => x.name === data.nextSkill)) {
-						const skill = skills.find((x) => x.name === data.nextSkill);
-						if (skill && !playerSkills?.filter((y) => y.unique).map((y) => y.unique).includes(skill.unique)) {
-							data.skills[i] = skill;
-							data.nextSkill = null;
-						} else {
-							data.skills[i] = getRerollSkill(data, oldSkillName);
-						}
-					} else {
-						data.skills[i] = getRerollSkill(data, oldSkillName);
-					}
-					msg.reply(`\n` + serifs.rpg.moveToSkill(oldSkillName, data.skills[i].name) + `\n効果: ${data.skills[i].desc}` + (aggregateTokensEffects(data).showSkillBonus && data.skills[i].info ? `\n詳細効果: ${data.skills[i].info}` : ""));
-					data.rerollOrb -= 1;
-					msg.friend.setPerModulesData(module, data);
-					skillCalculate(ai);
-					return {
-						reaction: 'love'
-					};
-				} else {
-					return {
-						reaction: 'confused'
-					};
-				}
-			}
-		}
-		return {
-			reaction: 'confused'
-		};
-	}
+       if (msg.includes([serifs.rpg.command.change])) {
+               if (!data.rerollOrb || data.rerollOrb <= 0) return { reaction: 'confused' };
+               for (let i = 0; i < data.skills.length; i++) {
+                       if (msg.includes([String(i + 1)])) {
+                               if (!playerSkills[i].cantReroll) {
+                                       const oldSkillName = playerSkills[i].name;
+                                       if (aggregateTokensEffects(data).selectSkill) {
+                                               const options = getRandomSkills(ai, 3);
+                                               const nextSkill = data.nextSkill ? skills.find(x => x.name === data.nextSkill) : null;
+                                               if (nextSkill && canLearnSkillNow(data, nextSkill)) {
+                                                       options.push(nextSkill);
+                                               }
+                                               module.unsubscribeReply(`selectSkill:${msg.userId}`);
+                                               data.rerollOrb -= 1;
+                                               msg.friend.setPerModulesData(module, data);
+                                               const reply = await msg.reply(`\nスキルを選んでください\n${options.map((x, idx) => `[${idx + 1}] ${x.name}`).join("\n")}\n[0] 変更しない`, { visibility: 'specified' });
+                                               module.subscribeReply(`selectSkill:${msg.userId}`, reply.id, { index: i, options: options.map(x => x.name), oldSkillName });
+                                               return { reaction: 'love' };
+                                       }
+                                       if (data.nextSkill && skills.find((x) => x.name === data.nextSkill) && canLearnSkillNow(data, skills.find((x) => x.name === data.nextSkill)!)) {
+                                               const skill = skills.find((x) => x.name === data.nextSkill)!;
+                                               data.skills[i] = skill;
+                                               data.nextSkill = null;
+                                       } else {
+                                               data.skills[i] = getRerollSkill(data, oldSkillName);
+                                       }
+                                       msg.reply(`\n` + serifs.rpg.moveToSkill(oldSkillName, data.skills[i].name) + `\n効果: ${data.skills[i].desc}` + (aggregateTokensEffects(data).showSkillBonus && data.skills[i].info ? `\n詳細効果: ${data.skills[i].info}` : ""));
+                                       data.rerollOrb -= 1;
+                                       msg.friend.setPerModulesData(module, data);
+                                       skillCalculate(ai);
+                                       return {
+                                               reaction: 'love'
+                                       };
+                               } else {
+                                       return {
+                                               reaction: 'confused'
+                                       };
+                               }
+                       }
+               }
+               return {
+                       reaction: 'confused'
+               };
+       }
 
 	let amuletSkill: string[] = [];
 	if (data.items?.filter((x) => x.type === "amulet").length) {
