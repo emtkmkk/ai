@@ -537,7 +537,7 @@ export const skillReply = async (module: Module, ai: 藍, msg: Message) => {
                                                module.unsubscribeReply(`selectSkill:${msg.userId}`);
                                                data.rerollOrb -= 1;
                                                msg.friend.setPerModulesData(module, data);
-                                               const reply = await msg.reply(`\n新しいスキルを**選択**してください！\n${options.map((x, idx) => `[${idx + 1}] ${x.name}`).join("\n")}\n[0] 変更しない`, { visibility: 'specified' });
+                                               const reply = await msg.reply(`\n新しいスキルを**選択**してください！\n${options.map((x, idx) => `[${idx + 1}] ${x.name}\n効果: ${data.skills[i].desc}` + (aggregateTokensEffects(data).showSkillBonus && data.skills[i].info ? `\n詳細効果: ${data.skills[i].info}` : "")).join("\n\n")}\n[0] 変更しない`, { visibility: 'specified' });
                                                module.subscribeReply(`selectSkill:${msg.userId}`, reply.id, { index: i, options: options.map(x => x.name), oldSkillName });
                                                return { reaction: 'love' };
                                        }
