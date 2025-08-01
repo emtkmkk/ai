@@ -1,5 +1,4 @@
 import Message from "@/message";
-import Module from "@/module";
 import serifs from "@/serifs";
 import * as seedrandom from 'seedrandom';
 import getDate from '@/utils/get-date';
@@ -69,7 +68,7 @@ export const shopCustomReply = async (module: rpg, ai: 藍, msg: Message) => {
     return { reaction: 'love' };
 };
 
-export const shopCustomContextHook = (module: Module, ai: 藍, key: any, msg: Message, data: any) => {
+export const shopCustomContextHook = (module: rpg, ai: 藍, key: any, msg: Message, data: any) => {
     if (key.replace('shopCustom:', '') !== msg.userId) return { reaction: 'hmm' };
     const index = parseInt(msg.text);
     const rpgData = initializeData(module, msg);
