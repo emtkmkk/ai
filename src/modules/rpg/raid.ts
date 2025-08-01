@@ -2769,24 +2769,33 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	if (verboseLog) {
 		message += `器用さ: ${Math.round(dex)} 仕上げ: ${Math.round(fix * 100)}\n\n`;
 	}
+
+  if (dex > 250) {
+	const rndNum = Math.random();
+	if (rndNum < 0.1) {
+		dex = 250
+	} else if (rndNum < 0.9) {
+		dex = 250 + (dex - 250) * ((rndNum - 0.1) / 0.8)
+	}
+  }
 	
   let plus = 0.1;
-  let life = dex < 100 ? 15 / (100/dex) : 15;
+  let life = dex < 120 ? Math.ceil(15 / (120/dex)) : 15;
   let spFlg = false;
 
   while (life > 0) {
 	if (Math.random() < 0.5) {
-		plus += dex < 100 ? 0.2 * (100/dex) : 0.2;
+		plus += dex < 120 ? 0.2 * (120/dex) : 0.2;
         if (!spFlg && Math.random() < (0.02 * Math.min(1, 50/dex))) {
             life = 15;
-            if (Math.random() < dex/50) spFlg = true;
+            if (Math.random() < dex/60) spFlg = true;
         }
 	} else { 
 		life -= 1;
 	}
   }
 
-	const score = (dex / 4) * plus * (0.97 + (Math.random() * 0.06));
+	const score = (dex < 120 ? (40 + dex *(2/3)) / 4 : dex / 4) * plus * (0.97 + (Math.random() * 0.06));
 
 	totalDmg = Math.round((100 - 100 * Math.pow(1/2, score/50)) * 10) / 10;
 
