@@ -521,7 +521,15 @@ export const skillReply = async (module: Module, ai: 藍, msg: Message) => {
                                if (!playerSkills[i].cantReroll) {
                                        const oldSkillName = playerSkills[i].name;
                                        if (aggregateTokensEffects(data).selectSkill) {
-                                               const options = getRandomSkills(ai, 3);
+												let options = [] as Skill[];
+												let loopCount = 0;
+												while (options.length < 3 && loopCount < 200) {
+													const option = getRerollSkill(data, oldSkillName);
+													if (![data.nextSkill, ...options.map((x) => x.name)].includes(option.name)) {
+														options.push(option)
+													}
+													loopCount += 1;
+												}
                                                const nextSkill = data.nextSkill ? skills.find(x => x.name === data.nextSkill) : null;
                                                if (nextSkill && canLearnSkillNow(data, nextSkill)) {
                                                        options.push(nextSkill);
@@ -529,7 +537,7 @@ export const skillReply = async (module: Module, ai: 藍, msg: Message) => {
                                                module.unsubscribeReply(`selectSkill:${msg.userId}`);
                                                data.rerollOrb -= 1;
                                                msg.friend.setPerModulesData(module, data);
-                                               const reply = await msg.reply(`\nスキルを選んでください\n${options.map((x, idx) => `[${idx + 1}] ${x.name}`).join("\n")}\n[0] 変更しない`, { visibility: 'specified' });
+                                               const reply = await msg.reply(`\n新しいスキルを**選択**してください！\n${options.map((x, idx) => `[${idx + 1}] ${x.name}`).join("\n")}\n[0] 変更しない`, { visibility: 'specified' });
                                                module.subscribeReply(`selectSkill:${msg.userId}`, reply.id, { index: i, options: options.map(x => x.name), oldSkillName });
                                                return { reaction: 'love' };
                                        }
