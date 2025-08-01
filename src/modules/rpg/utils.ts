@@ -15,6 +15,21 @@ export function initializeData(module: rpg, msg) {
     if (!data.clearHistory) data.clearHistory = data.clearEnemy;
     if (!data.items) data.items = [];
     if (!data.tempAmulet) data.tempAmulet = [];
+    if (data.items?.some(x => x.name === '選択カードの札')) {
+        data.items = data.items.map(item => item.name === '選択カードの札' ? { ...item, name: '質問カードの札' } : item);
+    }
+    if (Array.isArray(data.bankItems) && data.bankItems.some(x => x === '選択カードの札')) {
+        data.bankItems = data.bankItems.map(name => name === '選択カードの札' ? '質問カードの札' : name);
+    }
+    if (Array.isArray(data.shopItems) && data.shopItems.some(name => !Array.isArray(name) && name === '選択カードの札')) {
+        data.shopItems = data.shopItems.map(name => Array.isArray(name) ? name : name === '選択カードの札' ? '質問カードの札' : name);
+    }
+    if (Array.isArray(data.shop2Items) && data.shop2Items.some(name => !Array.isArray(name) && name === '選択カードの札')) {
+        data.shop2Items = data.shop2Items.map(name => Array.isArray(name) ? name : name === '選択カードの札' ? '質問カードの札' : name);
+    }
+    if (Array.isArray(data.showShopItems) && data.showShopItems.some(item => item.name === '選択カードの札')) {
+        data.showShopItems = data.showShopItems.map(item => ({ ...item, name: item.name === '選択カードの札' ? '質問カードの札' : item.name }));
+    }
     if (!data.coin) data.coin = 0;
 		if (data.shopExp < 200 && data.jar === 1) data.shopExp = 200;
 		if (data.shopExp < 600 && data.jar === 2) data.shopExp = 600;
