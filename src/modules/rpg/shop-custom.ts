@@ -4,6 +4,7 @@ import serifs from "@/serifs";
 import * as seedrandom from 'seedrandom';
 import getDate from '@/utils/get-date';
 import { skills, Skill, skillPower } from './skills';
+import { aggregateTokensEffects } from "./shop";
 import { initializeData } from './utils';
 import rpg from './index';
 import 藍 from '@/ai';
@@ -48,7 +49,7 @@ export const shopCustomReply = async (module: rpg, ai: 藍, msg: Message) => {
 
     const list = show.map((sk, i) => {
         const price = partPrice(ai, currentSkills, sk);
-        return `[${i + 1}] ${sk.name} ${price}枚\n${aggregateTokensEffects(data).showSkillBonus && sk.info ? `\n${sk.info}` : skill.desc ? `\n${sk.desc}` : ""}`;
+        return `[${i + 1}] ${sk.name} ${price}枚\n${aggregateTokensEffects(data).showSkillBonus && sk.info ? `\n${sk.info}` : sk.desc ? `\n${sk.desc}` : ""}`;
     });
     if (currentSkills.length > 0) {
         list.unshift(`[0] 完成させる！`);
