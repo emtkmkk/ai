@@ -229,6 +229,8 @@ export type Skill = {
 	notLearn?: boolean;
 	/** お守りとして出ない場合 */
 	skillOnly?: boolean;
+	/** ショップに並ばない場合 */
+	notShop?: boolean;
 };
 
 export const skills: Skill[] = [
@@ -303,6 +305,9 @@ export const skills: Skill[] = [
 	{ name: `暴食の力`, short: "**暴**", desc: `何かを食べる度に与ダメージが上がります さらに食べる程効果が上がります 食べてはいけない物を食べた場合にさらに効果が上がります`, info: "何かを食べる度、その戦いの間常に与ダメージ+10% 毒を食べた場合与ダメージ+20%", effect: { gluttony: 0.2 }, notLearn: true, amuletUnique: "sin"},
 	{ name: `怠惰の力`, short: "**怠**", desc: `時々怠けて行動をしなくなりますが、怠けた後は強くなります`, info: "30%で怠ける 怠ける度に、その戦いの間常に与ダメージ+50%", effect: { sloth: 0.5 }, notLearn: true, amuletUnique: "sin"},
 	{ name: `嫉妬の力`, short: "**嫉**", desc: `レイドで与えたダメージが低い間、ダメージを大きくカットします`, info: "レイドでのダメージ評価が低い間、被ダメージを最大70%カットします\n評価が高くなった場合、被ダメージが★1につき+10%", effect: { envy: 1 }, notLearn: true, amuletUnique: "sin"},
+	{ name: `バーサク`, short: "バ", desc: `レイド時、毎ターンダメージを受けますが、パワーがアップします`, info: "レイド時、毎ターンHP15%減少 パワー+24%", effect: { berserk: 0.15 }, notLearn: true, notShop: true},
+	{ name: `超全力の一撃`, short: "撃", desc: `レイド時、ターン7で発生する全力の一撃を強化します`, info: "レイド時、全力の一撃のダメージ1.3倍", effect: { finalAttackUp: 0.3 }, notLearn: true, notShop: true},
+	{ name: `スロースタート`, short: "ス", desc: `レイド時、最初は弱くなりますが、ターンが進む度にどんどん強くなります`, info: "レイド時、最初は弱くなりますが、ターンが進む度にどんどん強くなります", effect: { slowStart: 1 }, notLearn: true, notShop: true},
 	{ name: `水属性剣攻撃`, short: "水", desc: `炎属性の敵に対して、非常に有効です さらに、氷属性と雷属性の力を高めます`, info: `炎属性の敵に対し与ダメージ+18%かつ火炎ダメージのダメージカット+54%\n水曜日にここまでに記載された効果の効果量が66%アップ\n氷属性剣攻撃と雷属性剣攻撃の効果が+25%`, effect: { water: 0.18 } },
 ];
 

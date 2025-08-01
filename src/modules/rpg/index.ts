@@ -8,6 +8,7 @@ import { colorReply, colors } from './colors';
 import { endressEnemy, enemys, Enemy, raidEnemys } from './enemys';
 import { rpgItems } from './items';
 import { aggregateTokensEffects, shopContextHook, shopReply } from './shop';
+import { shopCustomReply, shopCustomContextHook } from './shop-custom';
 import { shop2Reply } from './shop2';
 import { skills, Skill, SkillEffect, getSkill, skillReply, skillCalculate, aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, countDuplicateSkillNames, skillBorders } from './skills';
 import { start, Raid, raidInstall, raidContextHook, raidTimeoutCallback } from './raid';
@@ -80,14 +81,21 @@ export default class extends Module {
 				return shop2Reply(this, this.ai, msg);
 			}
 		}
-		if (msg.includes(Array.isArray(serifs.rpg.command.shop) ? serifs.rpg.command.shop : [serifs.rpg.command.shop])) {
-			// ショップモード
-			return shopReply(this, this.ai, msg);
-		}
-		if (msg.includes(Array.isArray(serifs.rpg.command.skill) ? serifs.rpg.command.skill : [serifs.rpg.command.skill])) {
-			// スキルモード
-			return skillReply(this, this.ai, msg);
-		}
+                if (msg.includes(Array.isArray(serifs.rpg.command.shop) ? serifs.rpg.command.shop : [serifs.rpg.command.shop])) {
+                        // ショップモード
+                        return shopReply(this, this.ai, msg);
+                }
+                if (msg.includes(Array.isArray(serifs.rpg.command.shop) ? serifs.rpg.command.shop : [serifs.rpg.command.shop]) && msg.includes(Array.isArray(serifs.rpg.command.shopCustom) ? serifs.rpg.command.shopCustom : [serifs.rpg.command.shopCustom])) {
+                        const data = initializeData(this, msg);
+                        if ((!msg.user.host && msg.user.username === config.master) || data.items.filter((x) => x.name === "ショップカスタム入場の札").length) {
+                                // カスタムショップモード
+                                return shopCustomReply(this, this.ai, msg);
+                        }
+                }
+                if (msg.includes(Array.isArray(serifs.rpg.command.skill) ? serifs.rpg.command.skill : [serifs.rpg.command.skill])) {
+                        // スキルモード
+                        return skillReply(this, this.ai, msg);
+                }
 		if (msg.includes([serifs.rpg.command.rpg]) && msg.includes(Array.isArray(serifs.rpg.command.trial) ? serifs.rpg.command.trial : [serifs.rpg.command.trial])) {
 			// 木人モード
 			return this.handleTrialCommands(msg);
@@ -113,11 +121,14 @@ export default class extends Module {
 		if (typeof key === "string" && key.startsWith("replayOkawari:")) {
 			return this.replayOkawariHook(key, msg, data);
 		}
-		if (typeof key === "string" && key.startsWith("shopBuy:")) {
-			return shopContextHook(this, key, msg, data);
-		}
-		return raidContextHook(key, msg, data);
-	}
+                if (typeof key === "string" && key.startsWith("shopBuy:")) {
+                        return shopContextHook(this, key, msg, data);
+                }
+                if (typeof key === "string" && key.startsWith("shopCustom:")) {
+                        return shopCustomContextHook(this, key, msg, data);
+                }
+                return raidContextHook(key, msg, data);
+        }
 
 	@autobind
 	private timeoutCallback(data) {
@@ -238,6 +249,9 @@ export default class extends Module {
 		if (data.items) {
 			if (data.items.filter((x) => x.name === "裏ショップ入場の札").length) {
 				helpMessage.push(serifs.rpg.help.shop2);
+			}
+			if (data.items.filter((x) => x.name === "カスタムショップ入場の札").length) {
+				helpMessage.push(serifs.rpg.help.shopCustom);
 			}
 			helpMessage.push(serifs.rpg.help.item);
 		}
