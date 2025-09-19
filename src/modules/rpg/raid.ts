@@ -9,7 +9,7 @@ import { rpgItems } from './items';
 import { aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, getSkillsShortName, aggregateSkillsEffectsSkillX, countDuplicateSkillNames } from './skills';
 import { aggregateTokensEffects } from './shop';
 import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatusDmg, getPostCount, getPostX, getVal, random, getRaidPostX, preLevelUpProcess } from './utils';
-import { calculateStats, fortune, stockRandom } from './battle';
+import { calculateArpen, calculateStats, fortune, stockRandom } from './battle';
 import serifs from '@/serifs';
 import getDate from '@/utils/get-date';
 import { acct } from '@/utils/acct';
@@ -1099,15 +1099,11 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		}
 	}
 
-	const enemyMinDef = enemyDef * 0.4
-	const maxDownDef = enemyDef * 0.6
-	const arpenX = 1 - (1 / (1 + (skillEffects.arpen ?? 0)));
-	const downDef = Math.max(atk * arpenX, enemyDef * arpenX);
-	enemyDef -= downDef;
-	if (enemyDef < enemyMinDef) enemyDef = enemyMinDef;
-	if (verboseLog && Math.min(downDef, maxDownDef) > 3.5) {
+	const arpenX = calculateArpen(data, (skillEffects.arpen ?? 0), enemyDef)
+	atk = atk * arpenX;
+	if (verboseLog && arpenX > 1) {
 		buff += 1;
-		message += `貫スキル効果: -x${formatNumber(Math.min(downDef, maxDownDef) / (lv * 3.5))} (x${formatNumber(enemyDef / (lv * 3.5))})\n`;
+		message += `貫スキル効果: A+x${formatNumber(arpenX)}\n`;
 	}
 
 	// バフが1つでも付与された場合、改行を追加する
@@ -1247,13 +1243,12 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 				buff += 1;
 				message += serifs.rpg.skill.weak(enemy.dname ?? enemy.name) + "\n";
 			}
-			const enemyMinDef = enemyDef * 0.4
 			const weakXList = [0, 0.25, 0.5, 1, 1.5, 3.5, 4, 4.5, 5];
 			const weakX = 1 - (1 / (1 + ((skillEffects.weak * weakXList[count - 1]))))
 			enemyAtk -= Math.max(enemyAtk * weakX, atk * weakX);
-			enemyDef -= Math.max(enemyDef * weakX, atk * weakX);
+			const arpenX = calculateArpen(data, skillEffects.weak * weakXList[count - 1], enemyDef)
+			atk = atk * arpenX;
 			if (enemyAtk < 0) enemyAtk = 0;
-			if (enemyDef < enemyMinDef) enemyDef = enemyMinDef;
 			if (verboseLog) {
 				buff += 1;
 				message += `毒スキル効果: ${displayDifference(1 - weakX)} (x${formatNumber(enemyAtk / (lv * 3.5))} / x${formatNumber(enemyDef / (lv * 3.5))})\n`;

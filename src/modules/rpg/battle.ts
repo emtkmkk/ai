@@ -296,3 +296,29 @@ export function stockRandom(data, skillEffects) {
 		skillEffects
 	};
 }
+
+export function calculateArpen(data: { lv: number; }, arpen: number, edef: number): number {
+	
+		if (!arpen) return 1;
+		const D0   = data.lv * 3.5;
+		const BASE = 3.0;
+		const STEP = 6.0;
+
+		let perSkillPct = 0;
+		if (edef > 0) {
+			if (edef < D0) {
+				perSkillPct = BASE * (edef / D0);
+			} else {
+				const ratio = edef / D0;
+				const n = Math.floor(Math.log2(ratio));
+				const L = D0 * Math.pow(2, n);
+				const U = L * 2;
+				const tRaw = (edef - L) / (U - L);
+      			const t = Math.max(0, Math.min(1, tRaw));
+				perSkillPct = BASE + (n + t) * STEP;
+			}
+		}
+
+		return (1 + (perSkillPct / 100) * ((arpen ?? 0) / 0.12));
+
+}

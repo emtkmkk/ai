@@ -13,7 +13,7 @@ import { shop2Reply } from './shop2';
 import { skills, Skill, SkillEffect, getSkill, skillReply, skillCalculate, aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, countDuplicateSkillNames, skillBorders, canLearnSkillNow } from './skills';
 import { start, Raid, raidInstall, raidContextHook, raidTimeoutCallback } from './raid';
 import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatus, getPostCount, getPostX, getVal, random, preLevelUpProcess } from './utils';
-import { calculateStats } from './battle';
+import { calculateArpen, calculateStats } from './battle';
 import Friend from '@/friend';
 import config from '@/config';
 import * as loki from 'lokijs';
@@ -640,10 +640,8 @@ export default class extends Module {
 
 		// 敵のステータスを計算
 		let edef = data.lv * 3.5;
-		const enemyMinDef = edef * 0.4
-		const arpenX = 1 - (1 / (1 + (skillEffects.arpen ?? 0)));
-		edef -= Math.max(atk * arpenX, edef * arpenX);
-		if (edef < enemyMinDef) edef = enemyMinDef;
+
+		atk = atk * calculateArpen(data, (skillEffects.arpen ?? 0), edef);
 
 		// 天国と地獄は20%の効果で計算
 		atk = atk * (1 + ((skillEffects.heavenOrHell ?? 0) * 0.2));
@@ -1427,8 +1425,7 @@ export default class extends Module {
 			}
 		}
 
-		const arpenX = 1 - (1 / (1 + (skillEffects.arpen ?? 0)));
-		enemyDef -= Math.max(atk * arpenX, enemyDef * arpenX);
+		atk = atk * calculateArpen(data, (skillEffects.arpen ?? 0), enemyDef);
 
 		if (skillEffects.firstTurnResist && count === 1 && isBattle && isPhysical) {
 			buff += 1;
@@ -1498,12 +1495,11 @@ export default class extends Module {
 					buff += 1;
 					message += serifs.rpg.skill.weak(data.enemy.dname ?? data.enemy.name) + "\n";
 				}
-				const enemyMinDef = enemyDef * 0.4
 				const weakX = 1 - (1 / (1 + ((skillEffects.weak * (count - 1)))))
 				enemyAtk -= Math.max(enemyAtk * weakX, atk * weakX);
-				enemyDef -= Math.max(enemyDef * weakX, atk * weakX);
 				if (enemyAtk < 0) enemyAtk = 0;
-				if (enemyDef < enemyMinDef) enemyDef = enemyMinDef;
+				const arpenX = calculateArpen(data, skillEffects.weak * (count - 1), enemyDef)
+				atk = atk * arpenX;
 			}
 
 			// バフが1つでも付与された場合、改行を追加する
