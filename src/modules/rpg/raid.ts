@@ -1103,7 +1103,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	atk = atk * arpenX;
 	if (verboseLog && arpenX > 1) {
 		buff += 1;
-		message += `貫スキル効果: A+x${formatNumber(arpenX)}\n`;
+		message += `貫スキル効果: A${displayDifference(arpenX)}\n`;
 	}
 
 	// バフが1つでも付与された場合、改行を追加する
@@ -2943,3 +2943,4 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 		reply,
 	};
 }
+
