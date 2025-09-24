@@ -12,7 +12,7 @@ import { shopCustomReply, shopCustomContextHook } from './shop-custom';
 import { shop2Reply } from './shop2';
 import { skills, Skill, SkillEffect, getSkill, skillReply, skillCalculate, aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, countDuplicateSkillNames, skillBorders, canLearnSkillNow } from './skills';
 import { start, Raid, raidInstall, raidContextHook, raidTimeoutCallback } from './raid';
-import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatus, getPostCount, getPostX, getVal, random, preLevelUpProcess } from './utils';
+import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatus, getPostCount, getPostX, getVal, random, preLevelUpProcess, deepClone } from './utils';
 import { calculateArpen, calculateStats } from './battle';
 import Friend from '@/friend';
 import config from '@/config';
@@ -397,7 +397,7 @@ export default class extends Module {
 					rankmsg2 += `（同順位：${sameRankCount2 - 1}人）`;
 				}
 
-				return `${label}\n1位：${(values?.[0] + (options?.addValue || 0)).toLocaleString()} ${rankmsg}${sameRankCount < 9 ? `\n10位：${(values?.[9] + (options?.addValue || 0)).toLocaleString()} ${rankmsg2}` : ""}`;
+				return `${label}\n1位：${(values?.[0] + (options?.addValue || 0)).toLocaleString()} ${rankmsg}${sameRankCount < 9 && values.length >= 10 ? `\n10位：${(values?.[9] + (options?.addValue || 0)).toLocaleString()} ${rankmsg2}` : ""}`;
 			}
 		};
 
@@ -881,7 +881,7 @@ export default class extends Module {
 		let color = getColor(data);
 
 		if (!color.unlock(data)) {
-			data.color === (colors.find((x) => x.default) ?? colors[0]).id;
+			data.color = (colors.find(x => x.default) ?? colors[0]).id;
 			color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
 		}
 
@@ -918,7 +918,7 @@ export default class extends Module {
 		tp = Math.max(tp, data.maxTp / 2);
 
 		if (!isSuper) {
-			data.superPoint = Math.max(data.superPoint ?? 0 - (tp - 2), -3);
+			data.superPoint = Math.max((data.superPoint ?? 0) - (tp - 2), -3);
 		} else {
 			data.superPoint = 0;
 		}
@@ -988,6 +988,7 @@ export default class extends Module {
 			data.enemy = [...enemys, endressEnemy(data)].find((x) => data.enemy.name === x.name);
 			// 敵が消された？？
 			if (!data.enemy) data.enemy = endressEnemy(data);
+			data.enemy = deepClone(data.enemy);
 			// 敵の開始メッセージなどを設定
 			cw += `${data.enemy.short} ${count}${serifs.rpg.turn}`;
 			// 前ターン時点のステータスを表示
@@ -2045,3 +2046,4 @@ export default class extends Module {
 		}
 	}
 }
+
