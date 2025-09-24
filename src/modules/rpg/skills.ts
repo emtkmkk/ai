@@ -574,9 +574,6 @@ export const skillReply = async (module: Module, ai: 藍, msg: Message) => {
 		const skill = amulet.skillName && !Array.isArray(amulet.skillName) ? [skills.find((x) => amulet.skillName === x.name)] : amulet.skillName && Array.isArray(amulet.skillName) ? amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) : undefined;
 		if (amulet.durability) amuletSkill.push(`[お守り] ${amulet.skillName && !Array.isArray(amulet.skillName) ? amulet.skillName : amulet.name} ${aggregateTokensEffects(data).autoRepair && (item.durability ?? 0) >= 2 && amulet.durability <= 1 ? `コイン消費${Math.round((amulet.price ?? 12) / (item.durability ?? 6)) + 1}` : `残耐久${amulet.durability}`}${skillInfo(skill, item.desc, aggregateTokensEffects(data).showSkillBonus)}`);
 	}
-	
-	const skillBorders = [20, 50, 100, 170, 255];
-
 	msg.reply([
 		data.rerollOrb && data.rerollOrb > 0 ? serifs.rpg.skills.info(data.rerollOrb) + "\n" : "",
 		data.duplicationOrb && data.duplicationOrb > 0 ? serifs.rpg.skills.duplicationInfo(data.duplicationOrb) + "\n" : "",
@@ -951,7 +948,7 @@ export function amuletMinusDurability(data: any): string {
 				if (x.type === "amulet") {
 					if (boost <= 0 || Math.random() < (1 / Math.pow(1.5, boost * 2))) {
 						const minusCoin = Math.round((x.price ?? 12) / (item.durability ?? 6)) + 1;
-						if(aggregateTokensEffects(data).autoRepair && (item.durability ?? 0) >= 2 && x.durability <= 1 && data.coin > minusCoin) {
+						if(aggregateTokensEffects(data).autoRepair && (item.durability ?? 0) >= 2 && x.durability <= 1 && data.coin >= minusCoin) {
 							data.coin -= minusCoin;
 							if (!data.shopExp) data.shopExp = 0;
 							data.shopExp += minusCoin;
@@ -1006,7 +1003,8 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 		return Math.round(num * 10) / 10;
 	}
 
-	data.raid = true
+	const prevRaid = data.raid;
+	data.raid = true;
 
 	let skillEffects: SkillEffect;
 	if (skillX > 1) {
@@ -1388,7 +1386,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 	if (skillEffects.poisonAvoid) {
 		result.push("毒食べ物回避率: " + showNum((skillEffects.poisonAvoid ?? 0) * 100) + "%");
 	}
-	if (skillEffects.poisonAvoid) {
+	if (skillEffects.mindMinusAvoid) {
 		result.push("悪アイテム回避率: +" + showNum((skillEffects.mindMinusAvoid ?? 0) * 100) + "%");
 	}
 
@@ -1487,7 +1485,8 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 		result.push("合計防御効果（平均）: " + showNum((1 - totalDef) * 100) + "%");
 	}
 
-	data.raid = false
+	data.raid = prevRaid || false;
 
 	return result.join("\n");
 }
+
