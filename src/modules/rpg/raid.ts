@@ -143,7 +143,7 @@ export async function start(triggerUserId?: string, flg?: any) {
 	/** すべてのレイドゲームのリスト */
 	const games = raids.find({});
 
-	if (Date.now() - games[games.length - 1].startedAt < 31 * 60 * 1000) return;
+	if (games.length > 0 && Date.now() - games[games.length - 1].startedAt < 31 * 60 * 1000) return;
 
 	ai.decActiveFactor();
 
@@ -210,7 +210,7 @@ function finish(raid: Raid) {
 	// 攻撃者がいない場合
 	if (!raid.attackers?.filter((x) => x.dmg > 1).length) {
 		ai.decActiveFactor((raid.finishedAt.valueOf() - raid.startedAt.valueOf()) / (60 * 1000 * 100));
-		rpgData.raidReputations = [];
+		if (rpgData) rpgData.raidReputations = [];
 		ai.post({
 			text: raid.enemy.power ? serifs.rpg.onagare(raid.enemy.name) : serifs.rpg.onagare2(raid.enemy.name),
 			renoteId: raid.postId
@@ -249,12 +249,13 @@ function finish(raid: Raid) {
 	if (sortAttackers?.[0]) {
 		if (sortAttackers?.[0].mark === ":blank:") {
 			sortAttackers[0].mark = "👑";
-		}
-		const friend = ai.lookupFriend(sortAttackers?.[0].user.id);
-		if (!friend) return;
-		const data = friend.getPerModulesData(module_);
-		data.coin = Math.max((data.coin ?? 0) + 1, data.coin);
-		friend.setPerModulesData(module_, data);
+		} 
+		  const friend = ai.lookupFriend(sortAttackers[0].user.id);
+		  if (friend) {
+		    const data = friend.getPerModulesData(module_);
+		    data.coin = (data.coin ?? 0) + 1;
+		    friend.setPerModulesData(module_, data);
+		  }
 	}
 
 	let references: string[] = [];
@@ -328,7 +329,7 @@ function finish(raid: Raid) {
 		const friend = ai.lookupFriend(luckyUser.id);
 		if (!friend) return;
 		const data = friend.getPerModulesData(module_);
-		data.coin = Math.max((data.coin ?? 0) + (bonus ?? 1), data.coin);
+		data.coin = Math.max((data.coin ?? 0) + (bonus ?? 1), (data.coin ?? 0));
 		if (!data.maxLucky || data.maxLucky < (bonus ?? 1)) data.maxLucky = (bonus ?? 1);
 		friend.setPerModulesData(module_, data);
 	}
@@ -339,7 +340,7 @@ function finish(raid: Raid) {
 		const friend = ai.lookupFriend(x.user.id);
 		if (!friend) return;
 		const data = friend.getPerModulesData(module_);
-		data.coin = Math.max((data.coin ?? 0) + Math.floor((score ?? 4) * bonusCoin), data.coin);
+		data.coin = Math.max((data.coin ?? 0) + Math.floor((score ?? 4) * bonusCoin), (data.coin ?? 0));
 		const winCount = sortAttackers.filter((y) => x.dmg > y.dmg).length;
 		const loseCount = sortAttackers.filter((y) => x.dmg < y.dmg).length;
 		data.raidAdjust = (data.raidAdjust ?? 0) + Math.round(winCount - (loseCount * (1/3)));
@@ -565,7 +566,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 	}
 
 	if (!isSuper) {
-		data.superPoint = Math.max(data.superPoint ?? 0 - (tp - 2), -3);
+		data.superPoint = Math.max((data.superPoint ?? 0) - (tp - 2), -3);
 	} else {
 		data.superPoint = 0;
 	}
@@ -1907,7 +1908,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 			}
 
 			if (enemy && skillEffects.envy) {
-				const targetScore = (1024 / ((enemy?.power ?? 30) / 30)) * 2^4;
+				const targetScore = (1024 / ((enemy?.power ?? 30) / 30)) * (2 ** 4);
 				const rate = (1 - (0.7 * Math.max(1 - (totalDmg / targetScore), 0)))
 				if (rate < 1) {
 					enemyAtkX = enemyAtkX * rate;
@@ -1928,7 +1929,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 			}
 
 			if (enemy && skillEffects.beginner && count <= 4 && data.skills?.length && data.skills?.length <= 3) {
-				const targetScore = (1024 / ((enemy?.power ?? 30) / 30)) * 2^3;
+				const targetScore = (1024 / ((enemy?.power ?? 30) / 30)) * (2 ** 3);
 				const rate = (1 - ((data.skills?.length >= 4 ? 0 : data.skills?.length >= 3 ? 0.3 : data.skills?.length >= 2 ? 0.6 : 0.9) * Math.max(1 - (totalDmg / targetScore), 0)));
 				if (rate < 1) {
 					enemyAtkX = enemyAtkX * rate;
@@ -2305,12 +2306,6 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 		message += serifs.rpg.oomisoka + "\n";
 		buff += 1;
 		playerHp = 1;
-	}
-
-	if (aggregateTokensEffects(data).oomisoka && new Date().getMonth() === 11 && new Date().getDate() === 31) {
-		message += serifs.rpg.oomisoka + "\n";
-		buff += 1;
-		playerHp = 1;
 		dmgup = 0.25;
 	}
 
@@ -2608,14 +2603,14 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 		message += `経験 器用さ+${Math.round(expBonus * 100)}%` + `\n`;
 		dex = dex * (1 + expBonus);
 	}
-
-	const atkDmgUp = skillEffects.atkDmgUp - skillEffects.defDmgUp;
-	const atkUp = skillEffects.atkUp - skillEffects.defUp;
+	
+	const atkDmgUp = (skillEffects.atkDmgUp ?? 0) - (skillEffects.defDmgUp ?? 0);
+	const atkUp    = (skillEffects.atkUp    ?? 0) - (skillEffects.defUp    ?? 0);
 		
 	const atkX = 
 		(atkDmgUp && atkDmgUp > 0 ? (1 / (1 + (atkDmgUp ?? 0))) : 1) *
 		(atkUp && atkUp > 0 ? (1 / (1 + (atkUp ?? 0))) : 1) *
-		(color.reverseStatus ? (0.75 + (data.atk / (data.atk + data.def)) * 0.5) : (0.75 + (data.def / (data.atk + data.def)) * 0.5))
+		(color.reverseStatus ? (0.75 + (data.atk / ((data.atk + data.def) || 1)) * 0.5) : (0.75 + (data.def / ((data.atk + data.def) || 1)) * 0.5))
 	
 	if (atkX < 1) {
 		buff += 1;
@@ -2911,7 +2906,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 
 	let reply;
 
-	if (Number.isNaN(totalDmg) || totalDmg < 0) {
+	if (!Number.isFinite(totalDmg) || Number.isNaN(totalDmg) || totalDmg < 0) {
 		console.log(totalDmg);
 		reply = await msg.reply(`エラーが発生しました。もう一度試してみてください。`, {
 			visibility: "specified"
@@ -2943,4 +2938,5 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 		reply,
 	};
 }
+
 
