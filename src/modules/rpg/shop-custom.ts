@@ -60,8 +60,7 @@ export const shopCustomReply = async (module: rpg, ai: 藍, msg: Message) => {
     const candidateStartIndex = currentSkills.length > 0 ? 2 : 1;
     const showCount = currentSkills.length > 0 ? 8 : 9;
 
-    const candidates = skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly && !data.tempAmulet.includes(x.name));
-    const show = candidates.sort(() => rnd() - 0.5).slice(0, showCount);
+    const show = skills.sort(() => rnd() - 0.5).slice(0, showCount).filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly && !data.tempAmulet.includes(x.name));
 
     let list = show.map((sk, i) => {
         const price = partPrice(ai, currentSkills, sk, data.tempAmuletCost);
