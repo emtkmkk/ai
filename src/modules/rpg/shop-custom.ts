@@ -163,7 +163,7 @@ export const shopCustomContextHook = (module: rpg, ai: 藍, key: any, msg: Messa
     rpgData.coin -= cost;
     rpgData.shopExp += cost;
     rpgData.tempAmulet.push(skill.name);
-    rpgData.tempAmuletCost = getAmuletTotalCost(ai, resolveSkills(rpgData.tempAmulet));
+    rpgData.tempAmuletCost += cost;
     msg.friend.setPerModulesData(module, rpgData);
     return shopCustomReply(module, ai, msg);
 };
