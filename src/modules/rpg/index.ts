@@ -553,10 +553,26 @@ export default class extends Module {
 				.filter((skill) => !skill.notLearn)
 				.map((skill) => ({ short: skill.short ?? skill.name, count: skillNameCountMap.get(skill.name) ?? 0 }))
 				.sort((a, b) => b.count - a.count);
+			const filteredSkillNames = new Set(filteredSkills.map((skill) => skill.name));
 			const lines: string[] = [`平均: ${averageBase.toFixed(2)}`, ""];
 			for (let i = 0; i < entries.length; i += 3) {
 				const chunk = entries.slice(i, i + 3).map((entry) => `${entry.short}: ${entry.count}`);
 				lines.push(chunk.join('  '));
+			}
+			const excludedEntries = Array.from(skillNameCountMap.entries())
+				.map(([name, count]) => {
+					const skill = skills.find((x) => x.name === name);
+					return { skill, count: count ?? 0 };
+				})
+				.filter(({ skill, count }) => skill && !skill.notLearn && !filteredSkillNames.has(skill.name) && count > 0)
+				.map(({ skill, count }) => ({ short: skill!.short ?? skill!.name, count }))
+				.sort((a, b) => b.count - a.count);
+			if (excludedEntries.length) {
+				lines.push("", "--------------------", "");
+				for (let i = 0; i < excludedEntries.length; i += 3) {
+					const chunk = excludedEntries.slice(i, i + 3).map((entry) => `${entry.short}: ${entry.count}`);
+					lines.push(chunk.join('  '));
+				}
 			}
 			msg.reply(lines.join('\n'));
 			return { reaction: 'love' };
