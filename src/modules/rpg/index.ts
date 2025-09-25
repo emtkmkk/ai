@@ -544,6 +544,22 @@ export default class extends Module {
 			start(undefined, msg.includes(["recent"]) ? "r" : msg.includes(["hato"]) ? "h" : "");
 			return { reaction: "love" };
 		}
+		if (msg.includes(["skillPopularity"])) {
+			const { skillNameCountMap, totalSkillCount } = skillCalculate(this.ai);
+			const filteredSkills = skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly);
+			const averageBase = filteredSkills.length ? totalSkillCount / filteredSkills.length : 0;
+			const entries = filteredSkills
+				.filter((skill) => !skill.notLearn)
+				.map((skill) => ({ short: skill.short ?? skill.name, count: skillNameCountMap.get(skill.name) ?? 0 }))
+				.sort((a, b) => b.count - a.count);
+			const lines: string[] = [`平均: ${averageBase.toFixed(2)}`, ""];
+			for (let i = 0; i < entries.length; i += 3) {
+				const chunk = entries.slice(i, i + 3).map((entry) => `${entry.short}: ${entry.count}`);
+				lines.push(chunk.join('  '));
+			}
+			msg.reply(lines.join('\n'));
+			return { reaction: 'love' };
+		}
 		if (msg.includes(["dataFix"])) {
 
 			const ai = this.ai;
