@@ -15,7 +15,7 @@ export const skillPriceFixed = (_ai: 藍, skillName: Skill["name"]) => {
     const totalSkillCount = filteredSkills.reduce((acc, skill) => acc + (skillP.skillNameCountMap.get(skill.name) || 0), 0);
     const price = Math.max(
         Math.floor(
-            12 * (skill?.notLearn ? 2.5 : (Math.max(isNaN(skillP.skillNameCount) ? 0 : skillP.skillNameCount, 0.5) / (totalSkillCount / filteredSkills.length)))
+            12 * (skill?.notLearn ? 2.5 : (Math.max(isNaN(skillP.skillNameCount) ? 0 : skillP.skillNameCount, 0.5) / (totalSkillCount / filteredSkills.filter((x) => !x.notLearn).length)))
         ), 6
     );
     return price;

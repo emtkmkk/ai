@@ -548,7 +548,7 @@ export default class extends Module {
 			const { skillNameCountMap } = skillCalculate(this.ai);
 			const filteredSkills = skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly);
 			const totalSkillCount = filteredSkills.reduce((acc, skill) => acc + (skillNameCountMap.get(skill.name) || 0), 0);
-			const averageBase = filteredSkills.length ? totalSkillCount / filteredSkills.length : 0;
+			const averageBase = filteredSkills.length ? totalSkillCount / filteredSkills.filter((x) => !x.notLearn).length : 0;
 			const entries = filteredSkills
 				.filter((skill) => !skill.notLearn)
 				.map((skill) => ({ short: skill.short ?? skill.name, count: skillNameCountMap.get(skill.name) ?? 0 }))

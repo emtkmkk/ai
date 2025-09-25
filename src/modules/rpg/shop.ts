@@ -89,7 +89,7 @@ export const skillPrice = (_ai: 藍, skillName: Skill["name"], rnd: () => number
 
 	const price = Math.max(
 		Math.floor(
-			12 * (skill?.notLearn ? 2.5 : (Math.max(isNaN(skillP.skillNameCount) ? 0 : skillP.skillNameCount, 0.5) / (totalSkillCount / filteredSkills.length)))
+			12 * (skill?.notLearn ? 2.5 : (Math.max(isNaN(skillP.skillNameCount) ? 0 : skillP.skillNameCount, 0.5) / (totalSkillCount / filteredSkills.filter((x) => !x.notLearn).length)))
 		), 6
 	);
 
