@@ -545,8 +545,9 @@ export default class extends Module {
 			return { reaction: "love" };
 		}
 		if (msg.includes(["skillPopularity"])) {
-			const { skillNameCountMap, totalSkillCount } = skillCalculate(this.ai);
+			const { skillNameCountMap } = skillCalculate(this.ai);
 			const filteredSkills = skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly);
+			const totalSkillCount = filteredSkills.reduce((acc, skill) => acc + (skillNameCountMap.get(skill.name) || 0), 0);
 			const averageBase = filteredSkills.length ? totalSkillCount / filteredSkills.length : 0;
 			const entries = filteredSkills
 				.filter((skill) => !skill.notLearn)
