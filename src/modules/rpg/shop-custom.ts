@@ -79,7 +79,7 @@ export const shopCustomReply = async (module: rpg, ai: 藍, msg: Message) => {
 
         const headerOptions = [
             completionLine,
-            `\n\n[1] パーツをリセット {${totalCost}}枚返却`,
+            `[1] パーツをリセット ${totalCost}枚返却`,
         ];
         list = headerOptions.concat(list);
     }

@@ -603,7 +603,7 @@ export default {
 		shop: {
 			welcome: (coin: number) => `:mk_lowpoly:ショップへようこそ！\n欲しい商品の数値またはアルファベットを返信してね\n（所持${config.rpgCoinShortName}数: ${coin.toLocaleString()}）\n`,
 			welcome2: (coin: number, orb: number) => `$[spin.y,speed=5s :mk_lowpoly:]ようこそ、裏ショップへ……\n欲しい商品の数値またはアルファベットを返信してくれ……\n（所持${config.rpgCoinShortName}数: ${coin.toLocaleString()}）\n（所持変更珠数: ${orb.toLocaleString()}）\n`,
-			welcome3: (coin: number) => `:mk_lowpoly:カスタムショップへようこそ！\n欲しいパーツの数値を返信してね\n（所持${config.rpgCoinShortName}数: ${coin.toLocaleString()}）\n`,
+			welcome3: (coin: number) => `:mk_lowpoly:カスタムショップへようこそ！\n欲しいパーツの数値を返信してね\n（所持${config.rpgCoinShortName}数: ${coin.toLocaleString()}）`,
 			buyItem: (itemName, coin: number) => `:mk_lowpoly:まいどあり！\n${itemName}を購入しました！\n（残り${config.rpgCoinShortName}数: ${coin.toLocaleString()}）`,
 			buyItemOrb: (itemName, orb: number) => `:mk_lowpoly:まいどあり！\n${itemName}を購入しました！\n（残り変更珠数: ${orb.toLocaleString()}）`,
 			useItem: (itemName) => `${itemName}を使用しました！`,
