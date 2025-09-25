@@ -49,7 +49,7 @@ export const shopCustomReply = async (module: rpg, ai: 藍, msg: Message) => {
     if (!data) return false;
     if (!data.tempAmulet) data.tempAmulet = [];
 
-    let rnd = seedrandom(getDate() + ai.account.id + msg.userId);
+    let rnd = seedrandom(`${getDate()}${ai.account.id}${msg.userId}${data.lv ?? 0}`);
 
     const currentSkills = resolveSkills(data.tempAmulet);
 
