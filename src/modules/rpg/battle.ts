@@ -247,15 +247,13 @@ export function stockRandom(data, skillEffects) {
 					effect: () => {
 						skillEffects.defRndMax = Math.min((effectPoint / 35) * -0.7, -0.7);
 						effectPoint -= Math.min(effectPoint, 35)
-						attackUpFlg = true;
 					},
 				},
 				{
 					limit: !skillEffects.defRndMin && !skillEffects.defRndMax,
 					effect: () => {
-						skillEffects.defRndMax = Math.min((effectPoint / 35) * -0.7, -0.7);
-						effectPoint -= Math.min(effectPoint, 35)
-						attackUpFlg = true;
+						skillEffects.defRndMin = Math.min((effectPoint / 8) * -0.16, -0.16);
+						effectPoint -= Math.min(effectPoint, 8)
 					},
 				},
 				{
