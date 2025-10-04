@@ -24,6 +24,10 @@ export type EnsuredKazutoriData = {
         [key: string]: any;
 };
 
+export function hasKazutoriRateHistory(data: { rate: number; rateChanged?: boolean }): boolean {
+        return Boolean(data.rateChanged) || data.rate !== 1000;
+}
+
 export function createDefaultKazutoriData(): EnsuredKazutoriData {
         return {
                 winCount: 0,
@@ -74,12 +78,7 @@ export function ensureKazutoriData<T extends KazutoriDataContainer>(target: T): 
                 }
 
                 if (typeof data.rateChanged !== 'boolean') {
-                        data.rateChanged =
-                                (typeof data.rate === 'number' && data.rate !== 1000) ||
-                                (typeof data.playCount === 'number' && data.playCount > 0) ||
-                                (typeof data.winCount === 'number' && data.winCount > 0)
-                                        ? true
-                                        : false;
+                        data.rateChanged = typeof data.rate === 'number' && data.rate !== 1000;
                         updated = true;
                 }
 

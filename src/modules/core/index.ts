@@ -13,6 +13,7 @@ import {
         ensureKazutoriData,
         findRateRank,
         createDefaultKazutoriData,
+        hasKazutoriRateHistory,
 } from '@/modules/kazutori/rate';
 import type { EnsuredKazutoriData } from '@/modules/kazutori/rate';
 
@@ -667,7 +668,7 @@ export default class extends Module {
                         if (doc.userId === userId) {
                                 selfData = data;
                         }
-                        if (data.rateChanged) {
+                        if (hasKazutoriRateHistory(data)) {
                                 ranking.push({ userId: doc.userId, rate: data.rate });
                         }
                 }
