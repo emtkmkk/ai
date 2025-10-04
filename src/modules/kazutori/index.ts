@@ -626,12 +626,12 @@ export default class extends Module {
 			reverseWinner = winner;
 		}
 
-		if (!medal) {
-			const winDiff = (Math.min(winner?.winCount ?? 0, 50)) - (Math.min(reverseWinner?.winCount ?? 0, 50));
-			if (!reverse && winner && winDiff > 10 && Math.random() < Math.min((winDiff - 10) * 0.02, 0.7)) {
-				reverse = !reverse;
-			} else if (reverse && reverseWinner && winDiff < -10 && Math.random() < Math.min((winDiff + 10) * -0.02, 0.7)) {
-				reverse = !reverse;
+                if (!medal && config.kazutoriWinDiffReverseEnabled) {
+                        const winDiff = (Math.min(winner?.winCount ?? 0, 50)) - (Math.min(reverseWinner?.winCount ?? 0, 50));
+                        if (!reverse && winner && winDiff > 10 && Math.random() < Math.min((winDiff - 10) * 0.02, 0.7)) {
+                                reverse = !reverse;
+                        } else if (reverse && reverseWinner && winDiff < -10 && Math.random() < Math.min((winDiff + 10) * -0.02, 0.7)) {
+                                reverse = !reverse;
 			}
 		}
 

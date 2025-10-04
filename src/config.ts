@@ -39,14 +39,16 @@ type Config = {
 	rpgReplyRequired?: boolean;
 	/** RPGの返信の公開範囲 */
 	rpgReplyVisibility?: string;
-	/** RPG（レイド）の返信の公開範囲 */
-	rpgRaidReplyVisibility?: string;
-	/** 
-	 * チャートからの投稿数取得を強制？
-	 * リモートユーザでも必ず正しい値が取得できる場合はTrueに
-	 * */
-	forceRemoteChartPostCount?: boolean;
-	
+        /** RPG（レイド）の返信の公開範囲 */
+        rpgRaidReplyVisibility?: string;
+        /**
+         * チャートからの投稿数取得を強制？
+         * リモートユーザでも必ず正しい値が取得できる場合はTrueに
+         * */
+        forceRemoteChartPostCount?: boolean;
+        /** 数取りで勝利数差による反転判定を有効にする？ */
+        kazutoriWinDiffReverseEnabled?: boolean;
+
 };
 
 const config = require('../config.json');
@@ -65,5 +67,6 @@ if (!config.rpgCoinName) config.rpgCoinName = "もこコイン";
 if (!config.rpgCoinShortName) config.rpgCoinShortName = "コイン";
 if (config.rpgReplyRequired !== false) config.rpgReplyRequired = true;
 if (!config.forceRemoteChartPostCount) config.forceRemoteChartPostCount = false;
+if (config.kazutoriWinDiffReverseEnabled !== true) config.kazutoriWinDiffReverseEnabled = false;
 
 export default config as Config;
