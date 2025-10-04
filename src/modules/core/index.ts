@@ -598,15 +598,18 @@ export default class extends Module {
 	}
 
 	@autobind
-	private getStatus(msg: Message): boolean {
-		if (!msg.text) return false;
-		if (!msg.text.includes('ステータス') && !msg.includes(["status"])) return false;
+        private getStatus(msg: Message): boolean {
+                if (!msg.text) return false;
+                if (!msg.text.includes('ステータス') && !msg.includes(["status"])) return false;
 
-		const lovep = msg.friend.love || 0;
-		let love = "";
-		let over = Math.floor(lovep / (100 / 7)) - 7;
-		love += lovep >= -29 ? "★" : "☆";
-		love += lovep >= -10 ? "★" : "☆";
+                const { data: kazutoriData, updated: kazutoriUpdated } = ensureKazutoriData(msg.friend.doc);
+                if (kazutoriUpdated) msg.friend.save();
+
+                const lovep = msg.friend.love || 0;
+                let love = "";
+                let over = Math.floor(lovep / (100 / 7)) - 7;
+                love += lovep >= -29 ? "★" : "☆";
+                love += lovep >= -10 ? "★" : "☆";
 		love += lovep >= 0 ? "★" : "☆";
 		love += lovep >= 5 ? "★" : "☆";
 		love += lovep >= 20 ? "★" : "☆";
