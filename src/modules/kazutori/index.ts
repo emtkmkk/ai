@@ -685,7 +685,13 @@ export default class extends Module {
                                 const winnerData = ensureKazutoriData(winnerDoc).data;
                                 const beforeRate = winnerData.rate;
                                 const beforeRank = findRateRank(sortedBefore, winnerFriend.userId);
-                                const lossRatio = Math.max(calculatedLimitMinutes * 0.004, 0.02);
+                                const baseLossRatio = calculatedLimitMinutes * 0.004;
+                                const lossRatio = Math.max(
+                                        baseLossRatio <= 0.04
+                                                ? baseLossRatio
+                                                : 0.04 + (calculatedLimitMinutes - 10) * (1 / 12000),
+                                        0.02
+                                );
                                 let totalBonus = 0;
 
                                 for (const vote of game.votes) {
