@@ -8,7 +8,7 @@ import { acct } from '@/utils/acct';
 import { genItem } from '@/vocabulary';
 import config from '@/config';
 import type { FriendDoc } from '@/friend';
-import { ensureKazutoriData, findRateRank } from './rate';
+import { ensureKazutoriData, findRateRank, hasKazutoriRateHistory } from './rate';
 var Decimal = require('break_infinity.js');
 
 type Game = {
@@ -673,7 +673,7 @@ export default class extends Module {
                                 const { data, updated } = ensureKazutoriData(doc);
                                 if (updated) this.ai.friends.update(doc);
                                 friendDocMap.set(doc.userId, doc);
-                                if (data.rateChanged) {
+                                if (hasKazutoriRateHistory(data)) {
                                         rankingBefore.push({ userId: doc.userId, rate: data.rate });
                                 }
                         }
@@ -736,7 +736,7 @@ export default class extends Module {
 
                                 const rankingAfter = friendDocs.map((doc) => {
                                         const ensured = ensureKazutoriData(doc).data;
-                                        return ensured.rateChanged
+                                        return hasKazutoriRateHistory(ensured)
                                                 ? { userId: doc.userId, rate: ensured.rate }
                                                 : null;
                                 }).filter((record): record is { userId: string; rate: number } => record != null);
