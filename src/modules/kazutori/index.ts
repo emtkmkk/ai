@@ -673,7 +673,9 @@ export default class extends Module {
                                 const { data, updated } = ensureKazutoriData(doc);
                                 if (updated) this.ai.friends.update(doc);
                                 friendDocMap.set(doc.userId, doc);
-                                rankingBefore.push({ userId: doc.userId, rate: data.rate });
+                                if (data.rateChanged) {
+                                        rankingBefore.push({ userId: doc.userId, rate: data.rate });
+                                }
                         }
 
                         const sortedBefore = [...rankingBefore].sort((a, b) =>
@@ -702,6 +704,9 @@ export default class extends Module {
                                         const before = data.rate;
                                         const loss = Math.max(Math.ceil(before * lossRatio), 1);
                                         data.rate = Math.max(before - loss, 0);
+                                        if (data.rate !== before) {
+                                                data.rateChanged = true;
+                                        }
                                         totalBonus += loss;
                                         this.ai.friends.update(doc);
                                 }
@@ -715,19 +720,26 @@ export default class extends Module {
                                                 const loss = Math.min(penaltyPoint, data.rate - 1000);
                                                 if (loss > 0) {
                                                         data.rate -= loss;
+                                                        data.rateChanged = true;
                                                         totalBonus += loss;
                                                         this.ai.friends.update(doc);
                                                 }
                                         }
                                 }
 
+                                const winnerBeforeRate = winnerData.rate;
                                 winnerData.rate += totalBonus;
+                                if (winnerData.rate !== winnerBeforeRate) {
+                                        winnerData.rateChanged = true;
+                                }
                                 this.ai.friends.update(winnerDoc);
 
                                 const rankingAfter = friendDocs.map((doc) => {
                                         const ensured = ensureKazutoriData(doc).data;
-                                        return { userId: doc.userId, rate: ensured.rate };
-                                });
+                                        return ensured.rateChanged
+                                                ? { userId: doc.userId, rate: ensured.rate }
+                                                : null;
+                                }).filter((record): record is { userId: string; rate: number } => record != null);
                                 const sortedAfter = [...rankingAfter].sort((a, b) =>
                                         b.rate === a.rate ? a.userId.localeCompare(b.userId) : b.rate - a.rate
                                 );

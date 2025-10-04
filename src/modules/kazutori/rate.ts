@@ -8,6 +8,7 @@ export type KazutoriDataContainer = {
                 inventory?: string[];
                 medal?: number;
                 ratingVersion?: number;
+                rateChanged?: boolean;
                 [key: string]: any;
         };
 };
@@ -18,6 +19,7 @@ export type EnsuredKazutoriData = {
         rate: number;
         inventory: string[];
         ratingVersion: number;
+        rateChanged: boolean;
         medal?: number;
         [key: string]: any;
 };
@@ -29,6 +31,7 @@ export function createDefaultKazutoriData(): EnsuredKazutoriData {
                 rate: 1000,
                 inventory: [],
                 ratingVersion: KAZUTORI_RATING_VERSION,
+                rateChanged: false,
         };
 }
 
@@ -47,11 +50,13 @@ export function ensureKazutoriData<T extends KazutoriDataContainer>(target: T): 
                 if (data.ratingVersion !== KAZUTORI_RATING_VERSION) {
                         data.rate = 1000;
                         data.ratingVersion = KAZUTORI_RATING_VERSION;
+                        data.rateChanged = false;
                         updated = true;
                 }
 
                 if (typeof data.rate !== 'number' || Number.isNaN(data.rate)) {
                         data.rate = 1000;
+                        data.rateChanged = false;
                         updated = true;
                 } else if (!Number.isInteger(data.rate)) {
                         data.rate = Math.round(data.rate);
@@ -65,6 +70,16 @@ export function ensureKazutoriData<T extends KazutoriDataContainer>(target: T): 
 
                 if (typeof data.playCount !== 'number' || Number.isNaN(data.playCount)) {
                         data.playCount = 0;
+                        updated = true;
+                }
+
+                if (typeof data.rateChanged !== 'boolean') {
+                        data.rateChanged =
+                                (typeof data.rate === 'number' && data.rate !== 1000) ||
+                                (typeof data.playCount === 'number' && data.playCount > 0) ||
+                                (typeof data.winCount === 'number' && data.winCount > 0)
+                                        ? true
+                                        : false;
                         updated = true;
                 }
 
