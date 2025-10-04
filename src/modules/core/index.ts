@@ -13,8 +13,8 @@ import {
         ensureKazutoriData,
         findRateRank,
         createDefaultKazutoriData,
-        type EnsuredKazutoriData,
 } from '@/modules/kazutori/rate';
+import type { EnsuredKazutoriData } from '@/modules/kazutori/rate';
 
 const titles = ['さん', 'くん', '君', 'ちゃん', '様', '先生'];
 
