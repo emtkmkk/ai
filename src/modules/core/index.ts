@@ -9,6 +9,7 @@ import { acct } from '@/utils/acct';
 import { genItem, itemPrefixes } from '@/vocabulary';
 import Friend, { FriendDoc } from '@/friend';
 import config from '@/config';
+import { ensureKazutoriData, findRateRank, createDefaultKazutoriData } from '@/modules/kazutori/rate';
 
 const titles = ['さん', 'くん', '君', 'ちゃん', '様', '先生'];
 
@@ -414,8 +415,8 @@ export default class extends Module {
 		doc1.doc.love = 0;
 		doc2.doc.married = doc1.married || doc2.married;
 		doc2.doc.perModulesData = this.mergeAndSum(doc1.doc.perModulesData, doc2.doc.perModulesData);
-		doc2.doc.kazutoriData = this.mergeAndSum(doc1.doc.kazutoriData, doc2.doc.kazutoriData);
-		doc1.doc.kazutoriData = { winCount: 0, playCount: 0, rate: 0, inventory: [] };
+                doc2.doc.kazutoriData = this.mergeAndSum(doc1.doc.kazutoriData, doc2.doc.kazutoriData);
+                doc1.doc.kazutoriData = createDefaultKazutoriData();
 		doc2.save();
 		doc1.save();
 
@@ -575,7 +576,10 @@ export default class extends Module {
 		if (!msg.text) return false;
 		if (!msg.text.includes('好感度') && !msg.text.includes('懐き度') && !msg.text.includes('なつき度')) return false;
 
-		const lovep = msg.friend.love || 0;
+                const { data: kazutoriData, updated: kazutoriUpdated } = ensureKazutoriData(msg.friend.doc);
+                if (kazutoriUpdated) msg.friend.save();
+
+                const lovep = msg.friend.love || 0;
 		let love = "";
 		let over = Math.floor(lovep / (100 / 7)) - 7;
 		let point = (lovep / (100 / 7)).toFixed(2);
@@ -614,9 +618,14 @@ export default class extends Module {
 
 		const lovemsg = `懐き度 : ${love}`;
 
-		const kazutori = msg.friend.doc.kazutoriData?.playCount
-			? `数取り : ${msg.friend.doc.kazutoriData?.winCount} / ${msg.friend.doc.kazutoriData?.playCount}${msg.friend.doc.kazutoriData?.rate > 0 ? ` (${msg.friend.doc.kazutoriData?.rate})` : ""}${msg.friend.doc.kazutoriData?.medal ? "\nトロフィー : " + msg.friend.doc.kazutoriData?.medal : ""}`
-			: undefined;
+                const rateInfo = this.getKazutoriRateInfo(msg.friend.userId);
+                const rankText = rateInfo?.rank != null
+                        ? `${rateInfo.rank}位${rateInfo.total ? `/${rateInfo.total}人` : ''}`
+                        : undefined;
+                const rateText = rateInfo?.rate != null
+                        ? ` (レート : ${Math.round(rateInfo.rate)}${rankText ? ` / 順位 : ${rankText}` : ''})`
+                        : '';
+                const kazutori = `数取り : ${kazutoriData.winCount ?? 0} / ${kazutoriData.playCount ?? 0}${rateText}${kazutoriData.medal ? "\nトロフィー : " + kazutoriData.medal : ""}`;
 
 		const bonus = msg.friend.doc.perModulesData?.rpg ? (((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) + ((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0))) / 2 : 0;
 		const rpg = msg.friend.doc.perModulesData?.rpg
@@ -633,15 +642,41 @@ export default class extends Module {
 			].filter(Boolean).join("\n")
 			: "";
 
-		msg.reply(serifs.core.getStatus([name, lovemsg, kazutori, rpg].filter(Boolean).join("\n")));
+                msg.reply(serifs.core.getStatus([name, lovemsg, kazutori, rpg].filter(Boolean).join("\n")));
 
-		return true;
-	}
+                return true;
+        }
 
-	@autobind
-	private getInventory(msg: Message): boolean {
-		if (!msg.text) return false;
-		if (!msg.friend.doc.kazutoriData?.inventory?.length) return false;
+        private getKazutoriRateInfo(userId: string): { rate?: number; rank?: number; total: number; } {
+                const friendDocs = this.ai.friends.find({}) as FriendDoc[];
+                const ranking: { userId: string; rate: number; }[] = [];
+                const updatedDocs: FriendDoc[] = [];
+
+                for (const doc of friendDocs) {
+                        const { data, updated } = ensureKazutoriData(doc);
+                        if (updated) updatedDocs.push(doc);
+                        ranking.push({ userId: doc.userId, rate: data.rate });
+                }
+
+                for (const doc of updatedDocs) {
+                        this.ai.friends.update(doc);
+                }
+
+                ranking.sort((a, b) => (b.rate === a.rate ? a.userId.localeCompare(b.userId) : b.rate - a.rate));
+                const rank = findRateRank(ranking, userId);
+                const record = ranking.find((r) => r.userId === userId);
+
+                return {
+                        rate: record?.rate,
+                        rank,
+                        total: ranking.length,
+                };
+        }
+
+        @autobind
+        private getInventory(msg: Message): boolean {
+                if (!msg.text) return false;
+                if (!msg.friend.doc.kazutoriData?.inventory?.length) return false;
 		if (!(msg.includes(['貰った', 'もらった', 'くれた']) && msg.includes(['もの', '物']))) return false;
 
 		const inventory = [...msg.friend.doc.kazutoriData?.inventory].reverse();

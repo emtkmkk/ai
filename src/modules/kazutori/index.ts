@@ -7,6 +7,8 @@ import { User } from '@/misskey/user';
 import { acct } from '@/utils/acct';
 import { genItem } from '@/vocabulary';
 import config from '@/config';
+import type { FriendDoc } from '@/friend';
+import { ensureKazutoriData, findRateRank } from './rate';
 var Decimal = require('break_infinity.js');
 
 type Game = {
@@ -27,7 +29,8 @@ type Game = {
 	maxnum: typeof Decimal;
 	triggerUserId: string | undefined;
 	publicOnly: boolean;
-	replyKey: string[];
+        replyKey: string[];
+        limitMinutes: number;
 };
 
 export default class extends Module {
@@ -167,15 +170,16 @@ export default class extends Module {
 			...(visibility ? { visibility } : {})
 		});
 
-		this.games.insertOne({
-			votes: [],
-			isEnded: false,
-			startedAt: Date.now(),
-			finishedAt: Date.now() + 1000 * 60 * limitMinutes,
-			winRank,
-			postId: post.id,
-			maxnum: maxnum,
-			triggerUserId,
+                this.games.insertOne({
+                        votes: [],
+                        isEnded: false,
+                        startedAt: Date.now(),
+                        finishedAt: Date.now() + 1000 * 60 * limitMinutes,
+                        limitMinutes,
+                        winRank,
+                        postId: post.id,
+                        maxnum: maxnum,
+                        triggerUserId,
 			publicOnly,
 			replyKey: triggerUserId ? [triggerUserId] : [],
 		});
@@ -401,16 +405,11 @@ export default class extends Module {
 
 		this.games.update(game);
 
-		if (msg.friend?.doc) {
-			if (msg.friend.doc.kazutoriData) {
-				msg.friend.doc.kazutoriData.playCount += 1;
-				msg.friend.doc.kazutoriData.rate =
-					(msg.friend.doc.kazutoriData.rate ?? 0) - 1;
-			} else {
-				msg.friend.doc.kazutoriData = { winCount: 0, playCount: 1, rate: -1, inventory: [] };
-			}
-			msg.friend.save();
-		}
+                if (msg.friend?.doc) {
+                        const { data } = ensureKazutoriData(msg.friend.doc);
+                        data.playCount += 1;
+                        msg.friend.save();
+                }
 
 		return {
 			reaction: ':mk_discochicken:',
@@ -450,15 +449,14 @@ export default class extends Module {
 
 		// お流れ
 		if (game.votes?.filter((x) => x.user.winCount < 50).length <= 1 && !medal) {
-			game.votes.forEach((x) => {
-				const friend = this.ai.lookupFriend(x.user.id);
-				if (friend) {
-					friend.doc.kazutoriData.playCount -= 1;
-					friend.doc.kazutoriData.rate =
-						(friend.doc.kazutoriData.rate ?? 0) + 1;
-					friend.save();
-				}
-			});
+                        game.votes.forEach((x) => {
+                                const friend = this.ai.lookupFriend(x.user.id);
+                                if (friend) {
+                                        const { data } = ensureKazutoriData(friend.doc);
+                                        data.playCount = Math.max((data.playCount ?? 0) - 1, 0);
+                                        friend.save();
+                                }
+                        });
 			this.ai.decActiveFactor((game.finishedAt.valueOf() - game.startedAt.valueOf()) / (60 * 1000 * 100) * Math.max(1 - (game.votes.length / 3), 0));
 
 			if (this.ai.activeFactor < 0.5 || game.votes.length < 1) return;
@@ -654,27 +652,102 @@ export default class extends Module {
 
 		if (now.getMonth() === 3 && now.getDate() === 1) reverse = !reverse;
 
-		const winnerFriend = winner?.id ? this.ai.lookupFriend(winner.id) : null;
-		const name = winnerFriend ? winnerFriend.name : null;
+                const participants = new Set(game.votes.map((vote) => vote.user.id));
+                const calculatedLimitMinutes =
+                        game.limitMinutes ?? Math.max(Math.round((game.finishedAt - game.startedAt) / (1000 * 60)), 1);
+                if (game.limitMinutes == null) {
+                        game.limitMinutes = calculatedLimitMinutes;
+                        this.games.update(game);
+                }
 
-		if (winnerFriend) {
-			if (winnerFriend.doc.kazutoriData.winCount != null) {
-				winnerFriend.doc.kazutoriData.winCount += 1;
-				winnerFriend.doc.kazutoriData.rate += game.votes.length;
-			} else {
-				winnerFriend.doc.kazutoriData = { winCount: 1, playCount: 1, rate: game.votes.length, inventory: [] };
-			}
-			if (medal && winnerFriend.doc.kazutoriData.winCount > 50) {
-				winnerFriend.doc.kazutoriData.medal = (winnerFriend.doc.kazutoriData.medal || 0) + 1;
-			}
-			if (winnerFriend.doc.kazutoriData.inventory) {
-				if (winnerFriend.doc.kazutoriData.inventory.length >= 50) winnerFriend.doc.kazutoriData.inventory.shift();
-				winnerFriend.doc.kazutoriData.inventory.push(item);
-			} else {
-				winnerFriend.doc.kazutoriData.inventory = [item];
-			}
-			winnerFriend.save();
-		}
+                const winnerFriend = winner?.id ? this.ai.lookupFriend(winner.id) : null;
+                const name = winnerFriend ? winnerFriend.name : null;
+                let ratingInfo: { beforeRate: number; afterRate: number; beforeRank?: number; afterRank?: number } | null = null;
+
+                if (winnerFriend) {
+                        const friendDocs = this.ai.friends.find({}) as FriendDoc[];
+                        const friendDocMap = new Map<string, FriendDoc>();
+                        const rankingBefore: { userId: string; rate: number }[] = [];
+
+                        for (const doc of friendDocs) {
+                                const { data, updated } = ensureKazutoriData(doc);
+                                if (updated) this.ai.friends.update(doc);
+                                friendDocMap.set(doc.userId, doc);
+                                rankingBefore.push({ userId: doc.userId, rate: data.rate });
+                        }
+
+                        const sortedBefore = [...rankingBefore].sort((a, b) =>
+                                b.rate === a.rate ? a.userId.localeCompare(b.userId) : b.rate - a.rate
+                        );
+
+                        const winnerDoc = friendDocMap.get(winnerFriend.userId);
+                        if (winnerDoc) {
+                                const winnerData = ensureKazutoriData(winnerDoc).data;
+                                const beforeRate = winnerData.rate;
+                                const beforeRank = findRateRank(sortedBefore, winnerFriend.userId);
+                                const lossRatio = Math.max(calculatedLimitMinutes * 0.004, 0.02);
+                                let totalBonus = 0;
+
+                                for (const vote of game.votes) {
+                                        if (vote.user.id === winnerFriend.userId) continue;
+                                        const doc = friendDocMap.get(vote.user.id);
+                                        if (!doc) continue;
+                                        const data = ensureKazutoriData(doc).data;
+                                        const before = data.rate;
+                                        const loss = Math.max(Math.ceil(before * lossRatio), 1);
+                                        data.rate = Math.max(before - loss, 0);
+                                        totalBonus += loss;
+                                        this.ai.friends.update(doc);
+                                }
+
+                                const penaltyPoint = Math.max(Math.ceil(calculatedLimitMinutes / 10), 1);
+                                for (const doc of friendDocs) {
+                                        if (doc.userId === winnerFriend.userId) continue;
+                                        if (participants.has(doc.userId)) continue;
+                                        const data = ensureKazutoriData(doc).data;
+                                        if (data.rate > 1000) {
+                                                const loss = Math.min(penaltyPoint, data.rate - 1000);
+                                                if (loss > 0) {
+                                                        data.rate -= loss;
+                                                        totalBonus += loss;
+                                                        this.ai.friends.update(doc);
+                                                }
+                                        }
+                                }
+
+                                winnerData.rate += totalBonus;
+                                this.ai.friends.update(winnerDoc);
+
+                                const rankingAfter = friendDocs.map((doc) => {
+                                        const ensured = ensureKazutoriData(doc).data;
+                                        return { userId: doc.userId, rate: ensured.rate };
+                                });
+                                const sortedAfter = [...rankingAfter].sort((a, b) =>
+                                        b.rate === a.rate ? a.userId.localeCompare(b.userId) : b.rate - a.rate
+                                );
+                                const afterRank = findRateRank(sortedAfter, winnerFriend.userId);
+
+                                ratingInfo = {
+                                        beforeRate,
+                                        afterRate: winnerData.rate,
+                                        beforeRank,
+                                        afterRank,
+                                };
+                        }
+
+                        const winnerData = ensureKazutoriData(winnerFriend.doc).data;
+                        winnerData.winCount = (winnerData.winCount ?? 0) + 1;
+                        if (medal && winnerData.winCount > 50) {
+                                winnerData.medal = (winnerData.medal || 0) + 1;
+                        }
+                        if (winnerData.inventory) {
+                                if (winnerData.inventory.length >= 50) winnerData.inventory.shift();
+                                winnerData.inventory.push(item);
+                        } else {
+                                winnerData.inventory = [item];
+                        }
+                        winnerFriend.save();
+                }
 
 		let strmed = med === -1 ? "有効数字なし" : med != null ? med.equals(new Decimal(Decimal.NUMBER_MAX_VALUE)) ? '∞ (\\(1.8×10^{308}\\))' : med.toString() : "";
 		if (strmed.includes("e+")) {
@@ -685,10 +758,21 @@ export default class extends Module {
 			strmed += "}\\)";
 			strmed = "\\(" + strmed;
 		}
-		const maxnumText = game.maxnum.equals(Decimal.MAX_VALUE) ? '上限なし' : game.maxnum.toString();
-		const text = (game.winRank > 0 ? game.winRank === 1 ? "" : "勝利条件 : " + game.winRank + "番目に大きい値\n\n" : "勝利条件 : 中央値 (" + strmed + ")\n\n") + results.join('\n') + '\n\n' + (winner
-			? serifs.kazutori.finishWithWinner(acct(winner), name, item, reverse, perfect, winnerFriend?.doc?.kazutoriData?.winCount ?? 0, medal && (winnerFriend?.doc?.kazutoriData?.winCount ?? 0) > 50 ? winnerFriend?.doc?.kazutoriData?.medal ?? 0 : null)
-			: serifs.kazutori.finishWithNoWinner(item));
+                const maxnumText = game.maxnum.equals(Decimal.MAX_VALUE) ? '上限なし' : game.maxnum.toString();
+                const winnerWinCount = winnerFriend?.doc?.kazutoriData?.winCount ?? 0;
+                const winnerMedalCount = medal && winnerWinCount > 50 ? winnerFriend?.doc?.kazutoriData?.medal ?? 0 : null;
+                const text = (game.winRank > 0 ? game.winRank === 1 ? "" : "勝利条件 : " + game.winRank + "番目に大きい値\n\n" : "勝利条件 : 中央値 (" + strmed + ")\n\n") + results.join('\n') + '\n\n' + (winner
+                        ? serifs.kazutori.finishWithWinner(
+                                        acct(winner),
+                                        name,
+                                        item,
+                                        reverse,
+                                        perfect,
+                                        winnerWinCount,
+                                        winnerMedalCount,
+                                        ratingInfo ?? undefined
+                                )
+                        : serifs.kazutori.finishWithNoWinner(item));
 
 		this.ai.post({
 			text: text,

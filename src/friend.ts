@@ -6,6 +6,7 @@ import { User } from '@/misskey/user';
 import { genItem } from '@/vocabulary';
 import { acct } from '@/utils/acct';
 import { checkNgWord } from '@/utils/check-ng-word';
+import { createDefaultKazutoriData } from '@/modules/kazutori/rate';
 
 export type FriendDoc = {
 	userId: string;
@@ -92,8 +93,8 @@ export default class Friend {
 							doc1.doc.love = 0;
 							this.doc.married = doc1.married || this.married;
 							this.doc.perModulesData = this.mergeAndSum(doc1.doc.perModulesData, this.doc.perModulesData);
-							this.doc.kazutoriData = this.mergeAndSum(doc1.doc.kazutoriData, this.doc.kazutoriData);
-							doc1.doc.kazutoriData = { winCount: 0, playCount: 0, rate: 0, inventory: [] };
+                                                        this.doc.kazutoriData = this.mergeAndSum(doc1.doc.kazutoriData, this.doc.kazutoriData);
+                                                        doc1.doc.kazutoriData = createDefaultKazutoriData();
 							this.save();
 							doc1.save();
 						} else {

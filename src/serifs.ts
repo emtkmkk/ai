@@ -353,7 +353,12 @@ export default {
 
 		finish: 'ゲームの結果発表です！',
 
-		finishWithWinner: (user, name, item, reverse, perfect, winCount, medal) => `${reverse ? "...ありゃ？逆順で集計しちゃいました！\n" : ""}今回は${user}さん${name ? `(${name})` : ""}の${perfect ? "パーフェクト" : ""}勝ちです！${winCount === 5 || winCount % 10 === 0 ? `\nこれが${winCount}回目の勝利みたいです！` : winCount === 1 ? "\nこれが初勝利みたいです！" : ""}おめでとう！\n景品として${item}${medal ? `とトロフィー(${medal}個目)` : ""}をどうぞ！\nまたやりましょう！`,
+                finishWithWinner: (user, name, item, reverse, perfect, winCount, medal, rateInfo?: { beforeRate: number; afterRate: number; beforeRank?: number; afterRank?: number; }) => {
+                        const rateText = rateInfo
+                                ? `\nレート : ${Math.round(rateInfo.beforeRate)} → ${Math.round(rateInfo.afterRate)}\n順位 : ${rateInfo.beforeRank != null ? `${rateInfo.beforeRank}位` : '順位不明'} → ${rateInfo.afterRank != null ? `${rateInfo.afterRank}位` : '順位不明'}`
+                                : '';
+                        return `${reverse ? "...ありゃ？逆順で集計しちゃいました！\n" : ""}今回は${user}さん${name ? `(${name})` : ""}の${perfect ? "パーフェクト" : ""}勝ちです！${winCount === 5 || winCount % 10 === 0 ? `\nこれが${winCount}回目の勝利みたいです！` : winCount === 1 ? "\nこれが初勝利みたいです！" : ""}おめでとう！${rateText}\n景品として${item}${medal ? `とトロフィー(${medal}個目)` : ""}をどうぞ！\nまたやりましょう！`;
+                },
 
 		finishWithNoWinner: item => `今回は全員負けです...\n${item}は私がもらっておきますね...\nまたやりましょう！`,
 
