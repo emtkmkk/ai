@@ -626,7 +626,7 @@ export default class extends Module {
                         ? `${rateInfo.rank}位`
                         : undefined;
                 const rateText = rateInfo?.rate != null
-                        ? `\nレート : ${Math.round(rateInfo.rate)}${rankText ? ` / ${rankText}` : ''})`
+                        ? `\nレート : ${Math.round(rateInfo.rate)}${rankText ? ` / ${rankText}` : ''}`
                         : '';
                 const kazutori = `数取り : ${kazutoriData.winCount ?? 0} / ${kazutoriData.playCount ?? 0}${rateText}${kazutoriData.medal ? "\nトロフィー : " + kazutoriData.medal : ""}`;
 
