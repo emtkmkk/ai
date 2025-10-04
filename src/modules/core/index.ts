@@ -623,10 +623,10 @@ export default class extends Module {
 
                 const rateInfo = this.getKazutoriRateInfo(msg.friend.userId);
                 const rankText = rateInfo?.rank != null
-                        ? `${rateInfo.rank}位${rateInfo.total ? `/${rateInfo.total}人` : ''}`
+                        ? `${rateInfo.rank}位`
                         : undefined;
                 const rateText = rateInfo?.rate != null
-                        ? ` (レート : ${Math.round(rateInfo.rate)}${rankText ? ` / 順位 : ${rankText}` : ''})`
+                        ? `\nレート : ${Math.round(rateInfo.rate)}${rankText ? ` / ${rankText}` : ''})`
                         : '';
                 const kazutori = `数取り : ${kazutoriData.winCount ?? 0} / ${kazutoriData.playCount ?? 0}${rateText}${kazutoriData.medal ? "\nトロフィー : " + kazutoriData.medal : ""}`;
 
