@@ -8,7 +8,7 @@ export type KazutoriDataContainer = {
                 inventory?: string[];
                 medal?: number;
                 ratingVersion?: number;
-                rateChanged?: boolean;
+                rateChanged?: boolean | string | number;
                 [key: string]: any;
         };
 };
