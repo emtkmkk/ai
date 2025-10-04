@@ -19,13 +19,13 @@ export type EnsuredKazutoriData = {
         rate: number;
         inventory: string[];
         ratingVersion: number;
-        rateChanged: boolean;
+        rateChanged?: boolean;
         medal?: number;
         [key: string]: any;
 };
 
 export function hasKazutoriRateHistory(data: { rate: number; rateChanged?: boolean }): boolean {
-        return Boolean(data.rateChanged) || data.rate !== 1000;
+        return data.rateChanged === true || (data.rateChanged == null && data.rate !== 1000);
 }
 
 export function createDefaultKazutoriData(): EnsuredKazutoriData {
@@ -35,7 +35,6 @@ export function createDefaultKazutoriData(): EnsuredKazutoriData {
                 rate: 1000,
                 inventory: [],
                 ratingVersion: KAZUTORI_RATING_VERSION,
-                rateChanged: false,
         };
 }
 
@@ -54,13 +53,13 @@ export function ensureKazutoriData<T extends KazutoriDataContainer>(target: T): 
                 if (data.ratingVersion !== KAZUTORI_RATING_VERSION) {
                         data.rate = 1000;
                         data.ratingVersion = KAZUTORI_RATING_VERSION;
-                        data.rateChanged = false;
+                        delete data.rateChanged;
                         updated = true;
                 }
 
                 if (typeof data.rate !== 'number' || Number.isNaN(data.rate)) {
                         data.rate = 1000;
-                        data.rateChanged = false;
+                        delete data.rateChanged;
                         updated = true;
                 } else if (!Number.isInteger(data.rate)) {
                         data.rate = Math.round(data.rate);
@@ -78,7 +77,11 @@ export function ensureKazutoriData<T extends KazutoriDataContainer>(target: T): 
                 }
 
                 if (typeof data.rateChanged !== 'boolean') {
-                        data.rateChanged = typeof data.rate === 'number' && data.rate !== 1000;
+                        if (typeof data.rate === 'number' && data.rate !== 1000) {
+                                data.rateChanged = true;
+                        } else {
+                                delete data.rateChanged;
+                        }
                         updated = true;
                 }
 
