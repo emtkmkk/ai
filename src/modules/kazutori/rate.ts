@@ -25,7 +25,15 @@ export type EnsuredKazutoriData = {
 };
 
 export function hasKazutoriRateHistory(data: { rate: number; rateChanged?: boolean }): boolean {
-        return data.rateChanged === true || (data.rateChanged == null && data.rate !== 1000);
+        if (data.rateChanged === true) {
+                return true;
+        }
+
+        if (data.rateChanged === false) {
+                return false;
+        }
+
+        return data.rate !== 1000;
 }
 
 export function createDefaultKazutoriData(): EnsuredKazutoriData {
@@ -77,11 +85,29 @@ export function ensureKazutoriData<T extends KazutoriDataContainer>(target: T): 
                 }
 
                 if (typeof data.rateChanged !== 'boolean') {
-                        if (typeof data.rate === 'number' && data.rate !== 1000) {
-                                data.rateChanged = true;
-                        } else {
-                                delete data.rateChanged;
+                        if (typeof data.rateChanged === 'string') {
+                                const lowered = data.rateChanged.toLowerCase();
+                                if (lowered === 'true') {
+                                        data.rateChanged = true;
+                                } else if (lowered === 'false') {
+                                        data.rateChanged = false;
+                                }
+                        } else if (typeof data.rateChanged === 'number') {
+                                if (data.rateChanged === 1) {
+                                        data.rateChanged = true;
+                                } else if (data.rateChanged === 0) {
+                                        data.rateChanged = false;
+                                }
                         }
+
+                        if (typeof data.rateChanged !== 'boolean') {
+                                if (typeof data.rate === 'number' && data.rate !== 1000) {
+                                        data.rateChanged = true;
+                                } else {
+                                        delete data.rateChanged;
+                                }
+                        }
+
                         updated = true;
                 }
 
