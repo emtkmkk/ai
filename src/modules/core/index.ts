@@ -9,7 +9,12 @@ import { acct } from '@/utils/acct';
 import { genItem, itemPrefixes } from '@/vocabulary';
 import Friend, { FriendDoc } from '@/friend';
 import config from '@/config';
-import { ensureKazutoriData, findRateRank, createDefaultKazutoriData } from '@/modules/kazutori/rate';
+import {
+        ensureKazutoriData,
+        findRateRank,
+        createDefaultKazutoriData,
+        type EnsuredKazutoriData,
+} from '@/modules/kazutori/rate';
 
 const titles = ['さん', 'くん', '君', 'ちゃん', '様', '先生'];
 
@@ -654,11 +659,17 @@ export default class extends Module {
                 const friendDocs = this.ai.friends.find({}) as FriendDoc[];
                 const ranking: { userId: string; rate: number; }[] = [];
                 const updatedDocs: FriendDoc[] = [];
+                let selfData: EnsuredKazutoriData | undefined;
 
                 for (const doc of friendDocs) {
                         const { data, updated } = ensureKazutoriData(doc);
                         if (updated) updatedDocs.push(doc);
-                        ranking.push({ userId: doc.userId, rate: data.rate });
+                        if (doc.userId === userId) {
+                                selfData = data;
+                        }
+                        if (data.rateChanged) {
+                                ranking.push({ userId: doc.userId, rate: data.rate });
+                        }
                 }
 
                 for (const doc of updatedDocs) {
@@ -667,10 +678,9 @@ export default class extends Module {
 
                 ranking.sort((a, b) => (b.rate === a.rate ? a.userId.localeCompare(b.userId) : b.rate - a.rate));
                 const rank = findRateRank(ranking, userId);
-                const record = ranking.find((r) => r.userId === userId);
 
                 return {
-                        rate: record?.rate,
+                        rate: selfData?.rate,
                         rank,
                         total: ranking.length,
                 };
