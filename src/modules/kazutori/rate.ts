@@ -29,11 +29,11 @@ export function hasKazutoriRateHistory(data: { rate: number; rateChanged?: boole
                 return true;
         }
 
-        if (data.rateChanged === false) {
+        if (!data.rateChanged) {
                 return false;
         }
 
-        return data.rate !== 1000;
+        return data.rate && data.rate !== 1000;
 }
 
 export function createDefaultKazutoriData(): EnsuredKazutoriData {
