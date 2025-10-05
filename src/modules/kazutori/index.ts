@@ -8,7 +8,7 @@ import { acct } from '@/utils/acct';
 import { genItem } from '@/vocabulary';
 import config from '@/config';
 import type { FriendDoc } from '@/friend';
-import { ensureKazutoriData, findRateRank, hasKazutoriRateHistory } from './rate';
+import { ensureKazutoriData, findRateRank, hasKazutoriRateHistory, type EnsuredKazutoriData } from './rate';
 var Decimal = require('break_infinity.js');
 
 type Game = {
@@ -706,111 +706,177 @@ export default class extends Module {
                 const name = winnerFriend ? winnerFriend.name : null;
                 let ratingInfo: { beforeRate: number; afterRate: number; beforeRank?: number; afterRank?: number } | null = null;
 
-                if (winnerFriend) {
-                        const friendDocs = this.ai.friends.find({}) as FriendDoc[];
-                        const friendDocMap = new Map<string, FriendDoc>();
-                        const rankingBefore: { userId: string; rate: number }[] = [];
+                const friendDocs = this.ai.friends.find({}) as FriendDoc[];
+                const friendDocMap = new Map<string, FriendDoc>();
+                const rankingBefore: { userId: string; rate: number }[] = [];
 
-                        for (const doc of friendDocs) {
-                                const { data, updated } = ensureKazutoriData(doc);
-                                if (updated) this.ai.friends.update(doc);
-                                friendDocMap.set(doc.userId, doc);
-                                if (hasKazutoriRateHistory(data)) {
-                                        rankingBefore.push({ userId: doc.userId, rate: data.rate });
+                for (const doc of friendDocs) {
+                        const { data, updated } = ensureKazutoriData(doc);
+                        if (updated) this.ai.friends.update(doc);
+                        friendDocMap.set(doc.userId, doc);
+                        if (hasKazutoriRateHistory(data)) {
+                                rankingBefore.push({ userId: doc.userId, rate: data.rate });
+                        }
+                }
+
+                const penaltyPoint = Math.max(Math.ceil(calculatedLimitMinutes / 10), 1);
+                const nonParticipantPenalties: {
+                        doc: FriendDoc;
+                        data: EnsuredKazutoriData;
+                        loss: number;
+                }[] = [];
+                let totalBonusFromNonParticipants = 0;
+
+                for (const doc of friendDocs) {
+                        if (winnerFriend && doc.userId === winnerFriend.userId) continue;
+                        if (participants.has(doc.userId)) continue;
+                        const data = ensureKazutoriData(doc).data;
+                        if (data.rate > 1000) {
+                                const rateExcess = data.rate - 1000;
+                                const increaseSteps = Math.floor(rateExcess / 500);
+                                const multiplier = 1 + increaseSteps * 0.5;
+                                const calculatedLoss = penaltyPoint * multiplier;
+                                const loss = Math.min(Math.ceil(calculatedLoss), rateExcess);
+                                if (loss > 0) {
+                                        data.rate -= loss;
+                                        data.rateChanged = true;
+                                        totalBonusFromNonParticipants += loss;
+                                        nonParticipantPenalties.push({ doc, data, loss });
                                 }
                         }
+                }
 
-                        const sortedBefore = [...rankingBefore].sort((a, b) =>
-                                b.rate === a.rate ? a.userId.localeCompare(b.userId) : b.rate - a.rate
+                const sortedBefore = [...rankingBefore].sort((a, b) =>
+                        b.rate === a.rate ? a.userId.localeCompare(b.userId) : b.rate - a.rate
+                );
+
+                const winnerDoc = winnerFriend ? friendDocMap.get(winnerFriend.userId) : null;
+
+                if (winnerFriend && winnerDoc) {
+                        const winnerData = ensureKazutoriData(winnerDoc).data;
+                        const beforeRate = winnerData.rate;
+                        const beforeRank = findRateRank(sortedBefore, winnerFriend.userId);
+                        const baseLossRatio = calculatedLimitMinutes * 0.004;
+                        const lossRatio = Math.max(
+                                baseLossRatio <= 0.04
+                                        ? baseLossRatio
+                                        : 0.04 + (calculatedLimitMinutes - 10) * (1 / 12000),
+                                0.02
                         );
+                        let totalBonus = 0;
 
-                        const winnerDoc = friendDocMap.get(winnerFriend.userId);
-                        if (winnerDoc) {
-                                const winnerData = ensureKazutoriData(winnerDoc).data;
-                                const beforeRate = winnerData.rate;
-                                const beforeRank = findRateRank(sortedBefore, winnerFriend.userId);
-                                const baseLossRatio = calculatedLimitMinutes * 0.004;
-                                const lossRatio = Math.max(
-                                        baseLossRatio <= 0.04
-                                                ? baseLossRatio
-                                                : 0.04 + (calculatedLimitMinutes - 10) * (1 / 12000),
-                                        0.02
-                                );
-                                let totalBonus = 0;
-
-                                for (const vote of game.votes) {
-                                        if (vote.user.id === winnerFriend.userId) continue;
-                                        const doc = friendDocMap.get(vote.user.id);
-                                        if (!doc) continue;
-                                        const data = ensureKazutoriData(doc).data;
-                                        const before = data.rate;
-                                        const loss = Math.max(Math.ceil(before * lossRatio), 1);
-                                        data.rate = Math.max(before - loss, 0);
-                                        if (data.rate !== before) {
-                                                data.rateChanged = true;
-                                        }
-                                        totalBonus += loss;
-                                        this.ai.friends.update(doc);
+                        for (const vote of game.votes) {
+                                if (vote.user.id === winnerFriend.userId) continue;
+                                const doc = friendDocMap.get(vote.user.id);
+                                if (!doc) continue;
+                                const data = ensureKazutoriData(doc).data;
+                                const before = data.rate;
+                                const loss = Math.max(Math.ceil(before * lossRatio), 1);
+                                data.rate = Math.max(before - loss, 0);
+                                if (data.rate !== before) {
+                                        data.rateChanged = true;
                                 }
+                                totalBonus += loss;
+                                this.ai.friends.update(doc);
+                        }
 
-                                const penaltyPoint = Math.max(Math.ceil(calculatedLimitMinutes / 10), 1);
-                                for (const doc of friendDocs) {
-                                        if (doc.userId === winnerFriend.userId) continue;
-                                        if (participants.has(doc.userId)) continue;
-                                        const data = ensureKazutoriData(doc).data;
-                                        if (data.rate > 1000) {
-                                                const rateExcess = data.rate - 1000;
-                                                const increaseSteps = Math.floor(rateExcess / 500);
-                                                const multiplier = 1 + increaseSteps * 0.5;
-                                                const calculatedLoss = penaltyPoint * multiplier;
-                                                const loss = Math.min(Math.ceil(calculatedLoss), rateExcess);
-                                                if (loss > 0) {
-                                                        data.rate -= loss;
-                                                        data.rateChanged = true;
-                                                        totalBonus += loss;
-                                                        this.ai.friends.update(doc);
-                                                }
-                                        }
-                                }
+                        totalBonus += totalBonusFromNonParticipants;
 
-                                const winnerBeforeRate = winnerData.rate;
-                                winnerData.rate += totalBonus;
-                                if (winnerData.rate !== winnerBeforeRate) {
-                                        winnerData.rateChanged = true;
-                                }
-                                this.ai.friends.update(winnerDoc);
+                        const winnerBeforeRate = winnerData.rate;
+                        winnerData.rate += totalBonus;
+                        if (winnerData.rate !== winnerBeforeRate) {
+                                winnerData.rateChanged = true;
+                        }
+                        this.ai.friends.update(winnerDoc);
 
-                                const rankingAfter = friendDocs.map((doc) => {
+                        const rankingAfter = friendDocs
+                                .map((doc) => {
                                         const ensured = ensureKazutoriData(doc).data;
                                         return hasKazutoriRateHistory(ensured)
                                                 ? { userId: doc.userId, rate: ensured.rate }
                                                 : null;
-                                }).filter((record): record is { userId: string; rate: number } => record != null);
-                                const sortedAfter = [...rankingAfter].sort((a, b) =>
-                                        b.rate === a.rate ? a.userId.localeCompare(b.userId) : b.rate - a.rate
-                                );
-                                const afterRank = findRateRank(sortedAfter, winnerFriend.userId);
+                                })
+                                .filter((record): record is { userId: string; rate: number } => record != null);
+                        const sortedAfter = [...rankingAfter].sort((a, b) =>
+                                b.rate === a.rate ? a.userId.localeCompare(b.userId) : b.rate - a.rate
+                        );
+                        const afterRank = findRateRank(sortedAfter, winnerFriend.userId);
 
-                                ratingInfo = {
-                                        beforeRate,
-                                        afterRate: winnerData.rate,
-                                        beforeRank,
-                                        afterRank,
-                                };
-                        }
+                        ratingInfo = {
+                                beforeRate,
+                                afterRate: winnerData.rate,
+                                beforeRank,
+                                afterRank,
+                        };
 
-                        const winnerData = ensureKazutoriData(winnerFriend.doc).data;
-                        winnerData.winCount = (winnerData.winCount ?? 0) + 1;
-                        if (medal && winnerData.winCount > 50) {
-                                winnerData.medal = (winnerData.medal || 0) + 1;
+                        const winnerEnsuredData = ensureKazutoriData(winnerFriend.doc).data;
+                        winnerEnsuredData.winCount = (winnerEnsuredData.winCount ?? 0) + 1;
+                        if (medal && winnerEnsuredData.winCount > 50) {
+                                winnerEnsuredData.medal = (winnerEnsuredData.medal || 0) + 1;
                         }
-                        if (winnerData.inventory) {
-                                if (winnerData.inventory.length >= 50) winnerData.inventory.shift();
-                                winnerData.inventory.push(item);
+                        if (winnerEnsuredData.inventory) {
+                                if (winnerEnsuredData.inventory.length >= 50) winnerEnsuredData.inventory.shift();
+                                winnerEnsuredData.inventory.push(item);
                         } else {
-                                winnerData.inventory = [item];
+                                winnerEnsuredData.inventory = [item];
                         }
                         winnerFriend.save();
+                } else if (totalBonusFromNonParticipants > 0) {
+                        const participantDocs = Array.from(participants)
+                                .map((userId) => friendDocMap.get(userId))
+                                .filter((doc): doc is FriendDoc => doc != null);
+
+                        if (participantDocs.length > 0) {
+                                const baseShare = Math.floor(totalBonusFromNonParticipants / participantDocs.length);
+                                let remainder = totalBonusFromNonParticipants - baseShare * participantDocs.length;
+
+                                for (const doc of participantDocs) {
+                                        const data = ensureKazutoriData(doc).data;
+                                        if (baseShare > 0) {
+                                                data.rate += baseShare;
+                                                data.rateChanged = true;
+                                        }
+                                        this.ai.friends.update(doc);
+                                }
+
+                                while (remainder > 0) {
+                                        const candidates = nonParticipantPenalties.filter((penalty) => penalty.loss > 0);
+                                        if (candidates.length === 0) break;
+
+                                        const maxLoss = Math.max(...candidates.map((penalty) => penalty.loss));
+                                        let filtered = candidates.filter((penalty) => penalty.loss === maxLoss);
+                                        const minRate = Math.min(...filtered.map((penalty) => penalty.data.rate));
+                                        filtered = filtered.filter((penalty) => penalty.data.rate === minRate);
+                                        const selected = filtered[Math.floor(Math.random() * filtered.length)];
+
+                                        selected.data.rate += 1;
+                                        selected.data.rateChanged = true;
+                                        selected.loss -= 1;
+                                        this.ai.friends.update(selected.doc);
+                                        remainder--;
+                                }
+                        } else {
+                                let remainder = totalBonusFromNonParticipants;
+                                while (remainder > 0) {
+                                        const candidates = nonParticipantPenalties.filter((penalty) => penalty.loss > 0);
+                                        if (candidates.length === 0) break;
+                                        const maxLoss = Math.max(...candidates.map((penalty) => penalty.loss));
+                                        let filtered = candidates.filter((penalty) => penalty.loss === maxLoss);
+                                        const minRate = Math.min(...filtered.map((penalty) => penalty.data.rate));
+                                        filtered = filtered.filter((penalty) => penalty.data.rate === minRate);
+                                        const selected = filtered[Math.floor(Math.random() * filtered.length)];
+
+                                        selected.data.rate += 1;
+                                        selected.data.rateChanged = true;
+                                        selected.loss -= 1;
+                                        this.ai.friends.update(selected.doc);
+                                        remainder--;
+                                }
+                        }
+                }
+
+                for (const penalty of nonParticipantPenalties) {
+                        this.ai.friends.update(penalty.doc);
                 }
 
 		let strmed = med === -1 ? "有効数字なし" : med != null ? med.equals(new Decimal(Decimal.NUMBER_MAX_VALUE)) ? '∞ (\\(1.8×10^{308}\\))' : med.toString() : "";
