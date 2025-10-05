@@ -65,8 +65,6 @@ export function ensureKazutoriData<T extends KazutoriDataContainer>(target: T): 
                         updated = true;
                 }
 
-					      if (data.rateChanged && data.rate === 1000) delete data.rateChanged
-
                 if (typeof data.rate !== 'number' || Number.isNaN(data.rate)) {
                         data.rate = 1000;
                         delete data.rateChanged;
