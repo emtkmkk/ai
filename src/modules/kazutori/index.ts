@@ -34,32 +34,74 @@ type Game = {
 };
 
 export default class extends Module {
-	public readonly name = 'kazutori';
+        public readonly name = 'kazutori';
 
-	private games: loki.Collection<Game>;
+        private games: loki.Collection<Game>;
+        private lastHourlyRenote: { key: string; postId: string } | null = null;
 
-	@autobind
-	public install() {
-		this.games = this.ai.getCollection('kazutori');
+        @autobind
+        public install() {
+                this.games = this.ai.getCollection('kazutori');
 
-		this.crawleGameEnd();
-		setInterval(this.crawleGameEnd, 1000);
-		setInterval(() => {
-			const hours = new Date().getHours();
-			const rnd = (hours === 12 || (hours > 17 && hours < 24) ? 0.5 : 0.1) * this.ai.activeFactor;
-			if (Math.random() < rnd) {
-				this.start();
-			}
-		}, 1000 * 60 * 37);
+                this.crawleGameEnd();
+                setInterval(this.crawleGameEnd, 1000);
+                setInterval(this.renoteOnSpecificHours, 1000);
+                setInterval(() => {
+                        const hours = new Date().getHours();
+                        const rnd = (hours === 12 || (hours > 17 && hours < 24) ? 0.5 : 0.1) * this.ai.activeFactor;
+                        if (Math.random() < rnd) {
+                                this.start();
+                        }
+                }, 1000 * 60 * 37);
 
-		return {
-			mentionHook: this.mentionHook,
-			contextHook: this.contextHook,
-		};
-	}
+                return {
+                        mentionHook: this.mentionHook,
+                        contextHook: this.contextHook,
+                };
+        }
 
-	@autobind
-	private async start(triggerUserId?, flg?) {
+        @autobind
+        private async renoteOnSpecificHours() {
+                const game = this.games.findOne({
+                        isEnded: false,
+                });
+
+                if (game == null) return;
+
+                const now = new Date();
+                const hour = now.getHours();
+
+                if (![8, 10, 12, 14, 16, 18, 20, 22].includes(hour)) return;
+
+                if (now.getMinutes() !== 0) return;
+
+                const finishedAt = game.finishedAt ?? game.startedAt + 1000 * 60 * (game.limitMinutes ?? 10);
+                const remaining = finishedAt - Date.now();
+                const threshold = (10 * 60 + 10) * 1000;
+
+                if (remaining < threshold) return;
+
+                const key = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${hour}`;
+
+                if (this.lastHourlyRenote && this.lastHourlyRenote.key === key && this.lastHourlyRenote.postId === game.postId) {
+                        return;
+                }
+
+                this.lastHourlyRenote = { key, postId: game.postId };
+
+                try {
+                        await this.ai.post({
+                                renoteId: game.postId,
+                        });
+                } catch (err) {
+                        const reason = err instanceof Error ? err.message : String(err);
+                        this.log(`Failed to renote kazutori post on specific hour: ${reason}`);
+                        this.lastHourlyRenote = null;
+                }
+        }
+
+        @autobind
+        private async start(triggerUserId?, flg?) {
 		this.ai.decActiveFactor();
 
 		const games = this.games.find({});
