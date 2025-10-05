@@ -8,7 +8,8 @@ import { acct } from '@/utils/acct';
 import { genItem } from '@/vocabulary';
 import config from '@/config';
 import type { FriendDoc } from '@/friend';
-import { ensureKazutoriData, findRateRank, hasKazutoriRateHistory, type EnsuredKazutoriData } from './rate';
+import { ensureKazutoriData, findRateRank, hasKazutoriRateHistory } from './rate';
+import type { EnsuredKazutoriData } from './rate';
 var Decimal = require('break_infinity.js');
 
 type Game = {
