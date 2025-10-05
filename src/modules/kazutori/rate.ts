@@ -65,6 +65,8 @@ export function ensureKazutoriData<T extends KazutoriDataContainer>(target: T): 
                         updated = true;
                 }
 
+					      if (data.rateChanged && data.rate === 1000) delete data.rateChanged
+
                 if (typeof data.rate !== 'number' || Number.isNaN(data.rate)) {
                         data.rate = 1000;
                         delete data.rateChanged;
@@ -97,14 +99,6 @@ export function ensureKazutoriData<T extends KazutoriDataContainer>(target: T): 
                                         data.rateChanged = true;
                                 } else if (data.rateChanged === 0) {
                                         data.rateChanged = false;
-                                }
-                        }
-
-                        if (typeof data.rateChanged !== 'boolean') {
-                                if (typeof data.rate === 'number' && data.rate !== 1000) {
-                                        data.rateChanged = true;
-                                } else {
-                                        delete data.rateChanged;
                                 }
                         }
 
