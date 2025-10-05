@@ -33,7 +33,7 @@ export function hasKazutoriRateHistory(data: { rate: number; rateChanged?: boole
                 return false;
         }
 
-        return data.rate && typeof data.rate === "number" && data.rate !== 1000;
+        return data.rate === undefined && typeof data.rate === "number" && data.rate !== 1000;
 }
 
 export function createDefaultKazutoriData(): EnsuredKazutoriData {
