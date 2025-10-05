@@ -717,7 +717,11 @@ export default class extends Module {
                                         if (participants.has(doc.userId)) continue;
                                         const data = ensureKazutoriData(doc).data;
                                         if (data.rate > 1000) {
-                                                const loss = Math.min(penaltyPoint, data.rate - 1000);
+                                                const rateExcess = data.rate - 1000;
+                                                const increaseSteps = Math.floor(rateExcess / 500);
+                                                const multiplier = 1 + increaseSteps * 0.5;
+                                                const calculatedLoss = penaltyPoint * multiplier;
+                                                const loss = Math.min(Math.ceil(calculatedLoss), rateExcess);
                                                 if (loss > 0) {
                                                         data.rate -= loss;
                                                         data.rateChanged = true;
