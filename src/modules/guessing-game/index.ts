@@ -115,17 +115,27 @@ export default class extends Module {
 			reaction: 'confused'
 		};
 
-		let g = parseInt(guess[0], 10);
+                let g = parseInt(guess[0], 10);
 
-		const min = Math.max(...exist.tries.filter((x) => x < exist.secret), -1);
-		const max = Math.min(...exist.tries.filter((x) => x > exist.secret), 101);
+                const min = Math.max(...exist.tries.filter((x) => x < exist.secret), -1);
+                const max = Math.min(...exist.tries.filter((x) => x > exist.secret), 101);
 
-		if (g < min) g = min;
-		if (g > max) g = max;
+                if (g < min) g = min;
+                if (g > max) g = max;
 
-		const firsttime = exist.tries.indexOf(g) === -1 && g !== 101 && g !== -1;
+                const remainingTries = this.MAX_TRY - exist.tries.length;
+                const candidateCount = max - min - 1;
 
-		if (firsttime) exist.tries.push(g);
+                if (remainingTries === 1 && candidateCount === 2) {
+                        const candidates = [min + 1, max - 1];
+                        if (candidates.includes(g)) {
+                                exist.secret = g;
+                        }
+                }
+
+                const firsttime = exist.tries.indexOf(g) === -1 && g !== 101 && g !== -1;
+
+                if (firsttime) exist.tries.push(g);
 
 		let text: string;
 		let end = false;
