@@ -53,7 +53,7 @@ export default class extends Module {
                         if (Math.random() < rnd) {
                                 this.start();
                         }
-                }, 1000 * 60 * 37);
+                }, 1000 * 30 * 37);
 
                 return {
                         mentionHook: this.mentionHook,
@@ -267,9 +267,9 @@ export default class extends Module {
 			const cth = Math.max((msg.friend.love >= 200 ? 2 : msg.friend.love >= 100 ? 4 : msg.friend.love >= 20 ? 8 : msg.friend.love >= 5 ? 12 : 16) * (["public", "home"].includes(msg.visibility) ? 1 : 2), 1);
 
 			// トリガー者が管理人でない かつ クールタイムが開けていない場合
-			if ((msg.user.host || msg.user.username !== config.master) && Date.now() - recentGame.startedAt < 1000 * 60 * 60 * cth) {
-				const ct = Math.ceil((60 * cth) - ((Date.now() - recentGame.startedAt) / (1000 * 60)));
-				msg.reply(serifs.kazutori.matakondo(ct, Math.ceil((recentGame.startedAt + 1000 * 60 * 60 * cth) / 1000)));
+			if ((msg.user.host || msg.user.username !== config.master) && Date.now() - recentGame.startedAt < 1000 * 60 * 30 * cth) {
+				const ct = Math.ceil((30 * cth) - ((Date.now() - recentGame.startedAt) / (1000 * 30)));
+				msg.reply(serifs.kazutori.matakondo(ct, Math.ceil((recentGame.startedAt + 1000 * 30 * 30 * cth) / 1000)));
 				return {
 					reaction: 'hmm'
 				};
