@@ -711,6 +711,224 @@ export default class extends Module {
                 const friendDocMap = new Map<string, FriendDoc>();
                 const rankingBefore: { userId: string; rate: number }[] = [];
 
+                const originalWinRank = game.winRank ?? 1;
+                const totalParticipants = game.votes.length;
+                const shouldAdjustByRank = totalParticipants >= 3;
+                type VoteInfo = {
+                        user: Game['votes'][number]['user'];
+                        number: typeof Decimal;
+                        index: number;
+                };
+                const voteInfos: VoteInfo[] = game.votes.map((vote, index) => ({
+                        user: vote.user,
+                        number: vote.number as typeof Decimal,
+                        index,
+                }));
+                const numberToVotes = new Map<string, VoteInfo[]>();
+                for (const info of voteInfos) {
+                        const key = info.number.toString();
+                        const list = numberToVotes.get(key);
+                        if (list) {
+                                list.push(info);
+                        } else {
+                                numberToVotes.set(key, [info]);
+                        }
+                }
+                const uniqueVotes: VoteInfo[] = [];
+                const duplicateVotes: VoteInfo[] = [];
+                for (const [, list] of numberToVotes) {
+                        if (list.length === 1) {
+                                uniqueVotes.push(list[0]);
+                        } else {
+                                duplicateVotes.push(...list);
+                        }
+                }
+
+                const compareDecimalAsc = (a: typeof Decimal, b: typeof Decimal) => {
+                        if (a.lessThan(b)) return -1;
+                        if (a.greaterThan(b)) return 1;
+                        return 0;
+                };
+                const compareDecimalDesc = (a: typeof Decimal, b: typeof Decimal) => -compareDecimalAsc(a, b);
+                const decimalAbs = (value: typeof Decimal) => {
+                        if (value.lessThan(Decimal.ZERO)) {
+                                return value.times(-1);
+                        }
+                        return value;
+                };
+                const buildPlacementOrder = (sorted: VoteInfo[], winnerIndex: number | null) => {
+                        if (winnerIndex == null || winnerIndex < 0 || winnerIndex >= sorted.length) {
+                                return [...sorted];
+                        }
+                        const ordered: VoteInfo[] = [];
+                        ordered.push(sorted[winnerIndex]);
+                        for (let offset = 1; ordered.length < sorted.length; offset++) {
+                                const lowerIndex = winnerIndex + offset;
+                                const higherIndex = winnerIndex - offset;
+                                if (lowerIndex < sorted.length) {
+                                        ordered.push(sorted[lowerIndex]);
+                                }
+                                if (higherIndex >= 0) {
+                                        ordered.push(sorted[higherIndex]);
+                                }
+                        }
+                        return ordered;
+                };
+
+                let normalPlacements: VoteInfo[] = [];
+                let reversePlacements: VoteInfo[] = [];
+                let normalWinnerNumber: typeof Decimal | null = null;
+                let reverseWinnerNumber: typeof Decimal | null = null;
+
+                if (shouldAdjustByRank && uniqueVotes.length > 0) {
+                        if (originalWinRank === -1) {
+                                const target = typeof med !== 'undefined' && med !== -1 ? (med as typeof Decimal) : null;
+                                if (target) {
+                                        normalPlacements = [...uniqueVotes].sort((a, b) => {
+                                                const diffA = decimalAbs(a.number.minus(target));
+                                                const diffB = decimalAbs(b.number.minus(target));
+                                                const diffCompare = compareDecimalAsc(diffA, diffB);
+                                                if (diffCompare !== 0) return diffCompare;
+                                                return a.index - b.index;
+                                        });
+                                } else {
+                                        normalPlacements = [...uniqueVotes];
+                                }
+                                normalWinnerNumber = normalPlacements.length > 0 ? normalPlacements[0].number : null;
+                                reversePlacements = [];
+                                reverseWinnerNumber = null;
+                        } else {
+                                const sortedDesc = [...uniqueVotes].sort((a, b) => compareDecimalDesc(a.number, b.number));
+                                const normalWinnerIndex =
+                                        originalWinRank > 0 && originalWinRank <= sortedDesc.length
+                                                ? originalWinRank - 1
+                                                : null;
+                                normalPlacements = buildPlacementOrder(sortedDesc, normalWinnerIndex);
+                                normalWinnerNumber =
+                                        normalWinnerIndex != null
+                                                ? sortedDesc[normalWinnerIndex].number
+                                                : normalPlacements.length > 0
+                                                ? normalPlacements[0].number
+                                                : null;
+
+                                const sortedAsc = [...uniqueVotes].sort((a, b) => compareDecimalAsc(a.number, b.number));
+                                const reverseWinnerIndex =
+                                        originalWinRank > 0 && originalWinRank <= sortedAsc.length
+                                                ? originalWinRank - 1
+                                                : null;
+                                reversePlacements = buildPlacementOrder(sortedAsc, reverseWinnerIndex);
+                                reverseWinnerNumber =
+                                        reverseWinnerIndex != null
+                                                ? sortedAsc[reverseWinnerIndex].number
+                                                : reversePlacements.length > 0
+                                                ? reversePlacements[0].number
+                                                : null;
+                        }
+                }
+
+                const actualWinnerId = winner?.id ?? null;
+                const addedUsers = new Set<string>();
+                const finalRankOrder: VoteInfo[] = [];
+                const pushRankCandidate = (info: VoteInfo | undefined) => {
+                        if (!info) return;
+                        const userId = info.user.id;
+                        if (userId === actualWinnerId) return;
+                        if (addedUsers.has(userId)) return;
+                        finalRankOrder.push(info);
+                        addedUsers.add(userId);
+                };
+
+                if (shouldAdjustByRank && uniqueVotes.length > 0) {
+                        const maxIterations = Math.max(normalPlacements.length, reversePlacements.length) * 2 + 2;
+                        for (let step = 0; step < maxIterations; step++) {
+                                if (step === 0) {
+                                        if (reversePlacements.length > 0) pushRankCandidate(reversePlacements[0]);
+                                } else if (step % 2 === 1) {
+                                        const normalIndex = (step + 1) / 2;
+                                        if (normalIndex < normalPlacements.length) {
+                                                pushRankCandidate(normalPlacements[normalIndex]);
+                                        }
+                                } else {
+                                        const reverseIndex = step / 2;
+                                        if (reverseIndex < reversePlacements.length) {
+                                                pushRankCandidate(reversePlacements[reverseIndex]);
+                                        }
+                                }
+                        }
+
+                        for (const info of normalPlacements) pushRankCandidate(info);
+                        for (const info of reversePlacements) pushRankCandidate(info);
+                }
+
+                const buildProximityGroups = (target: typeof Decimal | null) => {
+                        if (target == null) return [] as VoteInfo[][];
+                        const diffMap = new Map<string, { diff: typeof Decimal; votes: VoteInfo[] }>();
+                        const groups: { diff: typeof Decimal; votes: VoteInfo[] }[] = [];
+                        for (const info of duplicateVotes) {
+                                const diff = decimalAbs(info.number.minus(target));
+                                const key = diff.toString();
+                                let entry = diffMap.get(key);
+                                if (!entry) {
+                                        entry = { diff, votes: [] };
+                                        diffMap.set(key, entry);
+                                        groups.push(entry);
+                                }
+                                entry.votes.push(info);
+                        }
+                        for (const entry of groups) {
+                                entry.votes.sort((a, b) => a.index - b.index);
+                        }
+                        groups.sort((a, b) => compareDecimalAsc(a.diff, b.diff));
+                        return groups.map((entry) => entry.votes);
+                };
+
+                const invalidRankOrder: VoteInfo[] = [];
+                const pushInvalidCandidate = (info: VoteInfo | undefined) => {
+                        if (!info) return;
+                        const userId = info.user.id;
+                        if (userId === actualWinnerId) return;
+                        if (addedUsers.has(userId)) return;
+                        invalidRankOrder.push(info);
+                        addedUsers.add(userId);
+                };
+
+                if (shouldAdjustByRank && duplicateVotes.length > 0) {
+                        const normalGroups = buildProximityGroups(normalWinnerNumber);
+                        const reverseGroups = buildProximityGroups(reverseWinnerNumber);
+                        const groupCount = Math.max(normalGroups.length, reverseGroups.length);
+                        for (let i = 0; i < groupCount; i++) {
+                                if (i < normalGroups.length) {
+                                        for (const info of normalGroups[i]) pushInvalidCandidate(info);
+                                }
+                                if (i < reverseGroups.length) {
+                                        for (const info of reverseGroups[i]) pushInvalidCandidate(info);
+                                }
+                        }
+                }
+
+                const loserRankMap = new Map<string, number>();
+                if (shouldAdjustByRank) {
+                        let currentRank = 2;
+                        for (const info of finalRankOrder) {
+                                if (info.user.id === actualWinnerId) continue;
+                                if (!loserRankMap.has(info.user.id)) {
+                                        loserRankMap.set(info.user.id, currentRank++);
+                                }
+                        }
+                        for (const info of invalidRankOrder) {
+                                if (info.user.id === actualWinnerId) continue;
+                                if (!loserRankMap.has(info.user.id)) {
+                                        loserRankMap.set(info.user.id, currentRank++);
+                                }
+                        }
+                        for (const info of voteInfos) {
+                                if (info.user.id === actualWinnerId) continue;
+                                if (!loserRankMap.has(info.user.id)) {
+                                        loserRankMap.set(info.user.id, currentRank++);
+                                }
+                        }
+                }
+
                 for (const doc of friendDocs) {
                         const { data, updated } = ensureKazutoriData(doc);
                         if (updated) this.ai.friends.update(doc);
@@ -773,11 +991,30 @@ export default class extends Module {
                                 const data = ensureKazutoriData(doc).data;
                                 const before = data.rate;
                                 const loss = Math.max(Math.ceil(before * lossRatio), 1);
-                                data.rate = Math.max(before - loss, 0);
+                                let adjustedLoss = loss;
+                                if (shouldAdjustByRank) {
+                                        const rank = loserRankMap.get(vote.user.id);
+                                        if (rank != null && rank >= 2) {
+                                                const threshold = Math.ceil(totalParticipants / 2);
+                                                if (threshold >= 2 && rank <= threshold) {
+                                                        let reductionRatio = 0.5;
+                                                        if (threshold > 2) {
+                                                                const progress = (rank - 2) / (threshold - 2);
+                                                                const clamped = Math.min(Math.max(progress, 0), 1);
+                                                                reductionRatio = 0.5 * (1 - clamped);
+                                                        }
+                                                        adjustedLoss = Math.max(
+                                                                Math.ceil(loss * (1 - reductionRatio)),
+                                                                1
+                                                        );
+                                                }
+                                        }
+                                }
+                                data.rate = Math.max(before - adjustedLoss, 0);
                                 if (data.rate !== before) {
                                         data.rateChanged = true;
                                 }
-                                totalBonus += loss;
+                                totalBonus += adjustedLoss;
                                 this.ai.friends.update(doc);
                         }
 
