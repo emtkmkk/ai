@@ -348,24 +348,39 @@ export default class extends Module {
 
 		let num: typeof Decimal;
 
-		// 数字が含まれていない
-		const match = msg.extractedText.replace(/[０-９]/g, m => '０１２３４５６７８９'.indexOf(m).toString()).match(/[0-9]+|∞/);
-		if (match == null) {
-			msg.reply('リプライの中に数字が見つかりませんでした！').then((reply) => {
-				game.replyKey.push(msg.userId);
-				this.games.update(game);
-				this.subscribeReply(msg.userId, reply.id);
-			});
-			return {
-				reaction: 'hmm',
-			};
-		}
+                const normalizedText = msg.extractedText.replace(/[０-９]/g, (m) => '０１２３４５６７８９'.indexOf(m).toString());
 
-		if (match[0] === '∞') {
-			num = new Decimal(Decimal.NUMBER_MAX_VALUE);
-		} else {
-			// 先頭のゼロを除去
-			const numStr = match[0].replace(/^0+/, '') || '0';
+                // 数字が含まれていない
+                const matches = normalizedText.match(/[0-9]+|∞/g);
+                if (matches == null) {
+                        msg.reply('リプライの中に数字が見つかりませんでした！').then((reply) => {
+                                game.replyKey.push(msg.userId);
+                                this.games.update(game);
+                                this.subscribeReply(msg.userId, reply.id);
+                        });
+                        return {
+                                reaction: 'hmm',
+                        };
+                }
+
+                if (matches.length >= 2) {
+                        msg.reply('数取りでは2個以上の数値に投票する事は出来ません。小数を指定した場合は、整数で指定するようにしてください。').then((reply) => {
+                                game.replyKey.push(msg.userId);
+                                this.games.update(game);
+                                this.subscribeReply(msg.userId, reply.id);
+                        });
+                        return {
+                                reaction: 'confused',
+                        };
+                }
+
+                const match = matches[0];
+
+                if (match === '∞') {
+                        num = new Decimal(Decimal.NUMBER_MAX_VALUE);
+                } else {
+                        // 先頭のゼロを除去
+                        const numStr = match.replace(/^0+/, '') || '0';
 
 			//21桁以上の場合
 			if (numStr.length > 20) {
