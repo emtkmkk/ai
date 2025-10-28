@@ -958,6 +958,9 @@ export default class extends Module {
 			data.superPoint = 0;
 		}
 
+		const verboseLog = msg.includes(['-v']);
+    const formatDebug = (value: number): string => Number.isFinite(value) ? value.toFixed(3) : String(value);
+
 
 		/** 画面に出力するメッセージ:CW */
 		let cw = acct(msg.user) + " ";
@@ -2104,4 +2107,5 @@ export default class extends Module {
 		}
 	}
 }
+
 
