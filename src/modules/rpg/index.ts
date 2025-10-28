@@ -1455,7 +1455,7 @@ export default class extends Module {
 
 		if (skillEffects.enemyStatusBonus) {
 			const enemyStrongs = (enemyAtk / (lv * 3.5)) * (getVal(data.enemy.atkx, [tp]) ?? 3) + (enemyDef / (lv * 3.5)) * (getVal(data.enemy.defx, [tp]) ?? 3);
-			const bonus = Math.floor((enemyStrongs / 4) * skillEffects.enemyStatusBonus);
+			const bonus = Math.floor((Math.min(enemyStrongs, 256) / 4) * skillEffects.enemyStatusBonus);
 			atk = atk * (1 + (bonus / 100));
 			def = def * (1 + (bonus / 100));
 			if (bonus / skillEffects.enemyStatusBonus >= 5) {
@@ -2107,5 +2107,6 @@ export default class extends Module {
 		}
 	}
 }
+
 
 
