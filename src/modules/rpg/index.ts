@@ -612,7 +612,9 @@ export default class extends Module {
 		data.lastPlayedLv = data.lv;
 
 		// 所持しているスキル効果を読み込み
-		const skillEffects = aggregateSkillsEffects(data);
+                const skillEffects = aggregateSkillsEffects(data);
+                const verboseLog = msg.includes(['-v']);
+                const formatDebug = (value: number): string => Number.isFinite(value) ? value.toFixed(3) : String(value);
 
 		let color = getColor(data);
 
@@ -1624,19 +1626,42 @@ export default class extends Module {
 
 			// 自身攻撃の処理
 			// spdの回数分、以下の処理を繰り返す
-			for (let i = 0; i < spd; i++) {
-				const rng = (atkMinRnd + random(data, startCharge, skillEffects, false) * atkMaxRnd);
-				if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`;
-				let dmgBonus = (1 + (skillEffects.atkDmgUp ?? 0)) * dmgUp * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1);
-				/** クリティカルかどうか */
-				let crit = Math.random() < Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0) + critUp), 0) + (skillEffects.critUpFixed ?? 0);
-				const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
-				if (skillEffects.noCrit) {
-					crit = false;
-					dmgBonus *= 1 + (Math.min(Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0) + critUp), 0) + (skillEffects.critUpFixed ?? 0), 1) * ((2 * critDmg) - 1))
-				}
-				/** ダメージ */
-				let dmg = getAtkDmg(data, atk, tp, count, crit ? critDmg : false, enemyDef, enemyMaxHp, rng * dmgBonus) + trueDmg;
+                        for (let i = 0; i < spd; i++) {
+                                const rng = (atkMinRnd + random(data, startCharge, skillEffects, false) * atkMaxRnd);
+                                if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`;
+                                let dmgBonus = (1 + (skillEffects.atkDmgUp ?? 0)) * dmgUp * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1);
+                                /** クリティカルかどうか */
+                                let crit = Math.random() < Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0) + critUp), 0) + (skillEffects.critUpFixed ?? 0);
+                                const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
+                                if (skillEffects.noCrit) {
+                                        crit = false;
+                                        dmgBonus *= 1 + (Math.min(Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0) + critUp), 0) + (skillEffects.critUpFixed ?? 0), 1) * ((2 * critDmg) - 1))
+                                }
+                                if (verboseLog) {
+                                        const debugLines: string[] = [];
+                                        debugLines.push(`---ダメージ計算${i + 1}回目---`);
+                                        debugLines.push(`攻撃力: ${formatDebug(atk)}`);
+                                        debugLines.push(`TP倍率: ${formatDebug(tp)}`);
+                                        debugLines.push(`ターン数: ${count}`);
+                                        debugLines.push(`行動回数: ${spd}`);
+                                        debugLines.push(`敵防御力: ${formatDebug(enemyDef)}`);
+                                        debugLines.push(`敵最大HP: ${formatDebug(enemyMaxHp)}`);
+                                        debugLines.push(`乱数: ${formatDebug(rng)}`);
+                                        debugLines.push(`ダメージ補正: ${formatDebug(dmgBonus)}`);
+                                        debugLines.push(`追加ダメージ: ${formatDebug(trueDmg)}`);
+                                        debugLines.push(`ダメージ上昇効果: ${formatDebug(dmgUp)}`);
+                                        debugLines.push(`会心補正: ${formatDebug(critUp)}`);
+                                        debugLines.push(`クリティカル: ${crit ? `はい(倍率:${formatDebug(critDmg)})` : 'いいえ'}`);
+                                        if (itemBonus?.atk) {
+                                                debugLines.push(`アイテム攻撃補正: ${formatDebug(itemBonus.atk)}`);
+                                        }
+                                        if (maxdmg != null) {
+                                                debugLines.push(`最大ダメージ制限: ${formatDebug(maxdmg)}`);
+                                        }
+                                        message += debugLines.join('\n') + '\n';
+                                }
+                                /** ダメージ */
+                                let dmg = getAtkDmg(data, atk, tp, count, crit ? critDmg : false, enemyDef, enemyMaxHp, rng * dmgBonus) + trueDmg;
 				const noItemDmg = getAtkDmg(data, atk - itemBonus.atk, tp, count, crit, enemyDef, enemyMaxHp, rng * dmgBonus) + trueDmg;
 				// 最大ダメージ制限処理
 				if (maxdmg && maxdmg > 0 && dmg > Math.round(maxdmg * (1 / ((abort || spd) - i)))) {
