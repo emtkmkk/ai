@@ -13,7 +13,7 @@ import { shop2Reply } from './shop2';
 import { skills, Skill, SkillEffect, getSkill, skillReply, skillCalculate, aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, countDuplicateSkillNames, skillBorders, canLearnSkillNow } from './skills';
 import { start, Raid, raidInstall, raidContextHook, raidTimeoutCallback } from './raid';
 import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatus, getPostCount, getPostX, getVal, random, preLevelUpProcess, deepClone } from './utils';
-import { calculateArpen, calculateStats } from './battle';
+import { calculateArpen, calculateStats, applySoftCapPow2 } from './battle';
 import Friend from '@/friend';
 import config from '@/config';
 import * as loki from 'lokijs';
@@ -1455,7 +1455,7 @@ export default class extends Module {
 
 		if (skillEffects.enemyStatusBonus) {
 			const enemyStrongs = (enemyAtk / (lv * 3.5)) * (getVal(data.enemy.atkx, [tp]) ?? 3) + (enemyDef / (lv * 3.5)) * (getVal(data.enemy.defx, [tp]) ?? 3);
-			const bonus = Math.floor((applySoftCapPow2(enemyStrongs / 4) * skillEffects.enemyStatusBonus);
+			const bonus = Math.floor(applySoftCapPow2(enemyStrongs / 4) * skillEffects.enemyStatusBonus);
 			atk = atk * (1 + (bonus / 100));
 			def = def * (1 + (bonus / 100));
 			if (bonus / skillEffects.enemyStatusBonus >= 5) {
@@ -2107,6 +2107,7 @@ export default class extends Module {
 		}
 	}
 }
+
 
 
 
