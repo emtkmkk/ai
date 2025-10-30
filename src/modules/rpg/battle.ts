@@ -320,3 +320,9 @@ export function calculateArpen(data: { lv: number; }, arpen: number, edef: numbe
 		return (1 + (perSkillPct / 100) * ((arpen ?? 0) / 0.12));
 
 }
+
+function applySoftCapPow2(raw: number, cap1 = 10, cap2 = 25, gamma = 0.5): number {
+  const a1 = raw <= cap1 ? raw : cap1 + Math.pow(raw - cap1, gamma);
+  const a2 = a1 <= cap2 ? a1 : cap2 + Math.pow(a1 - cap2, gamma);
+  return a2;
+}
