@@ -267,7 +267,7 @@ export const skills: Skill[] = [
 	{ name: `気合で頑張る`, short: "気", desc: `パワー・防御が少し上がり、気合耐えの確率が上がります`, info: `ステータス+6% 気合耐え確率+50%`, effect: { atkUp3: 0.06, defUp3: 0.06, endureUp: 0.5 } },
 	{ name: `すぐ決死の覚悟をする`, short: "決", desc: `決死の覚悟の発動条件が緩くなり、効果量が上がります さらに決死の覚悟発動時、追加で与ダメージとクリティカル率が上がります`, info: `与ダメージ+8% 覚悟発動条件効果量+50%\n覚悟発動時与ダメージ+5% クリティカル率1.2倍`, effect: { atkDmgUp2: 0.08, haisuiUp: 0.5, haisuiAtkUp: 0.05, haisuiCritUp: 0.2 } },
 	{ name: `投稿数ボーナス量アップ`, short: "投", desc: `投稿数が高ければ高いほどステータスが上昇します`, info: `20投稿につき、ステータス+1% (最大10%)`, effect: { postXUp: 0.01 } },
-	{ name: `強敵と戦うのが好き`, short: "強", desc: `敵が強ければステータスが上昇します`, info: `ステータス+(敵の攻撃 × 敵の防御 / 4)%`, effect: { enemyStatusBonus: 1 } },
+	{ name: `強敵と戦うのが好き`, short: "強", desc: `敵が強ければステータスが上昇します`, info: `ステータス+(敵の攻撃 × 敵の防御 / 4)% (+10%以上は上昇率鈍化)`, effect: { enemyStatusBonus: 1 } },
 	{ name: `${serifs.rpg.status.pen}+10%`, short: "貫", desc: `敵の防御の影響を減少させます`, info: `敵の防御が高いほどダメージが上昇します`, effect: { arpen: 0.12 } },
 	{ name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndM}4`, short: "４", desc: `乱数幅が20~180 -> 60~160 (%) になります`, info: `乱数幅 20~180 -> 60~160 (%) 期待値 110% 乱数系と重複しない`, effect: { atkRndMin: 0.4, atkRndMax: -0.2 }, unique: "rnd", moveTo: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndM}5` },
 	{ name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndM}5`, short: "５", desc: `クリティカルが発生しなくなりますが、高いダメージがとても出やすくなります`, info: `乱数幅 20~180 -> 90~135 (%) 期待値 112% クリティカルの期待値分、ダメージ上昇 乱数系と重複しない`, effect: { atkRndMin: 0.7, atkRndMax: -1.15, noCrit: 1 }, unique: "rnd" },
@@ -1489,4 +1489,5 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 
 	return result.join("\n");
 }
+
 
