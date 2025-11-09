@@ -415,7 +415,7 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
 		}
 	} else {
 		/** 総ダメージの計算結果 */
-		result = await getTotalDmg(msg, enemy);
+                result = await getTotalDmg(msg, enemy, raid.postId);
 	}
 
 	if (raid.attackers.some(x => x.dmg > 0 && x.user.id == msg.userId)) {
@@ -477,7 +477,7 @@ export function raidTimeoutCallback(data: any) {
 	}
 }
 
-export async function getTotalDmg(msg, enemy: RaidEnemy) {
+export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 	// データを読み込み
 	const data = initializeData(module_, msg);
 	if (!data.lv) return {
@@ -551,8 +551,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy) {
 		postCount = enemy.forcePostCount;
 		rawTp = tp;
 		tp = getPostX(postCount) * (1 + ((skillEffects.postXUp ?? 0) * Math.min((postCount - superBonusPost) / 20, 10)));
-	} else {
-		postCount = await getPostCount(ai, module_, data, msg, superBonusPost);
+        } else {
+                postCount = await getPostCount(ai, module_, data, msg, superBonusPost, raidPostId ? { type: 'raid', key: raidPostId } : undefined);
 
 		continuousBonusNum = (Math.min(Math.max(10, postCount / 2), 25));
 

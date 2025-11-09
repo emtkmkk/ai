@@ -929,8 +929,8 @@ export default class extends Module {
 
 		let superBonusPost = (isSuper && !aggregateTokensEffects(data).hyperMode ? 200 : 0)
 
-		/** 投稿数（今日と明日の多い方）*/
-		let postCount = await getPostCount(this.ai, this, data, msg, superBonusPost);
+                /** 投稿数（今日と明日の多い方）*/
+                let postCount = await getPostCount(this.ai, this, data, msg, superBonusPost, { type: 'normal', key: nowTimeStr });
 
 		let continuousBonusNum = 0;
 
