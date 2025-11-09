@@ -760,10 +760,14 @@ export default class extends Module {
 	@autobind
 	private async handleNormalCommands(msg: Message) {
 		// データを読み込み
-		const data = initializeData(this, msg);
-		const colorData = colors.map((x) => x.unlock(data));
-		// 所持しているスキル効果を読み込み
-		const skillEffects = aggregateSkillsEffects(data);
+                const data = initializeData(this, msg);
+                const colorData = colors.map((x) => x.unlock(data));
+                // 所持しているスキル効果を読み込み
+                const skillEffects = aggregateSkillsEffects(data);
+                const onemoreKeywords = Array.isArray(serifs.rpg.command.onemore)
+                        ? serifs.rpg.command.onemore
+                        : [serifs.rpg.command.onemore];
+                let isOkawariPlay = false;
 
 		/** 1回～3回前の時間の文字列 */
 		let TimeStrBefore1 = (new Date().getHours() < 12 ? getDate(-1) + "/18" : new Date().getHours() < 18 ? getDate() : getDate() + "/12");
@@ -788,8 +792,8 @@ export default class extends Module {
 		//if ((rpgData.maxLv - data.lv) >= 50) needCoin -= 2;
 
 		// プレイ済でないかのチェック
-		if (data.lastPlayedAt === nowTimeStr || data.lastPlayedAt === nextTimeStr) {
-			if (msg.includes(Array.isArray(serifs.rpg.command.onemore) ? serifs.rpg.command.onemore : [serifs.rpg.command.onemore])) {
+                if (data.lastPlayedAt === nowTimeStr || data.lastPlayedAt === nextTimeStr) {
+                        if (msg.includes(onemoreKeywords)) {
 				if (data.lastOnemorePlayedAt === getDate()) {
 					if (needCoin <= (data.coin ?? 0)) {
 						if (isMaxLevel) {
@@ -821,17 +825,18 @@ export default class extends Module {
 						};
 					}
 				}
-				if (isMaxLevel) {
-					if (rpgData.maxLv >= 255) {
-						msg.reply(serifs.rpg.oneMore.maxLv2);
-					} else {
-						msg.reply(serifs.rpg.oneMore.maxLv);
-					}
-					return {
-						reaction: 'confused'
-					};
-				}
-				data.lastOnemorePlayedAt = getDate();
+                                if (isMaxLevel) {
+                                        if (rpgData.maxLv >= 255) {
+                                                msg.reply(serifs.rpg.oneMore.maxLv2);
+                                        } else {
+                                                msg.reply(serifs.rpg.oneMore.maxLv);
+                                        }
+                                        return {
+                                                reaction: 'confused'
+                                        };
+                                }
+                                isOkawariPlay = true;
+                                data.lastOnemorePlayedAt = getDate();
 			} else {
 				if (
 					(skillEffects.rpgTime ?? 0) < 0 &&
@@ -852,7 +857,7 @@ export default class extends Module {
 				}
 			}
 		} else {
-			if (msg.includes(Array.isArray(serifs.rpg.command.onemore) ? serifs.rpg.command.onemore : [serifs.rpg.command.onemore])) {
+                        if (msg.includes(onemoreKeywords)) {
 				if (data.lastOnemorePlayedAt === getDate()) {
 					const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
 					msg.reply(serifs.rpg.oneMore.tired(!isMaxLevel));
@@ -931,6 +936,16 @@ export default class extends Module {
 
                 /** 投稿数（今日と明日の多い方）*/
                 let postCount = await getPostCount(this.ai, this, data, msg, superBonusPost, { type: 'normal', key: nowTimeStr });
+                const basePostCount = Math.max(postCount - superBonusPost, 0);
+
+                if (isOkawariPlay) {
+                        if (data.lastNormalPostCountKey === nowTimeStr && typeof data.lastNormalPostCount === 'number') {
+                                postCount = data.lastNormalPostCount + superBonusPost;
+                        }
+                } else {
+                        data.lastNormalPostCount = basePostCount;
+                        data.lastNormalPostCountKey = nowTimeStr;
+                }
 
 		let continuousBonusNum = 0;
 
