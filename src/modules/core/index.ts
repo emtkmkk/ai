@@ -51,50 +51,63 @@ export default class extends Module {
 
 	@autobind
 	private async linkAccountListAdd() {
-			const lists = await this.ai.api("users/lists/list", {}) as List[];
-			this.list = lists.find((x) => x.name === "Linked");
-			if (!this.list) {
-					this.list = await this.ai.api("users/lists/create", { name: "Linked" }) as List;
-					if (!this.list) return;
-					console.log("Linked List Create: " + this.list.id);
-			}
-			if (this.list) {
-					console.log("Linked List: " + this.list.id);
-					const friends = this.ai.friends.find() ?? [];
-					const linkedUsers = friends.filter((x) => x.linkedAccounts);
-					const listUserIds = new Set(this.list.userIds);
-					let newLinkedUserIds = new Set();
-	
-					for (const linkedUser of linkedUsers) {
-							if (linkedUser.linkedAccounts !== Array.from(new Set(linkedUser.linkedAccounts))) {
-									linkedUser.linkedAccounts = Array.from(new Set(linkedUser.linkedAccounts));
-							}
-							for (const linkedId of linkedUser.linkedAccounts!) {
-									if (!listUserIds.has(linkedId)) {
-											newLinkedUserIds.add(linkedId);
-									}
-							}
-					}
-	
-					newLinkedUserIds.forEach(async (x) => {
-							if (this.list?.id) {
-									await this.ai.api("users/lists/push", { listId: this.list.id, userId: x }).then(async (res) => {
-											if (typeof x === "string" && res?.response?.body?.error?.code === "YOU_HAVE_BEEN_BLOCKED") {
-													// ブロックされたユーザーIDをリンクしているユーザーのアカウントからそのIDを削除
-													for (const linkedUser of linkedUsers) {
-															if (linkedUser.linkedAccounts?.includes(x)) {
-																	// 該当IDを削除
-																	linkedUser.linkedAccounts = linkedUser.linkedAccounts.filter(id => id !== x);
-																	console.log(`Removed blocked ID ${x} from user ${linkedUser.userId}`);
-															}
-													}
-											}
-									});
-									console.log("Linked Account List Push: " + x);
-							}
-					});
-			}
-	}
+                        const lists = await this.ai.api("users/lists/list", {}) as List[];
+                        this.list = lists.find((x) => x.name === "Linked");
+                        if (!this.list) {
+                                        this.list = await this.ai.api("users/lists/create", { name: "Linked" }) as List;
+                                        if (!this.list) return;
+                                        console.log("Linked List Create: " + this.list.id);
+                        }
+                        if (this.list) {
+                                        console.log("Linked List: " + this.list.id);
+                                        const friends = this.ai.friends.find() ?? [];
+                                        const linkedUsers = friends.filter((x) => x.linkedAccounts);
+                                        const listUserIds = new Set<string>(this.list.userIds ?? []);
+                                        const newLinkedUserIds = new Set<string>();
+                                        const validLinkedUserIds = new Set<string>();
+
+                                        for (const linkedUser of linkedUsers) {
+                                                        if (linkedUser.linkedAccounts !== Array.from(new Set(linkedUser.linkedAccounts))) {
+                                                                        linkedUser.linkedAccounts = Array.from(new Set(linkedUser.linkedAccounts));
+                                                        }
+                                                        for (const linkedId of linkedUser.linkedAccounts ?? []) {
+                                                                        validLinkedUserIds.add(linkedId);
+                                                                        if (!listUserIds.has(linkedId)) {
+                                                                                        newLinkedUserIds.add(linkedId);
+                                                                        }
+                                                        }
+                                        }
+
+                                        const removeLinkedUserIds: string[] = [];
+                                        for (const id of listUserIds) {
+                                                        if (!validLinkedUserIds.has(id)) {
+                                                                        removeLinkedUserIds.push(id);
+                                                        }
+                                        }
+
+                                        for (const id of removeLinkedUserIds) {
+                                                        if (!this.list?.id) continue;
+                                                        await this.ai.api("users/lists/pull", { listId: this.list.id, userId: id });
+                                                        console.log("Linked Account List Pull: " + id);
+                                        }
+
+                                        for (const x of newLinkedUserIds) {
+                                                        if (!this.list?.id) continue;
+                                                        const res = await this.ai.api("users/lists/push", { listId: this.list.id, userId: x });
+                                                        if (typeof x === "string" && res?.response?.body?.error?.code === "YOU_HAVE_BEEN_BLOCKED") {
+                                                                        // ブロックされたユーザーIDをリンクしているユーザーのアカウントからそのIDを削除
+                                                                        for (const linkedUser of linkedUsers) {
+                                                                                        if (linkedUser.linkedAccounts?.includes(x)) {
+                                                                                                        // 該当IDを削除
+                                                                                                        linkedUser.linkedAccounts = linkedUser.linkedAccounts.filter(id => id !== x);
+                                                                                                        console.log(`Removed blocked ID ${x} from user ${linkedUser.userId}`);
+                                                                                        }
+                                                                        }
+                                                        }
+                                                        console.log("Linked Account List Push: " + x);
+                                        }
+                        }
+        }
 	
 
 	@autobind
@@ -126,13 +139,16 @@ export default class extends Module {
 	}
 
 
-	@autobind
-	private async linkAccount(msg: Message) {
-		if (!msg.text) return false;
-		if (!msg.includes(['リンク', 'link'])) return false;
+        @autobind
+        private async linkAccount(msg: Message) {
+                if (!msg.text) return false;
+                if (msg.includes(['リンク解除', 'unlink'])) {
+                        return this.unlinkAccount(msg);
+                }
+                if (!msg.includes(['リンク', 'link'])) return false;
 
-		const exp = /@(\w+)@?([\w.-]+)?/.exec(msg.extractedText.replace("リンク", ""));
-		if (!exp?.[1]) {
+                const exp = /@(\w+)@?([\w.-]+)?/.exec(msg.extractedText.replace("リンク", ""));
+                if (!exp?.[1]) {
 			if (!msg.friend.doc.linkedAccounts) {
 				msg.reply("リンクしているアカウントがありません！\n新しくアカウントをリンクさせたい場合は、リンクの後にあなたのサブアカウントへのメンションを入れてください！");
 				return { reaction: ":mk_hotchicken:" };
@@ -279,15 +295,72 @@ export default class extends Module {
 				msg.reply(`アカウントを登録しました！\nリンク先のアカウントからも同じ操作を実行してください！`);
 			}
 
-			return true;
-		};
-	}
+                        return true;
+                };
+        }
 
-	@autobind
-	private async findData(msg: Message) {
-		if (msg.user.host || msg.user.username !== config.master) return false;
-		if (!msg.text) return false;
-		if (!msg.includes(['データ照会'])) return false;
+        @autobind
+        private async unlinkAccount(msg: Message) {
+                if (!msg.friend.doc.linkedAccounts?.length) {
+                        msg.reply("リンクしているアカウントがありません！\n新しくアカウントをリンクさせたい場合は、リンクの後にあなたのサブアカウントへのメンションを入れてください！");
+                        return { reaction: ":mk_hotchicken:" };
+                }
+
+                const exp = /@(\w+)@?([\w.-]+)?/.exec(msg.extractedText.replace(/リンク解除|unlink/gi, ''));
+
+                if (!exp?.[1]) {
+                        msg.reply("リンク解除の後に解除したいアカウントへのメンションを入力してください！");
+                        return { reaction: ":mk_hotchicken:" };
+                }
+
+                const doc = this.ai.friends.find({
+                        'user.username': exp[1],
+                        ...(exp?.[2] ? { 'user.host': exp[2] } : {})
+                } as any) as any;
+                let filteredDoc = exp?.[2] ? doc : doc.filter((x) => x.user.host == null);
+
+                if (filteredDoc.length === 0) {
+                        const doc = this.ai.friends.find({
+                                'user.username': exp[1],
+                        } as any) as any;
+                        filteredDoc = doc.filter((x) => x.user.host == null);
+                }
+
+                if (filteredDoc.length !== 1 || (filteredDoc[0].userId === msg.userId && (exp?.[2] && exp?.[2] !== "mkkey.net"))) {
+                        msg.reply(`そのユーザは私が知らないユーザの様です！\n@${exp[1]}@${exp[2]} から \`@mkck@mkkey.net リンク ${acct(msg.user, true)}\`と送信していただけると上手く行く可能性があります！`);
+                        return { reaction: ":mk_hotchicken:" };
+                }
+
+                const target = filteredDoc[0];
+
+                if (!msg.friend.doc.linkedAccounts?.includes(target.userId)) {
+                        msg.reply("そのアカウントとはリンクされていません！");
+                        return { reaction: ":mk_hotchicken:" };
+                }
+
+                const updatedLinkedAccounts = (msg.friend.doc.linkedAccounts ?? []).filter((id) => id !== target.userId);
+                msg.friend.doc.linkedAccounts = updatedLinkedAccounts;
+                msg.friend.save();
+
+                const targetFriend = this.ai.lookupFriend(target.userId);
+                if (targetFriend?.doc?.linkedAccounts?.includes(msg.friend.userId)) {
+                        const targetLinkedAccounts = (targetFriend.doc.linkedAccounts ?? []).filter((id) => id !== msg.friend.userId);
+                        targetFriend.doc.linkedAccounts = targetLinkedAccounts;
+                        targetFriend.save();
+                }
+
+                await this.linkAccountListAdd();
+
+                msg.reply(`アカウントのリンクを解除しました！\nまたリンクしたくなったら \`リンク ${acct(target.user, true)}\` と話しかけてください！`);
+
+                return true;
+        }
+
+        @autobind
+        private async findData(msg: Message) {
+                if (msg.user.host || msg.user.username !== config.master) return false;
+                if (!msg.text) return false;
+                if (!msg.includes(['データ照会'])) return false;
 
 		const doc = this.ai.friends.find({
 			'user.username': { '$regex': new RegExp(msg.extractedText.replace("データ照会 ", ""), "i") }
