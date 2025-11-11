@@ -1663,19 +1663,15 @@ export default class extends Module {
                                         debugLines.push(`ターン数: ${count}`);
                                         debugLines.push(`行動回数: ${spd}`);
                                         debugLines.push(`敵防御力: ${formatDebug(enemyDef)}`);
-                                        debugLines.push(`敵最大HP: ${formatDebug(enemyMaxHp)}`);
                                         debugLines.push(`乱数: ${formatDebug(rng)}`);
-                                        debugLines.push(`ダメージ補正: ${formatDebug(dmgBonus)}`);
-                                        debugLines.push(`追加ダメージ: ${formatDebug(trueDmg)}`);
-                                        debugLines.push(`ダメージ上昇効果: ${formatDebug(dmgUp)}`);
-                                        debugLines.push(`会心補正: ${formatDebug(critUp)}`);
-                                        debugLines.push(`クリティカル: ${crit ? `はい(倍率:${formatDebug(critDmg)})` : 'いいえ'}`);
+                                        if(dmgBonus != 1) debugLines.push(`追加ダメージ: ${formatDebug(dmgBonus)}`);
+                                        if(trueDmg != 0) debugLines.push(`確定ダメージ: ${formatDebug(trueDmg)}`);
+                                        if(dmgUp != 1) debugLines.push(`ダメージ倍率: ${formatDebug(dmgUp)}`);
+                                        if(critUp != 0) debugLines.push(`会心率補正: ${formatDebug(critUp)}`);
+                                        if(crit) debugLines.push(`クリティカル倍率:${formatDebug(critDmg)}`);
                                         if (itemBonus?.atk) {
                                                 debugLines.push(`アイテム攻撃補正: ${formatDebug(itemBonus.atk)}`);
-                                        }
-                                        if (maxdmg != null) {
-                                                debugLines.push(`最大ダメージ制限: ${formatDebug(maxdmg)}`);
-                                        }
+																				}     
                                         message += debugLines.join('\n') + '\n';
                                 }
                                 /** ダメージ */
@@ -2122,6 +2118,7 @@ export default class extends Module {
 		}
 	}
 }
+
 
 
 
