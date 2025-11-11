@@ -977,8 +977,8 @@ export default class extends Module {
     const formatDebug = (value: number): string => {
 			if (!Number.isFinite(value)) return String(value);
 			if (value >= 10000000) return Math.floor(value/10000)+"万"
-			if (value >= 1000000) return (value/10000) toFixed(1)+"万"
-			if (value >= 1000) return Math.floor(value);
+			if (value >= 1000000) return (value/10000).toFixed(1)+"万"
+			if (value >= 1000) return String(Math.floor(value));
 			return value.toFixed(4-(String(Math.floor(value)).length));
 		}
 
@@ -2124,6 +2124,7 @@ export default class extends Module {
 		}
 	}
 }
+
 
 
 
