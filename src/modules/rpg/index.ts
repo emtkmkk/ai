@@ -1668,7 +1668,7 @@ export default class extends Module {
                                         debugLines.push(`TP倍率: ${formatDebug(tp)}`);
                                         debugLines.push(`ターン数: ${count}`);
                                         debugLines.push(`行動回数: ${spd}`);
-                                        debugLines.push(`敵防御力: ${formatDebug(enemyDef * (getVal(data.enemy.defx, [tp]) ?? 3)}`);
+                                        debugLines.push(`敵防御力: ${formatDebug(enemyDef * (getVal(data.enemy.defx, [tp]) ?? 3))}`);
                                         debugLines.push(`乱数: ${formatDebug(rng)}`);
                                         if(dmgBonus != 1) debugLines.push(`追加ダメージ: ${formatDebug(dmgBonus)}`);
                                         if(trueDmg != 0) debugLines.push(`確定ダメージ: ${formatDebug(trueDmg)}`);
@@ -2124,6 +2124,7 @@ export default class extends Module {
 		}
 	}
 }
+
 
 
 
