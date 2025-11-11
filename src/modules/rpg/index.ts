@@ -1813,8 +1813,8 @@ export default class extends Module {
 						if (data.enemy.fire && count > (data.thirdFire ?? 0)) data.thirdFire = count;
 					}
 					// HPが0で食いしばりが可能な場合、食いしばる
-					const endure = 0.1 + (0.1 * (data.endure ?? 0)) - (count * 0.05);
-					if (playerHp <= 0 && !data.enemy.notEndure && Math.random() < endure * (1 + (skillEffects.endureUp ?? 0))) {
+					const endure = ((0.1 + (0.1 * (data.endure ?? 0))) * (1 + (skillEffects.endureUp ?? 0))) - (count * (data.enemy.name == endressEnemy(data).name && (data.endress ?? 0) >= 199 && count > 1 ? 0.04 * count : 0.05));
+					if (playerHp <= 0 && !data.enemy.notEndure && Math.random() < endure) {
 						message += serifs.rpg.endure + "\n";
 						playerHp = 1;
 						data.endure = Math.max(data.endure - 1, 0);
@@ -2122,6 +2122,7 @@ export default class extends Module {
 		}
 	}
 }
+
 
 
 
