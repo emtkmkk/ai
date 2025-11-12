@@ -68,16 +68,21 @@ export function initializeData(module: rpg, msg) {
 }
 
 export function getColor(data) {
-    let _color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
-	let color = deepClone(_color);
-    if (!color.unlock(data)) {
-        data.color === (colors.find((x) => x.default) ?? colors[0]).id;
-        color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
+    const sourceColor = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
+    let color = deepClone(sourceColor);
+
+    if (!sourceColor.unlock(data)) {
+        const fallbackColor = colors.find((x) => x.default) ?? colors[0];
+        data.color = fallbackColor.id;
+        color = deepClone(fallbackColor);
     }
-	if (colors.find((x) => x.alwaysSuper)?.unlock(data) && !color.alwaysSuper && color.enhance && color.enhance(data)) {
-		color.alwaysSuper = true;
-		color.name = `$[sparkle ${color.name}]`
-	}
+
+    const superColor = colors.find((x) => x.alwaysSuper);
+    if (superColor?.unlock(data) && !color.alwaysSuper && color.enhance && color.enhance(data)) {
+        color.alwaysSuper = true;
+        color.name = `$[sparkle ${color.name}]`;
+    }
+
     return color;
 }
 
