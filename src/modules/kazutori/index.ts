@@ -953,7 +953,7 @@ export default class extends Module {
                         }
                 }
 
-                const penaltyPoint = Math.max(Math.ceil(calculatedLimitMinutes / 10), 1);
+                const penaltyPoint = Math.max(Math.ceil(calculatedLimitMinutes / 5), 1);
                 const nonParticipantPenalties: {
                         doc: FriendDoc;
                         data: EnsuredKazutoriData;
