@@ -45,13 +45,14 @@ export default class 藍 {
 	public readonly version = pkg._v;
 	public account: User;
 	public connection: Stream;
-	public modules: Module[] = [];
-	private mentionHooks: MentionHook[] = [];
-	private contextHooks: { [moduleName: string]: ContextHook; } = {};
-	private timeoutCallbacks: { [moduleName: string]: TimeoutCallback; } = {};
-	public db: loki;
-	public lastSleepedAt: number;
-	public activeFactor: number;
+        public modules: Module[] = [];
+        private mentionHooks: MentionHook[] = [];
+        private contextHooks: { [moduleName: string]: ContextHook; } = {};
+        private timeoutCallbacks: { [moduleName: string]: TimeoutCallback; } = {};
+        public db: loki;
+        public lastSleepedAt: number;
+        public activeFactor: number;
+        private hangDetectionTriggered = false;
 
 	private meta: loki.Collection<Meta>;
 
@@ -210,12 +211,56 @@ export default class 藍 {
 
 		// タイマー監視
 		this.crawleTimer();
-		setInterval(this.crawleTimer, 1000);
+                setInterval(this.crawleTimer, 1000);
 
-		setInterval(this.logWaking, 10000);
+                setInterval(this.logWaking, 10000);
 
-		this.log(chalk.green.bold('Ai am now running!'));
-	}
+                this.startHangDetection();
+
+                this.log(chalk.green.bold('Ai am now running!'));
+        }
+
+        @autobind
+        private startHangDetection() {
+                const interval = 10000;
+                const hangThreshold = 60000;
+                let lastTick = Date.now();
+
+                const tick = async () => {
+                        const now = Date.now();
+                        const drift = now - lastTick;
+                        lastTick = now;
+
+                        if (drift - interval >= hangThreshold) {
+                                await this.onHangDetected(drift - interval);
+                                return;
+                        }
+
+                        setTimeout(tick, interval);
+                };
+
+                setTimeout(tick, interval);
+        }
+
+        @autobind
+        private async onHangDetected(delay: number) {
+                if (this.hangDetectionTriggered) return;
+                this.hangDetectionTriggered = true;
+
+                this.log(`Hang detected: event loop delayed by ${Math.round(delay)}ms. Restarting...`);
+
+                try {
+                        await this.post({
+                                text: `Botのイベントループが${Math.round(delay / 1000)}秒間停止していました。自動的に再起動します。`,
+                                visibility: "specified",
+                                visibleUserIds: ["9d5ts6in38"],
+                        });
+                } catch (error) {
+                        this.log(`Failed to notify hang detection: ${error}`);
+                }
+
+                setTimeout(() => process.exit(1), 3000);
+        }
 
 	@autobind
         private async handlerTimeout<T>(handler: () => Promise<T> | T, obj?: any, description = 'ハンドラー'): Promise<boolean | T> {
