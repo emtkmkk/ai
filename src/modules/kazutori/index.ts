@@ -269,7 +269,7 @@ export default class extends Module {
 			// トリガー者が管理人でない かつ クールタイムが開けていない場合
 			if ((msg.user.host || msg.user.username !== config.master) && Date.now() - recentGame.startedAt < 1000 * 60 * 30 * cth) {
 				const ct = Math.ceil((30 * cth) - ((Date.now() - recentGame.startedAt) / (1000 * 60)));
-				msg.reply(serifs.kazutori.matakondo(ct, Math.ceil((recentGame.startedAt + 1000 * 30 * 30 * cth) / 1000)));
+                                msg.reply(serifs.kazutori.matakondo(ct, Math.ceil((recentGame.startedAt + 1000 * 60 * 30 * cth) / 1000)));
 				return {
 					reaction: 'hmm'
 				};
