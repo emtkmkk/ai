@@ -218,28 +218,31 @@ export default class 藍 {
 	}
 
 	@autobind
-	private async handlerTimeout<T>(handlerPromise: Promise<T>, obj?: any): Promise<boolean | T> {
-		return new Promise<boolean | T>((resolve, reject) => {
-			const timeoutId = setTimeout(() => {
-				console.log("hooks Timeout!");
-				if (obj) console.dir(obj);
-				// 管理者にDM
-				this.post({
-					text: "ハンドラーの処理がタイムアウトしました！\nログをご確認ください。",
-					visibility: "specified",
-					visibleUserIds: ["9d5ts6in38"],
-				});
-				resolve(false); // resolveでfalseを返す
-			}, 30000);
+        private async handlerTimeout<T>(handler: () => Promise<T> | T, obj?: any, description = 'ハンドラー'): Promise<boolean | T> {
+                const HANDLER_TIMEOUT_MS = 3 * 60 * 1000;
+                return new Promise<boolean | T>((resolve, reject) => {
+                        const timeoutId = setTimeout(() => {
+                                console.log(`${description} Timeout!`);
+                                if (obj) console.dir(obj);
+                                // 管理者にDM
+                                this.post({
+                                        text: `${description}の処理が3分以内に完了しませんでした。\nログをご確認ください。`,
+                                        visibility: "specified",
+                                        visibleUserIds: ["9d5ts6in38"],
+                                });
+                                resolve(false); // resolveでfalseを返す
+                        }, HANDLER_TIMEOUT_MS);
 
-			handlerPromise.then(result => {
-				clearTimeout(timeoutId);
-				resolve(result);
-			}).catch(error => {
-				clearTimeout(timeoutId);
-				reject(error);
-			});
-		});
+                        Promise.resolve()
+                                .then(handler)
+                                .then(result => {
+                                        clearTimeout(timeoutId);
+                                        resolve(result);
+                                }).catch(error => {
+                                        clearTimeout(timeoutId);
+                                        reject(error);
+                                });
+                });
 	}
 
 	/**
@@ -271,9 +274,9 @@ export default class 藍 {
 			let res: boolean | HandlerResult | null = null;
 
 			for (const handler of this.mentionHooks) {
-				res = await this.handlerTimeout(handler(msg), msg);
-				if (res === true || typeof res === 'object') break;
-			}
+                                res = await this.handlerTimeout(() => handler(msg), msg, 'メンションハンドラー');
+                                if (res === true || typeof res === 'object') break;
+                        }
 
 			if (res != null && typeof res === 'object') {
 				if (res.reaction != null) reaction = res.reaction;
@@ -284,8 +287,8 @@ export default class 藍 {
 		// コンテキストがあればコンテキストフック呼び出し
 		// なければそれぞれのモジュールについてフックが引っかかるまで呼び出し
 		if (context != null) {
-			const handler = this.contextHooks[context.module];
-			const res = await this.handlerTimeout(handler(context.key, msg, context.data), { key: context.key, msg, data: context.data });
+                        const handler = this.contextHooks[context.module];
+                        const res = await this.handlerTimeout(() => handler(context.key, msg, context.data), { key: context.key, msg, data: context.data }, 'コンテキストハンドラー');
 
 			if (res != null && typeof res === 'object') {
 				if (res.reaction != null) reaction = res.reaction;
@@ -345,17 +348,21 @@ export default class 藍 {
 	}
 
 	@autobind
-	private crawleTimer() {
-		const timers = this.timers.find();
-		for (const timer of timers) {
-			// タイマーが時間切れかどうか
-			if (Date.now() - (timer.insertedAt + timer.delay) >= 0) {
-				this.log(`Timer expired: ${timer.module} ${timer.id}`);
-				this.timers.remove(timer);
-				this.timeoutCallbacks[timer.module](timer.data);
-			}
-		}
-	}
+        private async crawleTimer() {
+                const timers = this.timers.find();
+                for (const timer of timers) {
+                        // タイマーが時間切れかどうか
+                        if (Date.now() - (timer.insertedAt + timer.delay) >= 0) {
+                                this.log(`Timer expired: ${timer.module} ${timer.id}`);
+                                this.timers.remove(timer);
+                                try {
+                                        await this.handlerTimeout(() => this.timeoutCallbacks[timer.module](timer.data), { timer }, 'タイムアウトコールバック');
+                                } catch (error) {
+                                        this.log(`Timer callback error: ${error}`);
+                                }
+                        }
+                }
+        }
 
 	@autobind
 	private logWaking() {
