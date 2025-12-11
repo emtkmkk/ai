@@ -266,14 +266,24 @@ export default class extends Module {
 			// トリガーの公開範囲がフォロワー以下ならクールタイム２倍
 			const cth = Math.max((msg.friend.love >= 200 ? 2 : msg.friend.love >= 100 ? 4 : msg.friend.love >= 20 ? 8 : msg.friend.love >= 5 ? 12 : 16) * (["public", "home"].includes(msg.visibility) ? 1 : 2), 1);
 
-			// トリガー者が管理人でない かつ クールタイムが開けていない場合
-			if ((msg.user.host || msg.user.username !== config.master) && Date.now() - recentGame.startedAt < 1000 * 60 * 30 * cth) {
-				const ct = Math.ceil((30 * cth) - ((Date.now() - recentGame.startedAt) / (1000 * 60)));
-                                msg.reply(serifs.kazutori.matakondo(ct, Math.ceil((recentGame.startedAt + 1000 * 60 * 30 * cth) / 1000)));
-				return {
-					reaction: 'hmm'
-				};
-			}
+                        // トリガー者が管理人でない かつ クールタイムが開けていない場合
+                        if ((msg.user.host || msg.user.username !== config.master) && Date.now() - recentGame.startedAt < 1000 * 60 * 30 * cth) {
+                                const cooldownMs = 1000 * 60 * 30 * cth;
+                                const elapsedMs = Date.now() - recentGame.startedAt;
+                                const remainingMinutes = Math.max(Math.ceil((cooldownMs - elapsedMs) / (1000 * 60)), 0);
+                                const retryAt = Math.ceil((recentGame.startedAt + cooldownMs) / 1000);
+
+                                try {
+                                        await msg.reply(serifs.kazutori.matakondo(remainingMinutes, retryAt));
+                                } catch (err) {
+                                        const reason = err instanceof Error ? err.message : String(err);
+                                        this.log(`Failed to reply cooldown message: ${reason}`);
+                                }
+
+                                return {
+                                        reaction: 'hmm'
+                                };
+                        }
 
 			if (!msg.user.host && msg.user.username === config.master && msg.includes(['inf'])) flg = "inf";
 			if (!msg.user.host && msg.user.username === config.master && msg.includes(['med'])) flg += " med";
