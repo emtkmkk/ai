@@ -352,10 +352,22 @@ export default class 藍 {
 			await delay(1000);
 		}
 
-		if (reaction === "love") reaction = ":mk_hi:";
-		if (reaction === "like") reaction = ":mk_yurayurachicken:";
-		if (reaction === "hmm") reaction = ":mk_fly_sliver:";
-		if (reaction === "confused") reaction = ":mk_ultrawidechicken:";
+                if (reaction === "love") reaction = ":mk_hi:";
+                if (reaction === "like") reaction = ":mk_yurayurachicken:";
+                if (reaction === "hmm") reaction = ":mk_fly_sliver:";
+                if (reaction === "confused") reaction = ":mk_ultrawidechicken:";
+
+                if (reaction != null) {
+                        const firstColonIndex = reaction.indexOf(":");
+
+                        if (firstColonIndex !== -1) {
+                                const secondColonIndex = reaction.indexOf(":", firstColonIndex + 1);
+
+                                if (secondColonIndex !== -1) {
+                                        reaction = reaction.slice(firstColonIndex, secondColonIndex + 1);
+                                }
+                        }
+                }
 
 		const friend = new Friend(this, { user: msg.user });
 		if (![":mk_widechicken:", ":mk_fly_sliver:", ":mk_ultrawidechicken:", ":mk_moyochicken:"].includes(reaction) && !(defaultReaction === reaction)) {
