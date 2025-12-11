@@ -379,12 +379,27 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
 	}
 
 	/** 現在進行中のレイド */
-	const raid = raids.findOne({
-		isEnded: false,
-		postId: key.split(":")[0],
-	});
+        const raid = raids.findOne({
+                isEnded: false,
+                postId: key.split(":")[0],
+        });
 
-	if (raid == null) return;
+        if (raid == null) return;
+
+        let needUpdate = false;
+        if (!raid.attackers) {
+                raid.attackers = [];
+                needUpdate = true;
+        }
+
+        if (!raid.replyKey) {
+                raid.replyKey = [];
+                needUpdate = true;
+        }
+
+        if (needUpdate) {
+                raids.update(raid);
+        }
 
 	if (raid.attackers.some(x => x.dmg > 0 && x.user.id == msg.userId)) {
 		msg.reply('すでに参加済みの様です！').then(reply => {
@@ -402,21 +417,28 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
 
 	if (!enemy) return;
 
-	let result;
-	if (enemy.pattern && enemy.pattern > 1) {
-		switch (enemy.pattern) {
-			case 2:
-			default:
-			result = await getTotalDmg2(msg, enemy);
-			break;
-			case 3:
-			result = await getTotalDmg3(msg, enemy);
-			break;
-		}
-	} else {
-		/** 総ダメージの計算結果 */
-                result = await getTotalDmg(msg, enemy, raid.postId);
-	}
+        let result;
+        try {
+                if (enemy.pattern && enemy.pattern > 1) {
+                        switch (enemy.pattern) {
+                                case 2:
+                                default:
+                                        result = await getTotalDmg2(msg, enemy);
+                                        break;
+                                case 3:
+                                        result = await getTotalDmg3(msg, enemy);
+                                        break;
+                        }
+                } else {
+                        /** 総ダメージの計算結果 */
+                        result = await getTotalDmg(msg, enemy, raid.postId);
+                }
+        } catch (err) {
+                module_.log(`レイド参加処理中にエラーが発生しました: ${err instanceof Error ? err.stack ?? err.message : err}`);
+                return {
+                        reaction: 'confused'
+                };
+        }
 
 	if (raid.attackers.some(x => x.dmg > 0 && x.user.id == msg.userId)) {
 		msg.reply('すでに参加済みの様です！').then(reply => {
@@ -473,6 +495,7 @@ export function raidTimeoutCallback(data: any) {
 			renoteId: data.id
 		});
 	} catch (err) {
+		module_.log(`レイドタイムアウト処理中にエラーが発生しました: ${err instanceof Error ? err.stack ?? err.message : err}`);
 		return;
 	}
 }
