@@ -145,10 +145,13 @@ export default class 藍 {
 
 		const meta = this.getMeta();
 		this.lastSleepedAt = meta.lastWakingAt;
-		this.activeFactor = meta.activeFactor || 1;
+                this.activeFactor = meta.activeFactor || 1;
 
-		// Init stream
-		this.connection = new Stream();
+                // Init stream
+                this.connection = new Stream();
+                this.connection.on('inactivityReconnect', ({ lastActivityAt }) => {
+                        this.recoverMissedMentions(lastActivityAt);
+                });
 
 		//#region Main stream
 		const mainStream = this.connection.useSharedConnection('main');
@@ -387,11 +390,11 @@ export default class 藍 {
 	}
 
 	@autobind
-	private onNotification(notification: any) {
-		switch (notification.type) {
-			// リアクションされたら親愛度を少し上げる
-			// TODO: リアクション取り消しをよしなにハンドリングする
-			case 'quote':
+        private onNotification(notification: any) {
+                switch (notification.type) {
+                        // リアクションされたら親愛度を少し上げる
+                        // TODO: リアクション取り消しをよしなにハンドリングする
+                        case 'quote':
 			case 'pollVote':
 			case 'reaction': {
 				const friend = new Friend(this, { user: notification.user });
@@ -399,12 +402,47 @@ export default class 藍 {
 				break;
 			}
 
-			default:
-				break;
-		}
-	}
+                        default:
+                                break;
+                }
+        }
 
-	@autobind
+        @autobind
+        private async recoverMissedMentions(lastActivityAt: number) {
+                try {
+                        const notifications = await this.api('i/notifications', {
+                                limit: 100,
+                                includeTypes: ['mention'],
+                                sinceDate: lastActivityAt,
+                        });
+
+                        if (!Array.isArray(notifications)) return;
+
+                        const missedMentions = notifications.filter(notification => {
+                                if (notification?.type !== 'mention' || notification.note == null) return false;
+                                if (notification.createdAt == null) return true;
+                                return new Date(notification.createdAt).getTime() >= lastActivityAt;
+                        });
+
+                        for (const notification of missedMentions) {
+                                const note = notification.note;
+                                if (!note || note.userId === this.account.id) continue;
+
+                                if (note.myReaction != null) continue;
+
+                                let resolvedNote = note;
+                                if (resolvedNote.text == null) {
+                                        resolvedNote = await this.api('notes/show', { noteId: note.id });
+                                }
+
+                                await this.onReceiveMessage(new Message(this, resolvedNote));
+                        }
+                } catch (error) {
+                        this.log(`Failed to recover missed mentions: ${error}`);
+                }
+        }
+
+        @autobind
         private async crawleTimer() {
                 const timers = this.timers.find();
                 for (const timer of timers) {
