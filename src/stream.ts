@@ -11,30 +11,27 @@ import log from '@/utils/log';
 export default class Stream extends EventEmitter {
 	private stream: any;
 	private state: string;
-	private buffer: any[];
-	private sharedConnectionPools: Pool[] = [];
-	private sharedConnections: SharedConnection[] = [];
-	private nonSharedConnections: NonSharedConnection[] = [];
+        private buffer: any[];
+        private sharedConnectionPools: Pool[] = [];
+        private sharedConnections: SharedConnection[] = [];
+        private nonSharedConnections: NonSharedConnection[] = [];
+        private lastActivityAt: number;
+        private inactivityCheckTimer: any;
 
-	constructor() {
-		super();
+        constructor() {
+                super();
 
-		this.state = 'initializing';
-		log(`stream : ` + this.state);
-		this.buffer = [];
+                this.state = 'initializing';
+                log(`stream : ` + this.state);
+                this.buffer = [];
 
-		this.stream = new ReconnectingWebsocket(`${config.wsUrl}/streaming?i=${config.i}`, [], {
-			WebSocket: WebSocket
-		});
-		log(`streamURL : ` + `${config.wsUrl}/streaming?i=${config.i}`);
-		this.stream.addEventListener('open', this.onOpen);
-		this.stream.addEventListener('close', this.onClose);
-		this.stream.addEventListener('message', this.onMessage);
-	}
+                this.initializeStream();
+                this.startInactivityWatcher();
+        }
 
-	@autobind
-	public useSharedConnection(channel: string): SharedConnection {
-		let pool = this.sharedConnectionPools.find(p => p.channel === channel);
+        @autobind
+        public useSharedConnection(channel: string): SharedConnection {
+                let pool = this.sharedConnectionPools.find(p => p.channel === channel);
 
 		if (pool == null) {
 			pool = new Pool(this, channel);
@@ -61,17 +58,17 @@ export default class Stream extends EventEmitter {
 	@autobind
 	public disconnectToChannel(connection: NonSharedConnection) {
 		this.nonSharedConnections = this.nonSharedConnections.filter(c => c !== connection);
-	}
+        }
 
-	/**
-	 * Callback of when open connection
-	 */
-	@autobind
-	private onOpen() {
-		const isReconnect = this.state == 'reconnecting';
+        /**
+         * Callback of when open connection
+         */
+        @autobind
+        private onOpen() {
+                const isReconnect = this.state == 'reconnecting';
 
-		this.state = 'connected';
-		log(`stream : ` + this.state);
+                this.state = 'connected';
+                log(`stream : ` + this.state);
 		this.emit('_connected_');
 
 		// バッファーを処理
@@ -102,12 +99,13 @@ export default class Stream extends EventEmitter {
 		this.emit('_disconnected_');
 	}
 
-	/**
-	 * Callback of when received a message from connection
-	 */
-	@autobind
-	private onMessage(message) {
-		const { type, body } = JSON.parse(message.data);
+        /**
+         * Callback of when received a message from connection
+         */
+        @autobind
+        private onMessage(message) {
+                this.lastActivityAt = Date.now();
+                const { type, body } = JSON.parse(message.data);
 
 		if (type == 'channel') {
 			const id = body.id;
@@ -150,14 +148,55 @@ export default class Stream extends EventEmitter {
 		this.stream.send(JSON.stringify(data));
 	}
 
-	/**
-	 * Close this connection
-	 */
-	@autobind
-	public close() {
-		this.stream.removeEventListener('open', this.onOpen);
-		this.stream.removeEventListener('message', this.onMessage);
-	}
+        /**
+         * Close this connection
+         */
+        @autobind
+        public close() {
+                this.stream.removeEventListener('open', this.onOpen);
+                this.stream.removeEventListener('message', this.onMessage);
+                this.stream.removeEventListener('close', this.onClose);
+                if (this.inactivityCheckTimer) {
+                        clearInterval(this.inactivityCheckTimer);
+                        this.inactivityCheckTimer = null;
+                }
+        }
+
+        @autobind
+        private initializeStream() {
+                this.lastActivityAt = Date.now();
+                this.stream = new ReconnectingWebsocket(`${config.wsUrl}/streaming?i=${config.i}`, [], {
+                        WebSocket: WebSocket
+                });
+                log(`streamURL : ` + `${config.wsUrl}/streaming?i=${config.i}`);
+                this.stream.addEventListener('open', this.onOpen);
+                this.stream.addEventListener('close', this.onClose);
+                this.stream.addEventListener('message', this.onMessage);
+        }
+
+        @autobind
+        private startInactivityWatcher() {
+                const RECONNECT_INTERVAL = 5 * 60 * 1000;
+                const CHECK_INTERVAL = 60 * 1000;
+
+                this.inactivityCheckTimer = setInterval(() => {
+                        const now = Date.now();
+                        if (now - this.lastActivityAt >= RECONNECT_INTERVAL) {
+                                log(`streamInactivityDetected : reconnecting stream after ${Math.round((now - this.lastActivityAt) / 1000)}s of silence`);
+                                this.forceReconnect();
+                        }
+                }, CHECK_INTERVAL);
+        }
+
+        @autobind
+        private forceReconnect() {
+                this.state = 'reconnecting';
+                this.stream.removeEventListener('open', this.onOpen);
+                this.stream.removeEventListener('close', this.onClose);
+                this.stream.removeEventListener('message', this.onMessage);
+                this.stream.close();
+                this.initializeStream();
+        }
 }
 
 class Pool {
