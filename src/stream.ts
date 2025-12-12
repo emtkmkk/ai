@@ -176,13 +176,15 @@ export default class Stream extends EventEmitter {
 
         @autobind
         private startInactivityWatcher() {
-                const RECONNECT_INTERVAL = 5 * 60 * 1000;
+                const RECONNECT_INTERVAL = 2 * 60 * 1000;
                 const CHECK_INTERVAL = 60 * 1000;
 
                 this.inactivityCheckTimer = setInterval(() => {
                         const now = Date.now();
                         if (now - this.lastActivityAt >= RECONNECT_INTERVAL) {
-                                log(`streamInactivityDetected : reconnecting stream after ${Math.round((now - this.lastActivityAt) / 1000)}s of silence`);
+                                const lastActivityAt = this.lastActivityAt;
+                                log(`streamInactivityDetected : reconnecting stream after ${Math.round((now - lastActivityAt) / 1000)}s of silence`);
+                                this.emit('inactivityReconnect', { lastActivityAt });
                                 this.forceReconnect();
                         }
                 }, CHECK_INTERVAL);
