@@ -322,7 +322,7 @@ export default class extends Module {
                         score: number | null,
                         label: string,
                         dataKey: string,
-                        options?: { prefix?: string; suffix?: string; addValue?: number; firstPlaceAppend?: (friend: Friend | undefined) => string | undefined; }
+                        options?: { prefix?: string; suffix?: string; addValue?: number; firstPlaceAppend?: (friend: Friend | undefined, score?: number) => string | undefined; }
                 ) => {
                         const entries = allData
                                 .map(friend => {
