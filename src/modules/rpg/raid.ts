@@ -2123,16 +2123,16 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 		message += "\n" + serifs.rpg.warrior.totalDmg(warriorTotalDmg);
 	}
 
-	if (!data.raidScore) data.raidScore = {};
-	if (!data.raidScore[enemy.name] || data.raidScore[enemy.name] < totalDmg) {
-		if (data.raidScore[enemy.name]) {
-			message += "\n" + serifs.rpg.hiScore(data.raidScore[enemy.name], totalDmg);
-			if (mark === ":blank:") mark = "🆙";
-		}
-		data.raidScore[enemy.name] = totalDmg;
-	} else {
-		if (data.raidScore[enemy.name]) message += `\n（これまでのベスト: ${data.raidScore[enemy.name].toLocaleString()}）`;
-	}
+        if (!data.raidScore) data.raidScore = {};
+        if (!data.raidScore[enemy.name] || data.raidScore[enemy.name] < totalDmg) {
+                if (data.raidScore[enemy.name]) {
+                        message += "\n" + serifs.rpg.hiScore(data.raidScore[enemy.name], totalDmg);
+                        if (mark === ":blank:") mark = "🆙";
+                }
+                data.raidScore[enemy.name] = totalDmg;
+        } else if (data.raidScore[enemy.name]) {
+                message += `\n（これまでのベスト: ${data.raidScore[enemy.name].toLocaleString()}）`;
+        }
 	if (!data.clearRaid) data.clearRaid = [];
 	if (count === 7 && !data.clearRaid.includes(enemy.name)) {
 		data.clearRaid.push(enemy.name);
@@ -2281,7 +2281,7 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 	data.raid = true;
 	const colorData = colors.map((x) => x.unlock(data));
 
-	const skillsStr = {skills: "", amulet: ""};
+        const skillsStr = getSkillsShortName(data);
 
 	/** 現在の敵と戦ってるターン数。 敵がいない場合は1 */
 	let count = 1;
@@ -2421,16 +2421,16 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 
 	message += "\n\n" + serifs.rpg.totalDmg(totalDmg);
 
-	if (!data.raidScore) data.raidScore = {};
-	if (!data.raidScore[enemy.name] || data.raidScore[enemy.name] < totalDmg) {
-		if (data.raidScore[enemy.name]) {
-			message += "\n" + serifs.rpg.hiScore(data.raidScore[enemy.name], totalDmg);
-			if (mark === ":blank:") mark = "🆙";
-		}
-		data.raidScore[enemy.name] = totalDmg;
-	} else {
-		if (data.raidScore[enemy.name]) message += `\n（これまでのベスト: ${data.raidScore[enemy.name].toLocaleString()}）`;
-	}
+        if (!data.raidScore) data.raidScore = {};
+        if (!data.raidScore[enemy.name] || data.raidScore[enemy.name] < totalDmg) {
+                if (data.raidScore[enemy.name]) {
+                        message += "\n" + serifs.rpg.hiScore(data.raidScore[enemy.name], totalDmg);
+                        if (mark === ":blank:") mark = "🆙";
+                }
+                data.raidScore[enemy.name] = totalDmg;
+        } else if (data.raidScore[enemy.name]) {
+                message += `\n（これまでのベスト: ${data.raidScore[enemy.name].toLocaleString()}）`;
+        }
 	if (!data.clearRaid) data.clearRaid = [];
 	if (count === 7 && !data.clearRaid.includes(enemy.name)) {
 		data.clearRaid.push(enemy.name);
@@ -2840,16 +2840,14 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 
 	data.hatogurumaExp = (data.hatogurumaExp ?? 0) + ((100 - totalDmg) / 100)
 
-	if (!data.raidScore) data.raidScore = {};
-	if (!data.raidScore[enemy.name] || data.raidScore[enemy.name] < totalDmg) {
-		if (data.raidScore[enemy.name] && Math.floor(data.raidScore[enemy.name]) != Math.floor(totalDmg)) {
-			message += "過去最高の手応えだ！" + `\n\n`;
-			if (mark === ":blank:") mark = "🆙";
-		}
-		data.raidScore[enemy.name] = totalDmg;
-	} else {
-		//if (data.raidScore[enemy.name]) message += `\n（これまでのベスト: ${data.raidScore[enemy.name].toLocaleString()}）`;
-	}
+        if (!data.raidScore) data.raidScore = {};
+        if (!data.raidScore[enemy.name] || data.raidScore[enemy.name] < totalDmg) {
+                if (data.raidScore[enemy.name] && Math.floor(data.raidScore[enemy.name]) != Math.floor(totalDmg)) {
+                        message += "過去最高の手応えだ！" + `\n\n`;
+                        if (mark === ":blank:") mark = "🆙";
+                }
+                data.raidScore[enemy.name] = totalDmg;
+        }
 	if (!data.clearRaid) data.clearRaid = [];
 	if (totalDmg >= 100 && !data.clearRaid.includes(enemy.name)) {
 		data.clearRaid.push(enemy.name);
