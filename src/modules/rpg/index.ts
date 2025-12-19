@@ -413,7 +413,7 @@ export default class extends Module {
                 const createFirstPlaceRaidSkillMessage = (enemyName: string) => (friend: FriendDocWithMeta | undefined, score: number | undefined) => {
                         if (!friend || score == null) return undefined;
 
-                        type RaidWithMeta = Raid & loki.LokiObj;
+                        type RaidWithMeta = LokiDoc<Raid>;
                         type AttackerWithSkills = Raid['attackers'][number] & {
                                 skillsStr: NonNullable<Raid['attackers'][number]['skillsStr']>;
                         };
