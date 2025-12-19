@@ -27,7 +27,7 @@ type List = {
         userIds: string[];
 };
 
-type LokiDoc<T> = T & { $loki?: number; meta?: unknown };
+type LokiDoc<T> = T & { $loki: number; meta?: unknown };
 type FriendDocWithMeta = LokiDoc<FriendDoc>;
 
 export default class extends Module {
@@ -418,11 +418,11 @@ export default class extends Module {
                                 skillsStr: NonNullable<Raid['attackers'][number]['skillsStr']>;
                         };
 
-                        const raidHistory = this.raids
+                        const raidHistory = (this.raids
                                 ?.find({
                                         isEnded: true,
-                                })
-                                .filter((raid): raid is RaidWithMeta => raid.enemy?.name === enemyName);
+                                }) as RaidWithMeta[] | undefined)
+                                ?.filter((raid) => raid.enemy?.name === enemyName);
 
                         const latestMatched = raidHistory
                                 ?.map((raid) => ({
