@@ -16,15 +16,19 @@ import type { Raid } from './raid';
 import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatus, getPostCount, getPostX, getVal, random, preLevelUpProcess, deepClone } from './utils';
 import { calculateArpen, calculateStats, applySoftCapPow2 } from './battle';
 import Friend from '@/friend';
+import type { FriendDoc } from '@/friend';
 import config from '@/config';
 import * as loki from 'lokijs';
 
 type List = {
-	id: string;
-	createdAt: any;
-	name: string;
-	userIds: string[];
+        id: string;
+        createdAt: any;
+        name: string;
+        userIds: string[];
 };
+
+type LokiDoc<T> = T & { $loki?: number; meta?: unknown };
+type FriendDocWithMeta = LokiDoc<FriendDoc>;
 
 export default class extends Module {
 	public readonly name = 'rpg';
@@ -316,13 +320,13 @@ export default class extends Module {
 		if (!data.lv) return { reaction: 'confused' };
 
 		let message: string[] = [];
-		const allData = this.ai.friends.find();
+                const allData = this.ai.friends.find() as FriendDocWithMeta[];
 
                 const createRankMessage = (
                         score: number | null,
                         label: string,
                         dataKey: string,
-                        options?: { prefix?: string; suffix?: string; addValue?: number; firstPlaceAppend?: (friend: Friend | undefined, score?: number) => string | undefined; }
+                        options?: { prefix?: string; suffix?: string; addValue?: number; firstPlaceAppend?: (friend: FriendDocWithMeta | undefined, score?: number) => string | undefined; }
                 ) => {
                         const entries = allData
                                 .map(friend => {
@@ -406,10 +410,10 @@ export default class extends Module {
                         }
                 };
 
-                const createFirstPlaceRaidSkillMessage = (enemyName: string) => (friend: Friend | undefined, score: number | undefined) => {
+                const createFirstPlaceRaidSkillMessage = (enemyName: string) => (friend: FriendDocWithMeta | undefined, score: number | undefined) => {
                         if (!friend || score == null) return undefined;
 
-                        type RaidWithMeta = Raid & loki.LokiObj;
+                        type RaidWithMeta = LokiDoc<Raid>;
 
                         const raidHistory = this.raids
                                 ?.find({
