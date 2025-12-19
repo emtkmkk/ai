@@ -409,19 +409,22 @@ export default class extends Module {
                 const createFirstPlaceRaidSkillMessage = (enemyName: string) => (friend: Friend | undefined, score: number | undefined) => {
                         if (!friend || score == null) return undefined;
 
-                        const raidHistory = this.raids?.find({
-                                'enemy.name': enemyName,
-                                isEnded: true,
-                        });
+                        type RaidWithMeta = Raid & loki.LokiObj;
+
+                        const raidHistory = this.raids
+                                ?.find({
+                                        isEnded: true,
+                                })
+                                .filter((raid): raid is RaidWithMeta => raid.enemy?.name === enemyName);
 
                         const latestMatched = raidHistory
                                 ?.map((raid) => ({
                                         raid,
                                         attacker: raid.attackers?.find((attacker) => attacker.user?.id === friend.userId && attacker.dmg === score),
                                 }))
-                                .filter((entry): entry is { raid: Raid; attacker: Raid['attackers'][number] } => Boolean(entry.attacker))
+                                .filter((entry): entry is { raid: RaidWithMeta; attacker: Raid['attackers'][number] } => Boolean(entry.attacker))
                                 .filter((entry) => entry.attacker.skillsStr?.skills || entry.attacker.skillsStr?.amulet)
-                                .reduce<{ raid: Raid; attacker: Raid['attackers'][number] } | undefined>((latest, current) => {
+                                .reduce<{ raid: RaidWithMeta; attacker: Raid['attackers'][number] } | undefined>((latest, current) => {
                                         if (!latest) return current;
                                         const latestFinishedAt = latest.raid.finishedAt ?? latest.raid.startedAt;
                                         const currentFinishedAt = current.raid.finishedAt ?? current.raid.startedAt;
