@@ -402,7 +402,7 @@ export default class extends Module {
 					rankmsg2 += `（同順位：${sameRankCount2 - 1}人）`;
 				}
 
-                                return `${label}\n1位：${(values?.[0] + (options?.addValue || 0)).toLocaleString()} ${rankmsg}${sameRankCount < 9 && values.length >= 10 ? `\n10位：${(values?.[9] + (options?.addValue || 0)).toLocaleString()} ${rankmsg2}` : ""}${firstPlaceAppend ? `\n${firstPlaceAppend}` : ""}`;
+                                return `${label}\n1位：${(values?.[0] + (options?.addValue || 0)).toLocaleString()} ${rankmsg}${firstPlaceAppend ? `\n${firstPlaceAppend}` : ""}${sameRankCount < 9 && values.length >= 10 ? `\n10位：${(values?.[9] + (options?.addValue || 0)).toLocaleString()} ${rankmsg2}` : ""}`;
                         }
                 };
 
@@ -437,7 +437,7 @@ export default class extends Module {
 
                         if (!parts.length) return undefined;
 
-                        return `1位スキル構成: ${parts.join(" ")}`;
+                        return `<small>${parts.join(" ")}</small>`;
                 };
 
 		if (msg.includes(["ランク"])){

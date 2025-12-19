@@ -2281,7 +2281,7 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 	data.raid = true;
 	const colorData = colors.map((x) => x.unlock(data));
 
-        const skillsStr = getSkillsShortName(data);
+	const skillsStr = {skills: "", amulet: ""};
 
 	/** 現在の敵と戦ってるターン数。 敵がいない場合は1 */
 	let count = 1;
