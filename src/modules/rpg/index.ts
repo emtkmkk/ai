@@ -11,7 +11,8 @@ import { aggregateTokensEffects, shopContextHook, shopReply } from './shop';
 import { shopCustomReply, shopCustomContextHook } from './shop-custom';
 import { shop2Reply } from './shop2';
 import { skills, Skill, SkillEffect, getSkill, skillReply, skillCalculate, aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, countDuplicateSkillNames, skillBorders, canLearnSkillNow } from './skills';
-import { start, Raid, raidInstall, raidContextHook, raidTimeoutCallback } from './raid';
+import { start, raidInstall, raidContextHook, raidTimeoutCallback } from './raid';
+import type { Raid } from './raid';
 import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatus, getPostCount, getPostX, getVal, random, preLevelUpProcess, deepClone } from './utils';
 import { calculateArpen, calculateStats, applySoftCapPow2 } from './battle';
 import Friend from '@/friend';
@@ -317,26 +318,30 @@ export default class extends Module {
 		let message: string[] = [];
 		const allData = this.ai.friends.find();
 
-		const createRankMessage = (
-			score: number | null,
-			label: string,
-			dataKey: string,
-			options?: { prefix?: string, suffix?: string, addValue?: number; }
-		) => {
-			const values = allData
-				.map(friend => {
-					if (dataKey.includes(".")) {
-						// 動的にプロパティにアクセスするための処理
-						const keys = dataKey.replace(/\[(\w+)\]/g, '.$1').split('.');
-						return keys.reduce((acc, key) => acc?.[key], friend.perModulesData?.rpg);
-					} else {
-						// 既存の単純なキーでのプロパティアクセス
-						return friend.perModulesData?.rpg?.[dataKey];
-					}
-				})
-				.filter(value => value !== undefined);
+                const createRankMessage = (
+                        score: number | null,
+                        label: string,
+                        dataKey: string,
+                        options?: { prefix?: string; suffix?: string; addValue?: number; firstPlaceAppend?: (friend: Friend | undefined) => string | undefined; }
+                ) => {
+                        const entries = allData
+                                .map(friend => {
+                                        let value;
+                                        if (dataKey.includes(".")) {
+                                                // 動的にプロパティにアクセスするための処理
+                                                const keys = dataKey.replace(/\[(\w+)\]/g, '.$1').split('.');
+                                                value = keys.reduce((acc, key) => acc?.[key], friend.perModulesData?.rpg);
+                                        } else {
+                                                // 既存の単純なキーでのプロパティアクセス
+                                                value = friend.perModulesData?.rpg?.[dataKey];
+                                        }
+                                        return { friend, value };
+                                })
+                                .filter(entry => entry.value !== undefined);
 
-			values.sort((a, b) => b - a); // 降順でソート
+                        const sortedEntries = entries.sort((a, b) => (b.value as number) - (a.value as number)); // 降順でソート
+                        const values = sortedEntries.map(entry => entry.value as number);
+                        const firstPlaceAppend = options?.firstPlaceAppend?.(sortedEntries[0]?.friend, sortedEntries[0]?.value as number | undefined);
 
 			if (score != null) {
 				// 同順位の人数を計算
@@ -381,8 +386,8 @@ export default class extends Module {
 				// 表示するスコアにだけaddValueを適用
 				const finalScoreDisplay = `${options?.prefix || ''}${(score + (options?.addValue || 0)).toLocaleString()}${options?.suffix || ''}`;
 
-				return `${label}\n${finalScoreDisplay} ${rankmsg}`;
-			} else {
+                                return `${label}\n${finalScoreDisplay} ${rankmsg}`;
+                        } else {
 				// 同順位の人数を計算
 				const sameRankCount = values.filter(v => v === values?.[0]).length;
 				const sameRankCount2 = values.filter(v => v === values?.[9]).length;
@@ -397,9 +402,43 @@ export default class extends Module {
 					rankmsg2 += `（同順位：${sameRankCount2 - 1}人）`;
 				}
 
-				return `${label}\n1位：${(values?.[0] + (options?.addValue || 0)).toLocaleString()} ${rankmsg}${sameRankCount < 9 && values.length >= 10 ? `\n10位：${(values?.[9] + (options?.addValue || 0)).toLocaleString()} ${rankmsg2}` : ""}`;
-			}
-		};
+                                return `${label}\n1位：${(values?.[0] + (options?.addValue || 0)).toLocaleString()} ${rankmsg}${firstPlaceAppend ? `\n${firstPlaceAppend}` : ""}${sameRankCount < 9 && values.length >= 10 ? `\n10位：${(values?.[9] + (options?.addValue || 0)).toLocaleString()} ${rankmsg2}` : ""}`;
+                        }
+                };
+
+                const createFirstPlaceRaidSkillMessage = (enemyName: string) => (friend: Friend | undefined, score: number | undefined) => {
+                        if (!friend || score == null) return undefined;
+
+                        const raidHistory = this.raids?.find({
+                                'enemy.name': enemyName,
+                                isEnded: true,
+                        });
+
+                        const latestMatched = raidHistory
+                                ?.map((raid) => ({
+                                        raid,
+                                        attacker: raid.attackers?.find((attacker) => attacker.user?.id === friend.userId && attacker.dmg === score),
+                                }))
+                                .filter((entry): entry is { raid: Raid; attacker: Raid['attackers'][number] } => Boolean(entry.attacker))
+                                .filter((entry) => entry.attacker.skillsStr?.skills || entry.attacker.skillsStr?.amulet)
+                                .reduce<{ raid: Raid; attacker: Raid['attackers'][number] } | undefined>((latest, current) => {
+                                        if (!latest) return current;
+                                        const latestFinishedAt = latest.raid.finishedAt ?? latest.raid.startedAt;
+                                        const currentFinishedAt = current.raid.finishedAt ?? current.raid.startedAt;
+                                        return (currentFinishedAt ?? 0) > (latestFinishedAt ?? 0) ? current : latest;
+                                }, undefined);
+
+                        if (!latestMatched) return undefined;
+
+                        const skillsStr = latestMatched.attacker.skillsStr;
+                        const skills = skillsStr?.skills;
+                        const amulet = skillsStr?.amulet ? `お守り ${skillsStr.amulet}` : undefined;
+                        const parts = [skills, amulet].filter(Boolean);
+
+                        if (!parts.length) return undefined;
+
+                        return `<small>${parts.join(" ")}</small>`;
+                };
 
 		if (msg.includes(["ランク"])){
 
@@ -408,14 +447,14 @@ export default class extends Module {
 			message.push(createRankMessage(null, "旅モード最高クリア記録", "maxEndress", { prefix: "ステージ", addValue: 1 }));
 			message.push(createRankMessage(null, "運の良さ", "maxStatusUp", { suffix: "pts" }));
 			message.push(createRankMessage(null, "壺購入数", "jar", { suffix: "個" }));
-			if (data.raidScore) {
-				for (const [key, value] of Object.entries(data.raidScore)) {
-					if (value && typeof value === "number") {
-						const enemy = raidEnemys.find((x) => x.name === key);
-						message.push(`${createRankMessage(null, key + ` 最大${enemy?.scoreMsg ?? "ダメージ"}`, `raidScore.${key}`, { suffix: data.clearRaid?.includes(key) ? `${enemy?.scoreMsg2 ?? "ダメージ"} ⭐️` : `${enemy?.scoreMsg2 ?? "ダメージ"}` })}`);
-					}
-				}
-			}
+                        if (data.raidScore) {
+                                for (const [key, value] of Object.entries(data.raidScore)) {
+                                        if (value && typeof value === "number") {
+                                                const enemy = raidEnemys.find((x) => x.name === key);
+                                                message.push(`${createRankMessage(null, key + ` 最大${enemy?.scoreMsg ?? "ダメージ"}`, `raidScore.${key}`, { suffix: data.clearRaid?.includes(key) ? `${enemy?.scoreMsg2 ?? "ダメージ"} ⭐️` : `${enemy?.scoreMsg2 ?? "ダメージ"}`, firstPlaceAppend: createFirstPlaceRaidSkillMessage(key) })}`);
+                                        }
+                                }
+                        }
 			message.push(createRankMessage(null, "7ターン戦ったレイドボス (⭐️)", "clearRaidNum", { suffix: "種類" }));
 
 		} else {
