@@ -516,30 +516,74 @@ export default class extends Module {
 	 * 終了すべきゲームがないかチェック
 	 */
 	@autobind
-	private crawleGameEnd() {
-		const game = this.games.findOne({
-			isEnded: false,
-		});
+        private crawleGameEnd() {
+                const game = this.games.findOne({
+                        isEnded: false,
+                });
 
-		if (game == null) return;
+                if (game == null) return;
 
-		// 制限時間が経過していたら
-		if (Date.now() - (game.finishedAt ?? game.startedAt + 1000 * 60 * 10) >= 0) {
-			this.finish(game);
-		}
-	}
+                // 制限時間が経過していたら
+                if (Date.now() - (game.finishedAt ?? game.startedAt + 1000 * 60 * 10) >= 0) {
+                        void this.finish(game);
+                }
+        }
 
 	/**
 	 * ゲームを終わらせる
 	 */
 	@autobind
-	private finish(game: Game) {
-		game.isEnded = true;
-		this.games.update(game);
+        private async finish(game: Game) {
+                game.isEnded = true;
+                this.games.update(game);
 
-		this.log('Kazutori game finished');
+                this.log('Kazutori game finished');
 
-		const item = genItem();
+                const filteredVotes: Game['votes'] = [];
+
+                for (const vote of game.votes) {
+                        const friend = this.ai.lookupFriend(vote.user.id);
+                        const love = friend?.love ?? 0;
+
+                        if (love > 10) {
+                                filteredVotes.push(vote);
+                                continue;
+                        }
+
+                        let isBlocking = friend?.doc?.user?.isBlocking;
+
+                        if (isBlocking == null) {
+                                try {
+                                        const user = await this.ai.api('users/show', { userId: vote.user.id });
+                                        isBlocking = user?.isBlocking;
+
+                                        if (friend && user) {
+                                                friend.updateUser(user);
+                                        }
+                                } catch (err) {
+                                        const reason = err instanceof Error ? err.message : String(err);
+                                        this.log(`Failed to check blocking for ${vote.user.id}: ${reason}`);
+                                }
+                        }
+
+                        if (isBlocking) {
+                                if (friend?.doc) {
+                                        const { data } = ensureKazutoriData(friend.doc);
+                                        data.playCount = Math.max((data.playCount ?? 0) - 1, 0);
+                                        friend.save();
+                                }
+                                continue;
+                        }
+
+                        filteredVotes.push(vote);
+                }
+
+                if (filteredVotes.length !== game.votes.length) {
+                        game.votes = filteredVotes;
+                        this.games.update(game);
+                }
+
+                const item = genItem();
 
 		const medal = game.votes?.length > 1 && game.votes?.filter((x) => x.user.winCount < 50).length < game.votes?.filter((x) => x.user.winCount >= 50).length;
 
