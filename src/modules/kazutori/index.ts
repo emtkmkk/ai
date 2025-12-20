@@ -3,7 +3,7 @@ import * as loki from 'lokijs';
 import Module from '@/module';
 import Message from '@/message';
 import serifs from '@/serifs';
-import { User } from '@/misskey/user';
+import type { User } from '@/misskey/user';
 import { acct } from '@/utils/acct';
 import { genItem } from '@/vocabulary';
 import config from '@/config';
@@ -39,6 +39,20 @@ export default class extends Module {
 
         private games: loki.Collection<Game>;
         private lastHourlyRenote: { key: string; postId: string } | null = null;
+
+        private isBannedUser(user: User): boolean {
+                const banUsers = config.kazutoriBanUsers ?? [];
+                const identifiers = [
+                        user.id,
+                        user.username,
+                        user.host ? `${user.username}@${user.host}` : user.username,
+                        acct(user),
+                ]
+                        .filter((value): value is string => typeof value === 'string')
+                        .map((value) => value.toLowerCase());
+
+                return banUsers.some((banUser) => typeof banUser === 'string' && identifiers.includes(banUser.toLowerCase()));
+        }
 
         @autobind
         public install() {
@@ -232,11 +246,18 @@ export default class extends Module {
 		this.log('New kazutori game started');
 	}
 
-	@autobind
-	private async mentionHook(msg: Message) {
-		if (!msg.includes(['数取り'])) return false;
+        @autobind
+        private async mentionHook(msg: Message) {
+                if (!msg.includes(['数取り'])) return false;
 
-		const games = this.games.find({});
+                if (this.isBannedUser(msg.user)) {
+                        msg.reply(serifs.kazutori.banned, { visibility: 'specified' });
+                        return {
+                                reaction: 'confused',
+                        };
+                }
+
+                const games = this.games.find({});
 
 		const recentGame = games.length == 0 ? null : games[games.length - 1];
 
@@ -303,15 +324,22 @@ export default class extends Module {
 	}
 
 	@autobind
-	private async contextHook(key: any, msg: Message) {
-		if (msg.text == null)
-			return {
-				reaction: 'hmm',
-			};
+        private async contextHook(key: any, msg: Message) {
+                if (msg.text == null)
+                        return {
+                                reaction: 'hmm',
+                        };
 
-		const game = this.games.findOne({
-			isEnded: false,
-		});
+                if (this.isBannedUser(msg.user)) {
+                        msg.reply(serifs.kazutori.banned, { visibility: 'specified' });
+                        return {
+                                reaction: 'confused',
+                        };
+                }
+
+                const game = this.games.findOne({
+                        isEnded: false,
+                });
 
 		// 処理の流れ上、実際にnullになることは無さそうだけど一応
 		if (game == null) return;
