@@ -1,9 +1,9 @@
 import { StringLiteral } from "typescript";
 
 type Config = {
-	host: string;
-	i: string;
-	master?: string;
+        host: string;
+        i: string;
+        master?: string;
 	wsUrl: string;
 	apiUrl: string;
 	keywordEnabled: boolean;
@@ -48,6 +48,8 @@ type Config = {
         forceRemoteChartPostCount?: boolean;
         /** 数取りで勝利数差による反転判定を有効にする？ */
         kazutoriWinDiffReverseEnabled?: boolean;
+        /** 数取りに参加できないユーザ */
+        kazutoriBanUsers?: string[];
 
 };
 
@@ -68,5 +70,6 @@ if (!config.rpgCoinShortName) config.rpgCoinShortName = "コイン";
 if (config.rpgReplyRequired !== false) config.rpgReplyRequired = true;
 if (!config.forceRemoteChartPostCount) config.forceRemoteChartPostCount = false;
 if (config.kazutoriWinDiffReverseEnabled !== true) config.kazutoriWinDiffReverseEnabled = false;
+if (!Array.isArray(config.kazutoriBanUsers)) config.kazutoriBanUsers = [];
 
 export default config as Config;
