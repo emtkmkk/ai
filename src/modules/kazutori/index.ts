@@ -166,23 +166,31 @@ export default class extends Module {
 			maxnum = Decimal.MAX_VALUE;
 		}
 
-		// 前回が2番目勝利モードでないかつ15%で2番目勝利モードになる
-		let winRank =
-			(recentGame?.winRank ?? 1) <= 1 &&
-				this.ai.activeFactor >= 0.5 &&
-				Math.random() < (maxnum.equals(Decimal.MAX_VALUE) ? 0.3 : 0.15)
-				? 2
-				: 1;
+                // 前回が2番目勝利モードでないかつ15%で2番目勝利モードになる
+                let winRank =
+                        (recentGame?.winRank ?? 1) <= 1 &&
+                                this.ai.activeFactor >= 0.5 &&
+                                Math.random() < (maxnum.equals(Decimal.MAX_VALUE) ? 0.3 : 0.15)
+                                ? 2
+                                : 1;
 
-		// 前回が中央値勝利モードでないかつ15%で中央値勝利モードになる
-		if (
-			((recentGame?.winRank ?? 1) > 0 &&
-				this.ai.activeFactor >= 0.5 &&
-				Math.random() < (maxnum.equals(Decimal.MAX_VALUE) ? 0.3 : 0.15)) ||
-			flg?.includes('med')
-		) {
-			winRank = -1;
-		}
+                // フラグ指定時は強制的に勝利モードを切り替える
+                if (flg?.includes('med')) {
+                        winRank = -1;
+                } else if (flg?.includes('2nd')) {
+                        winRank = 2;
+                }
+
+                // 前回が中央値勝利モードでないかつ15%で中央値勝利モードになる
+                if (
+                        ((recentGame?.winRank ?? 1) > 0 &&
+                                !flg?.includes('2nd') &&
+                                this.ai.activeFactor >= 0.5 &&
+                                Math.random() < (maxnum.equals(Decimal.MAX_VALUE) ? 0.3 : 0.15)) ||
+                        flg?.includes('med')
+                ) {
+                        winRank = -1;
+                }
 
 		// 1番目勝利モードでないかつ75%で最大数値がx倍 (x = x番目勝利モード)
 		if (maxnum.greaterThan(0) && winRank != 1 && Math.random() < 0.75) {
@@ -306,10 +314,11 @@ export default class extends Module {
                                 };
                         }
 
-			if (!msg.user.host && msg.user.username === config.master && msg.includes(['inf'])) flg = "inf";
-			if (!msg.user.host && msg.user.username === config.master && msg.includes(['med'])) flg += " med";
-			if (!msg.user.host && msg.user.username === config.master && msg.includes(['lng'])) flg += " lng";
-		}
+                        if (!msg.user.host && msg.user.username === config.master && msg.includes(['inf'])) flg = "inf";
+                        if (!msg.user.host && msg.user.username === config.master && msg.includes(['med'])) flg += " med";
+                        if (!msg.user.host && msg.user.username === config.master && msg.includes(['lng'])) flg += " lng";
+                        if (!msg.user.host && msg.user.username === config.master && msg.includes(['2nd'])) flg += " 2nd";
+                }
 
 		//TODO : このへんのセリフをserifに移行する
 		msg.reply("\n分かりました！数取りを開催します！\nあなたは開催1分後から数取りへの投票を行うことができます！\n（ダイレクトなら今すぐでも大丈夫です！）", { visibility: 'specified' }).then(reply => {
