@@ -19,6 +19,8 @@ import Friend from '@/friend';
 import type { FriendDoc } from '@/friend';
 import config from '@/config';
 import * as loki from 'lokijs';
+import RpgWebServer from './web-server';
+import type WebRpgMessage from './web-message';
 
 type List = {
         id: string;
@@ -33,26 +35,46 @@ type FriendDocWithMeta = LokiDoc<FriendDoc>;
 export default class extends Module {
 	public readonly name = 'rpg';
 
-	private rpgPlayerList: List | undefined;
+        private rpgPlayerList: List | undefined;
 
-	private raids: loki.Collection<Raid>;
+        private raids: loki.Collection<Raid>;
+
+        private webServer?: RpgWebServer;
 
 	@autobind
 	public install() {
 		this.raids = this.ai.getCollection('rpgRaid');
 		raidInstall(this.ai, this, this.raids);
-		setInterval(this.scheduleLevelUpdateAndRemind, 1000 * 60 * 5);
-		setInterval(this.scheduleDailyNoteCountsUpdate, 1000 * 60 * 5);
-		this.calculateMaxLv();
-		this.rpgAccountListAdd();
-		skillCalculate(this.ai);
+                setInterval(this.scheduleLevelUpdateAndRemind, 1000 * 60 * 5);
+                setInterval(this.scheduleDailyNoteCountsUpdate, 1000 * 60 * 5);
+                this.calculateMaxLv();
+                this.rpgAccountListAdd();
+                skillCalculate(this.ai);
 
-		return {
-			mentionHook: this.mentionHook,
-			contextHook: this.contextHook,
-			timeoutCallback: this.timeoutCallback
-		};
-	}
+                if (config.rpgWebEnabled) {
+                        this.webServer = new RpgWebServer(this.ai, this);
+                        this.webServer.listen();
+                }
+
+                return {
+                        mentionHook: this.mentionHook,
+                        contextHook: this.contextHook,
+                        timeoutCallback: this.timeoutCallback
+                };
+        }
+
+        public async handleWebCommand(msg: WebRpgMessage): Promise<string[]> {
+                await this.mentionHook(msg as unknown as Message);
+                return msg.getReplies();
+        }
+
+        public findFriendDoc(userId: string): FriendDocWithMeta | null {
+                return this.ai.friends.findOne({ userId }) as FriendDocWithMeta | null;
+        }
+
+        public getActiveRaid(): Raid | undefined {
+                return this.raids.findOne({ isEnded: false }) ?? undefined;
+        }
 
 	@autobind
 	private async mentionHook(msg: Message) {
