@@ -1,7 +1,7 @@
-import Router from '@koa/router';
-import Koa from 'koa';
-import jsonBody from 'koa-json-body';
-import request from 'request-promise-native';
+import Router = require('@koa/router');
+import Koa = require('koa');
+import jsonBody = require('koa-json-body');
+import request = require('request-promise-native');
 import { v4 as uuidv4 } from 'uuid';
 
 import config from '@/config';

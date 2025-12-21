@@ -73,7 +73,7 @@ export default class extends Module {
         }
 
         public getActiveRaid(): Raid | undefined {
-                return this.raids.findOne({ isEnded: false });
+                return this.raids.findOne({ isEnded: false }) ?? undefined;
         }
 
 	@autobind
