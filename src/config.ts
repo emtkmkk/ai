@@ -1,5 +1,3 @@
-import { StringLiteral } from "typescript";
-
 type Config = {
         host: string;
         i: string;
@@ -33,14 +31,18 @@ type Config = {
 	rpgHeroName?: string;
 	/** RPGでの通貨の名前 */
 	rpgCoinName?: string;
-	/** RPGでの通貨の短縮名 */
-	rpgCoinShortName?: string;
-	/** RPGで返信必須にする？ */
-	rpgReplyRequired?: boolean;
-	/** RPGの返信の公開範囲 */
-	rpgReplyVisibility?: string;
+        /** RPGでの通貨の短縮名 */
+        rpgCoinShortName?: string;
+        /** RPGで返信必須にする？ */
+        rpgReplyRequired?: boolean;
+        /** RPGの返信の公開範囲 */
+        rpgReplyVisibility?: string;
         /** RPG（レイド）の返信の公開範囲 */
         rpgRaidReplyVisibility?: string;
+        /** RPGのWebインターフェースを有効にする？ */
+        rpgWebEnabled?: boolean;
+        /** RPGのWebインターフェースのポート */
+        rpgWebPort?: number;
         /**
          * チャートからの投稿数取得を強制？
          * リモートユーザでも必ず正しい値が取得できる場合はTrueに
@@ -68,6 +70,8 @@ if (!config.rpgHeroName) config.rpgHeroName = "もこチキ";
 if (!config.rpgCoinName) config.rpgCoinName = "もこコイン";
 if (!config.rpgCoinShortName) config.rpgCoinShortName = "コイン";
 if (config.rpgReplyRequired !== false) config.rpgReplyRequired = true;
+if (config.rpgWebEnabled !== true) config.rpgWebEnabled = false;
+if (!config.rpgWebPort) config.rpgWebPort = 3030;
 if (!config.forceRemoteChartPostCount) config.forceRemoteChartPostCount = false;
 if (config.kazutoriWinDiffReverseEnabled !== true) config.kazutoriWinDiffReverseEnabled = false;
 if (!Array.isArray(config.kazutoriBanUsers)) config.kazutoriBanUsers = [];
