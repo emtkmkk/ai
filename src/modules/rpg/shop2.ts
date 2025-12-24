@@ -4,7 +4,7 @@ import serifs from "@/serifs";
 import { colors, enhanceCount } from './colors';
 import * as seedrandom from 'seedrandom';
 import getDate from '@/utils/get-date';
-import { skillNameCountMap, totalSkillCount, skills, SkillEffect, skillCalculate, Skill, skillPower, aggregateSkillsEffects, countDuplicateSkillNames, ultimateAmulet } from './skills';
+import { skillNameCountMap, totalSkillCount, skills, SkillEffect, skillCalculate, Skill, skillPower, aggregateSkillsEffects, countDuplicateSkillNames, ultimateAmulet, isKazutoriMasterDisabled } from './skills';
 import { getVal, initializeData, deepClone, numberCharConvert } from './utils';
 import 藍 from '@/ai';
 import rpg from './index';
@@ -116,7 +116,7 @@ export const shop2Items: ShopItem[] = [
 	{ name: `うねうねした壺`, limit: (data) => (data.jar ?? 0) === 4 && data.shopExp > 2800, price: 1000, desc: `なんかうねうねした感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1, always: true },
 	{ name: `ナノサイズ壺`, limit: (data) => (data.jar ?? 0) === 5 && data.shopExp > 4000, price: 1200, desc: `小さくて見えない感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1, always: true },
 	{ name: `謎の壺`, limit: (data) => (data.jar ?? 0) >= 6 && data.shopExp > 5400, price: (data) => (data.jar ?? 0) * 200, desc: `なんか謎な感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1, always: true },
-	...skills.filter((x) => !x.notLearn && !x.moveTo && !x.cantReroll).map((x): Item => ({ name: `${x.name}の教本`, limit: (data) => !data.nextSkill && (!x.unique || !data.skills.filter((y) => y.unique).map((y) => y.unique).includes(x.unique)), price: (data, rnd, ai) => Math.ceil(skillPrice(ai, x.name, rnd) / 2), desc: `購入すると次のスキル変更時に必ず「${x.name}」${x.desc ? `（${x.desc}）` : ""}を習得できる（複製時は対象外）`, type: "item", effect: (data) => { data.nextSkill = x.name } })),
+	...skills.filter((x) => !x.notLearn && !x.moveTo && !x.cantReroll).map((x): Item => ({ name: `${x.name}の教本`, limit: (data) => !data.nextSkill && (!x.unique || !data.skills.filter((y) => y.unique).map((y) => y.unique).includes(x.unique)) && !(x.name === "数取りの達人" && isKazutoriMasterDisabled(data)), price: (data, rnd, ai) => Math.ceil(skillPrice(ai, x.name, rnd) / 2), desc: `購入すると次のスキル変更時に必ず「${x.name}」${x.desc ? `（${x.desc}）` : ""}を習得できる（複製時は対象外）`, type: "item", effect: (data) => { data.nextSkill = x.name } })),
 ];
 
 export const shop2Reply = async (module: rpg, ai: 藍, msg: Message) => {

@@ -7,6 +7,8 @@ export type KazutoriDataContainer = {
                 rate?: number;
                 inventory?: string[];
                 medal?: number;
+                lastPlayedAt?: number;
+                lastWinAt?: number;
                 ratingVersion?: number;
                 rateChanged?: boolean | string | number;
                 [key: string]: any;
@@ -21,6 +23,8 @@ export type EnsuredKazutoriData = {
         ratingVersion: number;
         rateChanged?: boolean;
         medal?: number;
+        lastPlayedAt?: number;
+        lastWinAt?: number;
         [key: string]: any;
 };
 
@@ -105,6 +109,16 @@ export function ensureKazutoriData<T extends KazutoriDataContainer>(target: T): 
 
                 if (!Array.isArray(data.inventory)) {
                         data.inventory = [];
+                        updated = true;
+                }
+
+                if (data.lastPlayedAt != null && (typeof data.lastPlayedAt !== 'number' || Number.isNaN(data.lastPlayedAt))) {
+                        delete data.lastPlayedAt;
+                        updated = true;
+                }
+
+                if (data.lastWinAt != null && (typeof data.lastWinAt !== 'number' || Number.isNaN(data.lastWinAt))) {
+                        delete data.lastWinAt;
                         updated = true;
                 }
         }

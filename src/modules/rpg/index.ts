@@ -14,7 +14,7 @@ import { skills, Skill, SkillEffect, getSkill, skillReply, skillCalculate, aggre
 import { start, raidInstall, raidContextHook, raidTimeoutCallback } from './raid';
 import type { Raid } from './raid';
 import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatus, getPostCount, getPostX, getVal, random, preLevelUpProcess, deepClone } from './utils';
-import { calculateArpen, calculateStats, applySoftCapPow2 } from './battle';
+import { applyKazutoriMasterHiddenBonus, calculateArpen, calculateStats, applySoftCapPow2, ensureKazutoriMasterHistory, getKazutoriMasterMessage } from './battle';
 import Friend from '@/friend';
 import type { FriendDoc } from '@/friend';
 import config from '@/config';
@@ -665,6 +665,8 @@ export default class extends Module {
 
 		// 所持しているスキル効果を読み込み
                 const skillEffects = aggregateSkillsEffects(data);
+                ensureKazutoriMasterHistory(this.ai, msg, skillEffects);
+                applyKazutoriMasterHiddenBonus(msg, skillEffects);
                 const verboseLog = msg.includes(['-v']);
                 const formatDebug = (value: number): string => Number.isFinite(value) ? value.toFixed(3) : String(value);
 
@@ -723,6 +725,10 @@ export default class extends Module {
 
 		cw += serifs.rpg.trial.cw(data.lv);
 		message += `$[x2 ${me}]\n\n${serifs.rpg.start}\n\n`;
+		const kazutoriMasterMessage = getKazutoriMasterMessage(msg, skillEffects);
+		if (kazutoriMasterMessage) {
+			message += `${kazutoriMasterMessage}\n\n`;
+		}
 
 
 		// 敵のステータスを計算
@@ -816,6 +822,8 @@ export default class extends Module {
                 const colorData = colors.map((x) => x.unlock(data));
                 // 所持しているスキル効果を読み込み
                 const skillEffects = aggregateSkillsEffects(data);
+                ensureKazutoriMasterHistory(this.ai, msg, skillEffects);
+                applyKazutoriMasterHiddenBonus(msg, skillEffects);
                 const onemoreKeywords = Array.isArray(serifs.rpg.command.onemore)
                         ? serifs.rpg.command.onemore
                         : [serifs.rpg.command.onemore];
@@ -1114,6 +1122,11 @@ export default class extends Module {
 		if (data.enemy.event) {
 			msg.friend.setPerModulesData(this, data);
 			return data.enemy.event(this, msg, data);
+		}
+
+		const kazutoriMasterMessage = getKazutoriMasterMessage(msg, skillEffects);
+		if (kazutoriMasterMessage) {
+			message += `${kazutoriMasterMessage}\n\n`;
 		}
 
 		/** バフを得た数。行数のコントロールに使用 */

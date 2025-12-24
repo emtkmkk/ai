@@ -522,7 +522,8 @@ export default {
 			fortuneToken: `「しあわせのお札」発動！`,
 			berserk: (berserkDmg) => `「バーサクのお守り」発動！\n${berserkDmg}ポイントのダメージを受けた！\n${config.rpgHeroName}のパワーがアップ！`,
 			stockRandom: `謎のお守りが光り始めた……\n何かが起こったようだ。`,
-			guardAtkUp: (num) => `スキル「攻めの守勢」発動${num > 1 ? `×${num}` : ""}！\n${config.rpgHeroName}のパワーがアップ！`
+			guardAtkUp: (num) => `スキル「攻めの守勢」発動${num > 1 ? `×${num}` : ""}！\n${config.rpgHeroName}のパワーがアップ！`,
+			kazutoriMaster: `スキル「数取りの達人」発動！`
 		},
 		lvBonus: (num) => `修行の成果ボーナス！\nステータス+${num}%！`,
 		nurse: "$[x3 :mkck_nurse:]\n\n通りすがりのナースが現れた！\nナースは受けた傷を治療してくれた！", //この文を空白にすればナースは来なくなります

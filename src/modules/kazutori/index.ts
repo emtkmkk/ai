@@ -32,6 +32,7 @@ type Game = {
 	publicOnly: boolean;
         replyKey: string[];
         limitMinutes: number;
+        winnerUserId?: string;
 };
 
 export default class extends Module {
@@ -513,6 +514,7 @@ export default class extends Module {
                 if (msg.friend?.doc) {
                         const { data } = ensureKazutoriData(msg.friend.doc);
                         data.playCount += 1;
+                        data.lastPlayedAt = Date.now();
                         msg.friend.save();
                 }
 
@@ -800,6 +802,8 @@ export default class extends Module {
 		}
 
 		if (now.getMonth() === 3 && now.getDate() === 1) reverse = !reverse;
+		game.winnerUserId = winner?.id;
+		this.games.update(game);
 
                 const participants = new Set(game.votes.map((vote) => vote.user.id));
                 const calculatedLimitMinutes =
@@ -1155,6 +1159,7 @@ export default class extends Module {
 
                         const winnerEnsuredData = ensureKazutoriData(winnerFriend.doc).data;
                         winnerEnsuredData.winCount = (winnerEnsuredData.winCount ?? 0) + 1;
+                        winnerEnsuredData.lastWinAt = Date.now();
                         if (medal && winnerEnsuredData.winCount > 50) {
                                 winnerEnsuredData.medal = (winnerEnsuredData.medal || 0) + 1;
                         }

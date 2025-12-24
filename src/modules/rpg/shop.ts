@@ -4,7 +4,7 @@ import serifs from "@/serifs";
 import { colors } from './colors';
 import * as seedrandom from 'seedrandom';
 import getDate from '@/utils/get-date';
-import { skillNameCountMap, totalSkillCount, skills, SkillEffect, skillCalculate, Skill, skillPower, aggregateSkillsEffects } from './skills';
+import { skillNameCountMap, totalSkillCount, skills, SkillEffect, skillCalculate, Skill, skillPower, aggregateSkillsEffects, isKazutoriMasterDisabled } from './skills';
 import { getVal, initializeData, deepClone, numberCharConvert } from './utils';
 import { shop2Items } from './shop2';
 import 藍 from '@/ai';
@@ -157,11 +157,14 @@ export const shopItems: ShopItem[] = [
 	{ name: `魔力のお守り`, limit: (data) => false && !data.items.filter((x) => x.name === "魔法のお守り").length, price: 40, desc: `持っていると魔力を溜め込めるようになる (魔力最大値+3・チャージ+2) 耐久20 使用時耐久減少`, type: "amulet", effect: { magicMax: 3, magicCharge: 2 }, durability: 20, short: "魔", isUsed: (data) => true } as AmuletItem,
 	{ name: `ダイジェストフィルム`, limit: (data) => data.lv >= 255 && !data.allClear && (data.clearHistory?.length ?? 0) - (data.clearEnemy?.length ?? 0) > 0, price: (data) => (data.clearHistory?.length ?? 0) - (data.clearEnemy?.length ?? 0) * 1, desc: `購入時、これまで倒した事のある敵全てに連勝中である事にします`, type: "item", effect: (data) => { data.clearEnemy = data.clearHistory; } },
 	{ name: `⚠時間圧縮ボタン`, limit: (data) => data.lv < 254 && data.maxLv > 254 && (data.info === 3 || data.coin >= (lvBoostPrice(data) * 0.8)), price: lvBoostPrice, desc: `購入時、周囲の時間を圧縮！${config.rpgHeroName}がLv254に急成長します（⚠注意！戦闘を行う事なくレベルを上げる為、戦闘勝利数などの統計は一切増加しません！さらに、RPGおかわりの権利があと1回まで減少します！一度購入すると元には戻せません！）`, type: "item", effect: lvBoostEffect, always: true },
-	...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly && !x.notShop).map((x): AmuletItem => ({ name: `${x.name}のお守り`, price: (data, rnd, ai) => skillPrice(ai, x.name, rnd), desc: `持っているとスキル「${x.name}」を使用できる${x.desc ? `（${x.desc}）` : ""} 耐久6 使用時耐久減少`, type: "amulet", effect: x.effect, durability: 6, skillName: x.name, short: x.short, isUsed: (data) => true })),
+	...skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly && !x.notShop).map((x): AmuletItem => ({ name: `${x.name}のお守り`, price: (data, rnd, ai) => skillPrice(ai, x.name, rnd), desc: `持っているとスキル「${x.name}」を使用できる${x.desc ? `（${x.desc}）` : ""} 耐久6 使用時耐久減少`, type: "amulet", effect: x.effect, durability: 6, skillName: x.name, short: x.short, isUsed: (data) => true, ...(x.name === "数取りの達人" ? { limit: (data) => !isKazutoriMasterDisabled(data) } : {}) })),
 ];
 
-export function getRandomSkills(ai, num) {
+export function getRandomSkills(ai, num, data?) {
 	let filteredSkills = skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly && !x.notShop);
+	if (isKazutoriMasterDisabled(data)) {
+		filteredSkills = filteredSkills.filter((x) => x.name !== "数取りの達人");
+	}
 	const { skillNameCountMap, totalSkillCount } = skillCalculate(ai);
 
 	let selectedSkills: Skill[] = [];
@@ -280,7 +283,7 @@ const determineOutcome = (ai, data, getShopItems) => {
 
 		// スキルカウントが2以上の場合、スキルを取得
 		if (skillCount > 1) {
-			return getRandomSkills(ai, skillCount).map((x) => x.name);
+			return getRandomSkills(ai, skillCount, data).map((x) => x.name);
 		}
 	}
 

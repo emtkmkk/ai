@@ -6,6 +6,7 @@ import { aggregateTokensEffects, AmuletItem, ShopItem, shopItems, mergeSkillAmul
 import { deepClone, getColor } from './utils';
 import { colors, enhanceCount } from './colors';
 import config from "@/config";
+import { acct } from '@/utils/acct';
 
 export let skillNameCountMap = new Map();
 export let totalSkillCount = 0;
@@ -190,6 +191,8 @@ export type SkillEffect = {
 	berserk?: number;
 	slowStart?: number;
 	stockRandomEffect?: number;
+	/** 数取りの達人 */
+	kazutoriMaster?: number;
 	noAmuletAtkUp?: number;
 	haisuiAtkUp?: number;
 	haisuiCritUp?: number;
@@ -233,6 +236,24 @@ export type Skill = {
 	notShop?: boolean;
 };
 
+export const isKazutoriMasterDisabled = (data): boolean => {
+	const banUsers = config.kazutoriBanUsers ?? [];
+	if (!banUsers.length) return false;
+
+	const username = data?.username;
+	const host = data?.host ?? null;
+	const identifiers = [
+		data?.userId,
+		username,
+		username && host ? `${username}@${host}` : undefined,
+		username ? acct({ username, host }) : undefined,
+	]
+		.filter((value): value is string => typeof value === 'string')
+		.map((value) => value.toLowerCase());
+
+	return banUsers.some((banUser) => typeof banUser === 'string' && identifiers.includes(banUser.toLowerCase()));
+};
+
 export const skills: Skill[] = [
 	{ name: `${serifs.rpg.status.atk}+10%`, short: `Ｐ`, desc: `常に${serifs.rpg.status.atk}が10%上がります`, info: `条件無しで${serifs.rpg.status.atk}+10%`, effect: { atkUp: 0.1 }, moveTo: `${serifs.rpg.status.atk}アップ` },
 	{ name: `${serifs.rpg.status.def}+10%`, short: `Ｄ`, desc: `常に${serifs.rpg.status.def}が10%上がります`, info: `条件無しで${serifs.rpg.status.def}+10%`, effect: { defUp: 0.1 }, moveTo: `${serifs.rpg.status.def}アップ` },
@@ -255,6 +276,7 @@ export const skills: Skill[] = [
 	{ name: `毒属性剣攻撃`, short: "毒", desc: `戦闘時、ターン経過ごとに相手が弱体化します`, info: `ターン経過ごとに敵のステータス-5%\nレイドでは特殊な倍率でステータス減少を付与`, effect: { weak: 0.05 } },
 	{ name: `テキパキこなす`, short: "効", desc: `戦闘以外の事の効率が上がります`, info: `非戦闘時、${serifs.rpg.status.atk}+22%`, effect: { notBattleBonusAtk: 0.22 } },
 	{ name: `疲れにくい`, short: "疲", desc: `疲れでダメージを受ける際にそのダメージを軽減します`, info: `ダメージメッセージに疲が入っている場合、${serifs.rpg.status.def}+27% ${serifs.rpg.status.atk}+4%`, effect: { atkUpBonus: 1, notBattleBonusDef: 0.27 } },
+	{ name: `数取りの達人`, short: "数", desc: `数取りの戦績によってステータスが上がります`, info: `直近24時間以内に数取りに参加: ${serifs.rpg.status.atk}+5% ${serifs.rpg.status.def}+5%\n直近24時間以内に勝利: ${serifs.rpg.status.atk}+7% ${serifs.rpg.status.def}+3%\n直近48時間以内に勝利: ${serifs.rpg.status.atk}+4% ${serifs.rpg.status.def}+2%\n直近72時間以内に勝利: ${serifs.rpg.status.atk}+2% ${serifs.rpg.status.def}+1%`, effect: { kazutoriMaster: 1 } },
 	{ name: `油断しない`, short: "断", desc: `ターン1に受けるダメージを大きく軽減します`, info: `ターン1にてダメージカット40%を得る\n100%以上になる場合、残りはターン2に持ち越す\n${serifs.rpg.status.atk}+4%`, effect: { atkUpBonus: 1, firstTurnResist: 0.4 }, skillOnly: true },
 	{ name: `粘り強い`, short: "粘", desc: `体力が減るほど受けるダメージを軽減します`, info: `ダメージカット25%×(減少HP割合)を得る 最大90% ${serifs.rpg.status.atk}+4%`, effect: { atkUpBonus: 1, tenacious: 0.25 } },
 	{ name: `高速RPG`, short: "速", desc: `1回のRPGでお互いに2回行動します`, info: `1回のコマンドで2ターン進行する ${serifs.rpg.status.atk}+1% レイド時は、さらに${serifs.rpg.status.atk}+10%`, effect: { atkUpBonus: 0.25, plusActionX: 1 } },
@@ -378,7 +400,7 @@ export const ultimateAmulet = { name: `究極のお守り`, limit: (data) => enh
 export const getSkill = (data) => {
 	const playerSkills = data.skills.map((x) => skills.find((y) => x.name === y.name) ?? x);
 	// フィルタリングされたスキルの配列を作成
-	const filteredSkills = skills.filter((x) => !x.notLearn && !x.moveTo && (!x.cantReroll || !playerSkills?.some((y) => y.cantReroll)) && !playerSkills?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique));
+	const filteredSkills = skills.filter((x) => !x.notLearn && !x.moveTo && (!x.cantReroll || !playerSkills?.some((y) => y.cantReroll)) && !playerSkills?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique) && !(x.name === "数取りの達人" && isKazutoriMasterDisabled(data)));
 
 	// スキルの合計重みを計算
 	const totalWeight = filteredSkills.reduce((total, skill) => {
@@ -407,7 +429,7 @@ export const getSkill = (data) => {
 export const getRerollSkill = (data, oldSkillName = "") => {
 	const playerSkills = data.skills.map((x) => skills.find((y) => x.name === y.name) ?? x);
 	// フィルタリングされたスキルの配列を作成
-	const filteredSkills = skills.filter((x) => !x.notLearn && !x.moveTo && !x.cantReroll && x.name != oldSkillName && !playerSkills?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique));
+	const filteredSkills = skills.filter((x) => !x.notLearn && !x.moveTo && !x.cantReroll && x.name != oldSkillName && !playerSkills?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique) && !(x.name === "数取りの達人" && isKazutoriMasterDisabled(data)));
 
 	// スキルの合計重みを計算
 	const totalWeight = filteredSkills.reduce((total, skill) => {
@@ -435,6 +457,7 @@ export const getRerollSkill = (data, oldSkillName = "") => {
 
 export const canLearnSkillNow = (data, skill: Skill) => {
        const playerSkills = data.skills.map((x) => skills.find((y) => x.name === y.name) ?? x);
+       if (skill.name === "数取りの達人" && isKazutoriMasterDisabled(data)) return false;
        if (skill.notLearn || skill.moveTo || skill.cantReroll) return false;
        if (playerSkills.filter((y) => y.unique).map((y) => y.unique).includes(skill.unique)) return false;
        if (skill.name === "分散型" && (countDuplicateSkillNames(data.skills) !== 0 || data.skills.some((x) => x.name === "分散型"))) return false;

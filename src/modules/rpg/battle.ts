@@ -1,8 +1,175 @@
 import serifs from "@/serifs";
-import { SkillEffect } from "./skills";
+import type { SkillEffect } from "./skills";
 import { aggregateTokensEffects } from "./shop";
 
-export function calculateStats(data, msg, skillEffects, color, maxBonus = 100) {
+const kazutoriMasterWindows = {
+	play: 24 * 60 * 60 * 1000,
+	win24: 24 * 60 * 60 * 1000,
+	win48: 48 * 60 * 60 * 1000,
+	win72: 72 * 60 * 60 * 1000,
+};
+
+export type KazutoriMasterBonus = {
+	atk: number;
+	def: number;
+	raidBonusFixed: boolean;
+};
+
+type KazutoriHistoryGame = {
+	isEnded: boolean;
+	finishedAt: number;
+	votes: {
+		user: {
+			id: string;
+		};
+	}[];
+	winnerUserId?: string;
+};
+
+export function ensureKazutoriMasterHistory(ai, msg, skillEffects: SkillEffect): void {
+	if (!skillEffects.kazutoriMaster) {
+		return;
+	}
+
+	const kazutoriData = msg.friend?.doc?.kazutoriData;
+	if (!kazutoriData || (kazutoriData.lastPlayedAt != null && kazutoriData.lastWinAt != null)) {
+		return;
+	}
+
+	const kazutoriHistory = ai?.getCollection?.('kazutori');
+	if (!kazutoriHistory) {
+		return;
+	}
+
+	const now = Date.now();
+	const since = now - kazutoriMasterWindows.win72;
+	const games = kazutoriHistory
+		.chain()
+		.find({ isEnded: true })
+		.where((game: KazutoriHistoryGame) => (game.finishedAt ?? 0) >= since)
+		.data() as KazutoriHistoryGame[];
+
+	if (!games.length) {
+		return;
+	}
+
+	let updated = false;
+	const userId = msg.userId;
+
+	if (kazutoriData.lastPlayedAt == null) {
+		const lastPlayedAt = games
+			.filter((game) => game.votes?.some((vote) => vote.user?.id === userId))
+			.reduce((max, game) => Math.max(max, game.finishedAt ?? 0), 0);
+		if (lastPlayedAt > 0) {
+			kazutoriData.lastPlayedAt = lastPlayedAt;
+			updated = true;
+		}
+	}
+
+	if (kazutoriData.lastWinAt == null) {
+		const lastWinAt = games
+			.filter((game) => game.winnerUserId === userId)
+			.reduce((max, game) => Math.max(max, game.finishedAt ?? 0), 0);
+		if (lastWinAt > 0) {
+			kazutoriData.lastWinAt = lastWinAt;
+			updated = true;
+		}
+	}
+
+	if (updated && msg.friend?.doc) {
+		msg.friend.doc.kazutoriData = kazutoriData;
+		msg.friend.save();
+	}
+}
+
+export function getKazutoriMasterBonus(msg, skillEffects: SkillEffect): KazutoriMasterBonus {
+	if (!skillEffects.kazutoriMaster) {
+		return { atk: 0, def: 0, raidBonusFixed: false };
+	}
+
+	const kazutoriData = msg.friend?.doc?.kazutoriData;
+	if (!kazutoriData) {
+		return { atk: 0, def: 0, raidBonusFixed: false };
+	}
+
+	const now = Date.now();
+	let atk = 0;
+	let def = 0;
+	let raidBonusFixed = false;
+
+	if (typeof kazutoriData.lastPlayedAt === "number" && now - kazutoriData.lastPlayedAt <= kazutoriMasterWindows.play) {
+		atk += 0.05;
+		def += 0.05;
+	}
+
+	if (typeof kazutoriData.lastWinAt === "number") {
+		const diff = now - kazutoriData.lastWinAt;
+		if (diff <= kazutoriMasterWindows.win24) {
+			atk += 0.07;
+			def += 0.03;
+			raidBonusFixed = true;
+		} else if (diff <= kazutoriMasterWindows.win48) {
+			atk += 0.04;
+			def += 0.02;
+		} else if (diff <= kazutoriMasterWindows.win72) {
+			atk += 0.02;
+			def += 0.01;
+		}
+	}
+
+	return { atk, def, raidBonusFixed };
+}
+
+export function getKazutoriMasterMessage(msg, skillEffects: SkillEffect): string | null {
+	if (!skillEffects.kazutoriMaster) {
+		return null;
+	}
+
+	const bonus = getKazutoriMasterBonus(msg, skillEffects);
+	const totalPercent = Math.round((bonus.atk + bonus.def) * 100);
+	let resultMessage = "";
+
+	if (totalPercent >= 19) {
+		resultMessage = "ステータスがかなりアップ！";
+	} else if (totalPercent >= 15) {
+		resultMessage = "ステータスがとてもアップ！";
+	} else if (totalPercent >= 10) {
+		resultMessage = "ステータスがアップ！";
+	} else if (totalPercent >= 3) {
+		resultMessage = "ステータスが少しアップ！";
+	} else {
+		resultMessage = "効果がなかった！\n（数取りを遊んでみよう！）";
+	}
+
+	return `${serifs.rpg.skill.kazutoriMaster}\n${resultMessage}`;
+}
+
+export function applyKazutoriMasterHiddenBonus(msg, skillEffects: SkillEffect): void {
+	if (!skillEffects.kazutoriMaster) {
+		return;
+	}
+
+	const kazutoriData = msg.friend?.doc?.kazutoriData;
+	if (!kazutoriData || typeof kazutoriData.lastPlayedAt !== "number") {
+		return;
+	}
+
+	const now = Date.now();
+	if (now - kazutoriData.lastPlayedAt > kazutoriMasterWindows.play) {
+		return;
+	}
+
+	const rate = typeof kazutoriData.rate === "number" ? kazutoriData.rate : 1000;
+	const bonusStep = Math.floor((rate - 1000) / 600);
+	const critBonus = Math.min(Math.max(bonusStep, 0), 2);
+	if (critBonus <= 0) {
+		return;
+	}
+
+	skillEffects.critUpFixed = (skillEffects.critUpFixed ?? 0) + (critBonus * 0.01);
+}
+
+export function calculateStats(data, msg, skillEffects, color, maxBonus = 100, kazutoriMasterBonus?: KazutoriMasterBonus) {
 	const stbonus = (((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) + ((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0))) / 2;
 	let dataAtk = (data.atk ?? 0)
 	let dataDef = (data.def ?? 0)
@@ -27,8 +194,12 @@ export function calculateStats(data, msg, skillEffects, color, maxBonus = 100) {
 		def = _atk;
 	}
 
-	atk *= (1 + (skillEffects.atkUp ?? 0) + (data.items?.some((y) => y.type === "amulet") ? 0 : (skillEffects.noAmuletAtkUp ?? 0)));
-	def *= (1 + (skillEffects.defUp ?? 0));
+	const appliedKazutoriMasterBonus = kazutoriMasterBonus ?? getKazutoriMasterBonus(msg, skillEffects);
+	const atkUp = (skillEffects.atkUp ?? 0) + appliedKazutoriMasterBonus.atk;
+	const defUp = (skillEffects.defUp ?? 0) + appliedKazutoriMasterBonus.def;
+
+	atk *= (1 + atkUp + (data.items?.some((y) => y.type === "amulet") ? 0 : (skillEffects.noAmuletAtkUp ?? 0)));
+	def *= (1 + defUp);
 
 	atk *= (1 + (data.atkMedal ?? 0) * 0.01);
 

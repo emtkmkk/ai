@@ -9,7 +9,7 @@ import { rpgItems } from './items';
 import { aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, getSkillsShortName, aggregateSkillsEffectsSkillX, countDuplicateSkillNames } from './skills';
 import { aggregateTokensEffects } from './shop';
 import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatusDmg, getPostCount, getPostX, getVal, random, getRaidPostX, preLevelUpProcess } from './utils';
-import { calculateArpen, calculateStats, fortune, stockRandom } from './battle';
+import { applyKazutoriMasterHiddenBonus, calculateArpen, calculateStats, ensureKazutoriMasterHistory, fortune, getKazutoriMasterBonus, getKazutoriMasterMessage, stockRandom } from './battle';
 import serifs from '@/serifs';
 import getDate from '@/utils/get-date';
 import { acct } from '@/utils/acct';
@@ -549,6 +549,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 	const stockRandomResult = stockRandom(data, skillEffects);
 
 	skillEffects = stockRandomResult.skillEffects;
+	ensureKazutoriMasterHistory(ai, msg, skillEffects);
+	applyKazutoriMasterHiddenBonus(msg, skillEffects);
 
 	/** 現在の敵と戦ってるターン数。 敵がいない場合は1 */
 	let count = 1;
@@ -621,6 +623,10 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 		skillsStr.amulet ? `お守り ${skillsStr.amulet}` : undefined
 	].filter(Boolean).join(" ");
 	message += `$[x2 ${me}]\n\n${serifs.rpg.start}\n\n`;
+	const kazutoriMasterMessage = getKazutoriMasterMessage(msg, skillEffects);
+	if (kazutoriMasterMessage) {
+		message += `${kazutoriMasterMessage}\n\n`;
+	}
 
 	const maxLv = ai.moduleData.findOne({ type: 'rpg' })?.maxLv ?? 1;
 
@@ -729,7 +735,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 	// 数取りボーナスに上限がついたため、その分の補填を全員に付与
 	// ID毎に決められた得意曜日に従って最大75%分のステータスバフ
 	const day = new Date().getDay();
-	let bonusX = (day === 6 || day === 0 || stockRandomResult.activate ? 1 : (Math.floor(seedrandom("" + msg.user.id + Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) + ai.account.id)() * 5 + day) % 5) * 0.25) + (Math.random() < 0.01 ? 0.3 : 0) + (Math.random() < 0.01 ? 0.3 : 0);
+	const kazutoriMasterBonus = getKazutoriMasterBonus(msg, skillEffects);
+	let bonusX = (day === 6 || day === 0 || stockRandomResult.activate || kazutoriMasterBonus.raidBonusFixed ? 1 : (Math.floor(seedrandom("" + msg.user.id + Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) + ai.account.id)() * 5 + day) % 5) * 0.25) + (Math.random() < 0.01 ? 0.3 : 0) + (Math.random() < 0.01 ? 0.3 : 0);
 	while (Math.random() < 0.01) {
 		bonusX += 0.3;
 	}
