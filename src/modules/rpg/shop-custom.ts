@@ -2,7 +2,7 @@ import Message from "@/message";
 import serifs from "@/serifs";
 import * as seedrandom from 'seedrandom';
 import getDate from '@/utils/get-date';
-import { skills, Skill, skillPower } from './skills';
+import { skills, Skill, skillPower, isKazutoriMasterDisabled } from './skills';
 import { aggregateTokensEffects } from "./shop";
 import { initializeData } from './utils';
 import rpg from './index';
@@ -60,7 +60,7 @@ export const shopCustomReply = async (module: rpg, ai: 藍, msg: Message) => {
     const candidateStartIndex = currentSkills.length > 0 ? 2 : 1;
     const showCount = currentSkills.length > 0 ? 8 : 9;
 
-    const show = skills.filter((x) => x).sort(() => rnd() - 0.5).filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly && !data.tempAmulet.includes(x.name)).slice(0, showCount);
+    const show = skills.filter((x) => x).sort(() => rnd() - 0.5).filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly && !data.tempAmulet.includes(x.name) && !(x.name === "数取りの達人" && isKazutoriMasterDisabled(data))).slice(0, showCount);
 
     let list = show.map((sk, i) => {
         const price = partPrice(ai, currentSkills, sk, data.tempAmuletCost);

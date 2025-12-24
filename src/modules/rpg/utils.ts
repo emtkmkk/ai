@@ -16,6 +16,9 @@ export type PostCountUsageContext = {
 
 export function initializeData(module: rpg, msg) {
     const data = msg.friend.getPerModulesData(module);
+    data.userId = msg.userId;
+    data.username = msg.user?.username;
+    data.host = msg.user?.host ?? null;
     if (!data.clearEnemy) data.clearEnemy = [data.preEnemy ?? ""].filter(Boolean);
     if (!data.clearHistory) data.clearHistory = data.clearEnemy;
     if (!data.items) data.items = [];
