@@ -276,7 +276,7 @@ export const skills: Skill[] = [
 	{ name: `毒属性剣攻撃`, short: "毒", desc: `戦闘時、ターン経過ごとに相手が弱体化します`, info: `ターン経過ごとに敵のステータス-5%\nレイドでは特殊な倍率でステータス減少を付与`, effect: { weak: 0.05 } },
 	{ name: `テキパキこなす`, short: "効", desc: `戦闘以外の事の効率が上がります`, info: `非戦闘時、${serifs.rpg.status.atk}+22%`, effect: { notBattleBonusAtk: 0.22 } },
 	{ name: `疲れにくい`, short: "疲", desc: `疲れでダメージを受ける際にそのダメージを軽減します`, info: `ダメージメッセージに疲が入っている場合、${serifs.rpg.status.def}+27% ${serifs.rpg.status.atk}+4%`, effect: { atkUpBonus: 1, notBattleBonusDef: 0.27 } },
-	{ name: `数取りの達人`, short: "数", desc: `数取りの戦績によってステータスが上がります`, info: `直近24時間以内に数取りに参加: ${serifs.rpg.status.atk}+5% ${serifs.rpg.status.def}+5%\n直近24時間以内に勝利: ${serifs.rpg.status.atk}+7% ${serifs.rpg.status.def}+3%\n直近48時間以内に勝利: ${serifs.rpg.status.atk}+4% ${serifs.rpg.status.def}+2%\n直近72時間以内に勝利: ${serifs.rpg.status.atk}+2% ${serifs.rpg.status.def}+1%`, effect: { kazutoriMaster: 1 } },
+	{ name: `数取りの達人`, short: "数", desc: `数取りに参加したり勝利したりするとステータスが上がります`, info: `直近24時間以内に数取りに参加: ステータス+5%\n直近24時間以内に勝利: ${serifs.rpg.status.atk}+7% ${serifs.rpg.status.def}+3%\n直近48時間以内に勝利: ${serifs.rpg.status.atk}+4% ${serifs.rpg.status.def}+2%\n直近72時間以内に勝利: ${serifs.rpg.status.atk}+2% ${serifs.rpg.status.def}+1%`, effect: { kazutoriMaster: 1 } },
 	{ name: `油断しない`, short: "断", desc: `ターン1に受けるダメージを大きく軽減します`, info: `ターン1にてダメージカット40%を得る\n100%以上になる場合、残りはターン2に持ち越す\n${serifs.rpg.status.atk}+4%`, effect: { atkUpBonus: 1, firstTurnResist: 0.4 }, skillOnly: true },
 	{ name: `粘り強い`, short: "粘", desc: `体力が減るほど受けるダメージを軽減します`, info: `ダメージカット25%×(減少HP割合)を得る 最大90% ${serifs.rpg.status.atk}+4%`, effect: { atkUpBonus: 1, tenacious: 0.25 } },
 	{ name: `高速RPG`, short: "速", desc: `1回のRPGでお互いに2回行動します`, info: `1回のコマンドで2ターン進行する ${serifs.rpg.status.atk}+1% レイド時は、さらに${serifs.rpg.status.atk}+10%`, effect: { atkUpBonus: 0.25, plusActionX: 1 } },
@@ -1512,5 +1512,6 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 
 	return result.join("\n");
 }
+
 
 
