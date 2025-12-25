@@ -116,8 +116,8 @@ export default class extends Module {
                 }
         }
 
-        @autobind
-        private async start(triggerUserId?, flg?) {
+	@autobind
+	private async start(triggerUserId?, flg?) {
 		this.ai.decActiveFactor();
 
 		const games = this.games.find({});
@@ -126,6 +126,14 @@ export default class extends Module {
 
 		const penultimateGame =
 			recentGame && games.length > 1 ? games[games.length - 2] : null;
+
+		if (recentGame?.maxnum) {
+			const maxnum = recentGame.maxnum as unknown;
+			const needsConversion = typeof maxnum === 'string' || typeof maxnum === 'number' || typeof (maxnum as { equals?: unknown }).equals !== 'function';
+			if (needsConversion) {
+				recentGame.maxnum = maxnum === 'Infinity' ? Decimal.MAX_VALUE : new Decimal(maxnum as string | number);
+			}
+		}
 
 		let publicOnly = false;
 
