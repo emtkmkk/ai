@@ -480,6 +480,14 @@ export default class extends Module {
 		if (doc2 == null) return { reaction: ":mk_hotchicken:" };
 
 		doc2.doc.name = doc2.name || doc1.name;
+		const doc1Rpg = doc1.doc.perModulesData?.rpg
+			? JSON.parse(JSON.stringify(doc1.doc.perModulesData.rpg))
+			: undefined;
+		const doc2Rpg = doc2.doc.perModulesData?.rpg
+			? JSON.parse(JSON.stringify(doc2.doc.perModulesData.rpg))
+			: undefined;
+		const doc1KazutoriRate = doc1.doc.kazutoriData?.rate;
+		const doc2KazutoriRate = doc2.doc.kazutoriData?.rate;
 		let x = 0;
 		let y = 0;
 		while (y < doc1.love) {
@@ -496,6 +504,13 @@ export default class extends Module {
 		doc2.doc.perModulesData = this.mergeAndSum(doc1.doc.perModulesData, doc2.doc.perModulesData);
                 doc2.doc.kazutoriData = this.mergeAndSum(doc1.doc.kazutoriData, doc2.doc.kazutoriData);
                 doc1.doc.kazutoriData = createDefaultKazutoriData();
+		if (doc2.doc.kazutoriData == null) doc2.doc.kazutoriData = createDefaultKazutoriData();
+		doc2.doc.kazutoriData.rate = doc1KazutoriRate ?? doc2.doc.kazutoriData.rate;
+		doc1.doc.kazutoriData.rate = doc2KazutoriRate ?? doc1.doc.kazutoriData.rate;
+		if (doc2.doc.perModulesData == null) doc2.doc.perModulesData = {};
+		if (doc1.doc.perModulesData == null) doc1.doc.perModulesData = {};
+		doc2.doc.perModulesData.rpg = doc1Rpg;
+		doc1.doc.perModulesData.rpg = doc2Rpg;
 		doc2.save();
 		doc1.save();
 
