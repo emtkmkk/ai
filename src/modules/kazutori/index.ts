@@ -1080,7 +1080,10 @@ export default class extends Module {
                                 const multiplier = 1 + increaseSteps * 0.5;
                                 const calculatedLoss = penaltyPoint * multiplier;
                                 const loss = Math.min(Math.ceil(calculatedLoss), rateExcess);
-                                const minimumLoss = data.rate >= 2000 ? Math.floor((data.rate - 1920) / 80) : 0;
+                                const minimumLoss =
+                                        data.rate >= 2000 && calculatedLimitMinutes > 4
+                                                ? Math.floor((data.rate - 1920) / 80)
+                                                : 0;
                                 const adjustedLoss = Math.min(Math.max(loss, minimumLoss), rateExcess);
                                 if (adjustedLoss > 0) {
                                         data.rate -= adjustedLoss;
