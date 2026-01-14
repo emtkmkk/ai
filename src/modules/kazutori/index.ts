@@ -224,6 +224,11 @@ export default class extends Module {
 			}
 		}
 
+		if (flg?.includes('pub')) {
+			publicOnly = true;
+			visibility = undefined;
+		}
+
 		// 10% → 自然発生かつ50%で1分 そうでない場合2分
 		// 90% → 5分 or 10分
 		let limitMinutes = Math.random() < 0.1 && this.ai.activeFactor >= 0.75 ? Math.random() < 0.5 && !triggerUserId ? 1 : 2 : Math.random() < 0.5 ? 5 : 10;
@@ -327,6 +332,7 @@ export default class extends Module {
                         if (!msg.user.host && msg.user.username === config.master && msg.includes(['med'])) flg += " med";
                         if (!msg.user.host && msg.user.username === config.master && msg.includes(['lng'])) flg += " lng";
                         if (!msg.user.host && msg.user.username === config.master && msg.includes(['2nd'])) flg += " 2nd";
+                        if (!msg.user.host && msg.user.username === config.master && msg.includes(['pub'])) flg += " pub";
                 }
 
 		//TODO : このへんのセリフをserifに移行する
