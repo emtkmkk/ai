@@ -130,3 +130,8 @@ export function findRateRank(records: { userId: string; rate: number }[], userId
         const index = records.findIndex((record) => record.userId === userId);
         return index >= 0 ? index + 1 : undefined;
 }
+
+export function formatKazutoriRateForDisplay(rate: number): number {
+        const roundedRate = Math.round(rate);
+        return roundedRate > 10000 ? 9999 : roundedRate;
+}
