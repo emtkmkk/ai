@@ -55,6 +55,39 @@ export default class extends Module {
                 return banUsers.some((banUser) => typeof banUser === 'string' && identifiers.includes(banUser.toLowerCase()));
         }
 
+        private async collectPublicOnlyVoteUserIds(postId: string): Promise<Set<string> | null> {
+                const reactionKeys = new Set([':mk_discochicken:', ':disco_chicken:']);
+                const validUserIds = new Set<string>();
+
+                const collectFromNotes = (notes: Array<{ user?: { id: string }; myReaction?: string }>) => {
+                        for (const note of notes) {
+                                if (!note?.user?.id) continue;
+                                if (!note.myReaction || !reactionKeys.has(note.myReaction)) continue;
+                                validUserIds.add(note.user.id);
+                        }
+                };
+
+                try {
+                        const replies = await this.ai.api('notes/children', { noteId: postId, limit: 100 });
+                        collectFromNotes(Array.isArray(replies) ? replies : []);
+                } catch (err) {
+                        const reason = err instanceof Error ? err.message : String(err);
+                        this.log(`Failed to fetch kazutori replies: ${reason}`);
+                        return null;
+                }
+
+                try {
+                        const quotes = await this.ai.api('notes/renotes', { noteId: postId, limit: 100 });
+                        collectFromNotes(Array.isArray(quotes) ? quotes : []);
+                } catch (err) {
+                        const reason = err instanceof Error ? err.message : String(err);
+                        this.log(`Failed to fetch kazutori renotes: ${reason}`);
+                        return null;
+                }
+
+                return validUserIds;
+        }
+
         @autobind
         public install() {
                 this.games = this.ai.getCollection('kazutori');
@@ -565,8 +598,19 @@ export default class extends Module {
                 this.log('Kazutori game finished');
 
                 const filteredVotes: Game['votes'] = [];
+                const publicOnlyVoteUserIds = game.publicOnly ? await this.collectPublicOnlyVoteUserIds(game.postId) : null;
 
                 for (const vote of game.votes) {
+                        if (publicOnlyVoteUserIds && !publicOnlyVoteUserIds.has(vote.user.id)) {
+                                const friend = this.ai.lookupFriend(vote.user.id);
+                                if (friend?.doc) {
+                                        const { data } = ensureKazutoriData(friend.doc);
+                                        data.playCount = Math.max((data.playCount ?? 0) - 1, 0);
+                                        friend.save();
+                                }
+                                continue;
+                        }
+
                         const friend = this.ai.lookupFriend(vote.user.id);
                         const love = friend?.love ?? 0;
 
