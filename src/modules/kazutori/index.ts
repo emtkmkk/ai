@@ -1062,7 +1062,8 @@ export default class extends Module {
                         }
                 }
 
-                const penaltyPoint = Math.max(Math.ceil(calculatedLimitMinutes / 5), 1);
+                const cappedLimitMinutes = Math.min(calculatedLimitMinutes, 480);
+                const penaltyPoint = Math.max(Math.ceil(cappedLimitMinutes / 5), 1);
                 const nonParticipantPenalties: {
                         doc: FriendDoc;
                         data: EnsuredKazutoriData;
@@ -1081,7 +1082,7 @@ export default class extends Module {
                                 const calculatedLoss = penaltyPoint * multiplier;
                                 const loss = Math.min(Math.ceil(calculatedLoss), rateExcess);
                                 const minimumLoss =
-                                        data.rate >= 2000 && calculatedLimitMinutes > 4
+                                        data.rate >= 2000 && cappedLimitMinutes > 4
                                                 ? Math.floor((data.rate - 1920) / 80)
                                                 : 0;
                                 const adjustedLoss = Math.min(Math.max(loss, minimumLoss), rateExcess);
@@ -1104,11 +1105,11 @@ export default class extends Module {
                         const winnerData = ensureKazutoriData(winnerDoc).data;
                         const beforeRate = winnerData.rate;
                         const beforeRank = findRateRank(sortedBefore, winnerFriend.userId);
-                        const baseLossRatio = calculatedLimitMinutes * 0.004;
+                        const baseLossRatio = cappedLimitMinutes * 0.004;
                         const lossRatio = Math.max(
                                 baseLossRatio <= 0.04
                                         ? baseLossRatio
-                                        : 0.04 + (calculatedLimitMinutes - 10) * (1 / 12000),
+                                        : 0.04 + (cappedLimitMinutes - 10) * (1 / 12000),
                                 0.02
                         );
                         let totalBonus = 0;
