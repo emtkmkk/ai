@@ -1036,10 +1036,12 @@ export default class extends Module {
 		const verboseLog = msg.includes(['-v']);
     const formatDebug = (value: number): string => {
 			if (!Number.isFinite(value)) return String(value);
-			if (value >= 10000000) return Math.floor(value/10000)+"万"
-			if (value >= 1000000) return (value/10000).toFixed(1)+"万"
-			if (value >= 1000) return String(Math.floor(value));
-			return value.toFixed(4-(String(Math.floor(value)).length));
+			const absValue = Math.abs(value);
+			if (absValue >= 10000000) return Math.trunc(value / 10000) + "万";
+			if (absValue >= 1000000) return (value / 10000).toFixed(1) + "万";
+			if (absValue >= 1000) return String(Math.trunc(value));
+			const intLength = String(Math.floor(absValue)).length;
+			return value.toFixed(Math.max(0, 4 - intLength));
 		}
 
 
