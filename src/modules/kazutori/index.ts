@@ -33,6 +33,7 @@ type Game = {
         replyKey: string[];
         limitMinutes: number;
         winnerUserId?: string;
+        reaggregatedAt?: number;
 };
 
 export default class extends Module {
@@ -56,7 +57,7 @@ export default class extends Module {
         }
 
         private async collectPublicOnlyVoteUserIds(postId: string): Promise<Set<string> | null> {
-                const reactionKeys = new Set([':mk_discochicken:', ':disco_chicken:']);
+                const reactionKeys = new Set([':mk_discochicken@.:', ':disco_chicken:']);
                 const validUserIds = new Set<string>();
 
                 const collectFromNotes = (notes: Array<{ user?: { id: string }; myReaction?: string }>) => {
@@ -302,13 +303,20 @@ export default class extends Module {
 	}
 
         @autobind
-        private async mentionHook(msg: Message) {
+	private async mentionHook(msg: Message) {
                 if (!msg.includes(['数取り'])) return false;
 
                 if (this.isBannedUser(msg.user)) {
                         msg.reply(serifs.kazutori.banned, { visibility: 'specified' });
                         return {
                                 reaction: 'confused',
+                        };
+                }
+
+                if (!msg.user.host && msg.user.username === config.master && msg.includes(['再集計', '集計やり直し', '集計やりなおし'])) {
+                        await this.redoLastAggregation(msg);
+                        return {
+                                reaction: 'love',
                         };
                 }
 
@@ -379,6 +387,39 @@ export default class extends Module {
 			reaction: 'love',
 		};
 	}
+
+        @autobind
+        private async redoLastAggregation(msg: Message) {
+                const games = this.games.find({});
+                const recentGame = games.length === 0 ? null : games[games.length - 1];
+
+                if (!recentGame) {
+                        await msg.reply('再集計できるゲームが見つかりませんでした。', { visibility: 'specified' });
+                        return;
+                }
+
+                if (!recentGame.isEnded) {
+                        await msg.reply('前回の数取りはまだ終了していないため、再集計できません。', { visibility: 'specified' });
+                        return;
+                }
+
+                if (recentGame.reaggregatedAt) {
+                        await msg.reply('前回の集計はすでに再集計済みです。', { visibility: 'specified' });
+                        return;
+                }
+
+                if (!recentGame.votes || recentGame.votes.length === 0) {
+                        await msg.reply('再集計できる投票情報がありませんでした。', { visibility: 'specified' });
+                        return;
+                }
+
+                recentGame.isEnded = false;
+                recentGame.reaggregatedAt = Date.now();
+                this.games.update(recentGame);
+
+                await msg.reply('前回の集計をやり直します。結果の投稿まで少しお待ちください。', { visibility: 'specified' });
+                await this.finish(recentGame, { isReaggregate: true });
+        }
 
 	@autobind
         private async contextHook(key: any, msg: Message) {
@@ -591,9 +632,13 @@ export default class extends Module {
 	 * ゲームを終わらせる
 	 */
 	@autobind
-        private async finish(game: Game) {
+        private async finish(game: Game, options?: { isReaggregate?: boolean }) {
                 game.isEnded = true;
                 this.games.update(game);
+
+                if (options?.isReaggregate) {
+                        this.log('Kazutori game reaggregation started');
+                }
 
                 this.log('Kazutori game finished');
 
@@ -610,7 +655,6 @@ export default class extends Module {
                                 }
                                 continue;
                         }
-
                         const friend = this.ai.lookupFriend(vote.user.id);
                         const love = friend?.love ?? 0;
 
