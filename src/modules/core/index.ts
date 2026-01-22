@@ -565,6 +565,7 @@ export default class extends Module {
 
 	@autobind
 	private transferBegin(msg: Message): boolean {
+		return false;
 		if (!msg.text) return false;
 		if (!msg.includes(['引継', '引き継ぎ', '引越', '引っ越し'])) return false;
 
@@ -581,11 +582,12 @@ export default class extends Module {
 
 	@autobind
 	private transferEnd(msg: Message): boolean {
+		return false;
 		if (!msg.extractedText) return false;
 		if (!msg.extractedText.startsWith('「') || !msg.extractedText.endsWith('」')) return false;
 
 
-		const code = msg.extractedText.substring(1, msg.text.length - 1);
+		const code = msg.extractedText.substring(1, msg.extractedText.length - 1);
 
 		console.log("move account code : " + msg.user.id + " : " + code);
 
