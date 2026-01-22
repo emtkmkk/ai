@@ -99,7 +99,7 @@ export default class extends Module {
                 };
 
                 try {
-                        const replies = await this.ai.api('notes/children', { noteId: postId, limit: 100 });
+                        const replies = await this.ai.api('notes/replies', { noteId: postId, limit: 100 });
                         collectFromNotes(Array.isArray(replies) ? replies : [], 'reply');
                 } catch (err) {
                         const reason = err instanceof Error ? err.message : String(err);
