@@ -12,16 +12,18 @@ import { ensureKazutoriData, findRateRank, hasKazutoriRateHistory } from './rate
 import type { EnsuredKazutoriData } from './rate';
 var Decimal = require('break_infinity.js');
 
+type Vote = {
+	user: {
+		id: string;
+		username: string;
+		host: User['host'];
+		winCount: number;
+	};
+	number: typeof Decimal;
+};
+
 type Game = {
-	votes: {
-		user: {
-			id: string;
-			username: string;
-			host: User['host'];
-			winCount: number;
-		};
-		number: typeof Decimal;
-	}[];
+	votes: Vote[];
 	isEnded: boolean;
 	startedAt: number;
 	finishedAt: number;
@@ -58,19 +60,47 @@ export default class extends Module {
 
         private async collectPublicOnlyVoteUserIds(postId: string): Promise<Set<string> | null> {
                 const reactionKeys = new Set([':mk_discochicken@.:', ':disco_chicken:']);
+                const expectedReactions = Array.from(reactionKeys).join(', ');
                 const validUserIds = new Set<string>();
 
-                const collectFromNotes = (notes: Array<{ user?: { id: string }; myReaction?: string }>) => {
+                const collectFromNotes = (
+                        notes: Array<{ id?: string; user?: { id: string }; myReaction?: string }>,
+                        source: string
+                ) => {
+                        const rejectedReasons: string[] = [];
+                        let acceptedCount = 0;
+
                         for (const note of notes) {
-                                if (!note?.user?.id) continue;
-                                if (!note.myReaction || !reactionKeys.has(note.myReaction)) continue;
+                                const noteId = note?.id ? `noteId=${note.id}` : 'noteId=unknown';
+                                if (!note?.user?.id) {
+                                        rejectedReasons.push(`${noteId}: user id missing`);
+                                        continue;
+                                }
+                                if (!note.myReaction) {
+                                        rejectedReasons.push(`${noteId}: reaction missing`);
+                                        continue;
+                                }
+                                if (!reactionKeys.has(note.myReaction)) {
+                                        rejectedReasons.push(
+                                                `${noteId}: reaction mismatch (expected: ${expectedReactions}, actual: ${note.myReaction})`
+                                        );
+                                        continue;
+                                }
                                 validUserIds.add(note.user.id);
+                                acceptedCount += 1;
                         }
+
+                        this.log(
+                                `Public-only ${source} check fetched ${notes.length} posts, accepted ${acceptedCount}, rejected ${rejectedReasons.length}`
+                        );
+                        rejectedReasons.forEach((reason) => {
+                                this.log(`Public-only ${source} rejected: ${reason}`);
+                        });
                 };
 
                 try {
                         const replies = await this.ai.api('notes/children', { noteId: postId, limit: 100 });
-                        collectFromNotes(Array.isArray(replies) ? replies : []);
+                        collectFromNotes(Array.isArray(replies) ? replies : [], 'reply');
                 } catch (err) {
                         const reason = err instanceof Error ? err.message : String(err);
                         this.log(`Failed to fetch kazutori replies: ${reason}`);
@@ -79,7 +109,7 @@ export default class extends Module {
 
                 try {
                         const quotes = await this.ai.api('notes/renotes', { noteId: postId, limit: 100 });
-                        collectFromNotes(Array.isArray(quotes) ? quotes : []);
+                        collectFromNotes(Array.isArray(quotes) ? quotes : [], 'quote');
                 } catch (err) {
                         const reason = err instanceof Error ? err.message : String(err);
                         this.log(`Failed to fetch kazutori renotes: ${reason}`);
@@ -691,10 +721,8 @@ export default class extends Module {
                         filteredVotes.push(vote);
                 }
 
-                if (filteredVotes.length !== game.votes.length) {
-                        game.votes = filteredVotes;
-                        this.games.update(game);
-                }
+                game.votes = filteredVotes;
+                this.games.update(game);
 
                 const item = genItem();
 
