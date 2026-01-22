@@ -118,6 +118,7 @@ export default class extends Module {
 		const ret = (
 			(await this.findData(msg)) ||
 			this.mergeData(msg) ||
+			this.swapKazutoriRate(msg) ||
 			(await this.ranking(msg)) ||
 			this.transferBegin(msg) ||
 			this.transferEnd(msg) ||
@@ -529,6 +530,49 @@ export default class extends Module {
 		msg.reply(`合体完了\n\`\`\`\n${text}\n\`\`\``, {
 			visibility: 'specified',
 		});
+
+		return true;
+	}
+
+	@autobind
+	private swapKazutoriRate(msg: Message) {
+		if (msg.user.host || msg.user.username !== config.master) return false;
+		if (!msg.text) return false;
+		if (!msg.includes(['レート移行'])) return false;
+
+		const ids = /レート移行 (\w{10}) (\w{10})/.exec(msg.extractedText);
+
+		if (!ids?.[1]) return { reaction: ":mk_hotchicken:" };
+		if (!ids?.[2]) return { reaction: ":mk_hotchicken:" };
+
+		const doc1 = this.ai.lookupFriend(ids[1]);
+		if (doc1 == null) return { reaction: ":mk_hotchicken:" };
+
+		const doc2 = this.ai.lookupFriend(ids[2]);
+		if (doc2 == null) return { reaction: ":mk_hotchicken:" };
+
+		const { data: data1, updated: updated1 } = ensureKazutoriData(doc1.doc);
+		const { data: data2, updated: updated2 } = ensureKazutoriData(doc2.doc);
+
+		const beforeRate1 = data1.rate;
+		const beforeRate2 = data2.rate;
+
+		data1.rate = beforeRate2;
+		data2.rate = beforeRate1;
+		data1.rateChanged = true;
+		data2.rateChanged = true;
+
+		if (updated1 || updated2 || beforeRate1 !== data1.rate || beforeRate2 !== data2.rate) {
+			doc1.save();
+			doc2.save();
+		}
+
+		msg.reply(
+			`レートを入れ替えました！\n` +
+				`${acct(doc1.doc.user)} : ${formatKazutoriRateForDisplay(beforeRate1)} → ${formatKazutoriRateForDisplay(data1.rate)}\n` +
+				`${acct(doc2.doc.user)} : ${formatKazutoriRateForDisplay(beforeRate2)} → ${formatKazutoriRateForDisplay(data2.rate)}`,
+			{ visibility: 'specified' }
+		);
 
 		return true;
 	}
