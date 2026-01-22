@@ -69,41 +69,15 @@ export default class Friend {
 
 				this.doc = inserted;
 
-				if (opts.user.alsoKnownAs?.length) {
-					const moveto = opts.user.alsoKnownAs[0];
-					try {
-						const moveUserFriends = this.ai.friends.findOne({
-							'user.uri': moveto
-						} as any);
-						if (moveUserFriends) {
-							const doc1 = new Friend(this.ai, { doc: moveUserFriends });
-							console.log('move user ' + doc1.userId + ' -> ' + this.userId);
-							this.doc.name = this.doc.name || doc1.name;
-							let x = 0;
-							let y = 0;
-							while (y < doc1.love) {
-								const amount = y > 100 ? (Math.ceil(0.5 / ((y || 0) * 2 / 100 - 1) * 100) / 100) : 0.5;
-								y = parseFloat((y + amount || 0).toFixed(2));
-								x += 1;
-							}
-							console.log(`${x} : ${y}`);
-							for (let i = 0; i < x; i++) {
-								this.incLove(0.1, "merge");
-							}
-							doc1.doc.love = 0;
-							this.doc.married = doc1.married || this.married;
-							this.doc.perModulesData = this.mergeAndSum(doc1.doc.perModulesData, this.doc.perModulesData);
-                                                        this.doc.kazutoriData = this.mergeAndSum(doc1.doc.kazutoriData, this.doc.kazutoriData);
-                                                        doc1.doc.kazutoriData = createDefaultKazutoriData();
-							this.save();
-							doc1.save();
-						} else {
-							console.log('move user not found ' + opts.user.id);
-						}
-					} catch {
-						console.log('move user error ' + opts.user.id);
+				this.ai.api('users/show', {
+					userId: opts.user.id
+				}).then(user => {
+					this.updateUser(user);
+					const moveFrom = user.alsoKnownAs?.[0];
+					if (moveFrom) {
+						this.tryAutoTransfer(moveFrom);
 					}
-				}
+				});
 			} else {
 				this.doc = exist;
 				this.doc.user = { ...this.doc.user, ...opts.user };
@@ -289,6 +263,44 @@ export default class Friend {
 		// TODO: 合言葉を忘れる
 
 		return true;
+	}
+
+	@autobind
+	private tryAutoTransfer(moveUri: string) {
+		if (this.doc.linkedAccounts?.includes(moveUri)) return;
+		try {
+			const moveUserFriends = this.ai.friends.findOne({
+				'user.uri': moveUri
+			} as any);
+			if (moveUserFriends) {
+				const doc1 = new Friend(this.ai, { doc: moveUserFriends });
+				console.log('move user ' + doc1.userId + ' -> ' + this.userId);
+				this.doc.name = this.doc.name || doc1.name;
+				let x = 0;
+				let y = 0;
+				while (y < doc1.love) {
+					const amount = y > 100 ? (Math.ceil(0.5 / ((y || 0) * 2 / 100 - 1) * 100) / 100) : 0.5;
+					y = parseFloat((y + amount || 0).toFixed(2));
+					x += 1;
+				}
+				console.log(`${x} : ${y}`);
+				for (let i = 0; i < x; i++) {
+					this.incLove(0.1, "merge");
+				}
+				doc1.doc.love = 0;
+				this.doc.married = doc1.married || this.married;
+				this.doc.perModulesData = this.mergeAndSum(doc1.doc.perModulesData, this.doc.perModulesData);
+				this.doc.kazutoriData = this.mergeAndSum(doc1.doc.kazutoriData, this.doc.kazutoriData);
+				doc1.doc.kazutoriData = createDefaultKazutoriData();
+				this.doc.linkedAccounts = [...(this.doc.linkedAccounts ?? []), moveUri];
+				this.save();
+				doc1.save();
+			} else {
+				console.log('move user not found ' + this.userId);
+			}
+		} catch {
+			console.log('move user error ' + this.userId);
+		}
 	}
 
 	@autobind
