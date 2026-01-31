@@ -860,7 +860,7 @@ export default class extends Module {
                                 `現在の順位: ${rankText}\n` +
                                 `ランキングTOP3:\n` +
                                 `${topText}`,
-                        { visibility: 'specified' }
+                        { visibility: 'home' }
                 );
 
                 return true;
