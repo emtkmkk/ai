@@ -816,7 +816,12 @@ export default class extends Module {
                 const rateDeltaText = formatDelta(changeValue);
                 const rankText = rateInfo?.rank != null ? `${rateInfo.rank}位` : '--位';
                 const adjustmentValue = kazutoriData.lastRateLossAdjustmentPercent;
-                const adjustmentText = typeof adjustmentValue === 'number' ? `${adjustmentValue}` : '--';
+                const lossAdjustmentText = (() => {
+                        if (typeof adjustmentValue !== 'number' || Number.isNaN(adjustmentValue)) return undefined;
+                        if (adjustmentValue >= 100) return undefined;
+                        const reductionPercent = Math.max(0, Math.round(100 - adjustmentValue));
+                        return `軽減: ${reductionPercent}%`;
+                })();
 
                 const gameResultLabel = (() => {
                         if (shouldOverrideResult) {
@@ -826,7 +831,7 @@ export default class extends Module {
                                 case 'win':
                                         return '勝ち';
                                 case 'lose':
-                                        return adjustmentText !== '--' ? `負け (${adjustmentText})` : '負け';
+                                        return lossAdjustmentText ? `負け (${lossAdjustmentText})` : '負け';
                                 case 'no-winner':
                                         return '勝者なし';
                                 case 'absent':
