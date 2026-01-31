@@ -266,6 +266,7 @@ export const skills: Skill[] = [
 	{ name: `土属性剣攻撃`, short: "土", desc: `戦闘時、最大ダメージが上昇します`, info: `戦闘時かつ最大ダメージ制限がある場合、その制限を18%増加\n非戦闘時、${serifs.rpg.status.atk}+9%\n土曜日に全ての効果量が66%アップ`, effect: { dart: 0.18 } },
 	{ name: `光属性剣攻撃`, short: "光", desc: `戦闘時、たまに敵の攻撃力を下げます`, info: `戦闘時、18%でダメージカット50%\nそれ以外の場合、${serifs.rpg.status.def}+9%\n金曜日にここまでに記載された効果の効果量が66%アップ\n${serifs.rpg.status.atk}+4%`, effect: { atkUpBonus: 1, light: 0.18 } },
 	{ name: `闇属性剣攻撃`, short: "闇", desc: `戦闘時、たまに敵の周辺に高重力領域を発生させます`, info: `戦闘時、9%で敵の現在HPの半分のダメージ（レイドでは150ダメージ）を与える\n行動回数が2回以上の敵に18%で行動回数を1にする\nそれ以外の場合、${serifs.rpg.status.def}+6.3%\n月曜日にここまでに記載された効果の効果量が66%アップ ${serifs.rpg.status.atk}+4%`, effect: { atkUpBonus: 1, dark: 0.09 } },
+	{ name: `水属性剣攻撃`, short: "水", desc: `炎属性の敵に対して、非常に有効です さらに、氷属性と雷属性の力を高めます`, info: `炎属性の敵に対し与ダメージ+18%かつ火炎ダメージのダメージカット+54%\n水曜日にここまでに記載された効果の効果量が66%アップ\n氷属性剣攻撃と雷属性剣攻撃の効果が+25%`, effect: { water: 0.18 } },
 	{ name: `炎属性剣攻撃＋`, short: "**炎**", desc: `戦闘時、最低ダメージが大きく上昇します`, info: `戦闘時、Lvの15%がダメージに固定加算\n非戦闘時、${serifs.rpg.status.atk}+Lvの58%\n火曜日に全ての効果量が66%アップ`, effect: { fire: 0.15 }, notLearn: true, skillOnly: true },
 	{ name: `氷属性剣攻撃＋`, short: "**氷**", desc: `戦闘時、たまに敵を凍らせます`, info: `戦闘時、15%で相手のターンをスキップ\n非戦闘時、${serifs.rpg.status.def}+15%\n水曜日ここまでに記載された効果の効果量が66%アップ\n${serifs.rpg.status.atk}+4%`, effect: { atkUpBonus: 1, ice: 0.15 }, notLearn: true, skillOnly: true },
 	{ name: `雷属性剣攻撃＋`, short: "**雷**", desc: `戦闘時、連続攻撃をすればダメージが上がります`, info: `(現在攻撃数/最大攻撃数)×30%のダメージ上昇を得る\n日曜日に全ての効果量が66%アップ`, effect: { thunder: 0.3 }, notLearn: true, skillOnly: true },
@@ -330,7 +331,6 @@ export const skills: Skill[] = [
 	{ name: `バーサク`, short: "バ", desc: `レイド時、毎ターンダメージを受けますが、パワーがアップします`, info: "レイド時、毎ターンHP15%減少 パワー+24%", effect: { berserk: 0.15 }, notLearn: true, notShop: true},
 	{ name: `超全力の一撃`, short: "撃", desc: `レイド時、ターン7で発生する全力の一撃を強化します`, info: "レイド時、全力の一撃のダメージ1.3倍", effect: { finalAttackUp: 0.3 }, notLearn: true, notShop: true},
 	{ name: `スロースタート`, short: "ス", desc: `レイド時、最初は弱くなりますが、ターンが進む度にどんどん強くなります`, info: "レイド時、最初は弱くなりますが、ターンが進む度にどんどん強くなります", effect: { slowStart: 1 }, notLearn: true, notShop: true},
-	{ name: `水属性剣攻撃`, short: "水", desc: `炎属性の敵に対して、非常に有効です さらに、氷属性と雷属性の力を高めます`, info: `炎属性の敵に対し与ダメージ+18%かつ火炎ダメージのダメージカット+54%\n水曜日にここまでに記載された効果の効果量が66%アップ\n氷属性剣攻撃と雷属性剣攻撃の効果が+25%`, effect: { water: 0.18 } },
 ];
 
 export const skillBorders = [20, 50, 100, 170, 255];
