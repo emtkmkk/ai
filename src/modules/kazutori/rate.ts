@@ -11,6 +11,10 @@ export type KazutoriDataContainer = {
                 lastWinAt?: number;
                 ratingVersion?: number;
                 rateChanged?: boolean | string | number;
+                lastRateChange?: number;
+                lastRateLossAdjustmentPercent?: number;
+                lastRateChangeGameId?: string;
+                lastGameResult?: 'win' | 'lose' | 'no-winner' | 'absent';
                 [key: string]: any;
         };
 };
@@ -22,6 +26,10 @@ export type EnsuredKazutoriData = {
         inventory: string[];
         ratingVersion: number;
         rateChanged?: boolean;
+        lastRateChange?: number;
+        lastRateLossAdjustmentPercent?: number;
+        lastRateChangeGameId?: string;
+        lastGameResult?: 'win' | 'lose' | 'no-winner' | 'absent';
         medal?: number;
         lastPlayedAt?: number;
         lastWinAt?: number;
@@ -104,6 +112,45 @@ export function ensureKazutoriData<T extends KazutoriDataContainer>(target: T): 
                                 }
                         }
 
+                        updated = true;
+                }
+
+                if (data.lastRateChange != null && (typeof data.lastRateChange !== 'number' || Number.isNaN(data.lastRateChange))) {
+                        delete data.lastRateChange;
+                        updated = true;
+                }
+
+                if (data.lastRateChangeAt != null) {
+                        delete data.lastRateChangeAt;
+                        updated = true;
+                }
+
+                if (data.lastRateLossAdjustmentPercent != null) {
+                        if (typeof data.lastRateLossAdjustmentPercent !== 'number' || Number.isNaN(data.lastRateLossAdjustmentPercent)) {
+                                delete data.lastRateLossAdjustmentPercent;
+                                updated = true;
+                        } else if (data.lastRateLossAdjustmentPercent < 0 || data.lastRateLossAdjustmentPercent > 100) {
+                                data.lastRateLossAdjustmentPercent = Math.min(
+                                        Math.max(data.lastRateLossAdjustmentPercent, 0),
+                                        100
+                                );
+                                updated = true;
+                        }
+                }
+
+                if (data.lastRateChangeGameId != null && typeof data.lastRateChangeGameId !== 'string') {
+                        delete data.lastRateChangeGameId;
+                        updated = true;
+                }
+
+                if (
+                        data.lastGameResult != null &&
+                        data.lastGameResult !== 'win' &&
+                        data.lastGameResult !== 'lose' &&
+                        data.lastGameResult !== 'no-winner' &&
+                        data.lastGameResult !== 'absent'
+                ) {
+                        delete data.lastGameResult;
                         updated = true;
                 }
 

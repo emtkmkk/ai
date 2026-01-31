@@ -334,6 +334,9 @@ export default class extends Module {
 
         @autobind
 	private async mentionHook(msg: Message) {
+                if (msg.includes(['レート'])) {
+                        return false;
+                }
                 if (!msg.includes(['数取り'])) return false;
 
                 if (this.isBannedUser(msg.user)) {
@@ -950,6 +953,38 @@ export default class extends Module {
                 const friendDocs = this.ai.friends.find({}) as FriendDoc[];
                 const friendDocMap = new Map<string, FriendDoc>();
                 const rankingBefore: { userId: string; rate: number }[] = [];
+                const rateUpdateGameId = game.postId;
+                const touchedUserIds = new Set<string>();
+                const rateChangeAggregates = new Map<
+                        string,
+                        { delta: number; hasNegative: boolean; lossAdjustmentPercent?: number }
+                >();
+                const recordRateChange = (userId: string, delta: number, lossAdjustmentPercent?: number) => {
+                        if (!Number.isFinite(delta) || delta === 0) return;
+                        const entry = rateChangeAggregates.get(userId);
+                        if (entry) {
+                                entry.delta += delta;
+                        } else {
+                                rateChangeAggregates.set(userId, { delta, hasNegative: false });
+                        }
+                        if (delta < 0) {
+                                if (typeof lossAdjustmentPercent === 'number' && !Number.isNaN(lossAdjustmentPercent)) {
+                                        const clamped = Math.min(Math.max(lossAdjustmentPercent, 0), 100);
+                                        const current = rateChangeAggregates.get(userId);
+                                        if (current) {
+                                                current.hasNegative = true;
+                                                current.lossAdjustmentPercent = Math.round(clamped);
+                                        }
+                                } else {
+                                        const current = rateChangeAggregates.get(userId);
+                                        if (current) {
+                                                current.hasNegative = true;
+                                                current.lossAdjustmentPercent = 100;
+                                        }
+                                }
+                        }
+                        touchedUserIds.add(userId);
+                };
 
                 const originalWinRank = game.winRank ?? 1;
                 const totalParticipants = game.votes.length;
@@ -1178,6 +1213,10 @@ export default class extends Module {
                         }
                 }
 
+                const sortedBefore = [...rankingBefore].sort((a, b) =>
+                        b.rate === a.rate ? a.userId.localeCompare(b.userId) : b.rate - a.rate
+                );
+
                 const cappedLimitMinutes = Math.min(calculatedLimitMinutes, 480);
                 const penaltyPoint = Math.max(Math.ceil(cappedLimitMinutes / 5), 1);
                 const nonParticipantPenalties: {
@@ -1205,15 +1244,12 @@ export default class extends Module {
                                 if (adjustedLoss > 0) {
                                         data.rate -= adjustedLoss;
                                         data.rateChanged = true;
+                                        recordRateChange(doc.userId, -adjustedLoss, 100);
                                         totalBonusFromNonParticipants += adjustedLoss;
                                         nonParticipantPenalties.push({ doc, data, loss: adjustedLoss });
                                 }
                         }
                 }
-
-                const sortedBefore = [...rankingBefore].sort((a, b) =>
-                        b.rate === a.rate ? a.userId.localeCompare(b.userId) : b.rate - a.rate
-                );
 
                 const winnerDoc = winnerFriend ? friendDocMap.get(winnerFriend.userId) : null;
 
@@ -1256,9 +1292,13 @@ export default class extends Module {
                                                 }
                                         }
                                 }
-                                data.rate = Math.max(before - adjustedLoss, 0);
+                                const after = Math.max(before - adjustedLoss, 0);
+                                const appliedLoss = before - after;
+                                const adjustmentPercent = loss > 0 ? Math.round((appliedLoss / loss) * 100) : 100;
+                                data.rate = after;
                                 if (data.rate !== before) {
                                         data.rateChanged = true;
+                                        recordRateChange(doc.userId, data.rate - before, adjustmentPercent);
                                 }
                                 totalBonus += adjustedLoss;
                                 this.ai.friends.update(doc);
@@ -1270,6 +1310,7 @@ export default class extends Module {
                         winnerData.rate += totalBonus;
                         if (winnerData.rate !== winnerBeforeRate) {
                                 winnerData.rateChanged = true;
+                                recordRateChange(winnerFriend.userId, winnerData.rate - winnerBeforeRate);
                         }
                         this.ai.friends.update(winnerDoc);
 
@@ -1320,6 +1361,7 @@ export default class extends Module {
                                         if (baseShare > 0) {
                                                 data.rate += baseShare;
                                                 data.rateChanged = true;
+                                                recordRateChange(doc.userId, baseShare);
                                         }
                                         this.ai.friends.update(doc);
                                 }
@@ -1336,6 +1378,7 @@ export default class extends Module {
 
                                         selected.data.rate += 1;
                                         selected.data.rateChanged = true;
+                                        recordRateChange(selected.doc.userId, 1);
                                         selected.loss -= 1;
                                         this.ai.friends.update(selected.doc);
                                         remainder--;
@@ -1353,6 +1396,7 @@ export default class extends Module {
 
                                         selected.data.rate += 1;
                                         selected.data.rateChanged = true;
+                                        recordRateChange(selected.doc.userId, 1);
                                         selected.loss -= 1;
                                         this.ai.friends.update(selected.doc);
                                         remainder--;
@@ -1364,7 +1408,44 @@ export default class extends Module {
                         this.ai.friends.update(penalty.doc);
                 }
 
-		let strmed = med === -1 ? "有効数字なし" : med != null ? med.equals(new Decimal(Decimal.NUMBER_MAX_VALUE)) ? '∞ (\\(1.8×10^{308}\\))' : med.toString() : "";
+                const winnerUserId = winnerFriend?.userId ?? null;
+                for (const userId of participants) {
+                        touchedUserIds.add(userId);
+                }
+
+                for (const userId of touchedUserIds) {
+                        const doc = friendDocMap.get(userId);
+                        if (!doc) continue;
+                        const { data, updated } = ensureKazutoriData(doc);
+                        let touched = false;
+                        const aggregate = rateChangeAggregates.get(userId);
+                        if (aggregate) {
+                                data.lastRateChange = aggregate.delta;
+                                data.lastRateChangeGameId = rateUpdateGameId;
+                                if (aggregate.hasNegative) {
+                                        data.lastRateLossAdjustmentPercent = aggregate.lossAdjustmentPercent ?? 100;
+                                } else {
+                                        delete data.lastRateLossAdjustmentPercent;
+                                }
+                                touched = true;
+                        }
+                        if (participants.has(doc.userId)) {
+                                if (winnerUserId) {
+                                        data.lastGameResult = doc.userId === winnerUserId ? 'win' : 'lose';
+                                } else {
+                                        data.lastGameResult = 'no-winner';
+                                }
+                                touched = true;
+                        } else {
+                                data.lastGameResult = 'absent';
+                                touched = true;
+                        }
+                        if (updated || touched) {
+                                this.ai.friends.update(doc);
+                        }
+                }
+
+                let strmed = med === -1 ? "有効数字なし" : med != null ? med.equals(new Decimal(Decimal.NUMBER_MAX_VALUE)) ? '∞ (\\(1.8×10^{308}\\))' : med.toString() : "";
 		if (strmed.includes("e+")) {
 			if (strmed == "Infinity") strmed = "∞";
 			strmed = strmed.replace(/^1e/, "");

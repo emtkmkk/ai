@@ -125,6 +125,7 @@ export default class extends Module {
 			(await this.linkAccount(msg)) ||
 			this.setName(msg) ||
 			this.getLove(msg) ||
+			this.getKazutoriRateReport(msg) ||
 			this.getStatus(msg) ||
 			(await this.getEmojiData(msg)) ||
 			this.getInventory(msg) ||
@@ -789,6 +790,132 @@ export default class extends Module {
                 msg.reply(serifs.core.getStatus([name, lovemsg, kazutori, rpg].filter(Boolean).join("\n")));
 
                 return true;
+        }
+
+        @autobind
+        private getKazutoriRateReport(msg: Message): boolean {
+                if (!msg.text) return false;
+                const rateKeywords = ['レート'];
+                if (!msg.includes(rateKeywords)) return false;
+
+                const { data: kazutoriData, updated: kazutoriUpdated } = ensureKazutoriData(msg.friend.doc);
+                if (kazutoriUpdated) msg.friend.save();
+
+                const rateInfo = this.getKazutoriRateInfo(msg.friend.userId);
+                const lastGameId = this.getLatestKazutoriGameId();
+                const shouldOverrideResult =
+                        lastGameId != null && kazutoriData.lastRateChangeGameId !== lastGameId;
+                const changeValue = shouldOverrideResult ? undefined : kazutoriData.lastRateChange;
+                const formatDelta = (value?: number) => {
+                        if (typeof value !== 'number' || Number.isNaN(value)) return '→';
+                        if (value > 0) return `↑${value}`;
+                        if (value < 0) return `↓${Math.abs(value)}`;
+                        return '→';
+                };
+                const rateText = rateInfo?.rate != null ? formatKazutoriRateForDisplay(rateInfo.rate) : '--';
+                const rateDeltaText = formatDelta(changeValue);
+                const rankText = rateInfo?.rank != null ? `${rateInfo.rank}位` : '--位';
+                const adjustmentValue = kazutoriData.lastRateLossAdjustmentPercent;
+                const adjustmentText = typeof adjustmentValue === 'number' ? `${adjustmentValue}` : '--';
+
+                const gameResultLabel = (() => {
+                        if (shouldOverrideResult) {
+                                return '不参加';
+                        }
+                        switch (kazutoriData.lastGameResult) {
+                                case 'win':
+                                        return '勝ち';
+                                case 'lose':
+                                        return adjustmentText !== '--' ? `負け (${adjustmentText})` : '負け';
+                                case 'no-winner':
+                                        return '勝者なし';
+                                case 'absent':
+                                        return '不参加';
+                                default:
+                                        return '--';
+                        }
+                })();
+
+                const ranking = this.getKazutoriRateRankingSnapshot();
+                const topRates = ranking.slice(0, 3).map((entry, index) => {
+                        const hasEntryChange =
+                                lastGameId == null || entry.lastRateChangeGameId === lastGameId;
+                        const deltaText = hasEntryChange ? formatDelta(entry.lastRateChange) : '→';
+                        return `${index + 1}位 ${formatKazutoriRateForDisplay(entry.rate)} (${deltaText})`;
+                });
+
+                const topText = topRates.length > 0 ? topRates.join('\n') : 'データがありません';
+
+                msg.reply(
+                        `数取りレート情報\n` +
+                                `-----------\n` +
+                                `現在のレート: ${rateText} (${rateDeltaText})\n` +
+                                `前回の数取り: ${gameResultLabel}\n` +
+                                `-----------\n` +
+                                `現在の順位: ${rankText}\n` +
+                                `ランキングTOP3:\n` +
+                                `${topText}`,
+                        { visibility: 'specified' }
+                );
+
+                return true;
+        }
+
+        private getKazutoriRateRankingSnapshot(): {
+                userId: string;
+                rate: number;
+                lastRateChange?: number;
+                lastRateChangeGameId?: string;
+        }[] {
+                const friendDocs = this.ai.friends.find({}) as FriendDoc[];
+                const ranking: {
+                        userId: string;
+                        rate: number;
+                        lastRateChange?: number;
+                        lastRateChangeGameId?: string;
+                }[] = [];
+                const updatedDocs: FriendDoc[] = [];
+
+                for (const doc of friendDocs) {
+                        const { data, updated } = ensureKazutoriData(doc);
+                        if (updated) updatedDocs.push(doc);
+                        if (hasKazutoriRateHistory(data)) {
+                                ranking.push({
+                                        userId: doc.userId,
+                                        rate: data.rate,
+                                        lastRateChange: data.lastRateChange,
+                                        lastRateChangeGameId: data.lastRateChangeGameId,
+                                });
+                        }
+                }
+
+                for (const doc of updatedDocs) {
+                        this.ai.friends.update(doc);
+                }
+
+                ranking.sort((a, b) => (b.rate === a.rate ? a.userId.localeCompare(b.userId) : b.rate - a.rate));
+                return ranking;
+        }
+
+        private getLatestKazutoriGameId(): string | null {
+                const games = this.ai.getCollection('kazutori');
+                if (!games) return null;
+                const list = games.find({ isEnded: true }) as Array<{ finishedAt?: number; postId?: string }>;
+                if (!list?.length) return null;
+                let latest: { finishedAt?: number; postId?: string } | null = null;
+                for (const game of list) {
+                        if (!game?.postId) continue;
+                        if (!latest) {
+                                latest = game;
+                                continue;
+                        }
+                        const latestTime = latest.finishedAt ?? 0;
+                        const currentTime = game.finishedAt ?? 0;
+                        if (currentTime >= latestTime) {
+                                latest = game;
+                        }
+                }
+                return latest?.postId ?? null;
         }
 
         private getKazutoriRateInfo(userId: string): { rate?: number; rank?: number; total: number; } {
