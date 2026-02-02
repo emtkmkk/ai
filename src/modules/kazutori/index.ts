@@ -289,16 +289,42 @@ export default class extends Module {
 			visibility = undefined;
 		}
 
-		// 10% → 自然発生かつ50%で1分 そうでない場合2分
-		// 90% → 5分 or 10分
+		/** 10% → 自然発生かつ50%で1分 そうでない場合2分 */
+		/** 90% → 5分 or 10分 */
 		let limitMinutes = Math.random() < 0.1 && this.ai.activeFactor >= 0.75 ? Math.random() < 0.5 && !triggerUserId ? 1 : 2 : Math.random() < 0.5 ? 5 : 10;
 
-		if ((this.ai.activeFactor >= 1 && Math.random() < 0.001 && new Date().getHours() < 14) || flg?.includes('lng')) {
+		/** 日付の同一判定 */
+		const isSameDate = (left: Date, right: Date) =>
+			left.getFullYear() === right.getFullYear() &&
+			left.getMonth() === right.getMonth() &&
+			left.getDate() === right.getDate();
+		const recentGameDate = recentGame ? new Date(recentGame.startedAt) : null;
+		const yesterday = new Date(now);
+		yesterday.setDate(now.getDate() - 1);
+		/** 前回が昨日の日付なら今日の1回目なので同一判定で十分 */
+		const isRecentGameYesterday = recentGameDate
+			? isSameDate(recentGameDate, yesterday)
+			: false;
+		const isYesterdayFirstGameBoostTime = now.getHours() >= 8 && now.getHours() < 10;
+		/** 高機嫌かつ稀な長時間モード */
+		const hasHighMoodRareLongLimit =
+			this.ai.activeFactor >= 1 && Math.random() < 0.001 && now.getHours() < 14;
+		/** フラグ指定による長時間モード */
+		const hasForcedLongLimit = flg?.includes('lng');
+		/** 前回が昨日の初回＆朝時間帯の長時間モード */
+		const hasMorningYesterdayLongLimit =
+			this.ai.activeFactor > 0.75 &&
+			isRecentGameYesterday &&
+			isYesterdayFirstGameBoostTime &&
+			Math.random() < 0.5;
+
+		const hasLongLimit = hasHighMoodRareLongLimit || hasForcedLongLimit || hasMorningYesterdayLongLimit;
+		if (hasLongLimit) {
 			limitMinutes *= 48;
 		}
 
-		// 機嫌が低い場合、受付時間を延長
-		if (this.ai.activeFactor < 0.75) {
+		/** 機嫌が低い場合、受付時間を延長 */
+		if (this.ai.activeFactor < 0.75 && !hasLongLimit) {
 			limitMinutes = Math.floor(1 / (1 - Math.min((1 - this.ai.activeFactor) * 1.2 * (0.7 + Math.random() * 0.3), 0.8)) * limitMinutes / 5) * 5;
 		}
 
