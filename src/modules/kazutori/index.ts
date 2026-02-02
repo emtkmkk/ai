@@ -265,10 +265,6 @@ export default class extends Module {
                         winRank = -1;
                 }
 
-		// 1番目勝利モードでないかつ75%で最大数値がx倍 (x = x番目勝利モード)
-		if (maxnum.greaterThan(0) && winRank != 1 && Math.random() < 0.75) {
-			maxnum = maxnum.times(2);
-		}
 		const now = new Date();
 
 		// 今日が1/1の場合 最大値は新年の年数
@@ -304,6 +300,16 @@ export default class extends Module {
 		// 機嫌が低い場合、受付時間を延長
 		if (this.ai.activeFactor < 0.75) {
 			limitMinutes = Math.floor(1 / (1 - Math.min((1 - this.ai.activeFactor) * 1.2 * (0.7 + Math.random() * 0.3), 0.8)) * limitMinutes / 5) * 5;
+		}
+
+		// 1番目勝利モードでないかつ75%で最大数値を2倍
+		if (maxnum.greaterThan(0) && winRank !== 1 && Math.random() < 0.75) {
+			maxnum = maxnum.times(2);
+		}
+
+		// 1時間以上の数取りかつ最大数値が9以下なら75%で最大数値を2倍
+		if (limitMinutes >= 60 && maxnum.greaterThan(0) && maxnum.lessThanOrEqualTo(9) && Math.random() < 0.75) {
+			maxnum = maxnum.times(2);
 		}
 
 		const maxnumText = maxnum.equals(Decimal.MAX_VALUE) || maxnum.toString() == "Infinity" ? "上限なし" : maxnum.toString();
