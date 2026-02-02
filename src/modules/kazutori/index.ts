@@ -204,16 +204,16 @@ export default class extends Module {
 		// ゲーム開始条件判定
 		const h = new Date().getHours();
 
-		// 前回がお流れの場合はランダム発生のクールダウンを240分にする
+		// 前回がお流れの場合はランダム発生のクールダウンを110分にする
 		if (
 			recentGame && (
 				!recentGame.isEnded ||
 				(
 					(h > 0 && h < 8) ||
 					(
-						Date.now() - recentGame.startedAt < 1000 * 60 *
+						Date.now() - (recentGame.finishedAt ?? recentGame.startedAt) < 1000 * 60 *
 						(
-							(recentGame?.votes?.length ?? 2) <= 1 && !triggerUserId ? 240 : 120
+							(recentGame?.votes?.length ?? 2) <= 1 && !triggerUserId ? 110 : 50
 						)
 					) && !triggerUserId
 				)
@@ -387,14 +387,15 @@ export default class extends Module {
 
 			// 懐き度が高いほどトリガーのクールタイムを短く
 			// トリガーの公開範囲がフォロワー以下ならクールタイム２倍
-			const cth = Math.max((msg.friend.love >= 200 ? 2 : msg.friend.love >= 100 ? 4 : msg.friend.love >= 20 ? 8 : msg.friend.love >= 5 ? 12 : 16) * (["public", "home"].includes(msg.visibility) ? 1 : 2), 1);
+			const cth = Math.max((msg.friend.love >= 200 ? 1.2 : msg.friend.love >= 100 ? 1.5 : msg.friend.love >= 20 ? 2 : msg.friend.love >= 5 ? 4 : 8) * (["public", "home"].includes(msg.visibility) ? 1 : 1.5), 1);
+			const cooldownBaseAt = recentGame.finishedAt ?? recentGame.startedAt;
 
                         // トリガー者が管理人でない かつ クールタイムが開けていない場合
-                        if ((msg.user.host || msg.user.username !== config.master) && Date.now() - recentGame.startedAt < 1000 * 60 * 30 * cth) {
+                        if ((msg.user.host || msg.user.username !== config.master) && Date.now() - cooldownBaseAt < 1000 * 60 * 30 * cth) {
                                 const cooldownMs = 1000 * 60 * 30 * cth;
-                                const elapsedMs = Date.now() - recentGame.startedAt;
+                                const elapsedMs = Date.now() - cooldownBaseAt;
                                 const remainingMinutes = Math.max(Math.ceil((cooldownMs - elapsedMs) / (1000 * 60)), 0);
-                                const retryAt = Math.ceil((recentGame.startedAt + cooldownMs) / 1000);
+                                const retryAt = Math.ceil((cooldownBaseAt + cooldownMs) / 1000);
 
                                 try {
                                         await msg.reply(serifs.kazutori.matakondo(remainingMinutes, retryAt));
