@@ -842,7 +842,7 @@ export default class extends Module {
                 })();
 
                 const ranking = this.getKazutoriRateRankingSnapshot();
-                const topRates = ranking.slice(0, 3).map((entry, index) => {
+                const topRates = ranking.slice(0, 5).map((entry, index) => {
                         const hasEntryChange =
                                 lastGameId == null || entry.lastRateChangeGameId === lastGameId;
                         const deltaText = hasEntryChange ? formatDelta(entry.lastRateChange) : '→';
@@ -858,7 +858,7 @@ export default class extends Module {
                                 `前回の数取り: ${gameResultLabel}\n` +
                                 `-----------\n` +
                                 `現在の順位: ${rankText}\n` +
-                                `ランキングTOP3:\n` +
+                                `ランキングTOP5:\n` +
                                 `${topText}`,
                         { visibility: 'home' }
                 );
