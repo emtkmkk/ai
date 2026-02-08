@@ -108,6 +108,31 @@ export default class extends Module {
 		if (includes(note.text, ['taikin', '退勤', 'たいきん', 'しごおわ'])) return react(':otukaresama:');
 		if (includes(note.text, ['おはよ', 'ohayo', 'pokita', 'おきた', '起きた', 'おっは', 'ぽきた']) && note.text?.length <= 30 && !includes(note.text, ['が起きた', 'がおきた'])) return react(':mk_oha:');
 		if (includes(note.text, ['おやす', 'oyasu', 'poyasimi', 'ぽやしみ']) && note.text?.length <= 30 && !includes(note.text, ['ちゃんねる'])) return react(':oyasumi2:');
+		if (note.text.length <= 9) {
+			const textWithoutDash = note.text.replaceAll('ー', '');
+			if (includes(textWithoutDash, ['ひま'])) return react(':mkchicken_myonmyon:');
+			if (includes(textWithoutDash, ['すや', 'ねみ', 'ねむ'])) {
+				const hour = new Date().getHours();
+				if (hour === 0) return react(':mou_zerozi_dasi_iikagen_ni_nero:');
+				if (hour === 1 || hour === 13) return react(':mou_ichizi_dasi_iikagen_ni_nero:');
+				if (hour === 12) return react(':mou_jyuunizi_dasi_iikagen_ni_nero:');
+				const hourlyReactions: Record<number, string> = {
+					2: ':mou_nizi_dasi_iikagen_ni_nero:',
+					3: ':mou_sanzi_dasi_iikagen_ni_nero:',
+					4: ':mou_yozi_dasi_iikagen_ni_nero:',
+					5: ':mou_gozi_dasi_iikagen_ni_nero:',
+					6: ':mou_rokuzi_dasi_iikagen_ni_nero:',
+					7: ':mou_sitizi_dasi_iikagen_ni_nero:',
+					8: ':mou_hatizi_dasi_iikagen_ni_nero:',
+					9: ':mou_kuzi_dasi_iikagen_ni_nero:',
+					10: ':mou_jyuzi_dasi_iikagen_ni_nero:',
+					11: ':mou_jyuuichizi_dasi_iikagen_ni_nero:'
+				};
+				const normalizedHour = hour % 12;
+				const reaction = hourlyReactions[normalizedHour];
+				if (reaction) return react(reaction);
+			}
+		}
 
 		if (Math.random() > this.ai.activeFactor * 1.2) return;
 
