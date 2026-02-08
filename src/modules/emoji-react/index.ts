@@ -114,9 +114,9 @@ export default class extends Module {
 			if (includes(textWithoutDash, ['すや', 'ねみ', 'ねむ'])) {
 				const hour = new Date().getHours();
 				if (hour === 0) return react(':mou_zerozi_dasi_iikagen_ni_nero:');
-				if (hour === 1 || hour === 13) return react(':mou_ichizi_dasi_iikagen_ni_nero:');
 				if (hour === 12) return react(':mou_jyuunizi_dasi_iikagen_ni_nero:');
 				const hourlyReactions: Record<number, string> = {
+					1: ':mou_ichizi_dasi_iikagen_ni_nero:',
 					2: ':mou_nizi_dasi_iikagen_ni_nero:',
 					3: ':mou_sanzi_dasi_iikagen_ni_nero:',
 					4: ':mou_yozi_dasi_iikagen_ni_nero:',
