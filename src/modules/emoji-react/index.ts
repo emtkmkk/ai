@@ -134,10 +134,10 @@ export default class extends Module {
 			}
 		}
 
-		if (includes(note.text, ['こんにちは'])) {
+		if (includes(note.text, ['こんにちは', 'konnichiha']) && note.text?.length <= 30) {
 			return react(Math.random() < (2 / 3) ? ':konnichiha_irasutoya:' : ':konnichiha2_irasutoya:');
 		}
-		if (includes(note.text, ['こんばんは'])) {
+		if (includes(note.text, ['こんばんは', 'konbanha']) && note.text?.length <= 30) {
 			return react(Math.random() < (2 / 3) ? ':konbanha_irasutoya:' : ':konbanha2_irasutoya:');
 		}
 
