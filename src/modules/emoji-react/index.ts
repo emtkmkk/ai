@@ -134,6 +134,10 @@ export default class extends Module {
 			}
 		}
 
+		if (includes(note.text, ['こんにちは'])) {
+			return react(Math.random() < (2 / 3) ? ':konnichiha_irasutoya:' : ':konnichiha2_irasutoya:');
+		}
+
 		if (Math.random() > this.ai.activeFactor * 1.2) return;
 
 		let customEmojis = note.text.match(/:([^\n:]+?):/g)?.filter((x) => (x.includes("mk") || x.includes("pizza_")) && !x.includes("rank") && !x.includes("kill"));
