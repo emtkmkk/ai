@@ -26,7 +26,7 @@ Misskey用の日本語Botです。
 ```bash
 # 1. クローン
 git clone <repository_url>
-cd ai-1
+cd ai
 
 # 2. 設定ファイルを作成
 cp config.example.json config.json  # または手動で作成
@@ -130,7 +130,7 @@ npm start
 ```bash
 # 1. クローン＆設定
 git clone <repository_url>
-cd ai-1
+cd 
 # config.json を作成（MeCab設定・memoryDir は触らない）
 
 # 2. ビルド＆起動
@@ -214,7 +214,7 @@ graph TD
 ### ディレクトリ構造
 
 ```text
-ai-1/
+ai/
 ├── src/
 │   ├── ai.ts          # AIコアクラス（藍）
 │   ├── config.ts      # 設定ファイル読み込み
