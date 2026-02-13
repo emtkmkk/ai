@@ -1,3 +1,29 @@
+/**
+ * @packageDocumentation
+ *
+ * 数取りゲームモジュール
+ *
+ * ユーザーが数字を1つ選んで投票し、重複しない最大値（or 2番目/中央値）を選んだ
+ * ユーザーが勝利するゲーム。レーティングシステムも搭載。
+ *
+ * @remarks
+ * NOTE: 数取りの自動開催は18.5分間隔のポーリングで確率判定される。
+ *       12時/17-23時は50%、それ以外は10%。1-7時は開催しない。
+ * NOTE: 最大値は前回・前々回の参加者数の平均値をベースに計算される。
+ * NOTE: 勝利条件は3種類: 最大値(通常)、2番目に大きい値、中央値。
+ * NOTE: 3%の確率で最大値50〜500倍、2%で最大値1、3%で無限モードになる。
+ * NOTE: 15%で反転モード（昇順で判定）になり、結果発表時に勝者が入れ替わる可能性がある。
+ * NOTE: BAN機能により特定ユーザーを除外可能。
+ * NOTE: 公開投稿限定モードでは、リプライ/引用にリアクションがないユーザーは除外される。
+ * NOTE: レーティングは rate.ts で管理。初期レート1000、勝者は敗者からレートを吸収する。
+ * NOTE: メダルシステム: 勝利数50超かつメダル戦で勝つとメダルを獲得。
+ * NOTE: 4/1（エイプリルフール）は反転モードが追加で反転する。
+ * NOTE: 1/1（元日）は最大値が年数になる。
+ *
+ * TODO: セリフ定義を serifs に移動する（一部がインラインで定義されている）
+ *
+ * @public
+ */
 import autobind from 'autobind-decorator';
 import * as loki from 'lokijs';
 import Module from '@/module';
@@ -12,38 +38,93 @@ import { ensureKazutoriData, findRateRank, hasKazutoriRateHistory } from './rate
 import type { EnsuredKazutoriData } from './rate';
 var Decimal = require('break_infinity.js');
 
+/**
+ * 投票情報
+ *
+ * @internal
+ */
 type Vote = {
+        /** 投票者のユーザー情報 */
 	user: {
 		id: string;
 		username: string;
 		host: User['host'];
+                /** 数取りの累計勝利回数 */
 		winCount: number;
 	};
+        /** 投票した数値（Decimal型: 巨大数対応） */
 	number: typeof Decimal;
 };
 
+/**
+ * ゲーム状態
+ *
+ * @remarks
+ * LokiJS コレクションに保存されるゲーム1回分のデータ。
+ *
+ * @internal
+ */
 type Game = {
+        /** 全投票情報 */
 	votes: Vote[];
+        /** ゲーム終了済みか */
 	isEnded: boolean;
+        /** 開始時刻（ミリ秒タイムスタンプ） */
 	startedAt: number;
+        /** 終了時刻（ミリ秒タイムスタンプ） */
 	finishedAt: number;
+        /** 勝利条件: 1=最大値, 2=2番目, -1=中央値 */
 	winRank: number;
+        /** 開催投稿のノートID */
 	postId: string;
+        /** 投票可能な最大数値（Decimal型） */
 	maxnum: typeof Decimal;
+        /** ゲーム開催をトリガーしたユーザーのID */
 	triggerUserId: string | undefined;
+        /** 公開投稿のみ受付けるモードか */
 	publicOnly: boolean;
+        /** リプライ購読キーのリスト */
         replyKey: string[];
+        /** 投票受付時間（分） */
         limitMinutes: number;
+        /** 勝者のユーザーID */
         winnerUserId?: string;
+        /** 再集計実施時刻（ミリ秒タイムスタンプ） */
         reaggregatedAt?: number;
 };
 
+/**
+ * 数取りゲームモジュールクラス
+ *
+ * @remarks
+ * ゲームのライフサイクル:
+ * 1. start(): ゲーム開始投稿
+ * 2. contextHook(): 投票受付（リプライで数字を受ける）
+ * 3. crawleGameEnd(): 制限時間チェック（1秒間隔）
+ * 4. finish(): 結果集計・レーティング更新・結果発表
+ *
+ * @public
+ */
 export default class extends Module {
         public readonly name = 'kazutori';
 
+        /** ゲーム情報コレクション */
         private games: loki.Collection<Game>;
+        /** 定時リノート重複防止用 */
         private lastHourlyRenote: { key: string; postId: string } | null = null;
 
+
+        /**
+         * ユーザーがBAN対象かどうかを判定する
+         *
+         * @remarks
+         * `config.kazutoriBanUsers` に設定されたユーザーID/ユーザー名/acctと比較する。
+         * 大文字小文字を区別しない。
+         *
+         * @param user - 判定対象のユーザー
+         * @returns BANされている場合 `true`
+         * @internal
+         */
         private isBannedUser(user: User): boolean {
                 const banUsers = config.kazutoriBanUsers ?? [];
                 const identifiers = [
@@ -58,6 +139,18 @@ export default class extends Module {
                 return banUsers.some((banUser) => typeof banUser === 'string' && identifiers.includes(banUser.toLowerCase()));
         }
 
+        /**
+         * 公開投稿限定モードで、有効な投票者IDを収集する
+         *
+         * @remarks
+         * 開催投稿へのリプライ・引用を取得し、特定のリアクション
+         * (discochicken) を付けているユーザーのIDを集める。
+         * リアクションがないユーザーの投票は無効化される。
+         *
+         * @param postId - 開催投稿のノートID
+         * @returns 有効ユーザーIDのセット、またはエラー時 `null`
+         * @internal
+         */
         private async collectPublicOnlyVoteUserIds(postId: string): Promise<Set<string> | null> {
                 const reactionKeys = new Set([':mk_discochicken@.:', ':disco_chicken:']);
                 const expectedReactions = Array.from(reactionKeys).join(', ');
@@ -119,6 +212,18 @@ export default class extends Module {
                 return validUserIds;
         }
 
+        /**
+         * モジュールの初期化
+         *
+         * @remarks
+         * - ゲームコレクションの初期化
+         * - 1秒間隔でゲーム終了チェック
+         * - 1秒間隔で定時リノートチェック
+         * - 18.5分間隔で自動開催判定（時間帯により確率変動）
+         *
+         * @returns mentionHook と contextHook を含むフック登録オブジェクト
+         * @public
+         */
         @autobind
         public install() {
                 this.games = this.ai.getCollection('kazutori');
@@ -140,6 +245,16 @@ export default class extends Module {
                 };
         }
 
+        /**
+         * 定時リノート: 進行中のゲームを偶数時にリノートする
+         *
+         * @remarks
+         * 8,10,12,14,16,18,20,22時の正分にリノートする。
+         * 終了10分前以内の場合はリノートしない。
+         * 同じゲーム・同じ時間帯での重複リノートを防止する。
+         *
+         * @internal
+         */
         @autobind
         private async renoteOnSpecificHours() {
                 const game = this.games.findOne({
@@ -180,6 +295,16 @@ export default class extends Module {
                 }
         }
 
+        /**
+         * ゲームを開始する
+         *
+         * @remarks
+         * 最大値・勝利条件・制限時間・公開範囲を決定し、開催投稿を行う。
+         *
+         * @param triggerUserId - トリガーしたユーザーのID（自動開催時はundefined）
+         * @param flg - 管理者フラグ（'inf'=無限, 'med'=中央値, 'lng'=長時間, '2nd'=2番目, 'pub'=公開限定）
+         * @internal
+         */
 	@autobind
 	private async start(triggerUserId?, flg?) {
 		this.ai.decActiveFactor();
@@ -364,6 +489,18 @@ export default class extends Module {
 		this.log('New kazutori game started');
 	}
 
+        /**
+         * メンション受信時のフック: ゲーム開催リクエスト・再集計
+         *
+         * @remarks
+         * 「数取り」を含むメンションでゲーム開催をリクエストする。
+         * 管理者は「再集計」で最新ゲームの結果を再集計できる。
+         * クールタイムは親愛度に応じて短縮される（最大8倍→1.2倍）。
+         *
+         * @param msg - 受信メッセージ
+         * @returns HandlerResult または `false`
+         * @internal
+         */
         @autobind
 	private async mentionHook(msg: Message) {
                 if (msg.includes(['レート'])) {
@@ -454,6 +591,16 @@ export default class extends Module {
 		};
 	}
 
+        /**
+         * 最新ゲームの結果を再集計する（管理者コマンド）
+         *
+         * @remarks
+         * 最新の終了済みゲームに対して finish() を再実行する。
+         * 既に再集計済みの場合は拒否する。
+         *
+         * @param msg - メンションメッセージ（返信先）
+         * @internal
+         */
         @autobind
         private async redoLastAggregation(msg: Message) {
                 const games = this.games.find({});
@@ -487,6 +634,20 @@ export default class extends Module {
                 await this.finish(recentGame, { isReaggregate: true });
         }
 
+        /**
+         * コンテキストフック: 投票の受付処理
+         *
+         * @remarks
+         * 開催投稿へのリプライを投票として処理する。
+         * 各種バリデーション（BAN・重複・範囲・トリガー者の1分制限など）を行い、
+         * 有効な投票をゲームに記録する。
+         * 21桁以上の数字はDecimal型に変換し、丸め処理を行う。
+         *
+         * @param key - コンテキストキー
+         * @param msg - 受信メッセージ
+         * @returns HandlerResult
+         * @internal
+         */
 	@autobind
         private async contextHook(key: any, msg: Message) {
                 if (msg.text == null)
@@ -695,7 +856,20 @@ export default class extends Module {
         }
 
 	/**
-	 * ゲームを終わらせる
+	 * ゲームの終了処理: 結果集計・レーティング更新・結果発表
+	 *
+	 * @remarks
+	 * 1. 公開限定モードの場合は有効投票者をフィルタリング
+	 * 2. ブロックユーザーの投票を除外
+	 * 3. 勝者を決定（最大値/2番目/中央値 × 反転判定）
+	 * 4. レーティングを更新（勝者にボーナス、敗者にペナルティ）
+	 * 5. 不参加者のレート1000超過分にペナルティ
+	 * 6. 勝者にアイテム付与・勝利数カウント・メダル付与
+	 * 7. 結果発表を投稿
+	 *
+	 * @param game - 終了するゲーム
+	 * @param options - オプション（再集計フラグ）
+	 * @internal
 	 */
 	@autobind
         private async finish(game: Game, options?: { isReaggregate?: boolean }) {

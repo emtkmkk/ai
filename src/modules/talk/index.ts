@@ -1,3 +1,22 @@
+/**
+ * @packageDocumentation
+ *
+ * 会話応答モジュール
+ *
+ * メンションに対して挨拶・褒め・おめでとう等の会話応答を行うモジュール。
+ * 各ハンドラは mentionHook 内で優先順に評価され、最初にマッチしたものが応答する。
+ *
+ * @remarks
+ * NOTE: 現在、greet / erait / omedeto の3つのみ有効。
+ *       それ以外（nadenade, kawaii, suki, hug, humu, batou, itai, ote, ponkotu, rmrf, shutdown）は
+ *       mentionHook 内でコメントアウトされており無効。
+ *       将来的に再有効化する可能性があるため、関数定義自体は残している。
+ *
+ * NOTE: greet は incLove(0.6, "greet") を呼び出し、1日1回だけ親愛度を上昇させる。
+ *       ponkotu / rmrf は decLove() を呼び出し親愛度を下げるが、現在は無効。
+ *
+ * @public
+ */
 import autobind from 'autobind-decorator';
 import { HandlerResult } from '@/ai';
 import Module from '@/module';
@@ -5,9 +24,28 @@ import Message from '@/message';
 import serifs, { getSerif } from '@/serifs';
 import getDate from '@/utils/get-date';
 
+/**
+ * 会話応答モジュールクラス
+ *
+ * @remarks
+ * メンションに含まれるキーワードに応じて、挨拶やリアクションを返す。
+ * 各ハンドラメソッドは `boolean | HandlerResult` を返し、
+ * `true` または `HandlerResult` を返した場合に処理済みとなる。
+ *
+ * @public
+ */
 export default class extends Module {
 	public readonly name = 'talk';
 
+	/**
+	 * モジュールの初期化
+	 *
+	 * @remarks
+	 * mentionHook のみを登録する。定期実行やコンテキストフックは不要。
+	 *
+	 * @returns mentionHook を含むフック登録オブジェクト
+	 * @public
+	 */
 	@autobind
 	public install() {
 		return {
@@ -15,6 +53,18 @@ export default class extends Module {
 		};
 	}
 
+	/**
+	 * メンション受信時のフック
+	 *
+	 * @remarks
+	 * 各ハンドラを優先順に評価し、最初にマッチしたハンドラの結果を返す。
+	 * 現在有効なハンドラ: greet, erait, omedeto
+	 * コメントアウト中: nadenade, kawaii, suki, hug, humu, batou, itai, ote, ponkotu, rmrf, shutdown
+	 *
+	 * @param msg - 受信メッセージ
+	 * @returns 処理結果。いずれのハンドラにもマッチしなかった場合は `false`
+	 * @internal
+	 */
 	@autobind
 	private async mentionHook(msg: Message) {
 		if (!msg.text) return false;
@@ -38,6 +88,19 @@ export default class extends Module {
 		);
 	}
 
+	/**
+	 * 挨拶ハンドラ
+	 *
+	 * @remarks
+	 * 「おはよう」「こんにちは」「おやすみ」「行ってきます」「ただいま」「ありがとう」を検出し、
+	 * 対応するセリフで返信する。1日1回のみ親愛度を +0.6（実効 +3）上昇させる。
+	 *
+	 * NOTE: テンション（末尾の `！` の数）は「おはよう」の返信にのみ影響する。
+	 *
+	 * @param msg - 受信メッセージ
+	 * @returns マッチした場合は HandlerResult、しなかった場合は `false`
+	 * @internal
+	 */
 	@autobind
 	private greet(msg: Message) {
 		if (msg.text == null) return false;
@@ -53,13 +116,14 @@ export default class extends Module {
 			data.lastGreetedAt = today;
 			msg.friend.setPerModulesData(this, data);
 
+			// 0.6 × 5 = 実効 3 の親愛度上昇
 			msg.friend.incLove(0.6, "greet");
 
 			return { reaction: 'love' };
 			//#endregion
 		};
 
-		// 末尾のエクスクラメーションマーク
+		// 末尾のエクスクラメーションマークの連続数を取得（テンション判定用）
 		const tension = (msg.text.match(/[！!]{2,}/g) || [''])
 			.sort((a, b) => a.length < b.length ? 1 : -1)[0]
 			.substr(1);
@@ -105,20 +169,35 @@ export default class extends Module {
 		return false;
 	}
 
+	/**
+	 * 「褒めて」ハンドラ
+	 *
+	 * @remarks
+	 * 「〇〇たから褒めて」「〇〇るから褒めて」「〇〇だから褒めて」のパターンで
+	 * 理由を抽出し、理由付きの褒めセリフを返す。パターンにマッチしない場合は
+	 * 汎用の褒めセリフを返す。
+	 *
+	 * @param msg - 受信メッセージ
+	 * @returns マッチした場合は HandlerResult、しなかった場合は `false`
+	 * @internal
+	 */
 	@autobind
 	private erait(msg: Message) {
+		// 「〇〇た（から|ので）褒めて」パターン
 		const match = msg.extractedText.match(/(.+?)た(から|ので)(褒|ほ)めて/);
 		if (match) {
 			msg.reply(getSerif(serifs.core.erait.specify(match[1], msg.friend.name)));
 			return { reaction: 'love' };
 		}
 
+		// 「〇〇る（から|ので）褒めて」パターン
 		const match2 = msg.extractedText.match(/(.+?)る(から|ので)(褒|ほ)めて/);
 		if (match2) {
 			msg.reply(getSerif(serifs.core.erait.specify(match2[1], msg.friend.name)));
 			return { reaction: 'love' };
 		}
 
+		// 「〇〇だから褒めて」パターン
 		const match3 = msg.extractedText.match(/(.+?)だから(褒|ほ)めて/);
 		if (match3) {
 			msg.reply(getSerif(serifs.core.erait.specify(match3[1], msg.friend.name)));
@@ -127,11 +206,19 @@ export default class extends Module {
 
 		if (!msg.includes(['褒めて', 'ほめて'])) return false;
 
+		// 理由なしの汎用褒めセリフ
 		msg.reply(getSerif(serifs.core.erait.general(msg.friend.name)));
 
 		return { reaction: 'love' };
 	}
 
+	/**
+	 * 「おめでとう」ハンドラ
+	 *
+	 * @param msg - 受信メッセージ
+	 * @returns マッチした場合は HandlerResult、しなかった場合は `false`
+	 * @internal
+	 */
 	@autobind
 	private omedeto(msg: Message) {
 		if (!msg.includes(['おめでと'])) return false;
@@ -141,6 +228,17 @@ export default class extends Module {
 		return { reaction: ':mk_discochicken:' };
 	}
 
+	/**
+	 * 「なでなで」ハンドラ（現在コメントアウトで無効）
+	 *
+	 * @remarks
+	 * 親愛度に応じて返答が変化する。親愛度0以上なら1日1回 incLove() で +1（実効 +5）。
+	 * 親愛度が低い場合は嫌がるセリフになる。
+	 *
+	 * @param msg - 受信メッセージ
+	 * @returns マッチした場合は `true`、しなかった場合は `false`
+	 * @internal
+	 */
 	@autobind
 	private nadenade(msg: Message): boolean {
 		if (!msg.includes(['なでなで'])) return false;
@@ -160,6 +258,7 @@ export default class extends Module {
 		}
 		//#endregion
 
+		// 親愛度レベルに応じた返答を選択
 		msg.reply(getSerif(
 			msg.friend.love >= 10 ? serifs.core.nadenade.love3 :
 				msg.friend.love >= 5 ? serifs.core.nadenade.love2 :
@@ -173,6 +272,13 @@ export default class extends Module {
 		return true;
 	}
 
+	/**
+	 * 「かわいい」ハンドラ（現在コメントアウトで無効）
+	 *
+	 * @param msg - 受信メッセージ
+	 * @returns マッチした場合は `true`、しなかった場合は `false`
+	 * @internal
+	 */
 	@autobind
 	private kawaii(msg: Message): boolean {
 		if (!msg.includes(['かわいい', '可愛い'])) return false;
@@ -185,6 +291,17 @@ export default class extends Module {
 		return true;
 	}
 
+	/**
+	 * 「好き」ハンドラ（現在コメントアウトで無効）
+	 *
+	 * @remarks
+	 * `msg.or()` を使用して「好き」「すき」のいずれかに完全一致で判定。
+	 * 親愛度5以上かつ名前を設定済みなら、名前入りの特別返答を返す。
+	 *
+	 * @param msg - 受信メッセージ
+	 * @returns マッチした場合は `true`、しなかった場合は `false`
+	 * @internal
+	 */
 	@autobind
 	private suki(msg: Message): boolean {
 		if (!msg.or(['好き', 'すき'])) return false;
@@ -197,6 +314,19 @@ export default class extends Module {
 		return true;
 	}
 
+	/**
+	 * 「ハグ」ハンドラ（現在コメントアウトで無効）
+	 *
+	 * @remarks
+	 * 前のハグから1分以内は返信しない（連続応答による不自然さ防止）。
+	 * 「ぎゅ」「むぎゅ」「はぐ」等にマッチする。
+	 *
+	 * HACK: ハグ→ぎゅー→ぎゅーの連鎖を防ぐため、1分のクールダウンを設けている。
+	 *
+	 * @param msg - 受信メッセージ
+	 * @returns マッチした場合は `true`、しなかった場合は `false`
+	 * @internal
+	 */
 	@autobind
 	private hug(msg: Message): boolean {
 		if (!msg.or(['ぎゅ', 'むぎゅ', /^はぐ(し(て|よ|よう)?)?$/])) return false;
@@ -228,6 +358,13 @@ export default class extends Module {
 		return true;
 	}
 
+	/**
+	 * 「踏んで」ハンドラ（現在コメントアウトで無効）
+	 *
+	 * @param msg - 受信メッセージ
+	 * @returns マッチした場合は `true`、しなかった場合は `false`
+	 * @internal
+	 */
 	@autobind
 	private humu(msg: Message): boolean {
 		if (!msg.includes(['踏んで'])) return false;
@@ -240,6 +377,13 @@ export default class extends Module {
 		return true;
 	}
 
+	/**
+	 * 「罵倒して」ハンドラ（現在コメントアウトで無効）
+	 *
+	 * @param msg - 受信メッセージ
+	 * @returns マッチした場合は `true`、しなかった場合は `false`
+	 * @internal
+	 */
 	@autobind
 	private batou(msg: Message): boolean {
 		if (!msg.includes(['罵倒して', '罵って'])) return false;
@@ -252,6 +396,13 @@ export default class extends Module {
 		return true;
 	}
 
+	/**
+	 * 「痛い」ハンドラ（現在コメントアウトで無効）
+	 *
+	 * @param msg - 受信メッセージ
+	 * @returns マッチした場合は `true`、しなかった場合は `false`
+	 * @internal
+	 */
 	@autobind
 	private itai(msg: Message): boolean {
 		if (!msg.or(['痛い', 'いたい']) && !msg.extractedText.endsWith('痛い')) return false;
@@ -261,6 +412,16 @@ export default class extends Module {
 		return true;
 	}
 
+	/**
+	 * 「お手」ハンドラ（現在コメントアウトで無効）
+	 *
+	 * @remarks
+	 * 親愛度10以上 / 5以上 / それ以下で3段階の返答が変わる。
+	 *
+	 * @param msg - 受信メッセージ
+	 * @returns マッチした場合は `true`、しなかった場合は `false`
+	 * @internal
+	 */
 	@autobind
 	private ote(msg: Message): boolean {
 		if (!msg.or(['お手'])) return false;
@@ -273,6 +434,16 @@ export default class extends Module {
 		return true;
 	}
 
+	/**
+	 * 「ぽんこつ」ハンドラ（現在コメントアウトで無効）
+	 *
+	 * @remarks
+	 * decLove() を呼び出し、親愛度を -1（実効 -5）低下させる。
+	 *
+	 * @param msg - 受信メッセージ
+	 * @returns マッチした場合は HandlerResult（angry リアクション）、しなかった場合は `false`
+	 * @internal
+	 */
 	@autobind
 	private ponkotu(msg: Message): boolean | HandlerResult {
 		if (!msg.includes(['ぽんこつ'])) return false;
@@ -284,6 +455,16 @@ export default class extends Module {
 		};
 	}
 
+	/**
+	 * 「rm -rf」ハンドラ（現在コメントアウトで無効）
+	 *
+	 * @remarks
+	 * decLove() を呼び出し、親愛度を -1（実効 -5）低下させる。
+	 *
+	 * @param msg - 受信メッセージ
+	 * @returns マッチした場合は HandlerResult（angry リアクション）、しなかった場合は `false`
+	 * @internal
+	 */
 	@autobind
 	private rmrf(msg: Message): boolean | HandlerResult {
 		if (!msg.includes(['rm -rf'])) return false;
@@ -295,6 +476,16 @@ export default class extends Module {
 		};
 	}
 
+	/**
+	 * 「shutdown」ハンドラ（現在コメントアウトで無効）
+	 *
+	 * @remarks
+	 * 親愛度への影響はなく、セリフのみ返す。
+	 *
+	 * @param msg - 受信メッセージ
+	 * @returns マッチした場合は HandlerResult（confused リアクション）、しなかった場合は `false`
+	 * @internal
+	 */
 	@autobind
 	private shutdown(msg: Message): boolean | HandlerResult {
 		if (!msg.includes(['shutdown'])) return false;

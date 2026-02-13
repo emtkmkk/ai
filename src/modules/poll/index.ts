@@ -1,3 +1,24 @@
+/**
+ * @packageDocumentation
+ *
+ * アンケート（投票）モジュール
+ *
+ * ランダムなテーマでアンケートを自動投稿し、結果を集計・記憶するモジュール。
+ * 50種以上のテーマから選ばれたお題に対し、vocabulary から生成されたアイテムを選択肢にする。
+ *
+ * @remarks
+ * NOTE: アンケートの投稿タイミングは時間帯と activeFactor に依存する。
+ *       12時/17-23時は確率25%、それ以外は5%。深夜(0-6時)と13-16時は投稿しない。
+ * NOTE: 結果は pollresult コレクションに記録され、同じアイテムが連勝している場合は
+ *       次回のアンケートに前回の勝者を混ぜる仕組みがある。
+ * NOTE: 12/31（大晦日）は20:00-20:30に確定で投稿し、選択肢が10個になる。
+ * NOTE: 「好きな絵文字」テーマではインスタンスの絵文字を使用。
+ * NOTE: 「面白いバナナス」テーマでは makeBananasu で選択肢を生成。
+ *
+ * TODO: セリフ定義を serifs に移動する（現在はインラインで定義されている箇所がある）
+ *
+ * @public
+ */
 import autobind from 'autobind-decorator';
 import Message from '@/message';
 import Module from '@/module';
@@ -7,28 +28,84 @@ import { genItem } from '@/vocabulary';
 import config from '@/config';
 import { Note } from '@/misskey/note';
 
+/**
+ * アンケートモジュールクラス
+ *
+ * @remarks
+ * 30分間隔で投稿チェックし、確率的にアンケートを投稿する。
+ * 結果はタイムアウトコールバックで集計し、最多得票のアイテムを記憶する。
+ *
+ * @public
+ */
 export default class extends Module {
 	public readonly name = 'poll';
 
+	/**
+	 * アンケート結果の記憶コレクション（現在の最多得票アイテム）
+	 *
+	 * @remarks
+	 * テーマごとに最新の勝者アイテムと連勝数を記録する。
+	 * 同じアイテムが連続で1位になると winCount が増加し、
+	 * 次回のアンケートに前回の勝者を選択肢に混ぜる仕組みに使われる。
+	 *
+	 * @internal
+	 */
 	private pollresult: loki.Collection<{
+		/** アンケートテーマ名 */
 		key: string;
+		/** 最多得票アイテムのテキスト */
 		keyword: string;
+		/** 連勝数（同じアイテムが連続で1位になった回数） */
 		winCount?: number;
 	}>;
 
+	/**
+	 * アンケート結果のレジェンドコレクション（過去最高連勝記録）
+	 *
+	 * @remarks
+	 * テーマごとに過去最高の連勝記録を保持する。
+	 * 現在の連勝数が legend の記録を超えた場合に更新される。
+	 *
+	 * @internal
+	 */
 	private pollresultlegend: loki.Collection<{
 		key: string;
 		keyword: string;
 		winCount?: number;
 	}>;
 
-	// 新しく追加するコレクション
+	/**
+	 * 進行中のアンケートコレクション
+	 *
+	 * @remarks
+	 * 結果表示時に進行中のアンケートを「覚えた答え」リストから除外するために使用。
+	 * install 時に期限切れのエントリは自動削除される。
+	 *
+	 * @internal
+	 */
 	private ongoingPolls: loki.Collection<{
+		/** アンケートのテーマ名 */
 		title: string;
+		/** 投稿されたノートのID */
 		noteId: string;
+		/** 有効期限（ミリ秒タイムスタンプ） */
 		expiration: number;
 	}>;
 
+	/**
+	 * モジュールの初期化
+	 *
+	 * @remarks
+	 * 3つのLokiJSコレクションを初期化し、期限切れのongoingPollsを削除。
+	 * 30分間隔でアンケート投稿判定を行う。投稿確率は時間帯に依存:
+	 * - 12時 / 17-23時: 25% × activeFactor
+	 * - 7-12時 / 13-16時: 5% × activeFactor
+	 * - 0-6時: 投稿しない
+	 * - 12/31 20:00-20:30: 確定投稿
+	 *
+	 * @returns mentionHook と timeoutCallback を含むフック登録オブジェクト
+	 * @public
+	 */
 	@autobind
 	public install() {
 		this.pollresult = this.ai.getCollection('_poll_pollresult', {
@@ -41,7 +118,7 @@ export default class extends Module {
 			indices: ['noteId']
 		});
 		this.ongoingPolls.findAndRemove({'expiration':{ $lt: Date.now() }});
-		
+
 		setInterval(() => {
 			const hours = new Date().getHours();
 			let rnd = ((hours === 12 || (hours > 17 && hours < 24)) ? 0.25 : 0.05) * this.ai.activeFactor;
@@ -64,6 +141,25 @@ export default class extends Module {
 		};
 	}
 
+	/**
+	 * アンケートの投稿
+	 *
+	 * @remarks
+	 * 50種以上のテーマからランダムに1つ選び、vocabulary から生成したアイテムを選択肢として
+	 * Misskey の投票機能付きノートを投稿する。
+	 *
+	 * 投票受付時間:
+	 * - 通常: 10分（activeFactor が低い場合は延長される）
+	 * - 大晦日: 120分
+	 *
+	 * 選択肢数:
+	 * - 通常: 4個（28%の確率で各+1、最大9個。連勝数が多いほど追加されやすい）
+	 * - 大晦日: 10個
+	 * - 連勝中のアイテムがある場合: 選択肢にランダム挿入
+	 *
+	 * @param key - テーマのフィルタキー（指定時はキーを含むテーマから選択）
+	 * @internal
+	 */
 	@autobind
 	private async post(key?: string) {
 		this.ai.decActiveFactor(0.05);
@@ -236,6 +332,23 @@ export default class extends Module {
 		});
 	}
 
+	/**
+	 * メンション受信時のフック
+	 *
+	 * @remarks
+	 * 2つのコマンドに対応:
+	 *
+	 * 1. 「覚えた答え」確認:
+	 *    「覚えた」+「答」を含むメンションで、記憶しているアンケート結果一覧を返信する。
+	 *    進行中のアンケートのテーマは除外される。連勝数が多い順にソート。
+	 *
+	 * 2. 管理者コマンド `/poll [テーマキー]`:
+	 *    管理者のみ実行可能。指定テーマ（部分一致）でアンケートを手動投稿する。
+	 *
+	 * @param msg - 受信メッセージ
+	 * @returns マッチした場合は HandlerResult、しなかった場合は `false`
+	 * @internal
+	 */
 	@autobind
 	private async mentionHook(msg: Message) {
 		if (msg.includes(['覚えた', 'おぼえた']) && msg.includes(['答', 'こたえ'])) {
@@ -306,6 +419,25 @@ export default class extends Module {
 		}
 	}
 
+	/**
+	 * アンケート終了時のタイムアウトコールバック
+	 *
+	 * @remarks
+	 * アンケートの結果を集計し、最多得票のアイテムを記憶する。
+	 *
+	 * 結果パターン:
+	 * - 投票0: activeFactor を減少させるのみ（投稿しない）
+	 * - 単独1位: 結果を発表し、pollresult/pollresultlegend に記録。
+	 *   3票以上 or 総投票数が選択肢数超の場合に記憶する。
+	 *   同じアイテムの連勝時は winCount を増加。
+	 * - 同率1位: 以前の勝者以外からランダムに1つ選んで記憶。
+	 *
+	 * @param params - タイムアウトパラメータ
+	 * @param params.title - アンケートのテーマ名
+	 * @param params.noteId - 投稿ノートのID
+	 * @param params.duration - 投票受付時間（ミリ秒）
+	 * @internal
+	 */
 	@autobind
 	private async timeoutCallback({ title, noteId, duration, }) {
 		const note: Note = await this.ai.api('notes/show', { noteId });

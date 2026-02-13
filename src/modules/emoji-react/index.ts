@@ -1,3 +1,23 @@
+/**
+ * @packageDocumentation
+ *
+ * 自動絵文字リアクションモジュール
+ *
+ * ホームタイムラインのノートを監視し、キーワードや絵文字に応じて
+ * 自動的にリアクション（カスタム絵文字）を付与する。
+ *
+ * @remarks
+ * NOTE: Bot のノート・メンション付きノート・自己リプライ以外のリプライはスルーする。
+ * NOTE: フォロワー限定+CW付きは開かない（深刻な内容が多い為）。
+ *       それ以外のCW付きは50%で開く。
+ * NOTE: フォロワー限定ノートは50%の確率でリアクションをスキップする。
+ * NOTE: リアクションまでの待機時間は、テキスト長・CW有無・親愛度によって変動する。
+ * NOTE: 1日に同じユーザーへのリアクション数が3を超えると、確率的にスキップされる。
+ * NOTE: `activeFactor` が低い場合はキーワード判定前にスキップされることがある。
+ * NOTE: 長い文章ほどスキップ率が上がる（30文字超で5%〜、51文字以降は+2%/文字）。
+ *
+ * @public
+ */
 import autobind from 'autobind-decorator';
 import { parse } from 'twemoji-parser';
 const delay = require('timeout-as-promise');
@@ -11,11 +31,31 @@ import { mecab } from '@/modules/keyword/mecab';
 import { hankakuToZenkaku, katakanaToHiragana } from '@/utils/japanese';
 import getDate from '@/utils/get-date';
 
+/**
+ * 自動絵文字リアクションモジュールクラス
+ *
+ * @remarks
+ * ホームTLのストリームを監視し、条件にマッチするノートにリアクションする。
+ * mentionHook は使用せず、全てストリームイベントで動作する。
+ *
+ * @public
+ */
 export default class extends Module {
 	public readonly name = 'emoji-react';
 
+	/** ホームタイムラインのストリーム接続 */
 	private htl: ReturnType<Stream['useSharedConnection']>;
 
+	/**
+	 * モジュールの初期化
+	 *
+	 * @remarks
+	 * ホームTLのストリームに接続し、ノート受信イベントを監視する。
+	 * 空オブジェクトを返すため、mentionHook 等は登録しない。
+	 *
+	 * @returns 空のフック登録オブジェクト
+	 * @public
+	 */
 	@autobind
 	public install() {
 		this.htl = this.ai.connection.useSharedConnection('homeTimeline');
@@ -24,6 +64,18 @@ export default class extends Module {
 		return {};
 	}
 
+	/**
+	 * MeCab を使った単語マッチ確認
+	 *
+	 * @remarks
+	 * テキストを形態素解析し、指定された単語が表層形の前方・後方一致するかを確認する。
+	 * 人名は除外される。半角→全角変換、カタカナ→ひらがな変換を行って比較する。
+	 *
+	 * @param text - 確認対象のテキスト
+	 * @param word - マッチさせたい単語（文字列または文字列配列）
+	 * @returns マッチした場合 `true`
+	 * @public
+	 */
 	public async checkMecab(text: string, word: string | string[]): Promise<boolean> {
 		const tokens = await mecab(text, config.mecab, config.mecabDic, config.mecabCustom);
 		if (typeof word === "string") word = [word];
@@ -36,6 +88,24 @@ export default class extends Module {
 		return keywordsInThisNote.length > 0
 	}
 
+	/**
+	 * ノート受信時のハンドラ
+	 *
+	 * @remarks
+	 * ホームTLの各ノートに対し、以下の順序で判定を行う:
+	 *
+	 * 1. **前段フィルタ**: Bot・メンション付き・他者への返信・CW・公開範囲のチェック
+	 * 2. **即座判定のキーワード**: 退勤、おはよう、おやすみ、こんにちは、こんばんは
+	 * 3. **短文特殊判定** (9文字以内): 暇、眠い（時刻表示付きリアクション）
+	 * 4. **activeFactor チェック**: 低活動度の場合はここでスキップ
+	 * 5. **カスタム絵文字検出**: `mk` or `pizza_` を含む絵文字をそのままリアクション
+	 * 6. **新年リアクション**: 1/1 限定
+	 * 7. **長文スキップ判定**: 30文字超で確率的スキップ
+	 * 8. **キーワード判定**: ピザ、カンピロバクター、つらい、もこ 等
+	 *
+	 * @param note - 受信ノート
+	 * @internal
+	 */
 	@autobind
 	private async onNote(note: Note) {
 		// Botはスルー これで自分自身もスルーする
@@ -57,6 +127,22 @@ export default class extends Module {
 		// 公開範囲フォロワーの場合、50%でリアクションしない
 		if (note.visibility === 'followers' && Math.random() < 0.5) return;
 
+		/**
+		 * リアクション実行関数
+		 *
+		 * @remarks
+		 * 待機時間を計算してからリアクションAPIを呼び出す。
+		 * 待機時間は以下の要素で決まる:
+		 * - 基本: 3.5秒
+		 * - CW付き: +2秒
+		 * - 30文字超: +0.1秒/文字（最大+6.8秒）
+		 * - 親愛度: 好感度1あたり0.2%短縮（最大20%短縮）
+		 * - activeFactor: 低いほど遅延増加
+		 * - 1日のリアクション数: 3回超で確率的にスキップ
+		 *
+		 * @param reaction - リアクション絵文字
+		 * @param immediate - trueの場合は待機なしで即座にリアクション
+		 */
 		const react = async (reaction: string, immediate = false) => {
 			if (!immediate) {
 				// 絵文字をつけるまでの時間は3.5 ~ 6.5秒でゆらぎをつける
@@ -80,7 +166,7 @@ export default class extends Module {
 				if (friend) {
 					// 一日に反応した数が多ければ、反応率を下げる
 		const today = getDate();
-		
+
 		if (friend.doc.lastReactAt != today) {
 			friend.doc.todayReactCount = 0;
 			friend.doc.lastReactAt = today;
@@ -95,6 +181,7 @@ export default class extends Module {
 					waitTime = Math.round(waitTime * (1 - (0.002 * Math.min(friend.love, 100))));
 				}
 
+				// activeFactor が低いほど待機時間が伸びる
 				waitTime = waitTime * Math.max(0.6 / this.ai.activeFactor, 1);
 
 				await delay(waitTime + Math.round(Math.random() * Math.max(1 / this.ai.activeFactor, 1) * (waitTime + 500)));
@@ -105,12 +192,14 @@ export default class extends Module {
 			});
 		};
 
+		// --- 即座判定のキーワード（activeFactor に依存しない） ---
 		if (includes(note.text, ['taikin', '退勤', 'たいきん', 'しごおわ'])) return react(':otukaresama:');
 		if (includes(note.text, ['おはよ', 'ohayo', 'pokita', 'おきた', '起きた', 'おっは', 'ぽきた']) && note.text?.length <= 30 && !includes(note.text, ['が起きた', 'がおきた'])) return react(':mk_oha:');
 		if (includes(note.text, ['おやす', 'oyasu', 'poyasimi', 'ぽやしみ']) && note.text?.length <= 30 && !includes(note.text, ['ちゃんねる'])) return react(':oyasumi2:');
 		if (note.text.length <= 9) {
 			const textWithoutDash = note.text.replaceAll('ー', '');
 			if (includes(textWithoutDash, ['ひま'])) return react(':mkchicken_myonmyon:');
+			// 「眠い」系は現在時刻に応じた絵文字で反応
 			if (includes(textWithoutDash, ['すや', 'ねみ', 'ねむ'])) {
 				const hour = new Date().getHours();
 				if (hour === 0) return react(':mou_zerozi_dasi_iikagen_ni_nero:');
@@ -141,8 +230,10 @@ export default class extends Module {
 			return react(Math.random() < (2 / 3) ? ':konbanha_irasutoya:' : ':konbanha2_irasutoya:');
 		}
 
+		// --- activeFactor によるスキップ判定 ---
 		if (Math.random() > this.ai.activeFactor * 1.2) return;
 
+		// --- カスタム絵文字検出（mk_*、pizza_*）---
 		let customEmojis = note.text.match(/:([^\n:]+?):/g)?.filter((x) => (x.includes("mk") || x.includes("pizza_")) && !x.includes("rank") && !x.includes("kill"));
 		if (customEmojis && customEmojis.length > 0) {
 			// カスタム絵文字が複数種類ある場合はランダム
@@ -155,26 +246,23 @@ export default class extends Module {
 			return react(emoji);
 		}
 
-		/*const emojis = parse(note.text).map(x => x.text);
+		/* Unicode絵文字のオウム返しリアクション（現在無効）
+		const emojis = parse(note.text).map(x => x.text);
 		if (emojis.length > 0) {
-			// 絵文字が複数種類ある場合はキャンセル
 			if (!emojis.every((val, i, arr) => val === arr[0])) return;
-
 			this.log(`Emoji detected - ${emojis[0]}`);
-
 			let reaction = emojis[0];
-
 			switch (reaction) {
 				case '✊': return react('🖐', true);
 				case '✌': return react('✊', true);
 				case '🖐': case '✋': return react('✌', true);
 			}
-
 			return react(reaction);
 		}*/
 
-		// キーワード反応
-		// 新年
+		// --- キーワード反応 ---
+
+		// 新年（1/1限定）
 		const now = new Date();
 		if (now.getMonth() === 0 && now.getDate() === 1) {
 			if (includes(note.text, ['あけ', 'おめ', 'あけまして', 'おめでとう', 'happynewyear'])) return react(':supertada:');
@@ -194,14 +282,14 @@ export default class extends Module {
 		if ((note.text?.includes('伸び') || note.text?.includes('のび') || note.text?.includes('ノビ')) && note.text?.length > 3 && (await this.checkMecab(note.text, ['のび','伸び']))) return react(':mk_ultrawidechicken:');
 		if (includes(note.text, ['嘘']) && Math.random() < 0.5 && note.text?.length <= 30 && !includes(note.text, ['つく', 'つき', '吐き', '吐く'])) return react(':sonnano_uso:');
 		if (includes(note.text, ['もこ', 'niwatori_kun']) && note.text?.length > 3 && (includes(note.text, ['niwatori_kun']) || await this.checkMecab(note.text, 'もこ'))) {
-			//ランダムに選択される
+			// もこチキ関連リアクションをランダムに選択
 			let reactionList = [] as string[];
 			if (!includes(note.text, ["顔", "かお"])) {
 				reactionList.push(':mk_chicken_t:');
-			} 
+			}
 			if (!includes(note.text, ["ゆっくり"])) {
 				reactionList.push(':mk_yukkuriface:');
-			} 
+			}
 			if (!includes(note.text, ["ロー"]) && !includes(note.text, ["ポリ"])) {
 				reactionList.push(':mk_lowpoly:');
 			}
