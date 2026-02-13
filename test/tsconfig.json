@@ -3,10 +3,18 @@
 	"compilerOptions": {
 		"baseUrl": ".",
 		"rootDir": "../",
+		"typeRoots": [
+			"../src/types",
+			"../node_modules/@types"
+		],
+		"types": [
+			"jest",
+			"node"
+		],
 		"paths": {
 			"@/*": ["../src/*"],
 			"#/*": ["./*"]
-		},
+		}
 	},
 	"compileOnSave": false,
 	"include": [

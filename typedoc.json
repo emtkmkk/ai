@@ -1,13 +1,35 @@
 {
 	"$schema": "https://typedoc.org/schema.json",
+	"name": "AiOS API Reference",
 	"entryPoints": [
 		"src"
 	],
 	"entryPointStrategy": "expand",
 	"tsconfig": "tsconfig.json",
 	"out": "docs/api",
+	"cleanOutputDir": true,
+	"githubPages": true,
 	"readme": "README.md",
-	"excludeInternal": true,
+	"sort": [
+		"source-order"
+	],
+	"highlightLanguages": [
+		"ts",
+		"tsx",
+		"js",
+		"json",
+		"bash",
+		"sh",
+		"markdown",
+		"mermaid"
+	],
+	"validation": {
+		"invalidLink": false,
+		"notExported": false,
+		"notDocumented": false
+	},
+	"excludeInternal": false,
+	"excludePrivate": true,
 	"exclude": [
 		"**/*.test.ts",
 		"**/*.spec.ts",

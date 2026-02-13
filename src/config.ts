@@ -13,7 +13,6 @@
  *
  * @internal
  */
-import { StringLiteral } from "typescript";
 
 /**
  * 藍の設定型定義
@@ -94,7 +93,19 @@ type Config = {
 
 };
 
-const config = require('../config.json');
+let config: any;
+try {
+	config = require('../config.json');
+} catch (error) {
+	if (process.env.NODE_ENV === 'test') {
+		config = {
+			host: 'http://localhost',
+			i: 'test-token',
+		};
+	} else {
+		throw error;
+	}
+}
 
 // NOTE: host から WebSocket URL と API URL を自動生成
 config.wsUrl = config.host.replace('http', 'ws');

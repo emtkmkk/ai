@@ -121,11 +121,11 @@ export function hasKazutoriRateHistory(data: { rate: number; rateChanged?: boole
                 return true;
         }
 
-        if (!data.rateChanged) {
+        if (data.rateChanged === false) {
                 return false;
         }
 
-        return data.rate === undefined && typeof data.rate === "number" && data.rate !== 1000;
+        return data.rate !== undefined && typeof data.rate === "number" && data.rate !== 1000;
 }
 
 export function createDefaultKazutoriData(): EnsuredKazutoriData {
@@ -169,7 +169,10 @@ export function ensureKazutoriData<T extends KazutoriDataContainer>(target: T): 
         } else {
                 const data = target.kazutoriData;
 
-                if (data.ratingVersion !== KAZUTORI_RATING_VERSION) {
+                if (data.ratingVersion == null) {
+                        data.ratingVersion = KAZUTORI_RATING_VERSION;
+                        updated = true;
+                } else if (data.ratingVersion !== KAZUTORI_RATING_VERSION) {
                         data.rate = 1000;
                         data.ratingVersion = KAZUTORI_RATING_VERSION;
                         delete data.rateChanged;
@@ -208,6 +211,14 @@ export function ensureKazutoriData<T extends KazutoriDataContainer>(target: T): 
                                         data.rateChanged = true;
                                 } else if (data.rateChanged === 0) {
                                         data.rateChanged = false;
+                                }
+                        }
+
+                        if (typeof data.rateChanged !== 'boolean') {
+                                if (typeof data.rate === 'number' && data.rate !== 1000) {
+                                        data.rateChanged = true;
+                                } else {
+                                        delete data.rateChanged;
                                 }
                         }
 
