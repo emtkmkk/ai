@@ -13,7 +13,7 @@ Misskey用の日本語Botです。
 ### 必要なもの
 
 | 必要なもの | 必須 | 備考 |
-|---|---|---|
+| --- | --- | --- |
 | Node.js | ✅ | |
 | npm | ✅ | |
 | MeCab | ❌ | キーワード学習機能を使う場合のみ |
@@ -43,14 +43,14 @@ npm start
 #### 必須設定
 
 | キー | 型 | 説明 |
-|---|---|---|
+| --- | --- | --- |
 | `host` | string | インスタンスのURL（`https://` 付き、末尾の `/` は除く） |
 | `i` | string | 藍として動かしたいアカウントのアクセストークン |
 
 #### 基本設定
 
 | キー | 型 | デフォルト | 説明 |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `master` | string | — | 管理者のユーザー名 |
 | `instanceName` | string | `もこきー` | インスタンス名 |
 | `memoryDir` | string | `.` | `memory.json` の保存先 |
@@ -58,7 +58,7 @@ npm start
 #### 機能ON/OFF
 
 | キー | 型 | デフォルト | 説明 |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `notingEnabled` | boolean | `true` | ランダムノート投稿 |
 | `keywordEnabled` | boolean | `false` | キーワード学習（MeCab必要） |
 | `chartEnabled` | boolean | `true` | チャート投稿 |
@@ -68,7 +68,7 @@ npm start
 #### 投稿設定
 
 | キー | 型 | デフォルト | 説明 |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `postNotPublic` | boolean | `true` | 全公開投稿を禁止 |
 | `defaultVisibility` | string | `public` | 主に使用する公開範囲 |
 | `randomPostLocalOnly` | boolean | `true` | ランダム投稿をローカル限定 |
@@ -79,14 +79,14 @@ npm start
 #### MeCab設定
 
 | キー | 型 | 説明 |
-|---|---|---|
+| --- | --- | --- |
 | `mecab` | string | MeCab のインストールパス |
 | `mecabDic` | string | MeCab の辞書ファイルパス |
 
 #### RPG設定
 
 | キー | 型 | デフォルト | 説明 |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `rpgHeroName` | string | `もこチキ` | 主人公の名前 |
 | `rpgCoinName` | string | `もこコイン` | 通貨の名前 |
 | `rpgCoinShortName` | string | `コイン` | 通貨の短縮名 |
@@ -97,7 +97,7 @@ npm start
 #### その他
 
 | キー | 型 | 説明 |
-|---|---|---|
+| --- | --- | --- |
 | `forceRemoteChartPostCount` | boolean | チャートからの投稿数取得を強制 |
 | `kazutoriWinDiffReverseEnabled` | boolean | 数取りで勝利数差による反転判定を有効化 |
 | `kazutoriBanUsers` | string[] | 数取りに参加できないユーザのIDリスト |
@@ -236,7 +236,7 @@ ai-1/
 ### コアファイルの役割
 
 | ファイル | 責務 |
-|---|---|
+| --- | --- |
 | `ai.ts` | WebSocket購読、メンション振り分け、Friend管理、API呼び出し、activeFactor管理 |
 | `friend.ts` | ユーザーごとの親愛度・名前・最終アクセス管理。DB (LokiJS) で永続化 |
 | `message.ts` | 受信メッセージのラッパー。テキスト正規化・返信・リアクション付与 |
@@ -277,7 +277,7 @@ classDiagram
 ### フックの種類
 
 | フック | 用途 | 登録方法 |
-|---|---|---|
+| --- | --- | --- |
 | `mentionHook` | メンションに応答 | `install()` の返り値に含める |
 | `contextHook` | 会話の文脈に応答 | `msg.reply()` でコンテキスト登録 |
 | `timeoutCallback` | タイマー完了時の処理 | `install()` の返り値に含める |
@@ -293,7 +293,7 @@ flowchart LR
 ```
 
 | コレクション | 内容 |
-|---|---|
+| --- | --- |
 | `friends` | 全ユーザーの親愛度、名前、最終アクセスなど |
 | `moduleData` | モジュール固有の永続データ（タイマー、誤差補正値等） |
 | `_keyword_learnedKeywords` | keyword モジュールが学習したキーワード |
@@ -348,7 +348,7 @@ flowchart TD
 ### 対話・コア機能
 
 | モジュール | 説明 | トリガー |
-|---|---|---|
+| --- | --- | --- |
 | [Core](src/modules/core/) | 名前設定、好感度確認、ステータス表示、アカウントリンク | メンション |
 | [Talk](src/modules/talk/) | 会話応答全般（挨拶、なでなで、好き、罵って等） | メンション |
 | [Ping](src/modules/ping/) | `ping` → `PONG!` の死活確認 | メンション |
@@ -356,7 +356,7 @@ flowchart TD
 ### ゲーム
 
 | モジュール | 説明 | トリガー |
-|---|---|---|
+| --- | --- | --- |
 | [RPG](src/modules/rpg/) | RPGゲーム（戦闘・アイテム・レイド） | メンション |
 | [Kazutori](src/modules/kazutori/) | 数取りゲーム（複数人参加） | メンション |
 | [Reversi](src/modules/reversi/) | リバーシ対局 | メンション |
@@ -367,7 +367,7 @@ flowchart TD
 ### エンターテイメント
 
 | モジュール | 説明 | トリガー |
-|---|---|---|
+| --- | --- | --- |
 | [Fortune](src/modules/fortune/) | おみくじ（63種の結果、日替わり） | メンション |
 | [Emoji](src/modules/emoji/) | 手+顔の顔文字ランダム生成 | メンション |
 | [EmojiReact](src/modules/emoji-react/) | リアクション自動付与 | TLノート |
@@ -376,7 +376,7 @@ flowchart TD
 ### 定期実行・自動投稿
 
 | モジュール | 説明 | タイミング |
-|---|---|---|
+| --- | --- | --- |
 | [Today](src/modules/today/) | 暦情報（祝日・記念日・六曜等）投稿 | 毎日8時以降 |
 | [Yoruho](src/modules/yoruho/) | 夜報を0:00:00に精密投稿 | 毎日0時 |
 | [Noting](src/modules/noting/) | ランダムつぶやき投稿 | 5分間隔で確率判定 |
@@ -386,7 +386,7 @@ flowchart TD
 ### ユーザー関連
 
 | モジュール | 説明 | タイミング |
-|---|---|---|
+| --- | --- | --- |
 | [Welcome](src/modules/welcome/) | 新規ユーザーの初投稿祝い＋キリ番通知 | ローカルTL監視 |
 | [Follow](src/modules/follow/) | フォローバック＋リモートフォロー自動解除 | メンション / ホームTL |
 | [Birthday](src/modules/birthday/) | 誕生日祝い（DM or 公開投稿） | 3分間隔で確認 |
@@ -395,7 +395,7 @@ flowchart TD
 ### 学習・記録・管理
 
 | モジュール | 説明 | タイミング |
-|---|---|---|
+| --- | --- | --- |
 | [Keyword](src/modules/keyword/) | TLからキーワードを学習（MeCab使用） | TL監視 |
 | [Reminder](src/modules/reminder/) | リマインダー機能（12時間おきに催促） | メンション |
 | [Poll](src/modules/poll/) | アンケート結果通知 | メンション |
@@ -412,7 +412,7 @@ flowchart TD
 ★の表示は `core/index.ts` で計算される。各★の点灯閾値:
 
 | ★ | 閾値 | 親愛度範囲 | 主な解放機能 |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | ★1 | -29以上 | -29〜-11 | （マイナスでも最低限の★はつく） |
 | ★2 | -10以上 | -10〜-1 | — |
 | ★3 | 0以上 | 0〜4 | 基本応答、誕生日祝い(DM) |
@@ -429,7 +429,7 @@ flowchart TD
 `incLove` / `decLove` は入力値を **内部で5倍** して適用する。
 
 | アクション | 実効値 | 条件 |
-|---|---|---|
+| --- | --- | --- |
 | 挨拶（おはよう、こんにちは等） | 3 | 1日1回まで |
 | メンション応答（モジュールが正しく応答した時） | 0.5 | 同種は10分に1回 |
 | 通知受信（リアクション・引用・投票） | 0.5 | 同種は10分に1回 |
@@ -438,7 +438,7 @@ flowchart TD
 #### 1日の上限
 
 | 親愛度 | 1日の増加上限 |
-|---|---|
+| --- | --- |
 | 100未満 | 15 |
 | 100以上 | 50 |
 
