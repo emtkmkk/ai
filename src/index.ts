@@ -1,4 +1,17 @@
-// AiOS bootstrapper
+/**
+ * @packageDocumentation
+ *
+ * AiOS ブートストラッパー（エントリーポイント）。
+ *
+ * @remarks
+ * 藍の起動処理を行う。Misskey アカウントをフェッチし、
+ * 全モジュールをインスタンス化して {@link ./ai | 藍} のコアクラスに渡す。
+ *
+ * モジュールの登録順序は優先度を表す（先頭ほど高優先度）。
+ * メンションを受信した際、先頭のモジュールのフックから順に評価される。
+ *
+ * @internal
+ */
 
 import 'module-alias/register';
 
@@ -42,6 +55,13 @@ console.log('  /__\\  (_  _)(  _  )/ __)');
 console.log(' /(__)\\  _)(_  )(_)( \\__ \\');
 console.log('(__)(__)(____)(_____)(___/\n');
 
+/**
+ * 起動時のログを出力する（`[Boot]` プレフィックス付き）
+ *
+ * @param msg - ログメッセージ
+ * @returns なし
+ * @internal
+ */
 function log(msg: string): void {
 	_log(`[Boot]: ${msg}`);
 }

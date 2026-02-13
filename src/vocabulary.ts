@@ -1,6 +1,27 @@
+/**
+ * @packageDocumentation
+ *
+ * 語彙・アイテム名生成モジュール。
+ *
+ * @remarks
+ * アイテム名の生成に使用する語彙（形容詞、名詞、素材名など）と
+ * ランダムなアイテム名を生成する {@link genItem} 関数を定義する。
+ * RPG モジュールや合言葉生成（{@link ../friend | Friend.generateTransferCode}）で使用される。
+ *
+ * @internal
+ */
 import * as seedrandom from 'seedrandom';
 import getDate from '@/utils/get-date';
 
+/**
+ * 乱数生成器
+ *
+ * @remarks
+ * デフォルトでは当日の日付をシードとした `seedrandom` で初期化される。
+ * {@link genItem} 呼び出し時にシードが上書きされる場合がある。
+ *
+ * @internal
+ */
 export let rng: () => number = seedrandom(getDate());
 
 export const itemPrefixes = [
@@ -599,13 +620,42 @@ export const and = [
 	'キーの',
 ];
 
+/**
+ * ランダムなアイテム名を生成する（引数なし）
+ * @returns 生成されたアイテム名
+ * @public
+ */
 export function genItem(): string;
+/**
+ * ランダムなアイテム名を生成する（シードまたは乱数生成器指定）
+ * @param seedOrRng - シード値または乱数生成関数
+ * @returns 生成されたアイテム名
+ * @public
+ */
 export function genItem(seedOrRng: (() => number) | string | number): string;
+/**
+ * ランダムなアイテム名を生成する（オプション指定）
+ * @param options - 生成オプション
+ * @returns 生成されたアイテム名
+ * @public
+ */
 export function genItem(options: {
   seedOrRng?: (() => number) | string | number;
   allowSimpleItem?: boolean;
 }): string;
 
+/**
+ * ランダムなアイテム名を生成する（実装）
+ *
+ * @remarks
+ * {@link itemPrefixes}（形容詞・素材名）+ {@link items}（名詞）を組み合わせて名前を生成する。
+ * 1/20 の確率でプレフィックスなしのシンプルなアイテム名になる。
+ * 1/10 の確率で {@link and}（接続詞）で2つのアイテムを結合する。
+ *
+ * @param arg - シード値、乱数生成関数、またはオプションオブジェクト
+ * @returns 生成されたアイテム名
+ * @internal
+ */
 export function genItem(
   arg?: (() => number) | string | number | {
     seedOrRng?: (() => number) | string | number;
@@ -614,7 +664,7 @@ export function genItem(
 ): string {
   let seedOrRng: (() => number) | string | number | undefined;
   let allowSimpleItem: boolean = true;
-	
+
   if (
     typeof arg === 'function' ||
     typeof arg === 'string' ||
@@ -627,7 +677,7 @@ export function genItem(
       allowSimpleItem = arg.allowSimpleItem;
     }
   }
-	
+
   rng = seedOrRng
     ? typeof seedOrRng === 'function'
       ? seedOrRng

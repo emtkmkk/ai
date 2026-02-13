@@ -1,4 +1,16 @@
-// せりふ
+/**
+ * @packageDocumentation
+ *
+ * セリフ定義ファイル。
+ *
+ * @remarks
+ * 藍が発話する全てのセリフ（テキスト）を定義する。
+ * モジュールごとにカテゴリ分けされており、
+ * 関数で表現されるセリフは引数に応じて動的に内容が変わる。
+ * 文字列の配列で定義されているものはランダムに選択される。
+ *
+ * @internal
+ */
 
 import config from "./config";
 import { formatKazutoriRateForDisplay } from "@/modules/kazutori/rate";

@@ -1,5 +1,25 @@
-// Utilities for Japanese
+/**
+ * @packageDocumentation
+ *
+ * 日本語テキスト変換ユーティリティ。
+ *
+ * @remarks
+ * カタカナ⇔ひらがな、半角カタカナ⇔全角カタカナの変換を行う。
+ * テキストマッチ判定（{@link ./includes | includes}、{@link ./or | or}）の
+ * 正規化処理で使用される。
+ *
+ * @internal
+ */
 
+/**
+ * 半角カタカナ→全角カタカナの変換マッピング
+ *
+ * @remarks
+ * 濁音・半濁音の結合文字列（例: `ｶﾞ` → `ガ`）も含む。
+ * {@link hankakuToZenkaku} と {@link zenkakuToHankaku} の両方で使用される。
+ *
+ * @internal
+ */
 const kanaMap: string[][] = [
 	['ガ', 'ｶﾞ'], ['ギ', 'ｷﾞ'], ['グ', 'ｸﾞ'], ['ゲ', 'ｹﾞ'], ['ゴ', 'ｺﾞ'],
 	['ザ', 'ｻﾞ'], ['ジ', 'ｼﾞ'], ['ズ', 'ｽﾞ'], ['ゼ', 'ｾﾞ'], ['ゾ', 'ｿﾞ'],
@@ -23,9 +43,14 @@ const kanaMap: string[][] = [
 ];
 
 /**
- * カタカナをひらがなに変換します
- * @param str カタカナ
- * @returns ひらがな
+ * カタカナをひらがなに変換する
+ *
+ * @remarks
+ * Unicode のカタカナ範囲（U+30A1〜U+30F6）を 0x60 引いてひらがなに変換する。
+ *
+ * @param str - 変換対象の文字列
+ * @returns ひらがなに変換された文字列
+ * @public
  */
 export function katakanaToHiragana(str: string): string {
 	return str.replace(/[\u30a1-\u30f6]/g, match => {
@@ -35,9 +60,14 @@ export function katakanaToHiragana(str: string): string {
 }
 
 /**
- * ひらがなをカタカナに変換します
- * @param str ひらがな
- * @returns カタカナ
+ * ひらがなをカタカナに変換する
+ *
+ * @remarks
+ * Unicode のひらがな範囲（U+3041〜U+3096）を 0x60 足してカタカナに変換する。
+ *
+ * @param str - 変換対象の文字列
+ * @returns カタカナに変換された文字列
+ * @public
  */
 export function hiraganaToKatagana(str: string): string {
 	return str.replace(/[\u3041-\u3096]/g, match => {
@@ -47,9 +77,15 @@ export function hiraganaToKatagana(str: string): string {
 }
 
 /**
- * 全角カタカナを半角カタカナに変換します
- * @param str 全角カタカナ
- * @returns 半角カタカナ
+ * 全角カタカナを半角カタカナに変換する
+ *
+ * @remarks
+ * {@link kanaMap} の変換テーブルを使用する。
+ * 濁点（゛）・半濁点（゜）も半角形に変換する。
+ *
+ * @param str - 変換対象の文字列
+ * @returns 半角カタカナに変換された文字列
+ * @public
  */
 export function zenkakuToHankaku(str: string): string {
 	const reg = new RegExp('(' + kanaMap.map(x => x[0]).join('|') + ')', 'g');
@@ -63,9 +99,15 @@ export function zenkakuToHankaku(str: string): string {
 };
 
 /**
- * 半角カタカナを全角カタカナに変換します
- * @param str 半角カタカナ
- * @returns 全角カタカナ
+ * 半角カタカナを全角カタカナに変換する
+ *
+ * @remarks
+ * {@link kanaMap} の変換テーブルを使用する。
+ * 半角の濁点（ﾞ）・半濁点（ﾟ）も全角形に変換する。
+ *
+ * @param str - 変換対象の文字列
+ * @returns 全角カタカナに変換された文字列
+ * @public
  */
 export function hankakuToZenkaku(str: string): string {
 	const reg = new RegExp('(' + kanaMap.map(x => x[1]).join('|') + ')', 'g');
