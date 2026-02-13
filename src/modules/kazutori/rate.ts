@@ -7,9 +7,9 @@
  * データの初期化・正規化・バージョン管理を担当する。
  *
  * @remarks
- * NOTE: 初期レートは1000。レーティングバージョンが変わると全ユーザーのレートがリセットされる。
- * NOTE: `ensureKazutoriData` はデータの型安全性を保証し、不正な値を自動修正する。
- * NOTE: `rateChanged` は string/number/boolean の混在があり得るため、正規化が必要。
+ * - NOTE: 初期レートは1000。レーティングバージョンが変わると全ユーザーのレートがリセットされる。
+ * - NOTE: `ensureKazutoriData` はデータの型安全性を保証し、不正な値を自動修正する。
+ * - NOTE: `rateChanged` は string/number/boolean の混在があり得るため、正規化が必要。
  *
  * @public
  */

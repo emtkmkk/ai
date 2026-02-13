@@ -7,11 +7,11 @@
  * 管理者コマンド `/check` で学習済みキーワードの整理（不正なものの削除）も行う。
  *
  * @remarks
- * NOTE: `config.keywordEnabled` が false の場合は無効化される（install で空オブジェクトを返す）。
- * NOTE: 学習確率は `activeFactor` に依存する（活動度が高いほど学習しやすい）。
- * NOTE: NGワードに該当するキーワードは学習しない。
- * NOTE: 2桁以上の数字のみで構成されるキーワードは学習しない。
- * NOTE: 投稿確率も `activeFactor` に依存する（0.25未満だと投稿が間引かれる）。
+ * - NOTE: `config.keywordEnabled` が false の場合は無効化される（install で空オブジェクトを返す）。
+ * - NOTE: 学習確率は `activeFactor` に依存する（活動度が高いほど学習しやすい）。
+ * - NOTE: NGワードに該当するキーワードは学習しない。
+ * - NOTE: 2桁以上の数字のみで構成されるキーワードは学習しない。
+ * - NOTE: 投稿確率も `activeFactor` に依存する（0.25未満だと投稿が間引かれる）。
  *
  * @public
  */

@@ -349,57 +349,57 @@ flowchart TD
 
 | モジュール | 説明 | トリガー |
 | --- | --- | --- |
-| [Core](src/modules/core/) | 名前設定、好感度確認、ステータス表示、アカウントリンク | メンション |
-| [Talk](src/modules/talk/) | 会話応答全般（挨拶、なでなで、好き、罵って等） | メンション |
-| [Ping](src/modules/ping/) | `ping` → `PONG!` の死活確認 | メンション |
+| [Core](src/modules/core/index.ts) | 名前設定、好感度確認、ステータス表示、アカウントリンク | メンション |
+| [Talk](src/modules/talk/README.md) | 会話応答全般（挨拶、なでなで、好き、罵って等） | メンション |
+| [Ping](src/modules/ping/README.md) | `ping` → `PONG!` の死活確認 | メンション |
 
 ### ゲーム
 
 | モジュール | 説明 | トリガー |
 | --- | --- | --- |
-| [RPG](src/modules/rpg/) | RPGゲーム（戦闘・アイテム・レイド） | メンション |
-| [Kazutori](src/modules/kazutori/) | 数取りゲーム（複数人参加） | メンション |
-| [Reversi](src/modules/reversi/) | リバーシ対局 | メンション |
-| [GuessingGame](src/modules/guessing-game/) | 数当てゲーム | メンション |
-| [Maze](src/modules/maze/) | 迷路生成（難易度調整可） | メンション |
-| [Dice](src/modules/dice/) | サイコロ / YES・NO質問 / ファクトチェック | メンション |
+| [RPG](src/modules/rpg/index.ts) | RPGゲーム（戦闘・アイテム・レイド） | メンション |
+| [Kazutori](src/modules/kazutori/README.md) | 数取りゲーム（複数人参加） | メンション |
+| [Reversi](src/modules/reversi/README.md) | リバーシ対局 | メンション |
+| [GuessingGame](src/modules/guessing-game/README.md) | 数当てゲーム | メンション |
+| [Maze](src/modules/maze/README.md) | 迷路生成（難易度調整可） | メンション |
+| [Dice](src/modules/dice/README.md) | サイコロ / YES・NO質問 / ファクトチェック | メンション |
 
 ### エンターテイメント
 
 | モジュール | 説明 | トリガー |
 | --- | --- | --- |
-| [Fortune](src/modules/fortune/) | おみくじ（63種の結果、日替わり） | メンション |
-| [Emoji](src/modules/emoji/) | 手+顔の顔文字ランダム生成 | メンション |
-| [EmojiReact](src/modules/emoji-react/) | リアクション自動付与 | TLノート |
-| [Timer](src/modules/timer/) | タイマー（最大30日、永続化対応） | メンション |
+| [Fortune](src/modules/fortune/README.md) | おみくじ（63種の結果、日替わり） | メンション |
+| [Emoji](src/modules/emoji/README.md) | 手+顔の顔文字ランダム生成 | メンション |
+| [EmojiReact](src/modules/emoji-react/README.md) | リアクション自動付与 | TLノート |
+| [Timer](src/modules/timer/README.md) | タイマー（最大30日、永続化対応） | メンション |
 
 ### 定期実行・自動投稿
 
 | モジュール | 説明 | タイミング |
 | --- | --- | --- |
-| [Today](src/modules/today/) | 暦情報（祝日・記念日・六曜等）投稿 | 毎日8時以降 |
-| [Yoruho](src/modules/yoruho/) | 夜報を0:00:00に精密投稿 | 毎日0時 |
-| [Noting](src/modules/noting/) | ランダムつぶやき投稿 | 5分間隔で確率判定 |
-| [Chart](src/modules/chart/) | インスタンス統計チャート | 定期 |
-| [SleepReport](src/modules/sleep-report/) | 起動時に停止時間を「睡眠時間」として報告 | 起動時 |
+| [Today](src/modules/today/README.md) | 暦情報（祝日・記念日・六曜等）投稿 | 毎日8時以降 |
+| [Yoruho](src/modules/yoruho/README.md) | 夜報を0:00:00に精密投稿 | 毎日0時 |
+| [Noting](src/modules/noting/README.md) | ランダムつぶやき投稿 | 5分間隔で確率判定 |
+| [Chart](src/modules/chart/README.md) | インスタンス統計チャート | 定期 |
+| [SleepReport](src/modules/sleep-report/README.md) | 起動時に停止時間を「睡眠時間」として報告 | 起動時 |
 
 ### ユーザー関連
 
 | モジュール | 説明 | タイミング |
 | --- | --- | --- |
-| [Welcome](src/modules/welcome/) | 新規ユーザーの初投稿祝い＋キリ番通知 | ローカルTL監視 |
-| [Follow](src/modules/follow/) | フォローバック＋リモートフォロー自動解除 | メンション / ホームTL |
-| [Birthday](src/modules/birthday/) | 誕生日祝い（DM or 公開投稿） | 3分間隔で確認 |
-| [Valentine](src/modules/valentine/) | 2月14日にチョコメッセージ送信 | 3分間隔（2/14のみ） |
+| [Welcome](src/modules/welcome/README.md) | 新規ユーザーの初投稿祝い＋キリ番通知 | ローカルTL監視 |
+| [Follow](src/modules/follow/README.md) | フォローバック＋リモートフォロー自動解除 | メンション / ホームTL |
+| [Birthday](src/modules/birthday/README.md) | 誕生日祝い（DM or 公開投稿） | 3分間隔で確認 |
+| [Valentine](src/modules/valentine/README.md) | 2月14日にチョコメッセージ送信 | 3分間隔（2/14のみ） |
 
 ### 学習・記録・管理
 
 | モジュール | 説明 | タイミング |
 | --- | --- | --- |
-| [Keyword](src/modules/keyword/) | TLからキーワードを学習（MeCab使用） | TL監視 |
-| [Reminder](src/modules/reminder/) | リマインダー機能（12時間おきに催促） | メンション |
-| [Poll](src/modules/poll/) | アンケート結果通知 | メンション |
-| [Server](src/modules/server/) | サーバーCPU/メモリ監視・管理者通知 | リアルタイム |
+| [Keyword](src/modules/keyword/README.md) | TLからキーワードを学習（MeCab使用） | TL監視 |
+| [Reminder](src/modules/reminder/README.md) | リマインダー機能（12時間おきに催促） | メンション |
+| [Poll](src/modules/poll/README.md) | アンケート結果通知 | メンション |
+| [Server](src/modules/server/README.md) | サーバーCPU/メモリ監視・管理者通知 | リアルタイム |
 
 ---
 
@@ -421,8 +421,9 @@ flowchart TD
 | ★6 | 50以上 | 50〜99 | — |
 | ★7 | 100以上 | 100〜 | 呼び名20文字まで、RPG行動回数増加 |
 
-> ★7以上はオーバーフローで `★★★★★★★+` のように表示される。  
-> 親愛度の最低値は **-30**。名前設定はリモートフォロバは親愛度 **10以上** が必要。
+> 補足:
+> - ★7以上はオーバーフローで `★★★★★★★+` のように表示される。
+> - 親愛度の最低値は **-30**。名前設定やリモートフォロバは親愛度 **10以上** が必要。
 
 ### 増減ルール
 

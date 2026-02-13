@@ -7,12 +7,11 @@
  * 各ハンドラは mentionHook 内で優先順に評価され、最初にマッチしたものが応答する。
  *
  * @remarks
- * NOTE: 現在、greet / erait / omedeto の3つのみ有効。
- *       それ以外（nadenade, kawaii, suki, hug, humu, batou, itai, ote, ponkotu, rmrf, shutdown）は
- *       mentionHook 内でコメントアウトされており無効。
- *       将来的に再有効化する可能性があるため、関数定義自体は残している。
+ * - NOTE: 現在、greet / erait / omedeto の3つのみ有効。
+ *       （他のハンドラはコメントアウトされている）
+ *       （話す機能はコアモジュールや他のモジュールに分散されているため）
  *
- * NOTE: greet は incLove(0.6, "greet") を呼び出し、1日1回だけ親愛度を上昇させる。
+ * - NOTE: greet は incLove(0.6, "greet") を呼び出し、1日1回だけ親愛度を上昇させる。
  *       ponkotu / rmrf は decLove() を呼び出し親愛度を下げるが、現在は無効。
  *
  * @public

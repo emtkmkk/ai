@@ -10,6 +10,9 @@
 	"cleanOutputDir": true,
 	"githubPages": true,
 	"readme": "README.md",
+	"projectDocuments": [
+		"src/modules/**/README.md"
+	],
 	"sort": [
 		"source-order"
 	],
