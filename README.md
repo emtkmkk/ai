@@ -1,5 +1,8 @@
-<h1><p align="center"><img src="./ai.svg" alt="藍" height="200"></p></h1>
-<p align="center">An Ai for Misskey. <a href="./torisetu.md">About Ai</a></p>
+# 藍 (ai-1)
+
+![藍](./ai.svg)
+
+An Ai for Misskey. [About Ai](./torisetu.md)
 
 ## これなに
 
@@ -14,8 +17,8 @@ Misskey用の日本語Botです。
 
 | 必要なもの | 必須 | 備考 |
 | --- | --- | --- |
-| Node.js | ✅ | |
-| npm | ✅ | |
+| Node.js | ✅ | — |
+| npm | ✅ | — |
 | MeCab | ❌ | キーワード学習機能を使う場合のみ |
 
 ### 手順
@@ -180,12 +183,12 @@ npm start       # 起動
 ```mermaid
 graph TD
     subgraph Core["コア"]
-        AI["藍 (ai.ts)\nAIコア"]
-        Stream["Stream (stream.ts)\nWebSocket接続管理"]
-        Friend["Friend (friend.ts)\n親愛度・ユーザー管理"]
-        Message["Message (message.ts)\nメッセージ解析・返信"]
-        Serifs["Serifs (serifs.ts)\n全セリフ定義"]
-        Vocab["Vocabulary (vocabulary.ts)\nアイテム名生成"]
+        AI["藍 (ai.ts)<br/>AIコア"]
+        Stream["Stream (stream.ts)<br/>WebSocket接続管理"]
+        Friend["Friend (friend.ts)<br/>親愛度・ユーザー管理"]
+        Message["Message (message.ts)<br/>メッセージ解析・返信"]
+        Serifs["Serifs (serifs.ts)<br/>全セリフ定義"]
+        Vocab["Vocabulary (vocabulary.ts)<br/>アイテム名生成"]
     end
 
     subgraph Modules["モジュール (26種)"]
@@ -194,7 +197,7 @@ graph TD
 
     subgraph External["外部"]
         Misskey["Misskey API"]
-        DB["LokiJS\n(memory.json)"]
+        DB["LokiJS<br/>(memory.json)"]
     end
 
     AI --> Stream
@@ -210,7 +213,7 @@ graph TD
 
 ### ディレクトリ構造
 
-```
+```text
 ai-1/
 ├── src/
 │   ├── ai.ts          # AIコアクラス（藍）
@@ -288,7 +291,7 @@ classDiagram
 
 ```mermaid
 flowchart LR
-    AI["藍"] <-->|読み書き| LokiJS["LokiJS\n(インメモリDB)"]
+    AI["藍"] <-->|読み書き| LokiJS["LokiJS<br/>(インメモリDB)"]
     LokiJS -->|自動保存| File["memory.json"]
 ```
 
@@ -327,16 +330,16 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    A["メンション受信"] --> B{"自分自身?\nor Bot?"}
+    A["メンション受信"] --> B{"自分自身?<br/>or Bot?"}
     B -- はい --> Z["無視"]
     B -- いいえ --> C["Friend 取得/作成"]
     C --> D["Message オブジェクト作成"]
-    D --> E{"返信先が\n既存コンテキスト?"}
+    D --> E{"返信先が<br/>既存コンテキスト?"}
     E -- はい --> F["contextHook で処理"]
-    E -- いいえ --> G["モジュールの\nmentionHook を優先順に評価"]
-    G --> H{"いずれかの\nモジュールが処理?"}
+    E -- いいえ --> G["モジュールの<br/>mentionHook を優先順に評価"]
+    G --> H{"いずれかの<br/>モジュールが処理?"}
     H -- はい --> I["リアクション付与"]
-    H -- いいえ --> J["Talk モジュールが\nフォールバック応答"]
+    H -- いいえ --> J["Talk モジュールが<br/>フォールバック応答"]
 ```
 
 ---
@@ -422,6 +425,7 @@ flowchart TD
 | ★7 | 100以上 | 100〜 | 呼び名20文字まで、RPG行動回数増加 |
 
 > 補足:
+>
 > - ★7以上はオーバーフローで `★★★★★★★+` のように表示される。
 > - 親愛度の最低値は **-30**。名前設定やリモートフォロバは親愛度 **10以上** が必要。
 
@@ -447,7 +451,7 @@ flowchart TD
 
 親愛度が100を超えると、増減量に軽減がかかる:
 
-```
+```text
 実効値 = 入力値 × 5 / (親愛度 × 2 / 100 - 1)
 ```
 
@@ -465,4 +469,4 @@ MIT
 
 ## Awards
 
-<img src="./WorksOnMyMachine.png" alt="Works on my machine" height="120">
+![Works on my machine](./WorksOnMyMachine.png)
