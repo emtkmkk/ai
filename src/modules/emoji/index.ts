@@ -1,8 +1,32 @@
+/**
+ * @packageDocumentation
+ *
+ * emoji モジュール
+ *
+ * メンションに「絵文字」「顔文字」「emoji」「福笑い」が含まれたら、
+ * ランダムな手と顔の絵文字を組み合わせた顔文字を生成して返信する。
+ *
+ * @remarks
+ * - 「情報」を含む場合はスキップ（「絵文字情報」等への誤反応を防止）
+ * - 手の絵文字には左右ペアのもの（配列）と単体のもの（文字列）がある
+ * - ペアの場合は `左手 + 顔 + 右手`、単体の場合は `手 + 顔 + 手` の構成
+ *
+ * @internal
+ */
 import autobind from 'autobind-decorator';
 import Module from '@/module';
 import Message from '@/message';
 import serifs from '@/serifs';
 
+/**
+ * 手の絵文字リスト
+ *
+ * @remarks
+ * 文字列の場合は左右同じ絵文字。
+ * 配列の場合は `[左手, 右手]` のペア。
+ *
+ * @internal
+ */
 const hands = [
 	'👏',
 	'👍',
@@ -33,6 +57,11 @@ const hands = [
 	//	'🖕'
 ];
 
+/**
+ * 顔の絵文字リスト
+ *
+ * @internal
+ */
 const faces = [
 	'😀',
 	'😃',
@@ -129,6 +158,12 @@ const faces = [
 export default class extends Module {
 	public readonly name = 'emoji';
 
+	/**
+	 * モジュールをインストールし、mentionHook を登録する
+	 *
+	 * @returns mentionHook を含むインストール結果
+	 * @internal
+	 */
 	@autobind
 	public install() {
 		return {
@@ -136,11 +171,19 @@ export default class extends Module {
 		};
 	}
 
+	/**
+	 * 「絵文字」等のキーワードに反応し、ランダムな顔文字を生成して返信する
+	 *
+	 * @param msg - 受信したメッセージ
+	 * @returns マッチした場合はリアクション結果、しなかった場合は `false`
+	 * @internal
+	 */
 	@autobind
 	private async mentionHook(msg: Message) {
 		if (msg.includes(['顔文字', '絵文字', 'emoji', '福笑い']) && !msg.includes(['情報'])) {
 			const hand = hands[Math.floor(Math.random() * hands.length)];
 			const face = faces[Math.floor(Math.random() * faces.length)];
+			// ペア（配列）の場合は左右異なる絵文字を使う
 			const emoji = Array.isArray(hand) ? hand[0] + face + hand[1] : hand + face + hand;
 			msg.reply(serifs.emoji.suggest(emoji), { visibility: 'public' });
 			return {

@@ -1,3 +1,21 @@
+/**
+ * @packageDocumentation
+ *
+ * birthday モジュール
+ *
+ * 友達の誕生日をチェックし、お祝いメッセージを送るモジュール。
+ * 3分間隔のポーリングで誕生日を確認し、条件を満たしたユーザーを祝う。
+ *
+ * @remarks
+ * - 8時より前は通知を送らない
+ * - 親愛度1以上が必要
+ * - 親愛度が低く長期間アクティビティがないユーザーはスキップ
+ * - ローカルユーザーで親愛度20以上の場合は公開投稿で祝う（ただし非公開設定のユーザーはDM）
+ * - リモートユーザーや親愛度20未満のユーザーにはDMで祝う
+ * - 年に1回以上は祝わない（364日間隔）
+ *
+ * @internal
+ */
 import autobind from 'autobind-decorator';
 import Module from '@/module';
 import Friend from '@/friend';
@@ -6,6 +24,14 @@ import { acct } from '@/utils/acct';
 import getDate from '@/utils/get-date';
 import config from '@/config';
 
+/**
+ * 数値を指定桁数でゼロ埋めする
+ *
+ * @param num - 対象の数値
+ * @param length - 結果の桁数
+ * @returns ゼロ埋めされた文字列
+ * @internal
+ */
 function zeroPadding(num: number, length: number): string {
 	return ('0000000000' + num).slice(-length);
 }
@@ -13,6 +39,12 @@ function zeroPadding(num: number, length: number): string {
 export default class extends Module {
 	public readonly name = 'birthday';
 
+	/**
+	 * モジュールをインストールし、誕生日チェック用タイマーを設定する
+	 *
+	 * @returns 空のインストール結果（フックなし）
+	 * @internal
+	 */
 	@autobind
 	public install() {
 		this.crawleBirthday();
@@ -22,7 +54,17 @@ export default class extends Module {
 	}
 
 	/**
-	 * 誕生日のユーザーがいないかチェック(いたら祝う)
+	 * 誕生日のユーザーがいないかチェックし、いたらお祝いメッセージを送る
+	 *
+	 * @remarks
+	 * スキップ条件:
+	 * - 8時前
+	 * - 親愛度1未満
+	 * - 親愛度100未満（☆6以下）で最後の親愛度増加から31日以上経過
+	 * - 親愛度100以上（☆7以上）で最後の親愛度増加から364日以上経過
+	 * - 前回のお祝いから364日未満
+	 *
+	 * @internal
 	 */
 	@autobind
 	private async crawleBirthday() {
@@ -67,6 +109,7 @@ export default class extends Module {
 				if (!user) continue;
 
 				if (user.isExplorable === false) {
+					// 非公開設定のユーザーにはDMで祝う
 					this.ai.sendMessage(friend.userId, {
 						text: acct(friend.doc.user) + ' ' + text
 					});
@@ -79,6 +122,7 @@ export default class extends Module {
 					});
 				}
 			} else {
+				// リモートユーザーや親愛度20未満はDMで祝う
 				this.ai.sendMessage(friend.userId, {
 					text: acct(friend.doc.user) + ' ' + text
 				});
@@ -86,6 +130,17 @@ export default class extends Module {
 		}
 	}
 
+	/**
+	 * ユーザー情報を API から取得する（誕生日祝い用）
+	 *
+	 * @remarks
+	 * `isExplorable` の値によって公開投稿かDMかを判定するために使用。
+	 * API エラー時は `null` を返し、該当ユーザーのお祝いをスキップする。
+	 *
+	 * @param userId - 対象ユーザーのID
+	 * @returns ユーザー情報。取得失敗時は `null`
+	 * @internal
+	 */
 	private async fetchUserForBirthday(userId: string): Promise<{ isExplorable?: boolean } | null> {
 		try {
 			const user = await this.ai.api('users/show', { userId }) as { id?: string; isExplorable?: boolean };

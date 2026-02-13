@@ -1,3 +1,20 @@
+/**
+ * @packageDocumentation
+ *
+ * dice モジュール
+ *
+ * サイコロ、YES/NO質問、ファクトチェックの3つの機能を提供するモジュール。
+ *
+ * @remarks
+ * 機能一覧:
+ * 1. **YES/NO 質問**: 「ですか？」「ますか？」「ですよね？」で終わる質問に回答
+ *    （テキストのハッシュで決定的な答えを返す）
+ * 2. **ファクトチェック**: 返信先の投稿に対して正しい/嘘を判定
+ *    （リモートユーザーの投稿は非フォロー関係では不可）
+ * 3. **サイコロ**: `NdM` 形式（例: `2d6`）でサイコロを振る
+ *
+ * @internal
+ */
 import 藍 from '@/ai';
 import autobind from 'autobind-decorator';
 import Module from '@/module';
@@ -9,6 +26,12 @@ import includes from '@/utils/includes';
 export default class extends Module {
 	public readonly name = 'dice';
 
+	/**
+	 * モジュールをインストールし、mentionHook を登録する
+	 *
+	 * @returns mentionHook を含むインストール結果
+	 * @internal
+	 */
 	@autobind
 	public install() {
 		return {
@@ -16,11 +39,28 @@ export default class extends Module {
 		};
 	}
 
+	/**
+	 * メンション内容に応じて YES/NO 回答、ファクトチェック、またはサイコロを実行する
+	 *
+	 * @remarks
+	 * 判定順:
+	 * 1. 「ですか？」「ますか？」「ですよね？」 → YES/NO 回答
+	 * 2. 返信先あり＋「ファクトチェック」 → ファクトチェック
+	 * 3. `NdM` 形式 → サイコロ
+	 *
+	 * seedrandom を使用して同じ質問・同じ投稿には同じ回答を返す。
+	 *
+	 * @param msg - 受信したメッセージ
+	 * @returns マッチした場合はリアクション結果、しなかった場合は `false`
+	 * @internal
+	 */
 	@autobind
 	private async mentionHook(msg: Message) {
 		if (msg.extractedText == null) return false;
 
+		// --- YES/NO 質問 ---
 		if (msg.extractedText.endsWith("ですか？") || msg.extractedText.endsWith("ますか？") || msg.extractedText.endsWith("ですよね？")) {
+			// テキストをシードにして決定的な回答を生成
 			const rng = seedrandom(msg.extractedText.trim() + ":q");
 			const v = rng();
 			if (v < 0.5) {
@@ -41,8 +81,10 @@ export default class extends Module {
 				reaction: 'love'
 			};
 		}
-		
+
+		// --- ファクトチェック ---
 		if (msg.replyId && includes(msg.extractedText, ['ファクト']) && includes(msg.extractedText, ['チェック'])) {
+			// リモートユーザーの投稿でフォロー関係がない場合は拒否
 			if (msg.replyNote.uri) {
 						const replyUser = await this.ai.api('users/show', {
 							userId: msg.replyNote.userId
@@ -55,15 +97,18 @@ export default class extends Module {
 						}
 			}
 
+			// 公開範囲に応じて投稿方法を変更
 			const opt = msg.replyNote.visibility == 'followers' || msg.replyNote.visibility == 'specified' ? { visibility: 'public', references: [msg.replyId] } : { visibility: 'public', renote: msg.replyId };
-			
+
+			// 藍自身の投稿の場合は特別な応答
 			if (msg.replyNote.userId == this.ai.account.id) {
 				msg.reply("\nこの投稿はもちろん、正しいです！どうして疑うんですか？", opt);
 				return {
 					reaction: 'love'
 				};
 			}
-			
+
+			// 投稿IDをシードにして決定的な判定を生成
 			const rng = seedrandom(msg.replyId + ":f");
 			const v = rng();
 			if (v < 0.5) {
@@ -85,6 +130,7 @@ export default class extends Module {
 			};
 		}
 
+		// --- サイコロ ---
 		const query = msg.extractedText.match(/([0-9]+)[dD]([0-9]+)/);
 
 		if (query == null) return false;
@@ -95,6 +141,7 @@ export default class extends Module {
 		if (times < 1) return false;
 		if (dice < 2 || dice > Number.MAX_SAFE_INTEGER) return false;
 
+		// 結果文字列が長くなりすぎないよう制限
 		if ((dice.toString().length + 1) * times > 7000) return false;
 
 		const results: number[] = [];

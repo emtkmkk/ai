@@ -1,3 +1,20 @@
+/**
+ * @packageDocumentation
+ *
+ * fortune モジュール
+ *
+ * メンションに「占い」「おみくじ」等のキーワードが含まれたら、
+ * おみくじ結果・ラッキーアイテム・ラッキーワードを返信する。
+ *
+ * @remarks
+ * - ユーザーIDと日付をシードにした決定的乱数で結果を生成
+ *   （同じユーザーが同じ日に引くと同じ結果になる）
+ * - 1月1日は全て吉以上の `luckyBlessing` を使用
+ * - ラッキーアイテムは {@link genItem} で生成
+ * - ラッキーワードは keyword モジュールが学習済みのキーワードから選択
+ *
+ * @internal
+ */
 import autobind from 'autobind-decorator';
 import * as loki from 'lokijs';
 import Module from '@/module';
@@ -7,6 +24,16 @@ import * as seedrandom from 'seedrandom';
 import { genItem } from '@/vocabulary';
 import { acct } from '@/utils/acct';
 
+/**
+ * おみくじ結果の一覧（通常日用）
+ *
+ * @remarks
+ * 配列のインデックスが小さいほどレアで良い結果。
+ * SI接頭辞や漢数字の単位で「吉」のスケールを表現している。
+ * 末尾に凶・大凶を含む。
+ *
+ * @public
+ */
 export const blessing = [
 	'$[tada スーパーもこもこ吉🎉]',
 	'$[tada スーパーもこ吉🎉]',
@@ -73,6 +100,14 @@ export const blessing = [
 	'**大凶**:catsad:',
 ];
 
+/**
+ * おみくじ結果の一覧（1月1日用・吉以上のみ）
+ *
+ * @remarks
+ * 新年なので凶は出ない。`blessing` から凶系を除外したもの。
+ *
+ * @public
+ */
 export const luckyBlessing = [
 	'$[tada スーパーもこもこ吉🎉]',
 	'$[tada スーパーもこ吉🎉]',
@@ -113,11 +148,21 @@ export const luckyBlessing = [
 export default class extends Module {
 	public readonly name = 'fortune';
 
+	/** keyword モジュールが学習したキーワードのコレクション（共有） */
 	private learnedKeywords: loki.Collection<{
 		keyword: string;
 		learnedAt: number;
 	}>;
 
+	/**
+	 * モジュールをインストールし、mentionHook を登録する
+	 *
+	 * @remarks
+	 * keyword モジュールと共有する `_keyword_learnedKeywords` コレクションを取得する。
+	 *
+	 * @returns mentionHook を含むインストール結果
+	 * @internal
+	 */
 	@autobind
 	public install() {
 		this.learnedKeywords = this.ai.getCollection('_keyword_learnedKeywords', {
@@ -128,6 +173,17 @@ export default class extends Module {
 		};
 	}
 
+	/**
+	 * 「占い」「おみくじ」等のキーワードに反応し、おみくじ結果を返信する
+	 *
+	 * @remarks
+	 * シード: `年/月/日@ユーザーID` で同じ日・同じユーザーには同じ結果を返す。
+	 * ラッキーワード用のシードは別に用意（`:word` サフィックス）。
+	 *
+	 * @param msg - 受信したメッセージ
+	 * @returns マッチした場合はリアクション結果、しなかった場合は `false`
+	 * @internal
+	 */
 	@autobind
 	private async mentionHook(msg: Message) {
 		if (msg.includes(['占', 'うらな', '運勢', 'おみくじ'])) {
@@ -135,6 +191,7 @@ export default class extends Module {
 			const seed = `${date.getFullYear()}/${date.getMonth()}/${date.getDate()}@${msg.userId}`;
 			const rng = seedrandom(seed);
 			const rngword = seedrandom(seed + ":word");
+			// 1月1日は吉以上しか出ない luckyBlessing を使用
 			const omikuji = date.getMonth() === 0 && date.getDate() === 1 ? luckyBlessing[Math.floor(rng() * luckyBlessing.length)] : blessing[Math.floor(rng() * blessing.length)];
 			const item = genItem(rng);
 			const words = this.learnedKeywords.find();

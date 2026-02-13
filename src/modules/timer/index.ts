@@ -1,3 +1,17 @@
+/**
+ * @packageDocumentation
+ *
+ * timer モジュール
+ *
+ * メンションで「〇秒/〇分/〇時間/〇日」を指定すると、指定時間後に通知する。
+ * タイマーは {@link Module.setTimeoutWithPersistence} を使い、プロセス再起動後も有効。
+ *
+ * @remarks
+ * - 最大30日（2,592,000,000ミリ秒）まで設定可能
+ * - mentionHook と timeoutCallback を登録
+ *
+ * @internal
+ */
 import autobind from 'autobind-decorator';
 import Module from '@/module';
 import Message from '@/message';
@@ -7,6 +21,12 @@ import { acct } from '@/utils/acct';
 export default class extends Module {
 	public readonly name = 'timer';
 
+	/**
+	 * モジュールをインストールし、mentionHook と timeoutCallback を登録する
+	 *
+	 * @returns mentionHook と timeoutCallback を含むインストール結果
+	 * @internal
+	 */
 	@autobind
 	public install() {
 		return {
@@ -15,6 +35,17 @@ export default class extends Module {
 		};
 	}
 
+	/**
+	 * メンションから時間指定を解析し、タイマーをセットする
+	 *
+	 * @remarks
+	 * 「〇秒」「〇分」「〇時間」「〇日」を正規表現で抽出し、合算してタイマーを設定。
+	 * 合計0秒やキーワードなしの場合は無視、30日超は拒否する。
+	 *
+	 * @param msg - 受信したメッセージ
+	 * @returns マッチした場合はリアクション結果、しなかった場合は `false`
+	 * @internal
+	 */
 	@autobind
 	private async mentionHook(msg: Message) {
 		const secondsQuery = (msg.text || '').match(/([0-9]+)秒/);
@@ -27,6 +58,7 @@ export default class extends Module {
 		const hours = hoursQuery ? parseInt(hoursQuery[1], 10) : 0;
 		const days = daysQuery ? parseInt(daysQuery[1], 10) : 0;
 
+		// 時間指定キーワードが1つもなければ無視
 		if (!(secondsQuery || minutesQuery || hoursQuery || daysQuery)) return false;
 
 		if ((seconds + minutes + hours + days) == 0) {
@@ -40,6 +72,7 @@ export default class extends Module {
 			(1000 * 60 * 60 * hours) +
 			(1000 * 60 * 60 * 24 * days);
 
+		// 30日（2,592,000,000ms）を超えるタイマーは拒否
 		if (time > 2592000000) {
 			msg.reply(serifs.timer.tooLong);
 			return true;
@@ -47,9 +80,10 @@ export default class extends Module {
 
 		msg.reply(serifs.timer.set(Math.ceil((Date.now() + time) / 1000)));
 
+		// 表示用の時間文字列を組み立てる
 		const str = `${days ? daysQuery![0] : ''}${hours ? hoursQuery![0] : ''}${minutes ? minutesQuery![0] : ''}${seconds ? secondsQuery![0] : ''}`;
 
-		// タイマーセット
+		// 永続化タイマーをセット（プロセス再起動後も有効）
 		this.setTimeoutWithPersistence(time, {
 			msgId: msg.id,
 			userId: msg.friend.userId,
@@ -61,6 +95,15 @@ export default class extends Module {
 		};
 	}
 
+	/**
+	 * タイマー完了時のコールバック。設定者にメンション付きで通知する
+	 *
+	 * @remarks
+	 * 元の投稿への返信を試み、失敗した場合はホームに直接投稿する。
+	 *
+	 * @param data - 永続化されたタイマーデータ（msgId, userId, time）
+	 * @internal
+	 */
 	@autobind
 	private async timeoutCallback(data) {
 		const friend = this.ai.lookupFriend(data.userId);
@@ -73,6 +116,7 @@ export default class extends Module {
 				visibility: 'home'
 			});
 		} catch (e) {
+			// 元の投稿が削除されている場合などのフォールバック
 			this.ai.post({
 				text: acct(friend.doc.user) + ' ' + text,
 				visibility: 'home'

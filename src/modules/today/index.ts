@@ -1,3 +1,19 @@
+/**
+ * @packageDocumentation
+ *
+ * today モジュール
+ *
+ * 毎日8時以降に、その日の暦情報（曜日、元号、祝日、記念日、六曜など）を投稿する。
+ * 外部APIから情報を取得し、1日1回のみ投稿する。
+ *
+ * @remarks
+ * - こよみAPI（koyomi.zingsystem.com）と記念日API（api.whatistoday.cyou）を使用
+ * - 12分間隔のポーリングで投稿タイミングを確認
+ * - 同日中に2回投稿しないよう `lastPosted` で制御
+ * - API取得失敗時は投稿をスキップ
+ *
+ * @internal
+ */
 import autobind from 'autobind-decorator';
 import Module from '@/module';
 import Friend from '@/friend';
@@ -6,6 +22,12 @@ import serifs from '@/serifs';
 export default class TodayModule extends Module {
 	public readonly name = 'today';
 
+	/**
+	 * モジュールをインストールし、毎日投稿用タイマーを設定する
+	 *
+	 * @returns 空のインストール結果（フックなし）
+	 * @internal
+	 */
 	@autobind
 	public install() {
 		this.post();
@@ -14,11 +36,20 @@ export default class TodayModule extends Module {
 	}
 
 	/**
-	 * 毎日投稿
+	 * その日の暦情報を外部APIから取得し、投稿する
+	 *
+	 * @remarks
+	 * 取得情報:
+	 * - こよみAPI: 曜日、元号、祝日、二十四節気、六曜、一粒万倍日、天赦日、大明日
+	 * - 記念日API: 最大5件の記念日
+	 * - 月×日の計算値
+	 *
+	 * @internal
 	 */
 	@autobind
 	private async post() {
 		const now = new Date();
+		// 8時前は投稿しない
 		if (now.getHours() < 8) return;
 
 		const yyyy = now.getFullYear();
@@ -26,6 +57,7 @@ export default class TodayModule extends Module {
 		const dd = String(now.getDate()).padStart(2, '0');
 		const dateKey = `${yyyy}-${mm}-${dd}`;
 
+		// 同日中に既に投稿済みならスキップ
 		const data = this.getData();
 		if (data.lastPosted === dateKey) return;
 		data.lastPosted = dateKey;
