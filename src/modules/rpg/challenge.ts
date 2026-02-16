@@ -1,3 +1,15 @@
+/**
+ * @packageDocumentation
+ *
+ * チャレンジ機能（未実装）
+ *
+ * スキルセット解禁・旅モード補正・専門店解禁等のボーナスを定義する challenges が
+ * 全体コメントアウトされている。他モジュールから参照されていない。
+ *
+ * @remarks
+ * TODO: 将来的な実装予定（スキルセット解禁・旅モード補正等）
+ * @internal
+ */
 /*export const challenges = [
     {
         id: 1,

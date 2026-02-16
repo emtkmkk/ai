@@ -1,5 +1,17 @@
-// RPGで使用する敵の情報
-
+/**
+ * @packageDocumentation
+ *
+ * RPGモジュールの敵定義
+ *
+ * enemys に通常敵の定義、raidEnemys にレイド敵の定義を保持する。
+ * Enemy 型は戦闘時のステータス・HP・メッセージ等を定義し、RaidEnemy は power / pattern 等を追加する。
+ *
+ * @remarks
+ * - endressEnemy は旅モード用のエンドレス敵を返す
+ * - event を持つ敵は独自イベントに委譲される
+ *
+ * @public
+ */
 import Message from "@/message";
 import { colors, unlockCount } from "./colors";
 import rpg from "./index";
@@ -27,7 +39,7 @@ export type Enemy = {
 	mark2?: string;
 	/** 体力表示の際に 0% -> 100% で表示するか 進捗表示などに使用 */
 	lToR?: boolean;
-	/** 
+	/**
 	 * プレイヤーの体力表示の際に 0% -> 100% で表示するか 進捗表示などに使用
 	 * trueの場合、体力表示の際に自動的に上がプレイヤー、下が敵になる
 	 * */
@@ -60,12 +72,12 @@ export type Enemy = {
 	def?: number | ((atk: number, def: number, spd: number) => number);
 	/**  攻撃回数 未指定で1 */
 	spd?: number;
-	/** 
+	/**
 	 * 攻撃ボーナス倍率 基本的な値は3
 	 * プレイヤーの投稿数ボーナスと同じかかり方をする
 	 * */
 	atkx?: number | ((tp: number) => number);
-	/** 
+	/**
 	 * 防御ボーナス倍率 基本的な値は3
 	 * プレイヤーの投稿数ボーナスと同じかかり方をする
 	 * */
@@ -74,7 +86,7 @@ export type Enemy = {
 	maxdmg?: number;
 	/** 踏ん張れないフラグ 耐えるという概念がない場合にオン （川柳勝負など） */
 	notEndure?: boolean;
-	/** 
+	/**
 	 * 炎攻撃1スタックにつきHPに受けるダメージ割合 0 ~ 1
 	 * 0.1 に設定した場合、2スタックでプレイヤーは通常の攻撃ダメージ + プレイヤーHP20%の固定ダメージを受けるようになる
 	 * */
@@ -290,5 +302,3 @@ export const ending = (module: rpg, msg: Message, _data: any): any => {
 		reaction: me
 	};
 };
-
-

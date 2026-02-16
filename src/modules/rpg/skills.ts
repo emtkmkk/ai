@@ -1,3 +1,17 @@
+/**
+ * @packageDocumentation
+ *
+ * RPGモジュールのスキル定義・効果集計
+ *
+ * skills にスキル定義を保持し、aggregateSkillsEffects で所持スキルの効果を集計する。
+ * skillBorders はスキル解放のLv閾値。getSkill / getRerollSkill でスキル抽選を行う。
+ *
+ * @remarks
+ * - SkillEffect 型は戦闘中の各種判定で参照される
+ * - moveTo が設定されたスキルは廃止済みのため挙動は考慮しない
+ *
+ * @public
+ */
 import Message from "@/message";
 import Module from "@/module";
 import serifs from "@/serifs";
@@ -8,10 +22,21 @@ import { colors, enhanceCount } from './colors';
 import config from "@/config";
 import { acct } from '@/utils/acct';
 
+/** スキル名ごとの所持人数マップ（skillCalculate で更新） */
 export let skillNameCountMap = new Map();
+/** 全スキルの合計所持数（skillCalculate で更新） */
 export let totalSkillCount = 0;
 let ai: 藍;
 
+/**
+ * 全ユーザーのスキル所持状況を集計する
+ *
+ * skillNameCountMap / totalSkillCount を更新し、ショップ価格や人気度計算に使用される。
+ *
+ * @param _ai 藍オブジェクト（省略時は前回の ai）
+ * @returns { skillNameCountMap, totalSkillCount }
+ * @internal
+ */
 export function skillCalculate(_ai: 藍 = ai) {
 	skillNameCountMap = new Map();
 	totalSkillCount = 0;
@@ -333,6 +358,13 @@ export const skills: Skill[] = [
 	{ name: `スロースタート`, short: "ス", desc: `レイド時、最初は弱くなりますが、ターンが進む度にどんどん強くなります`, info: "レイド時、最初は弱くなりますが、ターンが進む度にどんどん強くなります", effect: { slowStart: 1 }, notLearn: true, notShop: true},
 ];
 
+/**
+ * スキル解放のLv閾値
+ *
+ * [20, 50, 100, 170, 255] で、Lv20で1つ目、Lv50で2つ目…とスキルスロットが解放される。
+ *
+ * @internal
+ */
 export const skillBorders = [20, 50, 100, 170, 255];
 
 const ultimateEffect: SkillEffect = {
@@ -397,6 +429,15 @@ const ultimateEffect: SkillEffect = {
 
 export const ultimateAmulet = { name: `究極のお守り`, limit: (data) => enhanceCount(data) >= 9, price: 18, desc: `${config.rpgHeroName}RPGを極めたあなたに……`, type: "amulet", effect: ultimateEffect, durability: 6, short: "究極", isUsed: (data) => true, always: true } as AmuletItem;
 
+/**
+ * スキル変更時に新たに習得するスキルを抽選する
+ *
+ * 人気度・出現制限（unique, notLearn 等）を考慮してランダムに選択する。
+ *
+ * @param data RPGモジュールのデータ
+ * @returns 抽選されたスキル
+ * @internal
+ */
 export const getSkill = (data) => {
 	const playerSkills = data.skills.map((x) => skills.find((y) => x.name === y.name) ?? x);
 	// フィルタリングされたスキルの配列を作成
@@ -474,6 +515,17 @@ const skillInfo = (skills: Skill[] | undefined, desc: string, infoFlg = false) =
 };
 
 /** スキルに関しての情報を返す */
+/**
+ * スキル確認・変更の初期表示を行う
+ *
+ * 「RPG スキル」コマンドで呼ばれ、現在のスキル一覧と変更オプションを表示する。
+ *
+ * @param module RPGモジュール
+ * @param ai 藍オブジェクト
+ * @param msg メッセージ
+ * @returns リアクションオブジェクト
+ * @internal
+ */
 export const skillReply = async (module: Module, ai: 藍, msg: Message) => {
 
 	// データを読み込み
@@ -624,6 +676,15 @@ export const skillPower = (ai: 藍, skillName: Skill["name"]) => {
  * @param data - skills配列を含むデータオブジェクト。
  * @returns 集計されたSkillEffect。
  */
+/**
+ * 所持スキル・お守りの効果を集計する
+ *
+ * 戦闘・レイド・木人モード等で参照され、atkUp / defUp / spdUp 等の倍率を返す。
+ *
+ * @param data RPGモジュールのデータ
+ * @returns SkillEffect 集計結果
+ * @internal
+ */
 export function aggregateSkillsEffects(data: any): SkillEffect {
 	const aggregatedEffect: SkillEffect = {};
 
@@ -680,7 +741,7 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
 	});
 
 	const day = new Date().getDay();
-	
+
 	aggregatedEffect.atkUp = (1 + (aggregatedEffect.atkUp ?? 0)) * (1 + (aggregatedEffect.atkUp2 ?? 0)) * (1 + (aggregatedEffect.atkUp3 ?? 0)) * (1 + (aggregatedEffect.atkUp4 ?? 0)) * (1 + (aggregatedEffect.atkUp5 ?? 0)) * (1 + (aggregatedEffect.atkUp6 ?? 0)) * (1.04 ** (aggregatedEffect.atkUpBonus ?? 0));
 	aggregatedEffect.defUp = (1 + (aggregatedEffect.defUp ?? 0)) * (1 + (aggregatedEffect.defUp2 ?? 0)) * (1 + (aggregatedEffect.defUp3 ?? 0)) * (1 + (aggregatedEffect.defUp4 ?? 0)) * (1 + (aggregatedEffect.defUp5 ?? 0));
 	aggregatedEffect.atkDmgUp = ((1 + (aggregatedEffect.atkDmgUp ?? 0)) * (1 + (aggregatedEffect.atkDmgUp2 ?? 0))) - 1;
@@ -700,7 +761,7 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
 		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) * ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) * (alwaysSuper || !data.raid ? 1 : 1.15)));
 		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) * ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) * (alwaysSuper || !data.raid ? 1 : 1.15)));
 	}
-	
+
 	if (aggregatedEffect.rainbow && aggregatedEffect.rainbow > 1) {
 		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) * (1 + (aggregatedEffect.rainbow - 1) * 0.05);
 		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) * (1 + (aggregatedEffect.rainbow - 1) * 0.05);
@@ -766,7 +827,7 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
 		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) * (1 + (aggregatedEffect.enemyCritDown - 1) * (1 / 3));
 		aggregatedEffect.enemyCritDown = 1;
 	}
-	
+
 	aggregatedEffect.atkUp = aggregatedEffect.atkUp - 1;
 	aggregatedEffect.defUp = aggregatedEffect.defUp - 1;
 
@@ -840,7 +901,7 @@ export function aggregateSkillsEffectsSkillX(data: any, skillX: number): SkillEf
 
 	const day = new Date().getDay();
 
-	
+
 	aggregatedEffect.atkUp = (1 + (aggregatedEffect.atkUp ?? 0)) * (1 + (aggregatedEffect.atkUp2 ?? 0)) * (1 + (aggregatedEffect.atkUp3 ?? 0)) * (1 + (aggregatedEffect.atkUp4 ?? 0)) * (1 + (aggregatedEffect.atkUp5 ?? 0)) * (1 + (aggregatedEffect.atkUp6 ?? 0)) * (1.04 ** (aggregatedEffect.atkUpBonus ?? 0)) * uniqueX;
 	aggregatedEffect.defUp = (1 + (aggregatedEffect.defUp ?? 0)) * (1 + (aggregatedEffect.defUp2 ?? 0)) * (1 + (aggregatedEffect.defUp3 ?? 0)) * (1 + (aggregatedEffect.defUp4 ?? 0)) * (1 + (aggregatedEffect.defUp5 ?? 0)) * uniqueX;
 	aggregatedEffect.atkDmgUp = ((1 + (aggregatedEffect.atkDmgUp ?? 0)) * (1 + (aggregatedEffect.atkDmgUp2 ?? 0))) - 1;
@@ -919,7 +980,7 @@ export function aggregateSkillsEffectsSkillX(data: any, skillX: number): SkillEf
 		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) * (1 + (aggregatedEffect.enemyCritDown - 1) * (1 / 3));
 		aggregatedEffect.enemyCritDown = 1;
 	}
-	
+
 	aggregatedEffect.atkUp = aggregatedEffect.atkUp - 1;
 	aggregatedEffect.defUp = aggregatedEffect.defUp - 1;
 
@@ -1043,14 +1104,14 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 
 	/** 覚醒状態か？*/
 	const isSuper = color.alwaysSuper;
-	
+
 	let result: string[] = [];
 	const resultS: string[] = [];
 
 	let atk = 1;
 	let def = 1;
 	let spd = 1;
-	
+
 	let lAtk = 1;
 	let lDef = 1;
 
@@ -1156,7 +1217,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 		atk *= (1 + (skillEffects.enemyBuff ?? 0) / 20);
 		def *= (1 + (skillEffects.enemyBuff ?? 0) / 20);
 	}
-	
+
 	if (skillEffects.wrath) {
 		resultS.push("開始時体力半減");
 	}
@@ -1189,7 +1250,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 		atk *= (1 + (skillEffects.allForOne ?? 0) * 0.1);
 		lAtk *= (1 + (skillEffects.allForOne ?? 0) * 0.1);
 	}
-	
+
 
 	if (skillEffects.ice) {
 		resultS.push("戦闘時凍結率: "+ showNum(skillEffects.ice * 100) + "%");
@@ -1308,7 +1369,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 			result.push("与ダメージ減少: " + showNum(dmgBonus * -100) + "%")
 		}
 	}
-	
+
 	if (skillEffects.haisuiAtkUp) {
 		result.push("覚悟与ダメージ増加: +" + showNum((skillEffects.haisuiAtkUp ?? 0) * 100) + "%");
 	}
@@ -1338,7 +1399,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 			result.push("被ダメージ軽減: " + showNum(defDmgX * -100) + "%")
 		}
 	}
-	
+
 	if (skillEffects.firstTurnResist) {
 		if (skillEffects.firstTurnResist > 1) {
 			result.push("ターン1ダメージ無効");
@@ -1359,7 +1420,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 	if (defMinRnd !== 0.2 || defMaxRnd !== 1.6) {
 		result.push("被ダメージ乱数幅: " + showNum(defMinRnd * 100) + "% ～ " + showNum((defMinRnd + defMaxRnd) * 100) + "%")
 	}
-	
+
 	if (skillEffects.critUp) {
 		result.push("クリティカル率（割合）: +" + showNum((skillEffects.critUp ?? 0) * 100) + "%");
 	}
@@ -1477,12 +1538,12 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 	}
 
 	const totalAtk = (1 + atk) * Math.max((1 + bAtk), (1 + nbAtk)) * (1 + (skillEffects.haisuiAtkUp ?? 0)) *
-	 (1 + spd) *  (1 + bSpd) * (1 / (1 + eDef)) * (1 + dmgBonus) * 
+	 (1 + spd) *  (1 + bSpd) * (1 / (1 + eDef)) * (1 + dmgBonus) *
 	 (((atkMinRnd + atkMinRnd + atkMaxRnd)) * (0.5 + (skillEffects.notRandom ?? 0) * 0.05)) *
 	 (1 + ((skillEffects.critUpFixed ?? 0) * (1 + (skillEffects.critDmgUp ?? 0) * 2))) *
-	 ( 
+	 (
 		1 +
-		(0.25 * (1 + (skillEffects.critUp ?? 0)) * (1 + (skillEffects.haisuiCritUp ?? 0)) * (1 + ((skillEffects.critDmgUp ?? 0) + (skillEffects.wrath ? 0.4 : 0)) * 2)) - 
+		(0.25 * (1 + (skillEffects.critUp ?? 0)) * (1 + (skillEffects.haisuiCritUp ?? 0)) * (1 + ((skillEffects.critDmgUp ?? 0) + (skillEffects.wrath ? 0.4 : 0)) * 2)) -
 		(0.25 * (1 + ((skillEffects.critDmgUp ?? 0) + (skillEffects.wrath ? 0.4 : 0)) * 2))
 	 ) *
 	 (1 + ((skillEffects.finalAttackUp ?? 0) / 7)) *
@@ -1512,6 +1573,3 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 
 	return result.join("\n");
 }
-
-
-

@@ -1,3 +1,17 @@
+/**
+ * @packageDocumentation
+ *
+ * RPGモジュールの裏ショップ
+ *
+ * 裏ショップ入場の札を持っているプレイヤーが利用できるレアアイテムショップ。
+ * shop2Items に定義されたラインナップを表示し、コインとスキル変更珠で購入する。
+ *
+ * @remarks
+ * - shop2Reply で表示、shopContextHook（shop.ts）で購入処理を行う
+ * - カスタムショップ（shop-custom）とは別
+ *
+ * @public
+ */
 import Message from "@/message";
 import Module from "@/module";
 import serifs from "@/serifs";
@@ -119,6 +133,17 @@ export const shop2Items: ShopItem[] = [
 	...skills.filter((x) => !x.notLearn && !x.moveTo && !x.cantReroll).map((x): Item => ({ name: `${x.name}の教本`, limit: (data) => !data.nextSkill && (!x.unique || !data.skills.filter((y) => y.unique).map((y) => y.unique).includes(x.unique)) && !(x.name === "数取りの達人" && isKazutoriMasterDisabled(data)), price: (data, rnd, ai) => Math.ceil(skillPrice(ai, x.name, rnd) / 2), desc: `購入すると次のスキル変更時に必ず「${x.name}」${x.desc ? `（${x.desc}）` : ""}を習得できる（複製時は対象外）`, type: "item", effect: (data) => { data.nextSkill = x.name } })),
 ];
 
+/**
+ * 裏ショップの初期表示を行う
+ *
+ * 「RPG 裏ショップ」コマンドで呼ばれ、裏ショップのラインナップを表示する。
+ *
+ * @param module RPGモジュール
+ * @param ai 藍オブジェクト
+ * @param msg メッセージ
+ * @returns リアクションオブジェクト
+ * @internal
+ */
 export const shop2Reply = async (module: rpg, ai: 藍, msg: Message) => {
 
 	// データを読み込み

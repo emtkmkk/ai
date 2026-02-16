@@ -1,3 +1,17 @@
+/**
+ * @packageDocumentation
+ *
+ * 魔法定義（未使用）
+ *
+ * magics 配列にレイド時の魔法効果を定義しているが、このファイルはどこからもインポートされていない。
+ * raid.ts には data.magic の処理が存在するが、magics の代入は行われていない。
+ *
+ * @remarks
+ * - magics は未使用のデッドコード
+ * - raid.ts の getTotalDmg 等で data.magic が参照されるが、現状は使用されない
+ *
+ * @internal
+ */
 type Magic = {
 	name: string;
     desc?: string;

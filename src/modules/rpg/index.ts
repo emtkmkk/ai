@@ -1,3 +1,14 @@
+/**
+ * @packageDocumentation
+ *
+ * RPGモジュール本体
+ *
+ * @remarks
+ * メンションにより起動し、ターン制の戦闘・レベルアップ・アイテム収集・レイド討伐等を提供する。
+ * mentionHook でコマンド分岐し、各ハンドラが通常RPG・木人モード・ショップ・殿堂等を処理する。
+ *
+ * @public
+ */
 import Message from '@/message';
 import Module from '@/module';
 import serifs from '@/serifs';
@@ -37,6 +48,14 @@ export default class extends Module {
 
 	private raids: loki.Collection<Raid>;
 
+	// -------- モジュールセットアップ・フック --------
+
+	/**
+	 * モジュールのインストール処理
+	 *
+	 * @returns mentionHook / contextHook / timeoutCallback を返し、藍に登録する
+	 * @public
+	 */
 	@autobind
 	public install() {
 		this.raids = this.ai.getCollection('rpgRaid');
@@ -54,6 +73,15 @@ export default class extends Module {
 		};
 	}
 
+	/**
+	 * メンションフック
+	 *
+	 * RPGコマンドの受信を処理し、ヘルプ・アイテム・殿堂・ショップ・木人・通常RPG等に振り分ける。
+	 *
+	 * @param msg メッセージ
+	 * @returns リアクションオブジェクト、または false（他モジュールへ）
+	 * @internal
+	 */
 	@autobind
 	private async mentionHook(msg: Message) {
 		if (config.rpgReplyRequired && !msg.user.host && msg.visibility !== "specified" && (!msg.replyId || msg.replyNote?.userId !== this.ai.account.id)) {
@@ -121,6 +149,17 @@ export default class extends Module {
 		}
 	}
 
+	/**
+	 * コンテキストフック
+	 *
+	 * おかわり返信・ショップ購入・スキル選択・レイド参加等の返信を処理する。
+	 *
+	 * @param key コンテキストキー（例: replayOkawari:userId, shopBuy:xxx, selectSkill:userId）
+	 * @param msg メッセージ
+	 * @param data コンテキストデータ
+	 * @returns リアクションオブジェクト
+	 * @internal
+	 */
 	@autobind
 	private async contextHook(key: any, msg: Message, data: any) {
           if (typeof key === "string" && key.startsWith("replayOkawari:")) {
@@ -136,8 +175,17 @@ export default class extends Module {
                   return this.selectSkillHook(key, msg, data);
           }
           return raidContextHook(key, msg, data);
-  }
+	}
 
+	/**
+	 * タイムアウトコールバック
+	 *
+	 * レイド投稿のタイムアウト時に呼ばれ、レイドへの再ノートを行う。
+	 *
+	 * @param data タイムアウトデータ（postId 等）
+	 * @returns raidTimeoutCallback の戻り値
+	 * @internal
+	 */
 	@autobind
 	private timeoutCallback(data) {
 
@@ -145,6 +193,14 @@ export default class extends Module {
 
 	}
 
+	// -------- レベル・スケジュール管理 --------
+
+	/**
+	 * 最大レベルを moduleData に保存する。
+	 * install 時に呼ばれ、全ユーザーの最高Lvを記録する。
+	 *
+	 * @internal
+	 */
 	@autobind
 	private calculateMaxLv() {
 		const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
@@ -157,12 +213,25 @@ export default class extends Module {
 		}
 	}
 
+	/**
+	 * 全ユーザー中の最高RPGレベルを取得する
+	 *
+	 * @returns 最大255までのレベル
+	 * @internal
+	 */
 	@autobind
 	private getMaxLevel() {
 		const maxLv = this.ai.friends.find().filter(x => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1).reduce((acc, cur) => acc > cur.perModulesData.rpg.lv ? acc : cur.perModulesData.rpg.lv, 0);
 		return maxLv > 255 ? 255 : maxLv;
 	}
 
+	/**
+	 * 定期的に最大Lvを更新し、レベルアップのリマインド投稿を行う
+	 *
+	 * 0/12/18時の1〜5分に実行される。
+	 *
+	 * @internal
+	 */
 	@autobind
 	private scheduleLevelUpdateAndRemind() {
 
@@ -181,6 +250,11 @@ export default class extends Module {
 		}
 	}
 
+	/**
+	 * レベルアップのリマインド投稿を行う
+	 *
+	 * @internal
+	 */
 	@autobind
 	private remindLevelUpdate() {
 		const filteredColors = colors.filter(x => x.id > 1 && !x.reverseStatus && !x.alwaysSuper && !x.hidden).map(x => x.name);
@@ -190,6 +264,13 @@ export default class extends Module {
 		});
 	}
 
+	/**
+	 * 日付切り替え時に投稿数を記録する
+	 *
+	 * 23時55〜59分に実行される。todayNotesCount / yesterdayNotesCount を更新する。
+	 *
+	 * @internal
+	 */
 	@autobind
 	private async scheduleDailyNoteCountsUpdate() {
 		const hours = new Date().getHours();
@@ -207,6 +288,15 @@ export default class extends Module {
 		}
 	}
 
+	// -------- ヘルプ / アイテム / 殿堂 ハンドラ --------
+
+	/**
+	 * RPG ヘルプコマンドを処理する
+	 *
+	 * @param msg メンションメッセージ
+	 * @returns リアクションオブジェクト
+	 * @internal
+	 */
 	@autobind
 	private handleHelpCommands(msg: Message) {
 		// データを読み込み
@@ -276,6 +366,13 @@ export default class extends Module {
 		return { reaction: "love" };
 	}
 
+	/**
+	 * RPG アイテムコマンドを処理し、所持アイテム一覧を表示する
+	 *
+	 * @param msg メンションメッセージ
+	 * @returns リアクションオブジェクト
+	 * @internal
+	 */
 	@autobind
 	private handleItemsCommands(msg: Message) {
 		const data = initializeData(this, msg);
@@ -314,6 +411,13 @@ export default class extends Module {
 		return { reaction: "love" };
 	}
 
+	/**
+	 * RPG 殿堂コマンドを処理し、ランキングを表示する
+	 *
+	 * @param msg メンションメッセージ
+	 * @returns リアクションオブジェクト
+	 * @internal
+	 */
 	@autobind
 	private handleRecordCommands(msg: Message) {
 		const data = initializeData(this, msg);
@@ -475,25 +579,25 @@ export default class extends Module {
 			if (data.lv) {
 				message.push(createRankMessage(data.lv, "Lv", "lv"));
 			}
-	
+
 			if (data.bestScore) {
 				message.push(createRankMessage(data.bestScore, "最大木人ダメージ", "bestScore", { suffix: "ダメージ" }));
 			}
-	
+
 			if (data.maxEndress) {
 				message.push(createRankMessage(data.maxEndress, "旅モード最高クリア記録", "maxEndress", { prefix: "ステージ", addValue: 1 }));
 			}
-	
+
 			if (data.maxStatusUp) {
 				message.push(createRankMessage(data.maxStatusUp, "運の良さ", "maxStatusUp", { suffix: "pts" }));
 			}
-	
+
 			if (data.jar) {
 				message.push(createRankMessage(data.jar, "壺購入数", "jar", { suffix: "個" }));
 			}
-	
+
 			let totalScore = 0;
-	
+
 			if (data.raidScore) {
 				for (const [key, value] of Object.entries(data.raidScore)) {
 					if (value && typeof value === "number") {
@@ -505,7 +609,7 @@ export default class extends Module {
 				}
 				if (totalScore > 0 && Object.entries(data.raidScore).length >= 2) message.push(`合計レイドボス評価値\n★${totalScore.toFixed(2)}`);
 			}
-	
+
 			if (data.clearRaidNum) {
 				message.push(createRankMessage(data.clearRaidNum, "7ターン戦ったレイドボス (⭐️)", "clearRaidNum", { suffix: "種類" }));
 			}
@@ -517,6 +621,15 @@ export default class extends Module {
 		return { reaction: "love" };
 	}
 
+	// -------- 管理者コマンド --------
+
+	/**
+	 * RPG admin コマンドを処理する（管理者専用）
+	 *
+	 * @param msg メンションメッセージ
+	 * @returns リアクションオブジェクト
+	 * @internal
+	 */
 	@autobind
 	private handleAdminCommands(msg: Message) {
 		if (msg.includes(["revert"])) {
@@ -564,7 +677,7 @@ export default class extends Module {
 				if (!skillData) {
 					skillData = skills.find((x) => x.name.includes(skill))
 					if (!skillData) return { reaction: ":mk_hotchicken:" };
-				} 
+				}
 				friend.doc.perModulesData.rpg.skills[num] = skillData;
 				friend.save();
 				return { reaction: "love" };
@@ -631,6 +744,9 @@ export default class extends Module {
 		}
 		if (msg.includes(["dataFix"])) {
 
+			// データ修正用の関数。データを修正する際はコードをここに記載。現在はなにもしません。
+
+			/*
 			const ai = this.ai;
 			const games = this.raids.find({});
 			const allData = this.ai.friends.find();
@@ -641,11 +757,22 @@ export default class extends Module {
 				if (doc?.perModulesData?.rpg?.raidScore?.[enemyName] != 8443) return;
 				doc.perModulesData.rpg.raidScore[enemyName] = 4159;
 			});
+			*/
+
 			return { reaction: "love" };
 		}
 		return { reaction: "hmm" };
 	}
 
+	// -------- 木人モード --------
+
+	/**
+	 * 木人モード（ダメージ計測）を処理する
+	 *
+	 * @param msg メンションメッセージ
+	 * @returns リアクションオブジェクト
+	 * @internal
+	 */
 	@autobind
 	private async handleTrialCommands(msg: Message) {
 
@@ -715,7 +842,7 @@ export default class extends Module {
 				skillEffects.poisonAvoid = ((1 + (skillEffects.poisonAvoid ?? 0)) * 1.15) - 1;
 			}
 		}
-		
+
 		message += [
 			`${serifs.rpg.nowStatus}`,
 			`${serifs.rpg.status.atk}/Lv : ${Math.round(atk / data.lv * 100) / 100}`,
@@ -742,7 +869,7 @@ export default class extends Module {
 		atk = atk * (1 + ((skillEffects.spdUp ?? 0)));
 		//アイテムボーナス
 		atk = atk + ((data.lv * 4) * Math.min(((skillEffects.firstTurnItem ? 0.9 : 0.4) * (1 + (skillEffects.itemEquip ?? 0))), 1) * (1 + (skillEffects.itemBoost ?? 0)) * (1 + (skillEffects.weaponBoost ?? 0)));
-		
+
 		atk = atk * (1 + ((skillEffects.critUpFixed ?? 0) * (1 + (skillEffects.critDmgUp ?? 0))));
 		atk = atk * (1 + (skillEffects.dart ?? 0) * 0.5);
 		atk = atk * (1 + (skillEffects.abortDown ?? 0) * (1 / 3));
@@ -815,8 +942,20 @@ export default class extends Module {
 		};
 	}
 
+	// -------- 通常RPG（通常・旅・おかわり） --------
+
+	/**
+	 * 通常RPG、おかわり、旅モードを処理する
+	 *
+	 * プレイ可否判定、敵選択、バフ処理、戦闘ループ、勝利/敗北処理、レベルアップまで一連の流れを実行する。
+	 *
+	 * @param msg メンションメッセージ
+	 * @returns リアクションオブジェクト
+	 * @internal
+	 */
 	@autobind
 	private async handleNormalCommands(msg: Message) {
+		// ---- データ初期化・スキル読み込み ----
 		// データを読み込み
                 const data = initializeData(this, msg);
                 const colorData = colors.map((x) => x.unlock(data));
@@ -829,14 +968,17 @@ export default class extends Module {
                         : [serifs.rpg.command.onemore];
                 let isOkawariPlay = false;
 
-		/** 1回～3回前の時間の文字列 */
+		// ---- プレイ可否判定・おかわり ----
+
+		/** 1回～3回前の時間の文字列（プレイ枠: 0-11時/12-17時/18-23時の3分割） */
 		let TimeStrBefore1 = (new Date().getHours() < 12 ? getDate(-1) + "/18" : new Date().getHours() < 18 ? getDate() : getDate() + "/12");
 		let TimeStrBefore2 = (new Date().getHours() < 12 ? getDate(-1) + "/12" : new Date().getHours() < 18 ? getDate(-1) + "/18" : getDate());
 		let TimeStrBefore3 = (new Date().getHours() < 12 ? getDate(-1) : new Date().getHours() < 18 ? getDate(-1) + "/12" : getDate(-1) + "/18");
 
-		/** 現在の時間の文字列 */
+		/** 現在の時間の文字列（プレイ枠を一意に識別するキー） */
 		let nowTimeStr = getDate() + (new Date().getHours() < 12 ? "" : new Date().getHours() < 18 ? "/12" : "/18");
 
+		/** 次のプレイ枠の時間文字列（rpgTime スキルで時間ずらし判定に使用） */
 		let nextTimeStr = new Date().getHours() < 12 ? getDate() + "/12" : new Date().getHours() < 18 ? getDate() + "/18" : getDate(1);
 
 		let autoReplayFlg = false;
@@ -845,17 +987,21 @@ export default class extends Module {
 
 		const isMaxLevel = data.lv >= rpgData.maxLv;
 
+		/** おかわりに必要なコイン数（Lv差200以上で-2、150以上で-2、100以上で-4と割引） */
 		let needCoin = 10;
 		if ((rpgData.maxLv - data.lv) >= 200) needCoin -= 2;
 		if ((rpgData.maxLv - data.lv) >= 150) needCoin -= 2;
 		if ((rpgData.maxLv - data.lv) >= 100) needCoin -= 4;
 		//if ((rpgData.maxLv - data.lv) >= 50) needCoin -= 2;
 
-		// プレイ済でないかのチェック
+		// プレイ済でないかのチェック（lastPlayedAt が現在枠 or 次枠なら既プレイ）
                 if (data.lastPlayedAt === nowTimeStr || data.lastPlayedAt === nextTimeStr) {
+                        // おかわりキーワードあり → 追加プレイを試行
                         if (msg.includes(onemoreKeywords)) {
+				// 今日すでにおかわり済みなら、コインで追加購入を試みる
 				if (data.lastOnemorePlayedAt === getDate()) {
 					if (needCoin <= (data.coin ?? 0)) {
+						// 最大Lvに達しているとおかわり不可（毎回Lv+1するため）
 						if (isMaxLevel) {
 							if (rpgData.maxLv >= 255) {
 								msg.reply(serifs.rpg.oneMore.maxLv2);
@@ -866,6 +1012,7 @@ export default class extends Module {
 								reaction: 'confused'
 							};
 						}
+						// 確認不要（札所持）でなければ、はい/いいえの返信を待つ
 						if (!data.replayOkawari && !aggregateTokensEffects(data).autoReplayOkawari) {
 							const reply = await msg.reply(serifs.rpg.oneMore.buyQuestion(needCoin, data.coin), { visibility: "specified" });
 							this.log("replayOkawari SubscribeReply: " + reply.id);
@@ -874,6 +1021,7 @@ export default class extends Module {
 						} else {
 							data.coin -= needCoin;
 							data.replayOkawari = false;
+							// 自動おかわり札所持時はメッセージに自動購入の旨を表示する
 							if (aggregateTokensEffects(data).autoReplayOkawari) {
 								autoReplayFlg = true;
 							}
@@ -885,6 +1033,7 @@ export default class extends Module {
 						};
 					}
 				}
+                                // おかわり初回（今日未使用）：最大Lvなら拒否、そうでなければ無料で許可
                                 if (isMaxLevel) {
                                         if (rpgData.maxLv >= 255) {
                                                 msg.reply(serifs.rpg.oneMore.maxLv2);
@@ -898,18 +1047,20 @@ export default class extends Module {
                                 isOkawariPlay = true;
                                 data.lastOnemorePlayedAt = getDate();
 			} else {
+				// おかわりキーワードなし：rpgTime スキルで時間枠をずらせるか判定
 				if (
 					(skillEffects.rpgTime ?? 0) < 0 &&
 					new Date().getHours() >= 24 + (skillEffects.rpgTime ?? 0) && data.lastPlayedAt !== getDate(1) ||
 					data.lastPlayedAt !== getDate() + (new Date().getHours() < 12 + (skillEffects.rpgTime ?? 0) ? "" : new Date().getHours() < 18 + (skillEffects.rpgTime ?? 0) ? "/12" : "/18")
 				) {
-
+					// rpgTime により「まだプレイ可能な枠」とみなす：時間文字列を1枠進めて続行
 					TimeStrBefore3 = TimeStrBefore2;
 					TimeStrBefore2 = TimeStrBefore1;
 					TimeStrBefore1 = nowTimeStr;
 
 					nowTimeStr = new Date().getHours() < 12 ? getDate() + "/12" : new Date().getHours() < 18 ? getDate() + "/18" : getDate(1);
 				} else {
+					// 時間ずらし不可 or 該当なし → 疲れたメッセージで終了
 					msg.reply(serifs.rpg.tired(new Date(), data.lv < rpgData.maxLv && data.lastOnemorePlayedAt !== getDate(), data.lv >= 7));
 					return {
 						reaction: 'confused'
@@ -917,6 +1068,7 @@ export default class extends Module {
 				}
 			}
 		} else {
+			// 未プレイの状態でおかわりキーワードのみ指定 → エラー（本来は不要な入力）
                         if (msg.includes(onemoreKeywords)) {
 				if (data.lastOnemorePlayedAt === getDate()) {
 					const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
@@ -931,7 +1083,9 @@ export default class extends Module {
 				};
 			}
 		}
-		/** 連続プレイかどうかをチェック */
+		// ---- 連続ボーナス・旅モード分岐 ----
+
+		/** 連続プレイかどうかをチェック（直前枠 or 1枠前で 1.0、2〜3枠前 or 昨日で 0.5） */
 		let continuousBonus = 0;
 		let continuousFlg = false;
 		if (data.lastPlayedAt === nowTimeStr || data.lastPlayedAt === TimeStrBefore1) {
@@ -941,6 +1095,7 @@ export default class extends Module {
 				[TimeStrBefore2, TimeStrBefore3].includes(data.lastPlayedAt) ||
 				data.lastPlayedAt?.startsWith(getDate(-1))
 			) {
+				// continuousFlg: 昨日プレイしたかどうか（連続ボーナス表示に使用）
 				if (data.lastPlayedAt === getDate()) continuousFlg = true;
 				continuousBonus = 0.5;
 			}
@@ -952,7 +1107,7 @@ export default class extends Module {
 
 		// 旅モード（エンドレスモード）のフラグ
 		if (msg.includes(Array.isArray(serifs.rpg.command.journey) ? serifs.rpg.command.journey : [serifs.rpg.command.journey]) && !aggregateTokensEffects(data).autoJournal) {
-			// 現在戦っている敵がいない場合で旅モード指定がある場合はON
+			// 敵がいない / 1ターン目 / 既に旅モード中なら ON。戦闘中に指定するとエラー
 			if (!data.enemy || count === 1 || data.endressFlg) {
 				data.endressFlg = true;
 			} else {
@@ -962,17 +1117,20 @@ export default class extends Module {
 				};
 			}
 		} else {
-			// 現在戦っている敵がいない場合で旅モード指定がない場合はOFF
+			// 旅モード指定がなく、敵がいない or 1ターン目なら OFF
 			if (!data.enemy || count === 1) {
 				data.endressFlg = false;
 			}
 		}
 
+		// 自動旅モード札所持時：敵がいない / 1ターン目 / 旅モード中 かつ †出現中でなければ自動で旅モード ON
 		if (aggregateTokensEffects(data).autoJournal) {
 			if ((!data.enemy || count === 1 || data.endressFlg) && !(aggregateTokensEffects(data).appearStrongBoss && !data.clearHistory.includes(":mk_chickenda_gtgt:"))) {
 				data.endressFlg = true;
 			}
 		}
+
+		// ---- 投稿数・倍率・基本変数初期化 ----
 
 		// 最終プレイの状態を記録
 		data.lastPlayedAt = nowTimeStr;
@@ -980,24 +1138,28 @@ export default class extends Module {
 		/** 使用中の色情報 */
 		let color = getColor(data);
 
+		// 色の解放条件を満たしていなければデフォルト色に戻す
 		if (!color.unlock(data)) {
 			data.color = (colors.find(x => x.default) ?? colors[0]).id;
 			color = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
 		}
 
+		// 常時覚醒色を解放済みなら superUnlockCount を加算（覚醒確率などの内部処理用）
 		if (colors.find((x) => x.alwaysSuper)?.unlock(data)) {
 			data.superUnlockCount = (data.superUnlockCount ?? 0) + 1;
 		}
 
-		/** 覚醒状態か？*/
+		/** 覚醒状態か？（2% + superPoint/200、または Lv100の倍数、または常時覚醒色） */
 		const isSuper = Math.random() < (0.02 + Math.max(data.superPoint / 200, 0)) || (data.lv ?? 1) % 100 === 0 || color.alwaysSuper;
 
+		/** 覚醒時のみ投稿数に加算（hyperMode 札所持時は代わりに postXUp で上昇） */
 		let superBonusPost = (isSuper && !aggregateTokensEffects(data).hyperMode ? 200 : 0)
 
                 /** 投稿数（今日と明日の多い方）*/
                 let postCount = await getPostCount(this.ai, this, data, msg, superBonusPost, { type: 'normal', key: nowTimeStr });
                 const basePostCount = Math.max(postCount - superBonusPost, 0);
 
+                // おかわり時は通常プレイ時の投稿数を再利用（同じ枠なので二重取得を防ぐ）
                 if (isOkawariPlay) {
                         if (data.lastNormalPostCountKey === nowTimeStr && typeof data.lastNormalPostCount === 'number') {
                                 postCount = data.lastNormalPostCount + superBonusPost;
@@ -1007,6 +1169,7 @@ export default class extends Module {
                         data.lastNormalPostCountKey = nowTimeStr;
                 }
 
+		/** 連続プレイボーナスで加算する投稿数（10〜25の範囲で continuousBonus 倍） */
 		let continuousBonusNum = 0;
 
 		if (continuousBonus > 0) {
@@ -1014,19 +1177,19 @@ export default class extends Module {
 			postCount = postCount + continuousBonusNum;
 		}
 
+		// 覚醒 + hyperMode 札の場合は postXUp を上昇（投稿数加算の代わり）
 		if (isSuper && aggregateTokensEffects(data).hyperMode) {
 			skillEffects.postXUp = (skillEffects.postXUp ?? 0) + 0.005
 		}
 
-		// 投稿数に応じてステータス倍率を得る
-		// 連続プレイの場合は倍率アップ
-		/** ステータス倍率（投稿数） */
+		/** ステータス倍率（投稿数に応じた倍率。postXUp でさらに上乗せ） */
 		let tp = getPostX(postCount) * (1 + ((skillEffects.postXUp ?? 0) * Math.min((postCount - superBonusPost) / 20, 10)));
 
-		// これが2ターン目以降の場合、戦闘中に計算された最大倍率の50%の倍率が保証される
+		// 2ターン目以降は「その戦闘での最大倍率の50%」が保証（連続戦闘で急に弱くならないように）
 		data.maxTp = Math.max(tp, data.maxTp ?? 0);
 		tp = Math.max(tp, data.maxTp / 2);
 
+		// 覚醒しなかった場合は superPoint を減少（tp-2 分。次回の覚醒確率を蓄積）、覚醒時はリセット
 		if (!isSuper) {
 			data.superPoint = Math.max((data.superPoint ?? 0) - (tp - 2), -3);
 		} else {
@@ -1069,14 +1232,17 @@ export default class extends Module {
 
 		if (!data.totalResistDmg) data.totalResistDmg = 0;
 
-		// 敵情報
+		// ---- 敵選択（新規/継続/旅/全クリア） ----
+
+		// 敵情報（敵がいない or 1ターン目なら新規選択、そうでなければ継続）
 		if (!data.enemy || count === 1) {
-			// 新しい敵
+			// 新規戦闘
 			count = 1;
 			data.count = 1;
 			playerHp = playerMaxHp;
-			/** すでにこの回で倒している敵、出現条件を満たしていない敵を除外 */
+			/** 除外条件：enemyBuff でなければ今回撃破済みを除外、limit で出現条件を満たすもののみ */
 			const filteredEnemys = enemys.filter((x) => (skillEffects.enemyBuff || !(data.clearEnemy ?? []).includes(x.name)) && (!x.limit || x.limit(data, msg.friend)));
+			// 通常モードで出現可能な敵がいれば通常敵から選択、いなければ旅モード用敵へ
 			if (filteredEnemys.length && !data.endressFlg) {
 				/** 1度も倒した事のない敵 */
 				const notClearedEnemys = filteredEnemys.filter((x) => !(data.clearHistory ?? []).includes(x.name));
@@ -1090,6 +1256,7 @@ export default class extends Module {
 			} else {
 				// 旅モード（エンドレスモード）
 				// 倒す敵がいなくてこのモードに入った場合、旅モード任意入場フラグをOFFにする
+				// 全敵撃破で旅モードに入った場合：allClear を記録し、endressFlg を OFF に
 				if (!filteredEnemys.length) {
 					if (!data.allClear) {
 						data.allClear = lv - 1;
@@ -1105,7 +1272,7 @@ export default class extends Module {
 			message += `$[x2 ${me}]\n\n${serifs.rpg.start}\n\n`;
 			data.ehp = (typeof data.enemy.maxhp === "function") ? data.enemy.maxhp((100 + lv * 3)) : Math.min((100 + lv * 3) + ((data.winCount ?? 0) * 5), (data.enemy.maxhp ?? 300));
 		} else {
-			// 一度敵の情報を取得しなおす（関数のデータなどが吹き飛ぶ為）
+			// 継続戦闘：敵データを再取得（関数参照などが永続化で失われるため）
 			data.enemy = [...enemys, endressEnemy(data)].find((x) => data.enemy.name === x.name);
 			// 敵が消された？？
 			if (!data.enemy) data.enemy = endressEnemy(data);
@@ -1121,10 +1288,13 @@ export default class extends Module {
 			data.count += 1;
 		}
 
+		// 独自イベントを持つ敵（例：川柳勝負）はここで委譲して終了
 		if (data.enemy.event) {
 			msg.friend.setPerModulesData(this, data);
 			return data.enemy.event(this, msg, data);
 		}
+
+		// ---- バフ処理（覚醒・7フィーバー・風・決死等） ----
 
 		const kazutoriMasterMessage = getKazutoriMasterMessage(msg, skillEffects);
 		if (kazutoriMasterMessage) {
@@ -1134,12 +1304,14 @@ export default class extends Module {
 		/** バフを得た数。行数のコントロールに使用 */
 		let buff = 0;
 
+		// 情報表示解禁：最大HP 300 以上に達した初回のみ、詳細表示を ON にする
 		if ((data.info ?? 0) < 1 && ((100 + lv * 3) + ((data.winCount ?? 0) * 5)) >= 300) {
 			data.info = 1;
 			buff += 1;
 			message += serifs.rpg.info + `\n`;
 		}
 
+		// 投稿数ボーナス詳細表示の札所持時は詳細メッセージ、なければ簡易メッセージ
 		if (aggregateTokensEffects(data).showPostBonus) {
 			buff += 1;
 			if (continuousBonus >= 1) {
@@ -1232,6 +1404,7 @@ export default class extends Module {
 
 		}
 
+		// 天国か地獄か：60% でステータス上昇、40% で低下
 		if (skillEffects.heavenOrHell) {
 			if (Math.random() < 0.6) {
 				message += serifs.rpg.skill.heaven + "\n";
@@ -1245,10 +1418,10 @@ export default class extends Module {
 		}
 
 
-		// ７フィーバー
+		// ７フィーバー：Lv/atk/def の 7 の並び度合いでバフ
 		let sevenFever = skillEffects.sevenFever ? calcSevenFever([data.lv, data.atk, data.def]) * skillEffects.sevenFever : 0;
-		
-		// 修行の成果
+
+		// 修行の成果：旅モードかつ Lv384 超で、修行の成果が 7 フィーバーより高ければこちらを適用
 		const upStats = data.lv > 594 ? 70 + ((data.lv - 594) / 21) : (data.lv - 384) / 3;
 		if (data.lv > 384 && data.enemy.name === endressEnemy(data).name && sevenFever < upStats) {
 			buff += 1;
@@ -1264,7 +1437,7 @@ export default class extends Module {
 			}
 		}
 
-		// spdが低い場合、確率でspdが+1。
+		// 速度アップ：spd 1 は 60%、spd 2 は 20% の確率で +1
 		if (spd === 2 && Math.random() < 0.2) {
 			buff += 1;
 			message += serifs.rpg.spdUp + "\n";
@@ -1276,13 +1449,14 @@ export default class extends Module {
 			spd = 2;
 		}
 
-		// 風魔法発動時
+		// 風魔法：spd * spdUp を小数部で四捨五入的に追加行動回数に変換
 		let spdUp = spd * (skillEffects.spdUp ?? 0);
 		if (Math.random() < spdUp % 1) {
 			spdUp = Math.floor(spdUp) + 1;
 		} else {
 			spdUp = Math.floor(spdUp);
 		}
+		// 戦闘かつ物理のときのみ追加行動、それ以外はパワーに還元
 		if ((isBattle && isPhysical) && spdUp) {
 			buff += 1;
 			message += serifs.rpg.skill.wind(spdUp) + "\n";
@@ -1303,7 +1477,7 @@ export default class extends Module {
 		let dmgUp = 1;
 		let critUp = 0;
 
-		// HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
+		// 決死の覚悟：HP 1/7 以下かつ敵との差が 0.5 以上で発動（平常心札で無効化）
 		if (!aggregateTokensEffects(data).notLastPower) {
 			if (playerHpPercent <= (1 / 7) * (1 + (skillEffects.haisuiUp ?? 0)) && ((enemyHpPercent * (1 + (skillEffects.haisuiUp ?? 0))) - playerHpPercent) >= 0.5) {
 				buff += 1;
@@ -1316,20 +1490,27 @@ export default class extends Module {
 			}
 		}
 
+		// 水属性：炎攻撃を持つ敵に対してダメージアップ
 		if (data.enemy.fire && skillEffects.water) {
 			dmgUp *= (1 + (skillEffects.water ?? 0));
 		}
 
+		// ---- アイテム取得・使用 ----
+
+		/** アイテム取得確率のベース（HP 低いほど高くなる：40%〜100%） */
 		const itemEquip = 0.4 + ((1 - playerHpPercent) * 0.6);
+		// firstTurnItem なら 1 ターン目は確定、それ以外は確率で取得
 		if (rpgItems.length && ((count === 1 && skillEffects.firstTurnItem) || Math.random() < itemEquip * (1 + (skillEffects.itemEquip ?? 0)))) {
 			//アイテム
 			buff += 1;
 			if ((count === 1 && skillEffects.firstTurnItem)) message += serifs.rpg.skill.firstItem;
+			// pLToR（進捗表示型）の敵：mind のみで武器/防具/薬/毒を区別（プラス/マイナスでランダム）
 			if (data.enemy.pLToR) {
 				let isPlus = Math.random() < 0.5;
 				const items = rpgItems.filter((x) => isPlus ? x.mind > 0 : x.mind < 0);
 				item = { ...items[Math.floor(Math.random() * items.length)] };
 			} else {
+				// 通常：weapon/armor/medicine/poison をスキルで重み付け。weaponSelect 等で強制指定も可能
 				let types = ["weapon", "armor"];
 				for (let i = 0; i < (skillEffects.weaponSelect ?? 0); i++) {
 					types.push("weapon");
@@ -1345,7 +1526,7 @@ export default class extends Module {
 						types.push("poison");
 					}
 				}
-				
+
 				if ((skillEffects.weaponSelect ?? 0) >= 1) {
 					types = ["weapon"]
 				}
@@ -1364,6 +1545,7 @@ export default class extends Module {
 					types = types.filter((x) => x !== "poison");
 				}
 				const type = types[Math.floor(Math.random() * types.length)];
+				// 非戦闘/非物理 or 疲れダメージ or pLToR のときは mind 値で効果（プラス/マイナスでパワー・防御変動）
 				if ((type === "weapon" && !(isBattle && isPhysical)) || (type === "armor" && isTired) || data.enemy.pLToR) {
 					let isPlus = Math.random() < (0.5 + (skillEffects.mindMinusAvoid ?? 0) + (count === 1 ? skillEffects.firstTurnMindMinusAvoid ?? 0 : 0));
 					const items = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind < 0));
@@ -1515,6 +1697,8 @@ export default class extends Module {
 			}
 		}
 
+		// ---- 敵ステータス計算・戦闘前準備 ----
+
 		// 敵のステータスを計算
 		/** 敵の攻撃力 */
 		let enemyAtk = (typeof data.enemy.atk === "function") ? data.enemy.atk(atk, def, spd) : lv * 3.5 * data.enemy.atk;
@@ -1523,6 +1707,7 @@ export default class extends Module {
 
 		let hardEnemyFlg = false;
 
+		// 強敵と戦うのが好き：撃破済みの通常敵を強化（ステータス・速度上昇）
 		if (skillEffects.enemyBuff && data.enemy.name !== endressEnemy(data).name && data.clearHistory.includes(data.enemy.name)) {
 			hardEnemyFlg = true;
 			if (!data.enemy.spd && enemyAtk + enemyDef <= (lv * 10.5)) data.enemy.spd = 3;
@@ -1569,6 +1754,7 @@ export default class extends Module {
 
 		const plusActionX = Math.ceil(skillEffects.plusActionX ?? 0);
 
+		// ---- 戦闘ループ本体（actionX 回繰り返し） ----
 		for (let actionX = 0; actionX < plusActionX + 1; actionX++) {
 
 			/** バフを得た数。行数のコントロールに使用 */
@@ -1685,7 +1871,7 @@ export default class extends Module {
 					const dmg = getEnemyDmg(data, def, tp, count, crit ? critDmg : false, enemyAtk, rng * defDmgX);
 					const noItemDmg = getEnemyDmg(data, def - itemBonus.def, tp, count, crit ? critDmg : false, enemyAtk, rng * defDmgX);
 					const normalDmg = getEnemyDmg(data, lv * 3.75, tp, count, crit ? critDmg : false, enemyAtk, rng);
-					
+
 					// ダメージが負けるほど多くなる場合は、先制攻撃しない
 					if (playerHp > dmg || (count === 3 && data.enemy.fire && (data.thirdFire ?? 0) <= 2)) {
 						if (normalDmg > dmg) {
@@ -1715,6 +1901,7 @@ export default class extends Module {
 				spd = 1;
 			}
 
+			// ---- プレイヤー攻撃ループ（spd回） ----
 			// 自身攻撃の処理
 			// spdの回数分、以下の処理を繰り返す
                         for (let i = 0; i < spd; i++) {
@@ -1744,7 +1931,7 @@ export default class extends Module {
                                         if(crit) debugLines.push(`クリティカル倍率:${formatDebug(critDmg)}`);
                                         if (itemBonus?.atk) {
                                                 debugLines.push(`アイテム攻撃補正: ${formatDebug(itemBonus.atk)}`);
-																				}     
+																				}
                                         message += debugLines.join('\n') + '\n';
                                 }
                                 /** ダメージ */
@@ -1780,7 +1967,7 @@ export default class extends Module {
 				data.fireAtk = (data.fireAtk ?? 0) + 10;
 			}
 
-			// 勝利処理
+			// ---- 勝利処理 ----
 			if (enemyHp <= 0) {
 				// エンドレスモードかどうかでメッセージ変更
 				if (data.enemy.name !== endressEnemy(data).name) {
@@ -1825,6 +2012,7 @@ export default class extends Module {
 				data.totalResistDmg = 0;
 				break;
 			} else {
+				// ---- 攻撃後スキル・敵ターン ----
 				let enemyAtkX = 1;
 				// 攻撃後発動スキル効果
 				// 氷属性剣攻撃
@@ -1881,23 +2069,23 @@ export default class extends Module {
 						if (dmg > maxDmg) maxDmg = dmg;
 						if (data.enemy.fire && count > (data.thirdFire ?? 0)) data.thirdFire = count;
 					}
-					// HPが0で食いしばりが可能な場合、食いしばる
+					// 食いしばり：HP 0 のときに endure 確率で HP 1 で生存。旅モード高ステージでは確率低下
 					const endure = ((0.1 + (0.1 * (data.endure ?? 0))) * (1 + (skillEffects.endureUp ?? 0))) - (count * (data.enemy.name == endressEnemy(data).name && (data.endress ?? 0) >= 199 && count > 1 ? 0.04 * count : 0.05));
 					if (playerHp <= 0 && !data.enemy.notEndure && Math.random() < endure) {
 						message += serifs.rpg.endure + "\n";
 						playerHp = 1;
 						data.endure = Math.max(data.endure - 1, 0);
 					}
+					// ナース：1% の確率で全回復イベント（HP が低いときのみ）
 					if (playerHp <= (30 + lv) && serifs.rpg.nurse && Math.random() < 0.01 && !data.enemy.notEndure) {
 						message += "\n" + serifs.rpg.nurse + "\n" + (playerMaxHp - playerHp) + "ポイント回復した！\n";
 						playerHp = playerMaxHp;
 					}
 					if (maxDmg > (data.superMuscle ?? 0) && playerHp > 0) data.superMuscle = maxDmg;
 				}
-				// 敗北処理
+				// ---- 敗北処理（逃走含む） ----
 				if (playerHp <= 0) {
-					// 逃走？
-					// スキル数までは100%、それ以上は成功の度に半減
+					// 逃走スキル：習得数までは 100% 成功、それ以上は成功するたびに確率半減
 					if (skillEffects.escape && ((data.escape ?? 0) < skillEffects.escape || Math.random() < 1 / (2 ** ((data.escape ?? 0) + 1 - skillEffects.escape)))) {
 						// 逃走成功の場合
 						message += "\n" + (data.enemy.escapemsg ?? (isBattle ? serifs.rpg.escape : serifs.rpg.escapeNotBattle));
@@ -1940,7 +2128,7 @@ export default class extends Module {
 					data.totalResistDmg = 0;
 					break;
 				} else {
-					// 決着がつかない場合
+					// 決着がつかない（双方生存）：count を進め、次アクション or 次回プレイへ
 					if (actionX === plusActionX) {
 						message += showStatus(data, playerHp, enemyHp, enemyMaxHp, me) + "\n\n" + serifs.rpg.next;
 					} else {
@@ -1953,6 +2141,8 @@ export default class extends Module {
 				}
 			}
 		}
+
+		// ---- レベルアップ・後処理 ----
 
 		if (skillEffects.charge && data.charge > 0) {
 			message += "\n\n" + serifs.rpg.skill.charge;
@@ -2078,6 +2268,19 @@ export default class extends Module {
 		};
 	}
 
+	// -------- contextHook 用ハンドラ --------
+
+	/**
+	 * おかわり購入の確認返信を処理する
+	 *
+	 * コイン消費による追加おかわり購入の「はい/いいえ」返信を受け取る。
+	 *
+	 * @param key コンテキストキー（replayOkawari:userId）
+	 * @param msg 返信メッセージ
+	 * @param data コンテキストデータ
+	 * @returns リアクションオブジェクト
+	 * @internal
+	 */
 	@autobind
         private replayOkawariHook(key: any, msg: Message, data: any) {
 		this.log("replayOkawari");
@@ -2107,6 +2310,17 @@ export default class extends Module {
                 }
         }
 
+	/**
+	 * スキル選択の返信を処理する
+	 *
+	 * スキル変更時に表示される選択肢への返信（番号）を受け取り、スキルを更新する。
+	 *
+	 * @param key コンテキストキー（selectSkill:userId）
+	 * @param msg 返信メッセージ
+	 * @param data コンテキストデータ（options, index, oldSkillName）
+	 * @returns リアクションオブジェクト、または false
+	 * @internal
+	 */
         @autobind
         private selectSkillHook(key: any, msg: Message, data: any) {
                 if (key.replace("selectSkill:", "") !== msg.userId) {
@@ -2152,6 +2366,15 @@ export default class extends Module {
                return { reaction: 'love' };
         }
 
+	// -------- アカウント一覧管理 --------
+
+	/**
+	 * rpgPlayers リストに Lv20 以上のプレイヤーを追加する
+	 *
+	 * install 時およびレベルアップ時刻に呼ばれ、rpgPlayers リストを更新する。
+	 *
+	 * @internal
+	 */
 	@autobind
 	private async rpgAccountListAdd() {
 		const lists = await this.ai.api("users/lists/list", {}) as List[];
@@ -2191,13 +2414,3 @@ export default class extends Module {
 		}
 	}
 }
-
-
-
-
-
-
-
-
-
-

@@ -1,3 +1,17 @@
+/**
+ * @packageDocumentation
+ *
+ * RPGモジュールの色（着せ替え）定義
+ *
+ * colors に色の定義を保持する。unlock で解放条件、enhance で覚醒色の適用を判定する。
+ * reverseStatus / alwaysSuper で戦闘時のステータス反転・常時覚醒を有効化する。
+ *
+ * @remarks
+ * - colorReply で色変更の返信を処理する
+ * - getColor（utils.ts）で現在の色オブジェクトを取得する
+ *
+ * @public
+ */
 import Message from "@/message";
 import Module from "@/module";
 import serifs from "@/serifs";

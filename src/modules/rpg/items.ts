@@ -1,15 +1,29 @@
+/**
+ * @packageDocumentation
+ *
+ * RPGモジュールの戦闘アイテム定義
+ *
+ * 戦闘中に取得するアイテム（武器/防具/薬/毒）を rpgItems に定義する。
+ * effect は物理効果（パワー・防御・回復・毒）、mind は精神効果（非戦闘時のパワー・防御変動）。
+ *
+ * @remarks
+ * - index.ts の handleNormalCommands でランダム取得・使用される
+ * - スキルによるタイプ選択制御（weaponSelect 等）がある
+ *
+ * @public
+ */
 type Item = {
 	name: string;
 	/** 種類 */
 	type: "weapon" | "armor" | "medicine" | "poison";
-	/** 
+	/**
 	 * 使用した際の効果量（物理）
 	 * 100 で ステータス+50%
 	 * 薬なら 失っているHPの50%回復
 	 * 毒なら 現在HPの30%減少
 	 * */
 	effect: number;
-	/** 
+	/**
 	 * 使用した際の効果量（精神）
 	 * 100 で パワー・防御+25%
 	 *  */

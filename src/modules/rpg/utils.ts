@@ -1,4 +1,16 @@
-
+/**
+ * @packageDocumentation
+ *
+ * RPGモジュールのユーティリティ
+ *
+ * データ初期化、ダメージ計算、ステータス表示、投稿数取得、乱数生成等の補助関数を提供する。
+ *
+ * @remarks
+ * - initializeData は戦闘・木人・レイド・ショップ等の入口で呼ばれ、RPGデータを正規化する
+ * - getPostCount / getPostX はステータス倍率計算に使用される
+ *
+ * @public
+ */
 import 藍 from '@/ai';
 import Message from '@/message';
 import Module from '@/module';
@@ -9,11 +21,28 @@ import { aggregateTokensEffects, shopItems } from './shop';
 import { countDuplicateSkillNames, getSkill, Skill, skillBorders, skills, ultimateAmulet } from './skills';
 import config from '@/config';
 
+/**
+ * 投稿数取得の利用コンテキスト
+ *
+ * 同一キーで複数回取得されるのを防ぐためのブロック判定に使用する。
+ *
+ * @public
+ */
 export type PostCountUsageContext = {
     type: 'normal' | 'raid';
     key: string;
 };
 
+/**
+ * RPGデータを初期化・正規化する
+ *
+ * フレンドから perModulesData.rpg を取得し、未定義プロパティの初期化・旧データのマイグレーションを行う。
+ *
+ * @param module RPGモジュール
+ * @param msg メッセージ（msg.friend からデータを取得）
+ * @returns 正規化されたRPGデータ（同一参照が返る）
+ * @internal
+ */
 export function initializeData(module: rpg, msg) {
     const data = msg.friend.getPerModulesData(module);
     data.userId = msg.userId;
@@ -70,6 +99,15 @@ export function initializeData(module: rpg, msg) {
     return data;
 }
 
+/**
+ * 現在の色オブジェクトを取得する
+ *
+ * data.color に対応する色を colors から取得し、解放条件・覚醒色の適用を行う。
+ *
+ * @param data RPGモジュールのデータ
+ * @returns 適用済みの色オブジェクト（deepClone されたコピー）
+ * @internal
+ */
 export function getColor(data) {
     const sourceColor = colors.find((x) => x.id === (data.color ?? 1)) ?? colors.find((x) => x.default) ?? colors[0];
     let color = deepClone(sourceColor);
@@ -89,9 +127,8 @@ export function getColor(data) {
     return color;
 }
 
-
 /**
- * ステータスを作成し、返します。
+ * 戦闘中のステータス表示文字列を生成する
  * @param data RPGモジュールのData
  * @param playerHp プレイヤーのHP
  * @param enemyHp 敵のHP
@@ -406,6 +443,18 @@ export function getEnemyDmg(data, def: number, tp: number, count: number, crit: 
     return Math.max(dmg, 1);
 }
 
+/**
+ * スキル効果を考慮した乱数を生成する
+ *
+ * notRandom スキルで固定値に近づく。charge スキルでチャージ量に応じて乱数が偏る。
+ *
+ * @param data RPGモジュールのデータ（charge が更新される）
+ * @param startCharge 開始時のチャージ量
+ * @param skillEffects スキル効果集計
+ * @param reverse charge の増減を反転するか（逃走等で使用）
+ * @returns 0〜1 の乱数
+ * @internal
+ */
 export function random(data, startCharge = 0, skillEffects, reverse = false) {
     let rnd = (skillEffects.notRandom || aggregateTokensEffects(data).notRandom) && !reverse ? 0.5 + (skillEffects.notRandom ?? 0) * 0.05 : Math.random();
     if (skillEffects.charge) {
@@ -445,6 +494,15 @@ export function getVal<T>(val: T | ((...args: any[]) => T), props?: any[]): T {
     return val;
 }
 
+/**
+ * オブジェクトを深いコピーする
+ *
+ * Date / RegExp / Map / Set / 配列 / 通常オブジェクトに対応する。
+ *
+ * @param obj コピーするオブジェクト
+ * @returns コピーされた新しいオブジェクト
+ * @internal
+ */
 export function deepClone<T>(obj: T): T {
   // 基本型、null、関数の場合はそのまま返す
   if (obj === null || typeof obj !== 'object' || typeof obj === 'function') {
@@ -504,6 +562,15 @@ export function deepClone<T>(obj: T): T {
   return copy;
 }
 
+/**
+ * 数値を文字に変換する
+ *
+ * 0〜9 はそのまま、10〜35 は a〜z に変換する。
+ *
+ * @param input 入力数値
+ * @returns 変換後の文字列、範囲外なら null
+ * @internal
+ */
 export function numberCharConvert(input: number): string | null {
     if (typeof input !== "number") {
         return null; // 無効な入力の場合
@@ -520,6 +587,15 @@ export function numberCharConvert(input: number): string | null {
     }
 }
 
+/**
+ * レベルアップ時の追加処理（情報表示・スキル習得・moveTo 移行等）を行う
+ *
+ * ステータス配分前に呼ばれ、追加表示メッセージを返す。
+ *
+ * @param data RPGモジュールのデータ（破壊的に更新される）
+ * @returns 追加表示するメッセージ
+ * @internal
+ */
 export function preLevelUpProcess(data): string {
     /** 追加表示メッセージ */
     let addMessage = "";
@@ -573,7 +649,7 @@ export function preLevelUpProcess(data): string {
             }
         }
     }
-    
+
     const skillCounts = skillBorders.filter((x) => data.lv >= x).length;
 
     if ((data.skills ?? []).length < skillCounts) {

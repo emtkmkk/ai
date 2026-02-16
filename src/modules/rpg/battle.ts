@@ -1,3 +1,17 @@
+/**
+ * @packageDocumentation
+ *
+ * RPGモジュールの戦闘補助計算
+ *
+ * 数取りの達人スキルの履歴補完・ボーナス計算、ステータス計算（calculateStats）、貫通計算（calculateArpen）、
+ * 天国か地獄か（fortune）、ストックランダム（stockRandom）等を提供する。
+ *
+ * @remarks
+ * - 数取りの達人スキルは数取りモジュールの履歴に依存し、戦闘・レイドのステータス倍率に影響する
+ * - calculateArpen は敵防御力に対する貫通率を算出する
+ *
+ * @public
+ */
 import serifs from "@/serifs";
 import type { SkillEffect } from "./skills";
 import { aggregateTokensEffects } from "./shop";
@@ -9,6 +23,11 @@ const kazutoriMasterWindows = {
 	win72: 72 * 60 * 60 * 1000,
 };
 
+/**
+ * 数取りの達人スキルによるステータスボーナス
+ *
+ * @public
+ */
 export type KazutoriMasterBonus = {
 	atk: number;
 	def: number;
@@ -26,6 +45,16 @@ type KazutoriHistoryGame = {
 	winnerUserId?: string;
 };
 
+/**
+ * 数取りの達人スキル用に、数取りの履歴（lastPlayedAt / lastWinAt）を補完する
+ *
+ * kazutori コレクションから過去のプレイ・勝利履歴を参照し、kazutoriData を更新する。
+ *
+ * @param ai 藍オブジェクト
+ * @param msg メッセージ
+ * @param skillEffects スキル効果（kazutoriMaster が無い場合は何もしない）
+ * @internal
+ */
 export function ensureKazutoriMasterHistory(ai, msg, skillEffects: SkillEffect): void {
 	if (!skillEffects.kazutoriMaster) {
 		return;
@@ -82,6 +111,16 @@ export function ensureKazutoriMasterHistory(ai, msg, skillEffects: SkillEffect):
 	}
 }
 
+/**
+ * 数取りの達人スキルによるステータスボーナスを取得する
+ *
+ * 直近のプレイ・勝利時刻に応じて atk / def の倍率と raidBonusFixed を返す。
+ *
+ * @param msg メッセージ
+ * @param skillEffects スキル効果
+ * @returns KazutoriMasterBonus
+ * @internal
+ */
 export function getKazutoriMasterBonus(msg, skillEffects: SkillEffect): KazutoriMasterBonus {
 	if (!skillEffects.kazutoriMaster) {
 		return { atk: 0, def: 0, raidBonusFixed: false };
@@ -120,6 +159,14 @@ export function getKazutoriMasterBonus(msg, skillEffects: SkillEffect): Kazutori
 	return { atk, def, raidBonusFixed };
 }
 
+/**
+ * 数取りの達人スキルのバフ表示メッセージを取得する
+ *
+ * @param msg メッセージ
+ * @param skillEffects スキル効果
+ * @returns 表示するメッセージ、効果がない場合は null
+ * @internal
+ */
 export function getKazutoriMasterMessage(msg, skillEffects: SkillEffect): string | null {
 	if (!skillEffects.kazutoriMaster) {
 		return null;
@@ -144,6 +191,15 @@ export function getKazutoriMasterMessage(msg, skillEffects: SkillEffect): string
 	return `${serifs.rpg.skill.kazutoriMaster}\n${resultMessage}`;
 }
 
+/**
+ * 数取りの達人スキルの隠しボーナス（クリティカル上昇）を適用する
+ *
+ * 直近24時間内に数取りでプレイしており、rate が一定以上の場合に critUpFixed を加算する。
+ *
+ * @param msg メッセージ
+ * @param skillEffects スキル効果（破壊的に更新される）
+ * @internal
+ */
 export function applyKazutoriMasterHiddenBonus(msg, skillEffects: SkillEffect): void {
 	if (!skillEffects.kazutoriMaster) {
 		return;
@@ -169,6 +225,20 @@ export function applyKazutoriMasterHiddenBonus(msg, skillEffects: SkillEffect): 
 	skillEffects.critUpFixed = (skillEffects.critUpFixed ?? 0) + (critBonus * 0.01);
 }
 
+/**
+ * 戦闘用のステータス（atk / def / spd）を算出する
+ *
+ * レベル・お守り・スキル・数取りボーナス・色の反転等を考慮する。
+ *
+ * @param data RPGモジュールのデータ
+ * @param msg メッセージ
+ * @param skillEffects スキル効果
+ * @param color 色オブジェクト（reverseStatus で atk/def を入れ替える）
+ * @param maxBonus ステータスボーナスの上限（割合）
+ * @param kazutoriMasterBonus 数取りの達人ボーナス（省略時は自動取得）
+ * @returns { atk, def, spd }
+ * @internal
+ */
 export function calculateStats(data, msg, skillEffects, color, maxBonus = 100, kazutoriMasterBonus?: KazutoriMasterBonus) {
 	const stbonus = (((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) + ((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0))) / 2;
 	let dataAtk = (data.atk ?? 0)
@@ -206,6 +276,17 @@ export function calculateStats(data, msg, skillEffects, color, maxBonus = 100, k
 	return { atk, def, spd };
 }
 
+/**
+ * 天国か地獄かスキルの効果を適用する
+ *
+ * 乱数で atk / def を再分配し、上昇・下降のメッセージを返す。
+ *
+ * @param _atk 元の攻撃力
+ * @param _def 元の防御力
+ * @param effect 効果レベル（0 の場合は 1 として扱う）
+ * @returns { atk, def, message }
+ * @internal
+ */
 export function fortune(_atk, _def, effect = 0) {
 
 	let atk = _atk;
@@ -300,6 +381,16 @@ export function fortune(_atk, _def, effect = 0) {
 	return { atk, def, message };
 }
 
+/**
+ * ストックランダムスキルの効果を試行する
+ *
+ * 蓄積カウントに応じた確率で発動し、ランダムにスキル効果を付与する。
+ *
+ * @param data RPGモジュールのデータ（stockRandomCount が更新される）
+ * @param skillEffects スキル効果（破壊的に更新される）
+ * @returns { activate, activateStr, skillEffects }
+ * @internal
+ */
 export function stockRandom(data, skillEffects) {
 
 	let activate = false;
@@ -466,8 +557,19 @@ export function stockRandom(data, skillEffects) {
 	};
 }
 
+/**
+ * 貫通スキルのダメージ倍率を算出する
+ *
+ * 敵防御力（edef）と Lv に基づき、貫通による追加ダメージ倍率を返す。
+ *
+ * @param data RPGモジュールのデータ（lv を使用）
+ * @param arpen 貫通値（スキル効果）
+ * @param edef 敵の防御力
+ * @returns 貫通による倍率（1 以上）
+ * @internal
+ */
 export function calculateArpen(data: { lv: number; }, arpen: number, edef: number): number {
-	
+
 		if (!arpen) return 1;
 		const D0   = data.lv * 3.5;
 		const BASE = 3.0;
@@ -492,9 +594,20 @@ export function calculateArpen(data: { lv: number; }, arpen: number, edef: numbe
 
 }
 
+/**
+ * 累乗によるソフトキャップを適用する
+ *
+ * cap1 を超えると gamma 乗で緩和し、cap2 を超えるとさらに緩和する。
+ *
+ * @param raw 元の値
+ * @param cap1 第一キャップ
+ * @param cap2 第二キャップ
+ * @param gamma 緩和曲線の指数
+ * @returns キャップ適用後の値
+ * @internal
+ */
 export function applySoftCapPow2(raw: number, cap1 = 10, cap2 = 25, gamma = 0.5): number {
   const a1 = raw <= cap1 ? raw : cap1 + Math.pow(raw - cap1, gamma);
   const a2 = a1 <= cap2 ? a1 : cap2 + Math.pow(a1 - cap2, gamma);
   return a2;
 }
-

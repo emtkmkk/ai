@@ -1,3 +1,16 @@
+/**
+ * @packageDocumentation
+ *
+ * RPGモジュールのカスタムショップ
+ *
+ * お守りパーツを組み合わせて自分好みのお守りを作成する。カスタムショップ入場の札を持っているプレイヤーが利用できる。
+ *
+ * @remarks
+ * - shopCustomReply / shopCustomContextHook で表示・購入処理を行う
+ * - スキルを選択して組み合わせ、完成時にコインで購入する
+ *
+ * @public
+ */
 import Message from "@/message";
 import serifs from "@/serifs";
 import * as seedrandom from 'seedrandom';
@@ -44,6 +57,17 @@ const resolveSkills = (skillNames: string[]): Skill[] => {
         .filter((skill): skill is Skill => Boolean(skill));
 };
 
+/**
+ * カスタムショップの初期表示を行う
+ *
+ * 「RPG カスタムショップ」コマンドで呼ばれ、パーツ選択画面を表示する。
+ *
+ * @param module RPGモジュール
+ * @param ai 藍オブジェクト
+ * @param msg メッセージ
+ * @returns リアクションオブジェクト、または false
+ * @internal
+ */
 export const shopCustomReply = async (module: rpg, ai: 藍, msg: Message) => {
     const data = initializeData(module, msg);
     if (!data) return false;
@@ -97,6 +121,19 @@ export const shopCustomReply = async (module: rpg, ai: 藍, msg: Message) => {
     return { reaction: 'love' };
 };
 
+/**
+ * カスタムショップのパーツ選択・購入返信を処理する
+ *
+ * パーツ番号の返信を受け取り、お守りに追加するか完成させる。
+ *
+ * @param module RPGモジュール
+ * @param ai 藍オブジェクト
+ * @param key コンテキストキー（shopCustom:userId）
+ * @param msg 返信メッセージ
+ * @param data コンテキストデータ
+ * @returns リアクションオブジェクト、または shopCustomReply の戻り値
+ * @internal
+ */
 export const shopCustomContextHook = (module: rpg, ai: 藍, key: any, msg: Message, data: any) => {
     if (key.replace('shopCustom:', '') !== msg.userId) return { reaction: 'hmm' };
 	if (msg.extractedText.length >= 3) return false;

@@ -1,3 +1,17 @@
+/**
+ * @packageDocumentation
+ *
+ * RPGモジュールのショップ（お守り・お札）
+ *
+ * コインでアイテムを購入する通常ショップ。shopItems に定義されたラインナップを1日1回更新し、
+ * shopContextHook / shopReply で購入処理・表示を行う。
+ *
+ * @remarks
+ * - 裏ショップ（shop2）、カスタムショップ（shop-custom）は別ファイル
+ * - BaseItem / TokenItem / AmuletItem / Item 等の型をエクスポート
+ *
+ * @public
+ */
 import Message from "@/message";
 import Module from "@/module";
 import serifs from "@/serifs";
@@ -379,6 +393,17 @@ const eventAmulet = (data?) => {
 	return undefined;
 }
 
+/**
+ * ショップの初期表示を行う
+ *
+ * 「RPG ショップ」コマンドで呼ばれ、当日のラインナップを表示する。
+ *
+ * @param module RPGモジュール
+ * @param ai 藍オブジェクト
+ * @param msg メッセージ
+ * @returns リアクションオブジェクト
+ * @internal
+ */
 export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 
 	// データを読み込み
@@ -459,6 +484,18 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 
 };
 
+/**
+ * ショップ購入の返信を処理するコンテキストフック
+ *
+ * 「RPG ショップ」で表示されたアイテムへの購入返信（番号）を受け取り、購入処理を行う。
+ *
+ * @param module RPGモジュール
+ * @param key コンテキストキー（shopBuy:userId）
+ * @param msg 返信メッセージ
+ * @param data コンテキストデータ（showShopItems 等）
+ * @returns リアクションオブジェクト
+ * @internal
+ */
 export function shopContextHook(module: Module, key: any, msg: Message, data: any) {
 	if (key.replace("shopBuy:", "") !== msg.userId) {
 		return {
