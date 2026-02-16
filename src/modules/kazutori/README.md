@@ -11,25 +11,36 @@
 flowchart TD
     subgraph 開催
         A["自動 or メンション"] --> B["start()"]
-        B --> C["最大値・勝利条件・制限時間決定"]
-        C --> D["開催投稿"]
+        B --> B1["canStartGame()"]
+        B1 --> B2["computeMaxnum()"]
+        B2 --> B3["computeWinRank()"]
+        B3 --> B4["computeLimitMinutes()"]
+        B4 --> B5["computeVisibilityAndPublicOnly()"]
+        B5 --> D["開催投稿"]
     end
 
     subgraph 投票受付
         D --> E["contextHook()"]
-        E --> F{"バリデーション"}
-        F -- NG --> G["エラー返信"]
-        F -- OK --> H["投票記録"]
+        E --> E1["validateVoteSubmission()"]
+        E1 --> E2["parseVoteNumber()"]
+        E2 --> E3["ensureVoteInRange()"]
+        E3 --> E4["recordVote()"]
     end
 
-    subgraph 集計
+    subgraph 集計["集計 — finish()"]
         I["crawleGameEnd()<br/>1秒間隔"] --> J{"制限時間?"}
         J -- 未経過 --> I
         J -- 経過 --> K["finish()"]
-        K --> L["公開限定フィルタ<br/>+ ブロック除外"]
-        L --> M["勝者決定<br/>（反転判定あり）"]
-        M --> N["レーティング更新"]
-        N --> O["結果発表投稿"]
+        K --> K1["filterValidVotesForFinish()"]
+        K1 --> K2{"handleOnagareIfNeeded()"}
+        K2 -- お流れ --> K2X["早期リターン"]
+        K2 -- 続行 --> K3["computeWinnerAndResults()"]
+        K3 --> K4["buildRatingContext()"]
+        K4 --> K5["applyNonParticipantPenalties()"]
+        K5 --> K6["applyWinnerAndLoserRates()"]
+        K6 --> K7["distributeBonusWhenNoWinner()"]
+        K7 --> K8["updateRateChangeMetadata()"]
+        K8 --> K9["publishGameResult()"]
     end
 ```
 
@@ -126,8 +137,69 @@ flowchart TD
 
 | ファイル | 説明 |
 | --- | --- |
-| `index.ts` | ゲームロジック本体（開催・投票・集計） |
-| `rate.ts` | レーティングデータ管理（型定義・正規化） |
+| `index.ts` | ゲームロジック本体（開催・投票・集計・レート計算） |
+| `rate.ts` | レーティングデータ管理（型定義・正規化・ランク検索） |
+
+---
+
+## index.ts の内部構造
+
+### 型定義
+
+| 型名 | 説明 |
+| --- | --- |
+| `Vote` | 投票1件分の情報（ユーザー情報 + 投票数値） |
+| `Game` | ゲーム1回分の状態（LokiJS コレクションに保存） |
+| `KazutoriRatingContext` | finish() のレート計算で使う準備データをまとめた型 |
+
+### ゲーム開始 (`start`)
+
+| メソッド | 説明 |
+| --- | --- |
+| `canStartGame()` | クールダウン・連続開催制限のチェック |
+| `computeMaxnum()` | 最大値の決定（前回参加者数ベース + 特殊モード判定） |
+| `computeWinRank()` | 勝利条件の決定（最大値 / 2番目 / 中央値） |
+| `computeLimitMinutes()` | 制限時間の決定 |
+| `computeVisibilityAndPublicOnly()` | 公開範囲と公開限定モードの決定 |
+
+### 投票受付 (`contextHook`)
+
+| メソッド | 説明 |
+| --- | --- |
+| `validateVoteSubmission()` | BAN・重複投票・トリガー者制限のチェック |
+| `parseVoteNumber()` | テキストから数値を解析（Decimal変換・丸め処理） |
+| `ensureVoteInRange()` | 投票数値が 0〜maxnum の範囲内かチェック |
+| `recordVote()` | 有効な投票をゲームに記録 |
+
+### 集計 (`finish`)
+
+| メソッド | 説明 |
+| --- | --- |
+| `filterValidVotesForFinish()` | 公開限定フィルタ・ブロック除外・親愛度チェック |
+| `handleOnagareIfNeeded()` | お流れ判定（無効試合なら早期リターン） |
+| `computeWinnerAndResults()` | 勝者・結果リスト・反転の計算 |
+| `buildRatingContext()` | レート計算の準備データ一式を構築 |
+| `applyNonParticipantPenalties()` | 不参加者のレート超過分にペナルティ |
+| `applyWinnerAndLoserRates()` | 勝者ボーナス・敗者減算・勝者ステータス更新 |
+| `distributeBonusWhenNoWinner()` | 勝者なし時のボーナス配分 |
+| `updateRateChangeMetadata()` | レート変動メタデータの反映 |
+| `publishGameResult()` | 結果投稿・リプライ購読解除 |
+
+### 共通ヘルパー
+
+| メソッド | 説明 |
+| --- | --- |
+| `isMedalMatch()` | メダル戦（トロフィー戦）かどうかの判定 |
+| `normalizeGameMaxnum()` | maxnum の文字列→Decimal 型正規化 |
+| `formatNumberForResult()` | 数値の表示用フォーマット（∞・指数表記の整形） |
+| `formatNumberOrSentinel()` | 中央値の表示用文字列（-1→有効数字なし 等） |
+| `formatMaxnumForDisplay()` | maxnum の表示文字列（MAX_VALUE→∞ 等） |
+| `compareDecimalAsc()` | Decimal 昇順比較 |
+| `compareDecimalDesc()` | Decimal 降順比較 |
+| `decimalAbs()` | Decimal 絶対値 |
+| `compareByRateDesc()` | レートランキングの降順比較 |
+| `distributeRemainderToPenalties()` | 端数ポイントの不参加者への返却 |
+| `computeMedian()` | 数値配列の中央値計算 |
 
 ---
 
