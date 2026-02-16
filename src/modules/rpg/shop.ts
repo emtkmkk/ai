@@ -118,7 +118,7 @@ export const skillPrice = (_ai: 藍, skillName: Skill["name"], rnd: () => number
 
 export const shopItems: ShopItem[] = [
 	{ name: `お守りを捨てる`, limit: (data) => data.items.filter((x) => x.type === "amulet").length, price: 0, desc: `今所持しているお守りを捨てます`, type: "item", effect: (data) => data.items = data.items?.filter((x) => x.type !== "amulet"), always: true },
-	{ name: "おかわり2RPG自動支払いの札", limit: (data) => data.lv < 255 && !data.items.filter((x) => x.name === "おかわり2RPG自動支払いの札").length && data.replayOkawari != null, desc: `所持している間、おかわりおかわりRPGをプレイする際に確認をスキップして自動で${config.rpgCoinShortName}を消費します`, price: 1, type: "token", effect: { autoReplayOkawari: true }, always: true },
+	{ name: "おかわり2RPG自動支払いの札", limit: (data) => data.lv < 255 && !data.items.filter((x) => x.name === "おかわり2RPG自動支払いの札").length && data.replayOkawari !== null && data.replayOkawari !== undefined, desc: `所持している間、おかわりおかわりRPGをプレイする際に確認をスキップして自動で${config.rpgCoinShortName}を消費します`, price: 1, type: "token", effect: { autoReplayOkawari: true }, always: true },
 	{ name: "自動旅モードの札", limit: (data) => (data.maxEndress ?? 0) > 0 && !data.items.filter((x) => x.name === "自動旅モードの札").length, desc: "所持している間、旅モードに自動で突入します", price: (data) => data.allClear ? 1 : Math.max(8 - (data.maxEndress ?? 0), 1), type: "token", effect: { autoJournal: true }, always: true },
 	{ name: "†の札", limit: (data) => !data.items.filter((x) => x.name === "†の札").length && data.lv >= 99 && data.lv <= 255 && !data.clearHistory.includes(":mk_chickenda_gtgt:"), desc: "所持している間、本気の†を味わう事が出来ます", price: 5, type: "token", effect: { appearStrongBoss: true }, always: true },
 	{ name: "おかわり2RPG自動支払いの札を捨てる", limit: (data) => data.items.filter((x) => x.name === "おかわり2RPG自動支払いの札").length, desc: "おかわりおかわりRPGをプレイする際に毎回確認を表示します", price: 0, type: "item", effect: (data) => data.items = data.items.filter((x) => x.name !== "おかわり2RPG自動支払いの札"), always: true },
@@ -312,43 +312,43 @@ const eventAmulet = (data?) => {
 	const d = new Date().getDate()
 	const dy = new Date().getDay();
 	if (data.lv >= 255) {
-		if (dy == 0) {
+		if (dy === 0) {
 			return [
 				Math.random() < 0.5 ? "雷属性剣攻撃＋" : "嫉妬の力",
 				...["高速RPG", "伝説", "連続攻撃完遂率上昇", "気合で頑張る"].sort(() => 0.5 - Math.random()).slice(0, Math.random() < 0.2 ? 3 : 2),
 			]
 		}
-		if (dy == 1) {
+		if (dy === 1) {
 			return [
 				Math.random() < 0.5 ? "闇属性剣攻撃＋" : "暴食の力",
 				...["粘り強い", `${serifs.rpg.status.def}アップ`, "連続・毎日ボーナス強化", `${serifs.rpg.status.pen}+10%`].sort(() => 0.5 - Math.random()).slice(0, Math.random() < 0.2 ? 3 : 2),
 			]
 		}
-		if (dy == 2) {
+		if (dy === 2) {
 			return [
 				"炎属性剣攻撃＋",
 				...[`${serifs.rpg.status.atk}アップ`, "脳筋", "すぐ決死の覚悟をする", "強敵と戦うのが好き"].sort(() => 0.5 - Math.random()).slice(0, Math.random() < 0.2 ? 3 : 2),
 			]
 		}
-		if (dy == 3) {
+		if (dy === 3) {
 			return [
 				Math.random() < 0.5 ? "氷属性剣攻撃＋" : "傲慢の力",
 				...["水属性剣攻撃", "毒属性剣攻撃", "慎重", "負けそうなら逃げる", "敵のクリティカル性能減少"].sort(() => 0.5 - Math.random()).slice(0, Math.random() < 0.1 ? 4 : Math.random() < 0.5 ? 3 : 2),
 			]
 		}
-		if (dy == 4) {
+		if (dy === 4) {
 			return [
 				Math.random() < 0.5 ? "風属性剣攻撃＋" : `強欲の力`,
 				...["テキパキこなす", "道具大好き", "道具の扱いが上手い", "道具の選択が上手い"].sort(() => 0.5 - Math.random()).slice(0, Math.random() < 0.2 ? 3 : 2),
 			]
 		}
-		if (dy == 5) {
+		if (dy === 5) {
 			return [
 				Math.random() < 0.5 ? "光属性剣攻撃＋" : `怠惰の力`,
 				...["油断しない", "７フィーバー！", "天国か地獄か", "不運チャージ"].sort(() => 0.5 - Math.random()).slice(0, Math.random() < 0.2 ? 3 : 2),
 			]
 		}
-		if (dy == 6) {
+		if (dy === 6) {
 			return [
 				Math.random() < 0.5 ? "土属性剣攻撃＋" : `憤怒の力`,
 				...["疲れにくい", "クリティカル性能上昇", "天国か地獄か", "投稿数ボーナス量アップ"].sort(() => 0.5 - Math.random()).slice(0, Math.random() < 0.2 ? 3 : 2),
@@ -410,7 +410,7 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 	const data = initializeData(module, msg);
 	if (!data) return false;
 	if (!data.lv) return false;
-	if (data.jar == null) data.jar = 0;
+	if (data.jar === null || data.jar === undefined) data.jar = 0;
 
 	// 所持しているスキル効果を読み込み
 	const skillEffects = aggregateSkillsEffects(data);
@@ -459,7 +459,7 @@ export const shopReply = async (module: rpg, ai: 藍, msg: Message) => {
 		data.shopItems[index] = x.replace("のお守り", "").split("&");
 	});
 
-	const _shopItems = (data.shopItems as (string | string[])[]).map((x) => Array.isArray(x) ? mergeSkillAmulet(ai, rnd, x.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) : shopItems.find((y) => x === y.name) ?? undefined).filter((x) => x != null) as ShopItem[];
+	const _shopItems = (data.shopItems as (string | string[])[]).map((x) => Array.isArray(x) ? mergeSkillAmulet(ai, rnd, x.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y !== null && y !== undefined) as Skill[]) : shopItems.find((y) => x === y.name) ?? undefined).filter((x) => x !== null && x !== undefined) as ShopItem[];
 
 	const showShopItems = _shopItems.filter((x) => (!x.limit || x.limit(data, () => 0)) &&  (aggregateTokensEffects(data).alwaysAmulet || !(x.type === "amulet" && data.items?.some((y) => y.type === "amulet")))).concat(shopItems.filter((x) => (!x.limit || x.limit(data, () => 0)) && (aggregateTokensEffects(data).alwaysAmulet || !(x.type === "amulet" && data.items?.some((y) => y.type === "amulet"))) && x.always)).slice(0, 35)
 		.map((x) => {
@@ -553,7 +553,7 @@ export function shopContextHook(module: Module, key: any, msg: Message, data: an
 						rpgData.shop2Items = rpgData.shop2Items?.filter((x) => data.showShopItems[i].name !== x);
 						module.unsubscribeReply(key);
 					} else {
-						if (!item.limit || item.price != data.showShopItems[i].price) {
+						if (!item.limit || item.price !== data.showShopItems[i].price) {
 							module.unsubscribeReply(key);
 						}
 					}

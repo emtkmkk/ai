@@ -61,7 +61,7 @@ export function ensureKazutoriMasterHistory(ai, msg, skillEffects: SkillEffect):
 	}
 
 	const kazutoriData = msg.friend?.doc?.kazutoriData;
-	if (!kazutoriData || (kazutoriData.lastPlayedAt != null && kazutoriData.lastWinAt != null)) {
+	if (!kazutoriData || (kazutoriData.lastPlayedAt !== null && kazutoriData.lastPlayedAt !== undefined && kazutoriData.lastWinAt !== null && kazutoriData.lastWinAt !== undefined)) {
 		return;
 	}
 
@@ -85,7 +85,7 @@ export function ensureKazutoriMasterHistory(ai, msg, skillEffects: SkillEffect):
 	let updated = false;
 	const userId = msg.userId;
 
-	if (kazutoriData.lastPlayedAt == null) {
+	if (kazutoriData.lastPlayedAt === null || kazutoriData.lastPlayedAt === undefined) {
 		const lastPlayedAt = games
 			.filter((game) => game.votes?.some((vote) => vote.user?.id === userId))
 			.reduce((max, game) => Math.max(max, game.finishedAt ?? 0), 0);
@@ -95,7 +95,7 @@ export function ensureKazutoriMasterHistory(ai, msg, skillEffects: SkillEffect):
 		}
 	}
 
-	if (kazutoriData.lastWinAt == null) {
+	if (kazutoriData.lastWinAt === null || kazutoriData.lastWinAt === undefined) {
 		const lastWinAt = games
 			.filter((game) => game.winnerUserId === userId)
 			.reduce((max, game) => Math.max(max, game.finishedAt ?? 0), 0);

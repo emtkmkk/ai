@@ -111,7 +111,7 @@ function crawleGameEnd() {
 		isEnded: false
 	});
 
-	if (raid == null) return;
+	if (raid === null || raid === undefined) return;
 
 	// 制限時間経過（finishedAt 未設定なら startedAt + 10分）で finish を呼ぶ
 	if (Date.now() - (raid.finishedAt ?? raid.startedAt + 1000 * 60 * 10) >= 0) {
@@ -173,7 +173,7 @@ function scheduleRaidStart() {
  * @param flg 特殊なフラグ（"h" 等）
  * @internal
  */
-export async function start(triggerUserId?: string, flg?: any) {
+export async function start(triggerUserId?: string, flg?: string | string[]) {
 
 	/** すべてのレイドゲームのリスト */
 	const games = raids.find({});
@@ -346,13 +346,13 @@ function finish(raid: Raid) {
 			// 評判値が高いほどコイン倍率アップ（1〜11 の範囲）
 			bonusCoin = Math.min(Math.max(1, Math.floor(reputation2 * 16.75 * (1.5 ** reputation2)) / 750), 11);
 
-			if (reputation1 == 0) {
+			if (reputation1 === 0) {
 				results.push(`討伐隊の評判値: ${Math.floor(reputation2 * 16.75 * (1.5 ** reputation2)).toLocaleString()} ↑アップ！`);
 			} else {
 				results.push(`討伐隊の評判値: ${Math.floor(reputation1 * 16.75 * (1.5 ** reputation1)).toLocaleString()} → ${Math.floor(reputation2 * 16.75 * (1.5 ** reputation2)).toLocaleString()} ${reputation1 < reputation2 ? "↑アップ！" : reputation1 > reputation2 ? "↓ダウン…" : ""}`);
 			}
 
-			if (score != Math.floor((score ?? 4) * bonusCoin)) {
+			if (score !== Math.floor((score ?? 4) * bonusCoin)) {
 				results.push(`評判値ボーナス！ もこコイン+${Math.floor((score ?? 4) * bonusCoin) - score}枚`);
 			}
 		}
@@ -377,11 +377,12 @@ function finish(raid: Raid) {
 		const bonus = Math.ceil(sortAttackers.length / 5 * (scoreRaw ?? (sortAttackers[0].dmg / 10)));
 		results.push((scoreRaw ? "\nラッキー！: " : "優勝！: ") + acct(luckyUser) + `\n${config.rpgCoinName}+` + bonus + "枚");
 		const friend = ai.lookupFriend(luckyUser.id);
-		if (!friend) return;
-		const data = friend.getPerModulesData(module_);
-		data.coin = Math.max((data.coin ?? 0) + (bonus ?? 1), (data.coin ?? 0));
-		if (!data.maxLucky || data.maxLucky < (bonus ?? 1)) data.maxLucky = (bonus ?? 1);
-		friend.setPerModulesData(module_, data);
+		if (friend) {
+			const data = friend.getPerModulesData(module_);
+			data.coin = Math.max((data.coin ?? 0) + (bonus ?? 1), (data.coin ?? 0));
+			if (!data.maxLucky || data.maxLucky < (bonus ?? 1)) data.maxLucky = (bonus ?? 1);
+			friend.setPerModulesData(module_, data);
+		}
 	}
 
 	const text = results.join('\n') + '\n\n' + (score ? serifs.rpg.finish(raid.enemy.name, Math.floor((score ?? 4) * bonusCoin)) : serifs.rpg.finish2(raid.enemy.name, 4));
@@ -399,15 +400,19 @@ function finish(raid: Raid) {
 		friend.setPerModulesData(module_, data);
 	});
 
-	ai.post({
-		text: text,
-		cw: score ? serifs.rpg.finishCw(raid.enemy.name) : serifs.rpg.finishCw2(raid.enemy.name),
-		renoteId: raid.postId,
-		referenceIds: references,
-	});
-
-	module_.unsubscribeReply(raid.postId);
-	raid.replyKey.forEach((x) => module_.unsubscribeReply(x));
+	try {
+		ai.post({
+			text: text,
+			cw: score ? serifs.rpg.finishCw(raid.enemy.name) : serifs.rpg.finishCw2(raid.enemy.name),
+			renoteId: raid.postId,
+			referenceIds: references,
+		});
+	} catch (err) {
+		module_.log(`レイド結果投稿エラー: ${err instanceof Error ? err.stack ?? err.message : err}`);
+	} finally {
+		module_.unsubscribeReply(raid.postId);
+		raid.replyKey.forEach((x) => module_.unsubscribeReply(x));
+	}
 }
 
 // -------- 参加処理 --------
@@ -423,7 +428,7 @@ function finish(raid: Raid) {
  * @returns リアクションオブジェクト
  * @internal
  */
-export async function raidContextHook(key: any, msg: Message, data: any) {
+export async function raidContextHook(key: string, msg: Message, data: unknown) {
 	if (!msg.extractedText.trim()) return {
 		reaction: 'hmm'
 	};
@@ -442,7 +447,7 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
                 postId: key.split(":")[0],
         });
 
-        if (raid == null) return;
+        if (raid === null || raid === undefined) return { reaction: 'confused' };
 
         let needUpdate = false;
         if (!raid.attackers) {
@@ -460,11 +465,13 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
         }
 
 	// 既に参加済み（dmg > 0 の同一 userId）なら拒否
-	if (raid.attackers.some(x => x.dmg > 0 && x.user.id == msg.userId)) {
+	if (raid.attackers.some(x => x.dmg > 0 && x.user.id === msg.userId)) {
 		msg.reply('すでに参加済みの様です！').then(reply => {
 			raid.replyKey.push(raid.postId + ":" + reply.id);
 			module_.subscribeReply(raid.postId + ":" + reply.id, reply.id);
 			raids.update(raid);
+		}).catch((err) => {
+			module_.log(`レイド参加済みメッセージ送信エラー: ${err instanceof Error ? err.stack ?? err.message : err}`);
 		});
 		return {
 			reaction: 'confused'
@@ -474,7 +481,7 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
 	/** 現在のレイドの敵 */
 	const enemy = [...raidEnemys].find((x) => raid.enemy.name === x.name);
 
-	if (!enemy) return;
+	if (!enemy) return { reaction: 'confused' };
 
         // 敵の pattern でダメージ計算を分岐：1=通常戦闘、2=じゃんけん型、3=コンテスト型
         let result;
@@ -500,11 +507,13 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
                 }
 
 	// ダメージ計算中の競合：他処理で既に参加済みなら二重参加を防ぐ
-	if (raid.attackers.some(x => x.dmg > 0 && x.user.id == msg.userId)) {
+	if (raid.attackers.some(x => x.dmg > 0 && x.user.id === msg.userId)) {
 		msg.reply('すでに参加済みの様です！').then(reply => {
 			raid.replyKey.push(raid.postId + ":" + reply.id);
 			module_.subscribeReply(raid.postId + ":" + reply.id, reply.id);
 			raids.update(raid);
+		}).catch((err) => {
+			module_.log(`レイド参加済みメッセージ送信エラー: ${err instanceof Error ? err.stack ?? err.message : err}`);
 		});
 		return {
 			reaction: 'confused'
@@ -548,13 +557,13 @@ export async function raidContextHook(key: any, msg: Message, data: any) {
  * @param data タイムアウトデータ（postId 等を含む）
  * @internal
  */
-export function raidTimeoutCallback(data: any) {
+export function raidTimeoutCallback(data: { id: string }) {
 	/** 現在進行中のレイド */
 	const raid = raids.findOne({
 		isEnded: false,
 		postId: data.id
 	});
-	if (raid == null) return;
+	if (raid === null || raid === undefined) return;
 
 	try {
 		ai.post({
@@ -605,7 +614,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 
 	// Lv20以上でお守り未所持かつ確率（10% + noAmuletCount*5%、最低-18から始まる）でお守り付与
 	if (data.lv >= 20) {
-		if (data.noAmuletCount == null) data.noAmuletCount = 0;
+		if (data.noAmuletCount === null || data.noAmuletCount === undefined) data.noAmuletCount = 0;
 		if (!skillEffects.noAmuletAtkUp && !skillsStr.amulet && Math.random() < 0.1 + ((data.noAmuletCount + 18) * 0.05)) {
 			amuletGetFlg = true;
 			data.noAmuletCount = -18;
@@ -746,7 +755,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 			if (isSuper && !aggregateTokensEffects(data).hyperMode) {
 				message += serifs.rpg.postBonusInfo.super + `\n`;
 			}
-			message += serifs.rpg.postBonusInfo.post(postCount, tp > 1 ? "+" + Math.floor((tp - 1) * 100) : (tp != 1 ? "-" : "") + Math.floor((tp - 1) * 100)) + `\n`;
+			message += serifs.rpg.postBonusInfo.post(postCount, tp > 1 ? "+" + Math.floor((tp - 1) * 100) : (tp !== 1 ? "-" : "") + Math.floor((tp - 1) * 100)) + `\n`;
 			if (verboseLog && continuousBonusX >= 1.01) message += "連スキル効果: AD+" + Math.ceil(continuousBonusX * 100 - 100) + '%\n';
 			if (verboseLog && tp - rawTp >= 0.01) message += "投スキル効果: AD+" + Math.ceil(tp / rawTp * 100 - 100) + '%\n';
 		}
@@ -851,7 +860,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 	}
 
 	// 魔法処理の為の関数
-	const checkMagic = (phase, argTriggerData = {} as any) => {
+	const checkMagic = (phase: string, argTriggerData: Record<string, unknown> = {}) => {
 		if (!data?.magic) return;
 
 		const triggerData = {
@@ -1577,7 +1586,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 				}
 				if (verboseLog) {
 					buff += 1;
-					message += `アイテム効果: ${Math.round(item.mind)}%${rawMind != item.mind ? ` (${displayDifference(item.mind / rawMind)})` : ""} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
+					message += `アイテム効果: ${Math.round(item.mind)}%${rawMind !== item.mind ? ` (${displayDifference(item.mind / rawMind)})` : ""} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
 				}
 			};
 			if (item.type !== "poison") {
@@ -1622,7 +1631,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 						}
 						if (verboseLog) {
 							buff += 1;
-							message += `アイテム効果: ${Math.round(item.effect)}%${rawEffect != item.effect ? ` (${displayDifference(item.effect / rawEffect)})` : ""} (${formatNumber(atk)})\n`;
+							message += `アイテム効果: ${Math.round(item.effect)}%${rawEffect !== item.effect ? ` (${displayDifference(item.effect / rawEffect)})` : ""} (${formatNumber(atk)})\n`;
 						}
 					}
 					break;
@@ -1652,7 +1661,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 						}
 						if (verboseLog) {
 							buff += 1;
-							message += `アイテム効果: ${Math.round(item.effect)}%${rawEffect != item.effect ? ` (${displayDifference(item.effect / rawEffect)})` : ""} (${formatNumber(def)})\n`;
+							message += `アイテム効果: ${Math.round(item.effect)}%${rawEffect !== item.effect ? ` (${displayDifference(item.effect / rawEffect)})` : ""} (${formatNumber(def)})\n`;
 						}
 					}
 					break;
@@ -1689,7 +1698,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 							}
 							if (verboseLog) {
 								buff += 1;
-								message += `アイテム効果: ${Math.round(item.effect)}%${rawEffect != item.effect ? ` (${displayDifference(item.effect / rawEffect)})` : ""}\n`;
+								message += `アイテム効果: ${Math.round(item.effect)}%${rawEffect !== item.effect ? ` (${displayDifference(item.effect / rawEffect)})` : ""}\n`;
 							}
 						}
 					}
@@ -1720,7 +1729,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 						}
 						if (verboseLog) {
 							buff += 1;
-							message += `アイテム効果: ${Math.round(item.effect)}%${rawEffect != item.effect ? ` (${displayDifference(item.effect / rawEffect)})` : ""}\n`;
+							message += `アイテム効果: ${Math.round(item.effect)}%${rawEffect !== item.effect ? ` (${displayDifference(item.effect / rawEffect)})` : ""}\n`;
 						}
 					}
 					if (skillEffects.gluttony) {
@@ -2262,7 +2271,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 		}
 	}
 
-	if (data.exp >= 5 && data.lv != 254 && (data.lv > 255 || data.lv + 1 < rpgData.maxLv)) {
+	if (data.exp >= 5 && data.lv !== 254 && (data.lv > 255 || data.lv + 1 < rpgData.maxLv)) {
 
 		let addMessage = preLevelUpProcess(data);
 
@@ -2561,7 +2570,7 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 		}
 	}
 
-	if (data.exp >= 5 && data.lv != 254 && (data.lv > 255 || data.lv + 1 < rpgData.maxLv)) {
+	if (data.exp >= 5 && data.lv !== 254 && (data.lv > 255 || data.lv + 1 < rpgData.maxLv)) {
 
 		let addMessage = preLevelUpProcess(data);
 
@@ -2959,7 +2968,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 
         if (!data.raidScore) data.raidScore = {};
         if (!data.raidScore[enemy.name] || data.raidScore[enemy.name] < totalDmg) {
-                if (data.raidScore[enemy.name] && Math.floor(data.raidScore[enemy.name]) != Math.floor(totalDmg)) {
+                if (data.raidScore[enemy.name] && Math.floor(data.raidScore[enemy.name]) !== Math.floor(totalDmg)) {
                         message += "過去最高の手応えだ！" + `\n\n`;
                         if (mark === ":blank:") mark = "🆙";
                 }
@@ -2992,7 +3001,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 		}
 	}
 
-	if (data.exp >= 5 && data.lv != 254 && (data.lv > 255 || data.lv + 1 < rpgData.maxLv)) {
+	if (data.exp >= 5 && data.lv !== 254 && (data.lv > 255 || data.lv + 1 < rpgData.maxLv)) {
 
 		let addMessage = preLevelUpProcess(data);
 

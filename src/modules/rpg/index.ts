@@ -161,7 +161,7 @@ export default class extends Module {
 	 * @internal
 	 */
 	@autobind
-	private async contextHook(key: any, msg: Message, data: any) {
+	private async contextHook(key: string, msg: Message, data: unknown) {
           if (typeof key === "string" && key.startsWith("replayOkawari:")) {
             return this.replayOkawariHook(key, msg, data);
           }
@@ -451,7 +451,7 @@ export default class extends Module {
                         const values = sortedEntries.map(entry => entry.value as number);
                         const firstPlaceAppend = options?.firstPlaceAppend?.(sortedEntries[0]?.friend, sortedEntries[0]?.value as number | undefined);
 
-			if (score != null) {
+			if (score !== null && score !== undefined) {
 				// 同順位の人数を計算
 				const sameRankCount = values.filter(v => v === score).length;
 
@@ -486,7 +486,7 @@ export default class extends Module {
 						rankmsg += `（同順位：${sameRankCount - 1}人）`;
 					} else if (rank <= 10 && rank >= 2) {
 						rankmsg += `（1位：${(values?.[0] + (options?.addValue || 0)).toLocaleString()}）`;
-					} else if (rank == 1 && values?.[1]) {
+					} else if (rank === 1 && values?.[1]) {
 						rankmsg += `（2位：${(values?.[1] + (options?.addValue || 0)).toLocaleString()}）`;
 					}
 				}
@@ -515,7 +515,7 @@ export default class extends Module {
                 };
 
                 const createFirstPlaceRaidSkillMessage = (enemyName: string) => (friend: FriendDocWithMeta | undefined, score: number | undefined) => {
-                        if (!friend || score == null) return undefined;
+                        if (!friend || score === null || score === undefined) return undefined;
 
                         type RaidWithMeta = LokiDoc<Raid>;
                         type AttackerWithSkills = Raid['attackers'][number] & {
@@ -636,7 +636,7 @@ export default class extends Module {
 			const id = /\w{10,}/.exec(msg.extractedText)?.[0];
 			if (id) {
 				const friend = this.ai.lookupFriend(id);
-				if (friend == null) return { reaction: ":mk_hotchicken:" };
+				if (friend === null || friend === undefined) return { reaction: ":mk_hotchicken:" };
 				friend.doc.perModulesData.rpg.lastPlayedAt = "";
 				friend.doc.perModulesData.rpg.lv = friend.doc.perModulesData.rpg.lv - 1;
 				friend.doc.perModulesData.rpg.atk = friend.doc.perModulesData.rpg.atk - 5;
@@ -649,7 +649,7 @@ export default class extends Module {
 			const id = /\w{10,}/.exec(msg.extractedText)?.[0];
 			if (id) {
 				const friend = this.ai.lookupFriend(id);
-				if (friend == null) return { reaction: ":mk_hotchicken:" };
+				if (friend === null || friend === undefined) return { reaction: ":mk_hotchicken:" };
 				friend.doc.perModulesData.rpg.lastShopVisited = "";
 				friend.save();
 				return { reaction: "love" };
@@ -659,7 +659,7 @@ export default class extends Module {
 			const id = /\w{10,}/.exec(msg.extractedText)?.[0];
 			if (id) {
 				const friend = this.ai.lookupFriend(id);
-				if (friend == null) return { reaction: ":mk_hotchicken:" };
+				if (friend === null || friend === undefined) return { reaction: ":mk_hotchicken:" };
 				friend.doc.perModulesData.rpg.lastPlayedLv = 0;
 				friend.doc.perModulesData.rpg.bestScore = 0;
 				friend.save();
@@ -672,7 +672,7 @@ export default class extends Module {
 			const num = /\s(\d)\s/.exec(msg.extractedText)?.[1];
 			if (id && skill && num) {
 				const friend = this.ai.lookupFriend(id);
-				if (friend == null) return { reaction: ":mk_hotchicken:" };
+				if (friend === null || friend === undefined) return { reaction: ":mk_hotchicken:" };
 				let skillData = skills.find((x) => x.name.startsWith(skill))
 				if (!skillData) {
 					skillData = skills.find((x) => x.name.includes(skill))
@@ -688,7 +688,7 @@ export default class extends Module {
 			const num = /\s(\d+)\s/.exec(msg.extractedText)?.[1];
 			if (id && num) {
 				const friend = this.ai.lookupFriend(id);
-				if (friend == null) return { reaction: ":mk_hotchicken:" };
+				if (friend === null || friend === undefined) return { reaction: ":mk_hotchicken:" };
 				friend.doc.perModulesData.rpg.coin = (friend.doc.perModulesData.rpg.coin ?? 0) + parseInt(num);
 				friend.save();
 				return { reaction: "love" };
@@ -699,7 +699,7 @@ export default class extends Module {
 			const num = /\s(\d+)\s/.exec(msg.extractedText)?.[1];
 			if (id && num) {
 				const friend = this.ai.lookupFriend(id);
-				if (friend == null) return { reaction: ":mk_hotchicken:" };
+				if (friend === null || friend === undefined) return { reaction: ":mk_hotchicken:" };
 				friend.doc.perModulesData.rpg.coin = parseInt(num);
 				friend.save();
 				return { reaction: "love" };
@@ -978,7 +978,7 @@ export default class extends Module {
 		/** 現在の時間の文字列（プレイ枠を一意に識別するキー） */
 		let nowTimeStr = getDate() + (new Date().getHours() < 12 ? "" : new Date().getHours() < 18 ? "/12" : "/18");
 
-		/** 次のプレイ枠の時間文字列（rpgTime スキルで時間ずらし判定に使用） */
+		/** 次のプレイ枠の時間文字列 */
 		let nextTimeStr = new Date().getHours() < 12 ? getDate() + "/12" : new Date().getHours() < 18 ? getDate() + "/18" : getDate(1);
 
 		let autoReplayFlg = false;
@@ -1047,25 +1047,11 @@ export default class extends Module {
                                 isOkawariPlay = true;
                                 data.lastOnemorePlayedAt = getDate();
 			} else {
-				// おかわりキーワードなし：rpgTime スキルで時間枠をずらせるか判定
-				if (
-					(skillEffects.rpgTime ?? 0) < 0 &&
-					new Date().getHours() >= 24 + (skillEffects.rpgTime ?? 0) && data.lastPlayedAt !== getDate(1) ||
-					data.lastPlayedAt !== getDate() + (new Date().getHours() < 12 + (skillEffects.rpgTime ?? 0) ? "" : new Date().getHours() < 18 + (skillEffects.rpgTime ?? 0) ? "/12" : "/18")
-				) {
-					// rpgTime により「まだプレイ可能な枠」とみなす：時間文字列を1枠進めて続行
-					TimeStrBefore3 = TimeStrBefore2;
-					TimeStrBefore2 = TimeStrBefore1;
-					TimeStrBefore1 = nowTimeStr;
-
-					nowTimeStr = new Date().getHours() < 12 ? getDate() + "/12" : new Date().getHours() < 18 ? getDate() + "/18" : getDate(1);
-				} else {
-					// 時間ずらし不可 or 該当なし → 疲れたメッセージで終了
-					msg.reply(serifs.rpg.tired(new Date(), data.lv < rpgData.maxLv && data.lastOnemorePlayedAt !== getDate(), data.lv >= 7));
-					return {
-						reaction: 'confused'
-					};
-				}
+				// おかわりキーワードなし → 疲れたメッセージで終了
+				msg.reply(serifs.rpg.tired(new Date(), data.lv < rpgData.maxLv && data.lastOnemorePlayedAt !== getDate(), data.lv >= 7));
+				return {
+					reaction: 'confused'
+				};
 			}
 		} else {
 			// 未プレイの状態でおかわりキーワードのみ指定 → エラー（本来は不要な入力）
@@ -1924,10 +1910,10 @@ export default class extends Module {
                                         debugLines.push(`行動回数: ${spd}`);
                                         debugLines.push(`敵防御力: ${formatDebug(enemyDef * (getVal(data.enemy.defx, [tp]) ?? 3))}`);
                                         debugLines.push(`乱数: ${formatDebug(rng)}`);
-                                        if(dmgBonus != 1) debugLines.push(`追加ダメージ: ${formatDebug(dmgBonus)}`);
-                                        if(trueDmg != 0) debugLines.push(`確定ダメージ: ${formatDebug(trueDmg)}`);
-                                        if(dmgUp != 1) debugLines.push(`ダメージ倍率: ${formatDebug(dmgUp)}`);
-                                        if(critUp != 0) debugLines.push(`会心率補正: ${formatDebug(critUp)}`);
+                                        if(dmgBonus !== 1) debugLines.push(`追加ダメージ: ${formatDebug(dmgBonus)}`);
+                                        if(trueDmg !== 0) debugLines.push(`確定ダメージ: ${formatDebug(trueDmg)}`);
+                                        if(dmgUp !== 1) debugLines.push(`ダメージ倍率: ${formatDebug(dmgUp)}`);
+                                        if(critUp !== 0) debugLines.push(`会心率補正: ${formatDebug(critUp)}`);
                                         if(crit) debugLines.push(`クリティカル倍率:${formatDebug(critDmg)}`);
                                         if (itemBonus?.atk) {
                                                 debugLines.push(`アイテム攻撃補正: ${formatDebug(itemBonus.atk)}`);
@@ -1989,7 +1975,7 @@ export default class extends Module {
 				// 連続勝利数
 				data.streak = (data.streak ?? 0) + 1;
 				// 1ターンで勝利した場合はさらに+1
-				if (data.count == 1) data.streak = (data.streak ?? 0) + 1;
+				if (data.count === 1) data.streak = (data.streak ?? 0) + 1;
 				data.winCount = (data.winCount ?? 0) + 1;
 				// クリアした敵のリストを追加
 				if (!(data.clearEnemy ?? []).includes(data.enemy.name)) data.clearEnemy.push(data.enemy.name);
@@ -2070,7 +2056,7 @@ export default class extends Module {
 						if (data.enemy.fire && count > (data.thirdFire ?? 0)) data.thirdFire = count;
 					}
 					// 食いしばり：HP 0 のときに endure 確率で HP 1 で生存。旅モード高ステージでは確率低下
-					const endure = ((0.1 + (0.1 * (data.endure ?? 0))) * (1 + (skillEffects.endureUp ?? 0))) - (count * (data.enemy.name == endressEnemy(data).name && (data.endress ?? 0) >= 199 && count > 1 ? 0.04 * count : 0.05));
+					const endure = ((0.1 + (0.1 * (data.endure ?? 0))) * (1 + (skillEffects.endureUp ?? 0))) - (count * (data.enemy.name === endressEnemy(data).name && (data.endress ?? 0) >= 199 && count > 1 ? 0.04 * count : 0.05));
 					if (playerHp <= 0 && !data.enemy.notEndure && Math.random() < endure) {
 						message += serifs.rpg.endure + "\n";
 						playerHp = 1;
@@ -2208,7 +2194,7 @@ export default class extends Module {
 		}
 
 		const nowPlay = /\d{4}\/\d{1,2}\/\d{1,2}(\/\d{2})?/.exec(nowTimeStr);
-		const nextPlay = !nowPlay?.[1] ? 12 + (skillEffects.rpgTime ?? 0) : nowPlay[1] == "/12" ? 18 + (skillEffects.rpgTime ?? 0) : nowPlay[1] == "/18" ? 24 + (skillEffects.rpgTime ?? 0) : 12 + (skillEffects.rpgTime ?? 0);
+		const nextPlay = !nowPlay?.[1] ? 12 : nowPlay[1] === "/12" ? 18 : nowPlay[1] === "/18" ? 24 : 12;
 		const minusDurability = amuletMinusDurability(data);
 
 		message += [
@@ -2218,7 +2204,7 @@ export default class extends Module {
 			`  ${serifs.rpg.status.def} : ${data.def ?? 0} (+${totalUp - atkUp + bonus})`,
 			addMessage,
 			minusDurability ? "\n" + minusDurability : "",
-			`\n${serifs.rpg.nextPlay(nextPlay == 24 ? "明日" : nextPlay + "時")}`,
+			`\n${serifs.rpg.nextPlay(nextPlay === 24 ? "明日" : nextPlay + "時")}`,
 			data.lv >= rpgData.maxLv ? "" : data.lastOnemorePlayedAt !== getDate() ? "(無料でおかわり可能)" : data.coin >= needCoin ? `(${config.rpgCoinShortName}でおかわり可能 ${data.coin > 99 ? "99+" : data.coin} / ${needCoin})` : "",
 		].filter(Boolean).join("\n");
 
@@ -2282,7 +2268,7 @@ export default class extends Module {
 	 * @internal
 	 */
 	@autobind
-        private replayOkawariHook(key: any, msg: Message, data: any) {
+        private replayOkawariHook(key: string, msg: Message, data: unknown) {
 		this.log("replayOkawari");
 		if (key.replace("replayOkawari:", "") !== msg.userId) {
 			this.log(msg.userId + " : " + key.replace("replayOkawari:", ""));
@@ -2305,6 +2291,8 @@ export default class extends Module {
 			this.log("replayOkawari: ?");
 			msg.reply(serifs.core.yesOrNo, { visibility: "specified" }).then(reply => {
 				this.subscribeReply("replayOkawari:" + msg.userId, reply.id);
+			}).catch((err) => {
+				this.log(`おかわり確認メッセージ送信エラー: ${err instanceof Error ? err.stack ?? err.message : err}`);
 			});
 			return { reaction: 'hmm' };
                 }
@@ -2322,7 +2310,7 @@ export default class extends Module {
 	 * @internal
 	 */
         @autobind
-        private selectSkillHook(key: any, msg: Message, data: any) {
+        private selectSkillHook(key: string, msg: Message, data: unknown) {
                 if (key.replace("selectSkill:", "") !== msg.userId) {
                         return { reaction: 'hmm' };
                 }
@@ -2331,14 +2319,17 @@ export default class extends Module {
                 const rpgData = msg.friend.getPerModulesData(this);
                 if (!rpgData) return { reaction: 'hmm' };
 
+				const selectData = data as { index: number; options: string[]; oldSkillName: string } | undefined;
+				if (!selectData?.options) return { reaction: 'hmm' };
+
 				const match = msg.extractedText.replace(/[０-９]/g, m => '０１２３４５６７８９'.indexOf(m).toString()).match(/[0-9]+/);
-				if (match == null) {
+				if (match === null || match === undefined) {
 					return {
 						reaction: 'hmm',
 					};
 				}
 				const num = parseInt(match[0]);
-               if (!num || num > data.options.length) {
+               if (!num || num > selectData.options.length) {
                        return { reaction: 'hmm' };
                }
 
@@ -2348,8 +2339,8 @@ export default class extends Module {
                         return { reaction: ':mk_muscleok:' };
                 }
 
-               const index = data.index;
-               const skillName = data.options[num - 1];
+               const index = selectData.index;
+               const skillName = selectData.options[num - 1];
                const skill = skills.find(x => x.name === skillName);
                if (!skill || !canLearnSkillNow(rpgData, skill)) {
                        msg.reply('そのスキルは習得できません！', { visibility: 'specified' });
@@ -2360,7 +2351,7 @@ export default class extends Module {
                if (num === 4) {
                        rpgData.nextSkill = null;
                }
-               msg.reply(`\n` + serifs.rpg.moveToSkill(data.oldSkillName, skill.name) + `\n効果: ${skill.desc}` + (aggregateTokensEffects(rpgData).showSkillBonus && skill.info ? `\n詳細効果: ${skill.info}` : ''), { visibility: 'specified' });
+               msg.reply(`\n` + serifs.rpg.moveToSkill(selectData.oldSkillName, skill.name) + `\n効果: ${skill.desc}` + (aggregateTokensEffects(rpgData).showSkillBonus && skill.info ? `\n詳細効果: ${skill.info}` : ''), { visibility: 'specified' });
                msg.friend.setPerModulesData(this, rpgData);
                skillCalculate(this.ai);
                return { reaction: 'love' };

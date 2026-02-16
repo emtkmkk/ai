@@ -138,7 +138,7 @@ export const shopCustomContextHook = (module: rpg, ai: 藍, key: any, msg: Messa
     if (key.replace('shopCustom:', '') !== msg.userId) return { reaction: 'hmm' };
 	if (msg.extractedText.length >= 3) return false;
     const match = msg.extractedText.replace(/[０-９]/g, m => '０１２３４５６７８９'.indexOf(m).toString()).match(/[0-9]+/);
-	if (match == null) {
+	if (match === null || match === undefined) {
         return {
             reaction: 'hmm',
         };

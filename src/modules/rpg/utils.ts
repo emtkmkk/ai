@@ -87,8 +87,11 @@ export function initializeData(module: rpg, msg) {
 			data.itemMedal = 10;
 		}
     data.clearRaidNum = (Array.from(new Set(data.clearRaid ?? []))?.length) ?? 0;
-    data.items?.filter((x) => x.type = ([...shopItems, ultimateAmulet].find((y) => x.name === y.name)?.type ?? (x.skillName ? "amulet" : "token")));
+    data.items?.forEach((x) => {
+        x.type = [...shopItems, ultimateAmulet].find((y) => y.name === x.name)?.type ?? (x.skillName ? "amulet" : "token");
+    });
     if (data.items.filter((x) => x.type === "amulet").length > 1) {
+        if (!data.shopItems) data.shopItems = [];
         data.items.filter((x) => x.type === "amulet").forEach((x) => {
             data.coin += x.price;
             data.shopItems.push(x.name);

@@ -8,7 +8,7 @@
  *
  * @remarks
  * - SkillEffect 型は戦闘中の各種判定で参照される
- * - moveTo が設定されたスキルは廃止済みのため挙動は考慮しない
+ * - moveTo が設定されたスキルは廃止済み。effect は空で効果なし。moveTo による自動移行で意味のあるスキルに置換される
  *
  * @public
  */
@@ -113,8 +113,6 @@ export type SkillEffect = {
 	tenacious?: number;
 	/** 1回のRPGコマンドにて動けるターン数 */
 	plusActionX?: number;
-	/** -n時間分RPGを先取り */
-	rpgTime?: number;
 	/** 与ダメージをn%上昇 （グループ１） */
 	atkDmgUp?: number;
 	/** 与ダメージをn%上昇 （グループ２） */
@@ -280,8 +278,8 @@ export const isKazutoriMasterDisabled = (data): boolean => {
 };
 
 export const skills: Skill[] = [
-	{ name: `${serifs.rpg.status.atk}+10%`, short: `Ｐ`, desc: `常に${serifs.rpg.status.atk}が10%上がります`, info: `条件無しで${serifs.rpg.status.atk}+10%`, effect: { atkUp: 0.1 }, moveTo: `${serifs.rpg.status.atk}アップ` },
-	{ name: `${serifs.rpg.status.def}+10%`, short: `Ｄ`, desc: `常に${serifs.rpg.status.def}が10%上がります`, info: `条件無しで${serifs.rpg.status.def}+10%`, effect: { defUp: 0.1 }, moveTo: `${serifs.rpg.status.def}アップ` },
+	{ name: `${serifs.rpg.status.atk}+10%`, short: `Ｐ`, desc: `常に${serifs.rpg.status.atk}が10%上がります（廃止）`, info: `条件無しで${serifs.rpg.status.atk}+10%（廃止）`, effect: {}, moveTo: `${serifs.rpg.status.atk}アップ` },
+	{ name: `${serifs.rpg.status.def}+10%`, short: `Ｄ`, desc: `常に${serifs.rpg.status.def}が10%上がります（廃止）`, info: `条件無しで${serifs.rpg.status.def}+10%（廃止）`, effect: {}, moveTo: `${serifs.rpg.status.def}アップ` },
 	{ name: `${serifs.rpg.status.atk}アップ`, short: `Ｐ`, desc: `常に${serifs.rpg.status.atk}が上がります`, info: `${serifs.rpg.status.atk}+11%`, effect: { atkUp: 0.11 } },
 	{ name: `${serifs.rpg.status.def}アップ`, short: `Ｄ`, desc: `常に${serifs.rpg.status.def}が上がります`, info: `${serifs.rpg.status.atk}+4% ${serifs.rpg.status.def}+13%`, effect: { atkUpBonus: 1, defUp: 0.13 } },
 	{ name: `炎属性剣攻撃`, short: "炎", desc: `戦闘時、最低ダメージが上昇します`, info: `戦闘時、Lvの9%がダメージに固定加算\n非戦闘時、${serifs.rpg.status.atk}+Lvの35%\n火曜日に全ての効果量が66%アップ`, effect: { fire: 0.09 } },
@@ -306,7 +304,7 @@ export const skills: Skill[] = [
 	{ name: `油断しない`, short: "断", desc: `ターン1に受けるダメージを大きく軽減します`, info: `ターン1にてダメージカット40%を得る\n100%以上になる場合、残りはターン2に持ち越す\n${serifs.rpg.status.atk}+4%`, effect: { atkUpBonus: 1, firstTurnResist: 0.4 }, skillOnly: true },
 	{ name: `粘り強い`, short: "粘", desc: `体力が減るほど受けるダメージを軽減します`, info: `ダメージカット25%×(減少HP割合)を得る 最大90% ${serifs.rpg.status.atk}+4%`, effect: { atkUpBonus: 1, tenacious: 0.25 } },
 	{ name: `高速RPG`, short: "速", desc: `1回のRPGでお互いに2回行動します`, info: `1回のコマンドで2ターン進行する ${serifs.rpg.status.atk}+1% レイド時は、さらに${serifs.rpg.status.atk}+10%`, effect: { atkUpBonus: 0.25, plusActionX: 1 } },
-	{ name: `1時間先取りRPG`, short: "先", desc: `1時間早くRPGをプレイする事が出来ます`, info: `1時間早くRPGプレイ可能 ステータス+5%`, effect: { atkUp: 0.05, defUp: 0.05, rpgTime: -1 }, moveTo: "高速RPG" },
+	{ name: `1時間先取りRPG`, short: "先", desc: `1時間早くRPGをプレイする事が出来ます（廃止）`, info: `1時間早くRPGプレイ可能 ステータス+5%（廃止）`, effect: {}, moveTo: "高速RPG" },
 	{ name: `伝説`, short: "★", desc: `パワー・防御が8%上がります`, info: `ステータス+8% 重複しない`, effect: { atkUp2: 0.08, defUp2: 0.08 }, unique: "legend" },
 	{ name: `脳筋`, short: "筋", desc: `与えるダメージが上がりますが、受けるダメージも上がります`, info: `${serifs.rpg.dmg.give}+20% ${serifs.rpg.dmg.take}+10%`, effect: { atkDmgUp: 0.2, defDmgUp: 0.1 } },
 	{ name: `慎重`, short: "慎", desc: `与えるダメージが下がりますが、受けるダメージも下がります`, info: `${serifs.rpg.dmg.give}-4% ${serifs.rpg.dmg.take}-20%`, effect: { atkDmgUp: -0.04, defDmgUp: -0.2 } },
@@ -317,7 +315,7 @@ export const skills: Skill[] = [
 	{ name: `投稿数ボーナス量アップ`, short: "投", desc: `投稿数が高ければ高いほどステータスが上昇します`, info: `20投稿につき、ステータス+1% (最大10%)`, effect: { postXUp: 0.01 } },
 	{ name: `強敵と戦うのが好き`, short: "強", desc: `敵が強ければステータスが上昇します`, info: `ステータス+(敵の攻撃 × 敵の防御 / 4)% (+10%以上は上昇率鈍化)`, effect: { enemyStatusBonus: 1 } },
 	{ name: `${serifs.rpg.status.pen}+10%`, short: "貫", desc: `敵の防御の影響を減少させます`, info: `敵の防御が高いほどダメージが上昇します`, effect: { arpen: 0.12 } },
-	{ name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndM}4`, short: "４", desc: `乱数幅が20~180 -> 60~160 (%) になります`, info: `乱数幅 20~180 -> 60~160 (%) 期待値 110% 乱数系と重複しない`, effect: { atkRndMin: 0.4, atkRndMax: -0.2 }, unique: "rnd", moveTo: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndM}5` },
+	{ name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndM}4`, short: "４", desc: `乱数幅が20~180 -> 60~160 (%) になります（廃止）`, info: `乱数幅 20~180 -> 60~160 (%) 期待値 110% 乱数系と重複しない（廃止）`, effect: {}, unique: "rnd", moveTo: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndM}5` },
 	{ name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndM}5`, short: "５", desc: `クリティカルが発生しなくなりますが、高いダメージがとても出やすくなります`, info: `乱数幅 20~180 -> 90~135 (%) 期待値 112% クリティカルの期待値分、ダメージ上昇 乱数系と重複しない`, effect: { atkRndMin: 0.7, atkRndMax: -1.15, noCrit: 1 }, unique: "rnd" },
 	{ name: `${serifs.rpg.dmg.give}${serifs.rpg.status.rndP}`, short: "乱", desc: `乱数幅が20~180 -> 5~225になります クリティカル率も上がります`, info: `乱数幅 20~180 -> 5~225 (%) 期待値 115% クリティカル率+2% 乱数系と重複しない`, effect: { atkRndMin: -0.15, atkRndMax: 0.6, critUpFixed: 0.02 }, unique: "rnd" },
 	{ name: `${serifs.rpg.dmg.take}${serifs.rpg.status.rndM}`, short: "安", desc: `敵から受ける最大ダメージを減少させます`, info: `敵の乱数幅 20~180 -> 20~160 (%) ${serifs.rpg.status.atk}+4% 乱数系と重複しない`, effect: { atkUpBonus: 1, defRndMin: 0, defRndMax: -0.2 }, unique: "rnd" },
@@ -329,14 +327,14 @@ export const skills: Skill[] = [
 	{ name: `武器が大好き`, short: "武", desc: `武器のみを装備するようになり、武器の効果量が上がります`, info: `防具・食べ物を使用しない 武器効果量+70% 種類大好き系と重複しない`, effect: { weaponSelect: 2, weaponBoost: 0.7 }, unique: "itemSelect" },
 	{ name: `防具が大好き`, short: "防", desc: `防具のみを装備するようになり、防具の効果量が上がります`, info: `武器・食べ物を使用しない 防具効果量+70% ${serifs.rpg.status.atk}+4% 種類大好き系と重複しない`, effect: { atkUpBonus: 1, armorSelect: 2, armorBoost: 0.7 }, unique: "itemSelect" },
 	{ name: `食いしんぼう`, short: "食", desc: `食べ物のみを装備するようになり、食べ物の効果量が上がります`, info: `武器・防具を使用しない 食べ物効果量+70% 毒食べ物ダメージ-60% ${serifs.rpg.status.atk}+4% 種類大好き系と重複しない`, effect: { atkUpBonus: 1, foodSelect: 2, foodBoost: 0.7, poisonResist: 0.6 }, unique: "itemSelect" },
-	{ name: `なんでも口に入れない`, short: "捨", desc: `良くないものを食べなくなることがあります`, info: `毒食べ物を50%で捨てる 100%以上になると悪アイテム率減少に変換`, effect: { poisonAvoid: 0.5 }, moveTo: "道具の選択が上手い" },
+	{ name: `なんでも口に入れない`, short: "捨", desc: `良くないものを食べなくなることがあります（廃止）`, info: `毒食べ物を50%で捨てる 100%以上になると悪アイテム率減少に変換（廃止）`, effect: {}, moveTo: "道具の選択が上手い" },
 	{ name: `道具の選択が上手い`, short: "選", desc: `道具の効果量がすこし上がり、悪いアイテムを選びにくくなり、良くないものを食べなくなる事があります`, info: `道具効果量+15% 悪アイテム率-15% 毒食べ物を40%で捨てる 100%以上になると悪アイテム率減少に変換`, effect: { itemBoost: 0.15, mindMinusAvoid: 0.15, poisonAvoid: 0.4 } },
 	{ name: `お腹が空いてから食べる`, short: "空", desc: `体力が減ったら食べ物を食べやすくなり、食べ物の効果量が少し上がります`, info: `体力が減少すれば食べ物を食べるようになり、毒食べ物の確率が下がる 食べ物効果量+20% 毒食べ物ダメージ-20% ${serifs.rpg.status.atk}+4% `, effect: { atkUpBonus: 1, lowHpFood: 1, foodBoost: 0.2, poisonResist: 0.2 }, unique: "lowHpFood" },
-	{ name: `たまにたくさん成長`, short: "成", desc: `たまにステータスが多く増加します ★変更不可`, info: `Lvアップ毎になにかのステータス+1 ★変更不可（変更してもステータスは残るため）`, effect: { statusBonus: 2 }, unique: "status", cantReroll: true, moveTo: `テキパキこなす` },
+	{ name: `たまにたくさん成長`, short: "成", desc: `たまにステータスが多く増加します ★変更不可（廃止）`, info: `Lvアップ毎になにかのステータス+1 ★変更不可（変更してもステータスは残るため）（廃止）`, effect: {}, unique: "status", cantReroll: true, moveTo: `テキパキこなす` },
 	{ name: `連続攻撃完遂率上昇`, short: "遂", desc: `連続攻撃を相手に止められにくくなります`, info: `連続攻撃中断率-32% 効果がない場合、${serifs.rpg.status.atk}+10%`, effect: { abortDown: 0.32 } },
 	{ name: `クリティカル性能上昇`, short: "急", desc: `クリティカル率とクリティカルダメージが上昇します`, info: `クリティカル率1.2倍&+3% クリティカルダメージ+20%`, effect: { critUp: 0.2, critUpFixed: 0.03, critDmgUp: 0.2 } },
 	{ name: `敵のクリティカル性能減少`, short: "守", desc: `相手のクリティカル率とクリティカルダメージが減少します`, info: `敵のクリティカル率-40% 敵のクリティカルダメージ-40% ${serifs.rpg.status.atk}+4% レイド時は、追加で${serifs.rpg.status.def}+10%`, effect: { atkUpBonus: 1, enemyCritDown: 0.4, enemyCritDmgDown: 0.4 } },
-	{ name: `負けた時、しっかり反省`, short: "省", desc: `敗北時のボーナスが上昇します ★変更不可`, info: `敗北毎にステータス+2 ★変更不可（変更してもステータスは残るため）`, effect: { loseBonus: 1 }, unique: "loseBonus", cantReroll: true, moveTo: `負けそうなら逃げる` },
+	{ name: `負けた時、しっかり反省`, short: "省", desc: `敗北時のボーナスが上昇します ★変更不可（廃止）`, info: `敗北毎にステータス+2 ★変更不可（変更してもステータスは残るため）（廃止）`, effect: {}, unique: "loseBonus", cantReroll: true, moveTo: `負けそうなら逃げる` },
 	{ name: `７フィーバー！`, short: "７", desc: `Lv・パワー・防御の値に「7」が含まれている程ステータスアップ`, info: `Lv・パワー・防御の値に「7」が含まれている場合ステータス+7%\n「77」が含まれている場合ステータス+77% 「777」が含まれている場合...`, effect: { sevenFever: 1 } },
 	{ name: `不運チャージ`, short: "Ｃ", desc: `不運だった場合、次回幸運になりやすくなります`, info: `ステータス+7% 低乱数を引いた時、次回以降に高乱数を引きやすくなる`, effect: { atkUp4: 0.07, defUp4: 0.07, charge: 1 } },
 	{ name: `お守り整備`, short: "整", desc: `お守りの効果が上がり、お守りが壊れにくくなります`, info: `お守り効果+50% お守り耐久+50%`, effect: { amuletBoost: 0.5 }, skillOnly: true },
@@ -470,7 +468,7 @@ export const getSkill = (data) => {
 export const getRerollSkill = (data, oldSkillName = "") => {
 	const playerSkills = data.skills.map((x) => skills.find((y) => x.name === y.name) ?? x);
 	// フィルタリングされたスキルの配列を作成
-	const filteredSkills = skills.filter((x) => !x.notLearn && !x.moveTo && !x.cantReroll && x.name != oldSkillName && !playerSkills?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique) && !(x.name === "数取りの達人" && isKazutoriMasterDisabled(data)));
+	const filteredSkills = skills.filter((x) => !x.notLearn && !x.moveTo && !x.cantReroll && x.name !== oldSkillName && !playerSkills?.filter((y) => y.unique).map((y) => y.unique).includes(x.unique) && !(x.name === "数取りの達人" && isKazutoriMasterDisabled(data)));
 
 	// スキルの合計重みを計算
 	const totalWeight = filteredSkills.reduce((total, skill) => {
@@ -645,8 +643,8 @@ export const skillReply = async (module: Module, ai: 藍, msg: Message) => {
 	let amuletSkill: string[] = [];
 	if (data.items?.filter((x) => x.type === "amulet").length) {
 		const amulet = data.items?.filter((x) => x.type === "amulet")[0];
-		const item = [...shopItems, ultimateAmulet, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem;
-		const skill = amulet.skillName && !Array.isArray(amulet.skillName) ? [skills.find((x) => amulet.skillName === x.name)] : amulet.skillName && Array.isArray(amulet.skillName) ? amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) : undefined;
+		const item = [...shopItems, ultimateAmulet, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y !== null && y !== undefined) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem;
+		const skill = amulet.skillName && !Array.isArray(amulet.skillName) ? [skills.find((x) => amulet.skillName === x.name)] : amulet.skillName && Array.isArray(amulet.skillName) ? amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y !== null && y !== undefined) : undefined;
 		if (amulet.durability) amuletSkill.push(`[お守り] ${amulet.skillName && !Array.isArray(amulet.skillName) ? amulet.skillName : amulet.name} ${aggregateTokensEffects(data).autoRepair && (item.durability ?? 0) >= 2 && amulet.durability <= 1 ? `コイン消費${Math.round((amulet.price ?? 12) / (item.durability ?? 6)) + 1}` : `残耐久${amulet.durability}`}${skillInfo(skill, item.desc, aggregateTokensEffects(data).showSkillBonus)}`);
 	}
 	msg.reply([
@@ -693,7 +691,7 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
 	if (data.items?.filter((x) => x.type === "amulet").length) {
 		const amulet = data.items?.filter((x) => x.type === "amulet")[0] as AmuletItem;
 		console.log("amulet: " + amulet.name);
-		const item = [...shopItems, ultimateAmulet, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem;
+		const item = [...shopItems, ultimateAmulet, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y !== null && y !== undefined) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem;
 		if (!item) {
 			data.items.filter((x) => x.type === "amulet").forEach((x) => {
 				data.coin = (data.coin ?? 0) + (x.price || 0);
@@ -769,32 +767,32 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
 	}
 
 	//曜日ボーナス
-	if ((day == 0 || aggregatedEffect.rainbow) && aggregatedEffect.thunder) {
+	if ((day === 0 || aggregatedEffect.rainbow) && aggregatedEffect.thunder) {
 		aggregatedEffect.thunder *= 5 / 3;
 	}
-	if ((day == 1 || aggregatedEffect.rainbow) && aggregatedEffect.dark) {
+	if ((day === 1 || aggregatedEffect.rainbow) && aggregatedEffect.dark) {
 		aggregatedEffect.dark *= 5 / 3;
 	}
-	if ((day == 2 || aggregatedEffect.rainbow) && aggregatedEffect.fire) {
+	if ((day === 2 || aggregatedEffect.rainbow) && aggregatedEffect.fire) {
 		aggregatedEffect.fire *= 5 / 3;
 	}
-	if ((day == 3 || aggregatedEffect.rainbow) && aggregatedEffect.ice) {
+	if ((day === 3 || aggregatedEffect.rainbow) && aggregatedEffect.ice) {
 		aggregatedEffect.ice *= 5 / 3;
 	}
-	if ((day == 4 || aggregatedEffect.rainbow) && aggregatedEffect.spdUp) {
+	if ((day === 4 || aggregatedEffect.rainbow) && aggregatedEffect.spdUp) {
 		aggregatedEffect.spdUp *= 5 / 3;
 	}
-	if ((day == 5 || aggregatedEffect.rainbow) && aggregatedEffect.light) {
+	if ((day === 5 || aggregatedEffect.rainbow) && aggregatedEffect.light) {
 		aggregatedEffect.light *= 5 / 3;
 	}
-	if ((day == 6 || aggregatedEffect.rainbow) && aggregatedEffect.dart) {
+	if ((day === 6 || aggregatedEffect.rainbow) && aggregatedEffect.dart) {
 		aggregatedEffect.dart *= 5 / 3;
 	}
 	if (aggregatedEffect.water) {
 		aggregatedEffect.ice = (aggregatedEffect.ice ?? 0) * (1 + (aggregatedEffect.water * 1.4));
 		aggregatedEffect.thunder = (aggregatedEffect.thunder ?? 0) * (1 + (aggregatedEffect.water * 1.4));
 	}
-	if ((day == 3 || aggregatedEffect.rainbow) && aggregatedEffect.water) {
+	if ((day === 3 || aggregatedEffect.rainbow) && aggregatedEffect.water) {
 		aggregatedEffect.water *= 5 / 3;
 	}
 
@@ -842,7 +840,7 @@ export function aggregateSkillsEffectsSkillX(data: any, skillX: number): SkillEf
 	if (data.items?.filter((x) => x.type === "amulet").length) {
 		const amulet = data.items?.filter((x) => x.type === "amulet")[0] as AmuletItem;
 		console.log("amulet: " + amulet.name);
-		const item = [...shopItems, ultimateAmulet, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem;
+		const item = [...shopItems, ultimateAmulet, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y !== null && y !== undefined) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem;
 		if (!item) {
 			data.items.filter((x) => x.type === "amulet").forEach((x) => {
 				data.coin = (data.coin ?? 0) + (x.price || 0);
@@ -929,25 +927,25 @@ export function aggregateSkillsEffectsSkillX(data: any, skillX: number): SkillEf
 	}
 
 	//曜日ボーナス
-	if ((day == 0 || aggregatedEffect.rainbow) && aggregatedEffect.thunder) {
+	if ((day === 0 || aggregatedEffect.rainbow) && aggregatedEffect.thunder) {
 		aggregatedEffect.thunder *= 5 / 3;
 	}
-	if ((day == 1 || aggregatedEffect.rainbow) && aggregatedEffect.dark) {
+	if ((day === 1 || aggregatedEffect.rainbow) && aggregatedEffect.dark) {
 		aggregatedEffect.dark *= 5 / 3;
 	}
-	if ((day == 2 || aggregatedEffect.rainbow) && aggregatedEffect.fire) {
+	if ((day === 2 || aggregatedEffect.rainbow) && aggregatedEffect.fire) {
 		aggregatedEffect.fire *= 5 / 3;
 	}
-	if ((day == 3 || aggregatedEffect.rainbow) && aggregatedEffect.ice) {
+	if ((day === 3 || aggregatedEffect.rainbow) && aggregatedEffect.ice) {
 		aggregatedEffect.ice *= 5 / 3;
 	}
-	if ((day == 4 || aggregatedEffect.rainbow) && aggregatedEffect.spdUp) {
+	if ((day === 4 || aggregatedEffect.rainbow) && aggregatedEffect.spdUp) {
 		aggregatedEffect.spdUp *= 5 / 3;
 	}
-	if ((day == 5 || aggregatedEffect.rainbow) && aggregatedEffect.light) {
+	if ((day === 5 || aggregatedEffect.rainbow) && aggregatedEffect.light) {
 		aggregatedEffect.light *= 5 / 3;
 	}
-	if ((day == 6 || aggregatedEffect.rainbow) && aggregatedEffect.dart) {
+	if ((day === 6 || aggregatedEffect.rainbow) && aggregatedEffect.dart) {
 		aggregatedEffect.dart *= 5 / 3;
 	}
 
@@ -990,7 +988,7 @@ export function aggregateSkillsEffectsSkillX(data: any, skillX: number): SkillEf
 export function getSkillsShortName(data: { items?: ShopItem[], skills: Skill[]; }): { skills?: string | undefined, amulet?: string | undefined; } {
 	const dataSkills = data.skills?.length ? "[" + data.skills.map((x) => (skills.find((y) => x.name === y.name) ?? x).short).join("") + "]" : undefined;
 	const amulet = data.items?.filter((x) => x.type === "amulet").length ? data.items?.filter((x) => x.type === "amulet")[0] as AmuletItem : undefined;
-	const amuletItem = amulet ? [...shopItems, ultimateAmulet, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem : undefined;
+	const amuletItem = amulet ? [...shopItems, ultimateAmulet, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y !== null && y !== undefined) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem : undefined;
 	const amuletShort = amuletItem?.short ? "[" + amuletItem.short + "]" : undefined;
 
 	return { skills: dataSkills, amulet: amuletShort };
@@ -1025,7 +1023,7 @@ export function amuletMinusDurability(data: any): string {
 	let ret = "";
 	if (data.items?.filter((x) => x.type === "amulet").length) {
 		const amulet = data.items?.filter((x) => x.type === "amulet")[0] as AmuletItem;
-		const item = [...shopItems, ultimateAmulet, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem;
+		const item = [...shopItems, ultimateAmulet, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y !== null && y !== undefined) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem;
 		if ((item.isMinusDurability ?? item.isUsed)(data) && (!aggregateTokensEffects(data).normalModeNotUseAmulet || data.raid)) {
 			const boost = data.skills ? data.skills?.filter((x) => x.effect?.amuletBoost).reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0 : 0;
 			data.items.forEach((x) => {
@@ -1509,13 +1507,13 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 	result = [...result, ...resultS];
 	if (skillEffects.sevenFever) {
 		result.push("与ダメージ７の倍数化");
-		result.push(`７ステータスダメージ軽減${skillEffects.sevenFever != 1 ? ` ×${showNum(skillEffects.sevenFever)}` : ""}`);
+		result.push(`７ステータスダメージ軽減${skillEffects.sevenFever !== 1 ? ` ×${showNum(skillEffects.sevenFever)}` : ""}`);
 	}
 	if (skillEffects.escape) {
-		result.push(`負けそうな時逃げる${skillEffects.escape != 1 ? ` ×${showNum(skillEffects.escape)}` : ""}`);
+		result.push(`負けそうな時逃げる${skillEffects.escape !== 1 ? ` ×${showNum(skillEffects.escape)}` : ""}`);
 	}
 	if (skillEffects.charge) {
-		result.push(`不運チャージ${skillEffects.charge != 1 ? ` ×${showNum(skillEffects.charge)}` : ""}`);
+		result.push(`不運チャージ${skillEffects.charge !== 1 ? ` ×${showNum(skillEffects.charge)}` : ""}`);
 	}
 	if (aggregateTokensEffects(data).fivespd) {
 		result.push("最低行動回数保障: 5");
@@ -1524,7 +1522,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 		result.push(`ランダムステータス${(skillEffects.fortuneEffect ?? 0) !== 1 ? (skillEffects.fortuneEffect ?? 0) > 1 ? ` ×${showNum((skillEffects.fortuneEffect ?? 0))}` : `: ${showNum((skillEffects.fortuneEffect ?? 0))}` : ""}`);
 	}
 	if (skillEffects.slowStart) {
-		result.push(`スロースタート${(skillEffects.slowStart ?? 0) != 1 ? ` ×${showNum(skillEffects.slowStart)}` : ""}`);
+		result.push(`スロースタート${(skillEffects.slowStart ?? 0) !== 1 ? ` ×${showNum(skillEffects.slowStart)}` : ""}`);
 	}
 	if (skillEffects.plusActionX) {
 		result.push("通常時RPG進行数: ×" + (showNum(skillEffects.plusActionX ?? 0) + 1));

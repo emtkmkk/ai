@@ -150,7 +150,7 @@ export const shop2Reply = async (module: rpg, ai: 藍, msg: Message) => {
 	const data = initializeData(module, msg);
 	if (!data) return false;
 	if (!data.lv) return false;
-	if (data.jar == null) data.jar = 0;
+	if (data.jar === null || data.jar === undefined) data.jar = 0;
 	let spd = Math.floor((msg.friend.love ?? 0) / 100) + 1;
 	if (!data.maxSpd || data.maxSpd < spd) data.maxSpd = spd;
 
@@ -193,7 +193,7 @@ export const shop2Reply = async (module: rpg, ai: 藍, msg: Message) => {
 		data.shop2Items[index] = x.replace("のお守り", "").split("&");
 	});
 
-	const _shopItems = (data.shop2Items as (string | string[])[]).map((x) => Array.isArray(x) ? mergeSkillAmulet(ai, rnd, x.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y != null) as Skill[]) : shop2Items.find((y) => x === y.name) ?? undefined).filter((x) => x != null) as ShopItem[];
+	const _shopItems = (data.shop2Items as (string | string[])[]).map((x) => Array.isArray(x) ? mergeSkillAmulet(ai, rnd, x.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y !== null && y !== undefined) as Skill[]) : shop2Items.find((y) => x === y.name) ?? undefined).filter((x) => x !== null && x !== undefined) as ShopItem[];
 
 	const showShopItems = _shopItems.filter((x) => (!x.limit || x.limit(data, () => 0)) && !(x.type === "amulet" && data.items?.some((y) => y.type === "amulet"))).concat(shop2Items.filter((x) => (!x.limit || x.limit(data, () => 0)) && !(x.type === "amulet" && data.items?.some((y) => y.type === "amulet")) && x.always)).slice(0, 35)
 		.map((x) => {
