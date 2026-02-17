@@ -562,6 +562,7 @@ export default class extends Module {
 			message.push(createRankMessage(null, "Lv", "lv"));
 			message.push(createRankMessage(null, "最大木人ダメージ", "bestScore", { suffix: "ダメージ" }));
 			message.push(createRankMessage(null, "旅モード最高クリア記録", "maxEndress", { prefix: "ステージ", addValue: 1 }));
+			message.push(createRankMessage(null, "耐えたダメージ", "superMuscle", { suffix: "ダメージ" }));
 			message.push(createRankMessage(null, "運の良さ", "maxStatusUp", { suffix: "pts" }));
 			message.push(createRankMessage(null, "壺購入数", "jar", { suffix: "個" }));
                         if (data.raidScore) {
@@ -586,6 +587,10 @@ export default class extends Module {
 
 			if (data.maxEndress) {
 				message.push(createRankMessage(data.maxEndress, "旅モード最高クリア記録", "maxEndress", { prefix: "ステージ", addValue: 1 }));
+			}
+
+			if (data.superMuscle) {
+				message.push(createRankMessage(data.superMuscle, "耐えたダメージ", "superMuscle", { suffix: "ダメージ" }));
 			}
 
 			if (data.maxStatusUp) {
