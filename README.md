@@ -65,8 +65,18 @@ npm start
 | `notingEnabled` | boolean | `true` | ランダムノート投稿 |
 | `keywordEnabled` | boolean | `false` | キーワード学習（MeCab必要） |
 | `chartEnabled` | boolean | `true` | チャート投稿 |
-| `reversiEnabled` | boolean | `false` | リバーシ |
+| `reversiEnabled` | boolean | `false` | リバーシ（reversi-service と対局） |
 | `serverMonitoring` | boolean | `false` | サーバー監視 |
+
+#### リバーシ（reversi-service）設定
+
+リバーシを有効にするには、次の 4 つをすべて設定する必要がある（`reversiEnabled` に加え、下記 3 つ）。
+
+| キー | 型 | 説明 |
+| --- | --- | --- |
+| `reversiServiceWsUrl` | string | reversi-service の WebSocket URL（例: `wss://example.com/api/reversi/stream`） |
+| `reversiServiceApiUrl` | string | reversi-service の HTTP API ベース URL（例: `https://example.com`）。invite/create 等に使用 |
+| `reversiServiceToken` | string | MiAuth で取得したセッショントークン |
 
 #### 投稿設定
 
@@ -116,6 +126,9 @@ npm start
   "keywordEnabled": false,
   "chartEnabled": true,
   "reversiEnabled": false,
+  "reversiServiceWsUrl": "wss://your-reversi-service.example.com/api/reversi/stream",
+  "reversiServiceApiUrl": "https://your-reversi-service.example.com",
+  "reversiServiceToken": "",
   "serverMonitoring": false,
   "mecab": "/usr/local/bin/mecab",
   "mecabDic": "/usr/lib/mecab/dic/",

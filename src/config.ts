@@ -39,6 +39,12 @@ type Config = {
 	keywordEnabled: boolean;
 	/** リバーシ対局機能の有効/無効 */
 	reversiEnabled: boolean;
+	/** reversi-service の WebSocket URL（例: wss://example.com/api/reversi/stream）。reversi 用の別接続に使用。 */
+	reversiServiceWsUrl?: string;
+	/** reversi-service の HTTP API ベース URL（例: https://example.com）。invite/create 等に使用。 */
+	reversiServiceApiUrl?: string;
+	/** reversi-service 用セッショントークン（MiAuth で取得）。Host として着手するために必要。 */
+	reversiServiceToken?: string;
 	/** ランダムノート投稿機能の有効/無効 */
 	notingEnabled: boolean;
 	/** チャート機能の有効/無効 */

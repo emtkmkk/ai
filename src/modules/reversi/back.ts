@@ -1,9 +1,13 @@
 /**
- * -AI-
- * Botのバックエンド(思考を担当)
+ * @packageDocumentation
  *
- * 対話と思考を同じプロセスで行うと、思考時間が長引いたときにストリームから
- * 切断されてしまうので、別々のプロセスで行うようにします
+ * リバーシの思考エンジン（back）
+ *
+ * @remarks
+ * - **Session**: 従来の Misskey リバーシ用。子プロセスとして fork され、親から _init_ / started / set / ended を受信する。本ファイルを直接実行したときのみ使用。
+ * - **ReversiGameSession**: reversi-service 用。同一プロセス内で started / log / ended / sync を受け、超単純モードで思考し putStone / ready を送信する。{@link ../index | reversi モジュール}から利用される。
+ *
+ * @internal
  */
 
 import 'module-alias/register';
@@ -448,4 +452,658 @@ class Session {
 	};
 }
 
-new Session();
+/**
+ * reversi-service 用の対局セッション（同一プロセスで使用）
+ *
+ * @remarks
+ * started / log / ended / sync を受け取り、超単純または単純モードで思考し putStone / ready を送信する。
+ * 単純モードは変則盤対応・未来読みなしで、角/C/X/GoodEdge2/GoodInner/辺の優先・回避とタイブレークにより 1 手を決める。
+ * canPutEverywhere が true の game は対応せず、onEndedCallback で即終了する。
+ *
+ * @internal
+ */
+export class ReversiGameSession {
+	private gameId: string;
+	private account: User;
+	private sendPutStone: (pos: number) => void;
+	private sendReady: () => void;
+	private onEndedCallback: (resultText: string, winnerId: string | null) => void;
+	/** 現在の game オブジェクト（started / sync でセット）。user1, user2 等を含む */
+	private game: any;
+	/** リバーシエンジン（misskey-reversi）。started / sync で初期化、log で着手を適用 */
+	private o: Reversi | null = null;
+	private botColor: Color | null = null;
+	/** 隅のマス位置（8x8 なら 0,7,56,63 等）。超単純思考で隅優先に利用 */
+	private sumiIndexes: number[] = [];
+	/** 隅に隣接するマス位置。角が空のときのみ避ける対象 */
+	private sumiNearIndexes: number[] = [];
+	private currentTurn = 0;
+	private maxTurn = 0;
+	/** 観戦URL（任意）。表示用 */
+	private gameUrl: string;
+	/** 単純モード（変則盤対応・未来読みなし）で思考するか。false のときは超単純モード */
+	private useSimpleMode: boolean;
+
+	/**
+	 * 対局セッションを生成する
+	 *
+	 * @param gameId - ゲーム ID
+	 * @param account - 藍のアカウント（手番判定に使用）
+	 * @param sendPutStone - 石を置く手を送信するコールバック
+	 * @param sendReady - ready を送信するコールバック
+	 * @param onEndedCallback - 終局時に結果テキストと勝者 ID を渡して呼ぶコールバック
+	 * @param gameUrl - 観戦用 URL（省略可）
+	 * @param useSimpleMode - 単純モードで思考するか。省略時は false（超単純）
+	 *
+	 * @internal
+	 */
+	constructor(
+		gameId: string,
+		account: User,
+		sendPutStone: (pos: number) => void,
+		sendReady: () => void,
+		onEndedCallback: (resultText: string, winnerId: string | null) => void,
+		gameUrl?: string,
+		useSimpleMode?: boolean
+	) {
+		this.gameId = gameId;
+		this.account = account;
+		this.sendPutStone = sendPutStone;
+		this.sendReady = sendReady;
+		this.onEndedCallback = onEndedCallback;
+		this.gameUrl = gameUrl || '';
+		this.useSimpleMode = useSimpleMode === true;
+	}
+
+	/** 対戦相手の User（user1 が自分なら user2、そうでなければ user1） */
+	private get user(): User {
+		return this.game.user1Id === this.account.id ? this.game.user2 : this.game.user1;
+	}
+
+	/** 対戦相手の表示名（Markdown リンク＋敬称） */
+	private get userName(): string {
+		const name = getUserName(this.user);
+		return `?[${name}](${config.host}/@${this.user.username})${titles.some(x => name.endsWith(x)) ? '' : 'さん'}`;
+	}
+
+	/**
+	 * started 受信時の処理。エンジン初期化・隅リスト計算・ready 送信・先手なら思考開始
+	 *
+	 * @param body - メッセージ body（game を含む）
+	 *
+	 * @remarks
+	 * canPutEverywhere が true の game は対応しないため、onEndedCallback で即終了する。
+	 *
+	 * @internal
+	 */
+	onStarted(body: { game: any }) {
+		this.game = body.game;
+		if (this.game.canPutEverywhere) {
+			this.onEndedCallback(serifs.reversi.decline, null);
+			return; // 変則ルールは未対応
+		}
+		this.o = new Reversi(this.game.map, {
+			isLlotheo: this.game.isLlotheo,
+			canPutEverywhere: this.game.canPutEverywhere,
+			loopedBoard: this.game.loopedBoard
+		});
+		this.maxTurn = this.o.map.filter((p: string) => p === 'empty').length - this.o.board.filter((x: any) => x != null).length;
+		this.currentTurn = 0;
+		this.computeSumiIndexes();
+		this.botColor = (this.game.user1Id === this.account.id && this.game.black === 1) || (this.game.user2Id === this.account.id && this.game.black === 2);
+		this.sendReady();
+		if (this.botColor) {
+			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), 500);
+		}
+	}
+
+	/**
+	 * log（着手）受信時の処理。エンジンに着手を適用し、次が自分なら思考を開始する
+	 *
+	 * @param body - メッセージ body（color または black, pos を含む）
+	 *
+	 * @internal
+	 */
+	onLog(body: any) {
+		if (!this.o) return;
+		const pos = body.pos;
+		if (pos == null) return;
+		const color = body.color != null ? body.color : (body.black ? 1 : 0);
+		this.o.put(color, pos);
+		this.currentTurn++;
+		if ((this.o as any).turn === this.botColor) {
+			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), 500);
+		}
+	}
+
+	/**
+	 * sync 受信時の処理。切断復帰用に盤面・手番を再構築する
+	 *
+	 * @param body - メッセージ body（game, board / boardState, turn 等）
+	 *
+	 * @remarks
+	 * body に board または boardState があればエンジンの盤面を上書き、turn があれば手番を設定する。
+	 *
+	 * @internal
+	 */
+	onSync(body: any) {
+		const game = body.game || body;
+		this.game = game;
+		if (game.canPutEverywhere) {
+			this.onEndedCallback(serifs.reversi.decline, null);
+			return;
+		}
+		this.o = new Reversi(game.map, {
+			isLlotheo: game.isLlotheo,
+			canPutEverywhere: game.canPutEverywhere,
+			loopedBoard: game.loopedBoard
+		});
+		// サーバーから受け取った盤面で上書き（sync で復帰するため）
+		if (body.board != null || body.boardState != null) {
+			const board = body.board || body.boardState;
+			for (let i = 0; i < (this.o as any).board.length; i++) {
+				if (board[i] != null) (this.o as any).board[i] = board[i];
+			}
+		}
+		if (body.turn != null) (this.o as any).turn = body.turn;
+		this.currentTurn = this.o.board.filter((x: any) => x != null).length - 4;
+		this.botColor = (game.user1Id === this.account.id && game.black === 1) || (game.user2Id === this.account.id && game.black === 2);
+		this.computeSumiIndexes();
+		if ((this.o as any).turn === this.botColor) {
+			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), 500);
+		}
+	}
+
+	/**
+	 * ended 受信時の処理。勝敗・投了・引き分けに応じた結果テキストを組み立て、コールバックで返す
+	 *
+	 * @param body - メッセージ body（game, winnerId, surrendered 等）
+	 *
+	 * @internal
+	 */
+	onEnded(body: any) {
+		let text: string;
+		const msg = body.game ? body : { game: body };
+		const winnerId: string | null = msg.winnerId ?? msg.game?.winnerId ?? null;
+		// 投了・勝者あり・引き分けで結果テキストを組み立て、コールバックに winnerId も渡す（勝敗記録用）
+		if (msg.game?.surrendered) {
+			text = serifs.reversi.youSurrendered(this.userName);
+		} else if (winnerId) {
+			if (winnerId === this.account.id) {
+				text = serifs.reversi.iWon(this.userName);
+			} else {
+				text = serifs.reversi.iLose(this.userName);
+			}
+		} else {
+			text = serifs.reversi.drawn(this.userName);
+		}
+		this.onEndedCallback(text, winnerId);
+	}
+
+	/** 隅（sumiIndexes）と隅に隣接するマス（sumiNearIndexes）を map から計算する。超単純思考で使用。 */
+	private computeSumiIndexes() {
+		if (!this.o) return;
+		this.sumiIndexes = [];
+		this.sumiNearIndexes = [];
+		const o = this.o as any;
+		o.map.forEach((pix: string, i: number) => {
+			if (pix === 'null') return;
+			const [x, y] = o.transformPosToXy(i);
+			const get = (xx: number, yy: number) => {
+				if (xx < 0 || yy < 0 || xx >= o.mapWidth || yy >= o.mapHeight) return 'null';
+				return o.mapDataGet(o.transformXyToPos(xx, yy));
+			};
+			const isNotSumi = (
+				(get(x - 1, y - 1) === 'empty' && get(x + 1, y + 1) === 'empty') ||
+				(get(x, y - 1) === 'empty' && get(x, y + 1) === 'empty') ||
+				(get(x + 1, y - 1) === 'empty' && get(x - 1, y + 1) === 'empty') ||
+				(get(x - 1, y) === 'empty' && get(x + 1, y) === 'empty')
+			);
+			if (!isNotSumi) this.sumiIndexes.push(i);
+		});
+		o.map.forEach((pix: string, i: number) => {
+			if (pix === 'null' || this.sumiIndexes.includes(i)) return;
+			const [x, y] = o.transformPosToXy(i);
+			const check = (xx: number, yy: number) => {
+				if (xx < 0 || yy < 0 || xx >= o.mapWidth || yy >= o.mapHeight) return 0;
+				return this.sumiIndexes.includes(o.transformXyToPos(xx, yy));
+			};
+			if (check(x - 1, y - 1) || check(x, y - 1) || check(x + 1, y - 1) || check(x + 1, y) ||
+				check(x + 1, y + 1) || check(x, y + 1) || check(x - 1, y + 1) || check(x - 1, y)) {
+				this.sumiNearIndexes.push(i);
+			}
+		});
+	}
+
+	/**
+	 * 指定位置に着手したときの反転数（裏返る相手石の数）
+	 *
+	 * @param pos - 着手するマス位置
+	 * @returns 反転数。put して差分を取ったあと undo で盤面を戻す
+	 * @internal
+	 */
+	private getFlippedCount(pos: number): number {
+		if (!this.o) return 0;
+		const o = this.o as any;
+		const before = o.board.filter((x: any) => x != null).length;
+		o.put(o.turn, pos);
+		const after = o.board.filter((x: any) => x != null).length;
+		o.undo();
+		return after - before - 1;
+	}
+
+	// --- 単純モード用（変則盤対応・未来読みなし）---
+
+	/** 4 方向（上下左右）の [dx, dy]。単純モードの隣接・step で使用 */
+	private static readonly D4: [number, number][] = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+	/** 8 近傍の [dx, dy]。単純モードの emptyNeighbors8 で使用 */
+	private static readonly D8: [number, number][] = [
+		[0, -1], [0, 1], [-1, 0], [1, 0],
+		[-1, -1], [-1, 1], [1, -1], [1, 1]
+	];
+
+	/**
+	 * セルが使用可能マスか（盤外・欠けマスでないか）
+	 *
+	 * @param p - マス位置（map のインデックス）
+	 * @returns 使用可能なら true
+	 * @internal
+	 */
+	private simpleIsValid(p: number): boolean {
+		if (!this.o || p < 0) return false;
+		const o = this.o as any;
+		return p < o.map.length && o.map[p] !== 'null';
+	}
+
+	/**
+	 * 使用可能マスかつ空き（石が置かれていない）か
+	 *
+	 * @param p - マス位置
+	 * @returns 空きマスなら true
+	 * @internal
+	 */
+	private simpleIsEmpty(p: number): boolean {
+		if (!this.o) return false;
+		const o = this.o as any;
+		return this.simpleIsValid(p) && o.board[p] == null;
+	}
+
+	/**
+	 * 上下左右の隣接セル（有効なもののみ）
+	 *
+	 * @param p - マス位置
+	 * @returns 隣接する使用可能マスの位置の配列
+	 * @internal
+	 */
+	private simpleNeighbors4(p: number): number[] {
+		if (!this.o) return [];
+		const o = this.o as any;
+		const [x, y] = o.transformPosToXy(p);
+		const out: number[] = [];
+		for (const [dx, dy] of ReversiGameSession.D4) {
+			const q = o.transformXyToPos(x + dx, y + dy);
+			if (this.simpleIsValid(q)) out.push(q);
+		}
+		return out;
+	}
+
+	/**
+	 * 8 近傍のセル（有効なもののみ）
+	 *
+	 * @param p - マス位置
+	 * @returns 8 近傍の使用可能マスの位置の配列
+	 * @internal
+	 */
+	private simpleNeighbors8(p: number): number[] {
+		if (!this.o) return [];
+		const o = this.o as any;
+		const [x, y] = o.transformPosToXy(p);
+		const out: number[] = [];
+		for (const [dx, dy] of ReversiGameSession.D8) {
+			const q = o.transformXyToPos(x + dx, y + dy);
+			if (this.simpleIsValid(q)) out.push(q);
+		}
+		return out;
+	}
+
+	/**
+	 * 位置 k から方向 d に n マス進んだ先の位置
+	 *
+	 * @param k - 開始マス位置
+	 * @param d - 方向 [dx, dy]（D4 または D8 の要素）
+	 * @param n - 進むマス数
+	 * @returns 有効な終端位置。途中で無効マスに当たったら undefined
+	 * @internal
+	 */
+	private simpleStep(k: number, d: [number, number], n: number): number | undefined {
+		if (!this.o || n <= 0) return k;
+		const o = this.o as any;
+		let [x, y] = o.transformPosToXy(k);
+		const [dx, dy] = d;
+		for (let i = 0; i < n; i++) {
+			x += dx;
+			y += dy;
+			const next = o.transformXyToPos(x, y);
+			if (!this.simpleIsValid(next)) return undefined;
+		}
+		return o.transformXyToPos(x, y);
+	}
+
+	/**
+	 * 辺セルか（上下左右のいずれかが盤外または欠け）
+	 *
+	 * @param p - マス位置
+	 * @returns 隣接 4 方向の有効数が 4 未満なら true
+	 * @internal
+	 */
+	private simpleIsEdge(p: number): boolean {
+		return this.simpleNeighbors4(p).length < 4;
+	}
+
+	/**
+	 * 角のリスト（pos と内向き 2 方向）。形状のみで決まり石配置に依存しない
+	 *
+	 * @returns 各角の位置と、その角から盤内へ向かう 2 方向 [dx, dy] の配列
+	 * @internal
+	 */
+	private simpleCorners(): { pos: number; inwardDirs: [number, number][] }[] {
+		if (!this.o) return [];
+		const o = this.o as any;
+		const corners: { pos: number; inwardDirs: [number, number][] }[] = [];
+		for (let i = 0; i < o.map.length; i++) {
+			if (o.map[i] === 'null') continue;
+			if (!this.simpleIsEdge(i)) continue;
+			const n4 = this.simpleNeighbors4(i);
+			if (n4.length !== 2) continue;
+			const [x, y] = o.transformPosToXy(i);
+			const dirs: [number, number][] = [];
+			for (const q of n4) {
+				const [qx, qy] = o.transformPosToXy(q);
+				dirs.push([qx - x, qy - y]);
+			}
+			// 直交: dx1*dx2 + dy1*dy2 === 0
+			if (dirs[0][0] * dirs[1][0] + dirs[0][1] * dirs[1][1] === 0) {
+				corners.push({ pos: i, inwardDirs: dirs });
+			}
+		}
+		return corners;
+	}
+
+	/**
+	 * 各使用可能マスから最も近い辺セルまでの最短 4 近傍距離
+	 *
+	 * @returns 位置 → 距離の Map。形状のみで決まり石配置に依存しない
+	 * @internal
+	 */
+	private simpleEdgeDist(): Map<number, number> {
+		const dist = new Map<number, number>();
+		if (!this.o) return dist;
+		const o = this.o as any;
+		const edgeCells: number[] = [];
+		for (let i = 0; i < o.map.length; i++) {
+			if (o.map[i] === 'null') continue;
+			if (this.simpleIsEdge(i)) {
+				edgeCells.push(i);
+				dist.set(i, 0);
+			}
+		}
+		const queue = [...edgeCells];
+		while (queue.length > 0) {
+			const p = queue.shift()!;
+			const d = dist.get(p)!;
+			for (const q of this.simpleNeighbors4(p)) {
+				if (!dist.has(q)) {
+					dist.set(q, d + 1);
+					queue.push(q);
+				}
+			}
+		}
+		return dist;
+	}
+
+	/**
+	 * 使用可能マス（欠けでないマス）の総数
+	 *
+	 * @returns 総数。タイブレークの EMPTY_SWITCH 計算に使用
+	 * @internal
+	 */
+	private simpleTotalValid(): number {
+		if (!this.o) return 0;
+		const o = this.o as any;
+		let n = 0;
+		for (let i = 0; i < o.map.length; i++) {
+			if (this.simpleIsValid(i)) n++;
+		}
+		return n;
+	}
+
+	/**
+	 * 空きマス（石が置かれていない使用可能マス）の数
+	 *
+	 * @returns 空きマス数。タイブレーク T1 の切替に使用
+	 * @internal
+	 */
+	private simpleCountEmpty(): number {
+		if (!this.o) return 0;
+		const o = this.o as any;
+		let n = 0;
+		for (let i = 0; i < o.map.length; i++) {
+			if (this.simpleIsEmpty(i)) n++;
+		}
+		return n;
+	}
+
+	/**
+	 * 位置 p の 8 近傍のうち空きマスの個数
+	 *
+	 * @param p - マス位置
+	 * @returns 空きの 8 近傍数。タイブレーク T2 で最小の手を残すために使用
+	 * @internal
+	 */
+	private simpleEmptyNeighbors8(p: number): number {
+		return this.simpleNeighbors8(p).filter(q => this.simpleIsEmpty(q)).length;
+	}
+
+	/**
+	 * 空いている角のみ対象に Cset, Xset, GoodEdge2, GoodInner, Line2, Nearset を構築する
+	 *
+	 * @param emptyCornerPoses - 現局面で空きの角の位置の配列
+	 * @param cornersWithDirs - 全角の位置と内向き 2 方向
+	 * @param edgeDist - 辺からの距離 Map
+	 * @returns 各集合（Xset, Cset, GoodEdge2set, GoodInnerset, Line2set, Nearset）
+	 * @internal
+	 */
+	private simpleBuildSets(
+		emptyCornerPoses: number[],
+		cornersWithDirs: { pos: number; inwardDirs: [number, number][] }[],
+		edgeDist: Map<number, number>
+	): {
+		Xset: Set<number>;
+		Cset: Set<number>;
+		GoodEdge2set: Set<number>;
+		GoodInnerset: Set<number>;
+		Line2set: Set<number>;
+		Nearset: Set<number>;
+	} {
+		const Xset = new Set<number>();
+		const Cset = new Set<number>();
+		const GoodEdge2set = new Set<number>();
+		const GoodInnerset = new Set<number>();
+		const Line2set = new Set<number>();
+		const cornerByPos = new Map(cornersWithDirs.map(c => [c.pos, c]));
+
+		for (const k of emptyCornerPoses) {
+			const c = cornerByPos.get(k);
+			if (!c) continue;
+			const [d1, d2] = c.inwardDirs;
+			// C: 角の内向き 2 方向の隣
+			const n1 = this.simpleStep(k, d1, 1);
+			const n2 = this.simpleStep(k, d2, 1);
+			if (n1 != null) Cset.add(n1);
+			if (n2 != null) Cset.add(n2);
+			// X: 角の斜め内側（d1 + d2 方向に 1 マス）
+			const xPos = this.simpleStep(k, [d1[0] + d2[0], d1[1] + d2[1]], 1);
+			if (xPos != null && this.simpleIsValid(xPos)) Xset.add(xPos);
+			// GoodEdge2: 角から 2 マス離れた辺
+			const p2a = this.simpleStep(k, d1, 2);
+			if (p2a != null && this.simpleIsEdge(p2a)) GoodEdge2set.add(p2a);
+			const p2b = this.simpleStep(k, d2, 2);
+			if (p2b != null && this.simpleIsEdge(p2b)) GoodEdge2set.add(p2b);
+			// Line2: 角から内向き 2 マスの点（Nearset 用）
+			if (p2a != null) Line2set.add(p2a);
+			if (p2b != null) Line2set.add(p2b);
+			// GoodInner: 角から 2 マス→さらに 2 マスで、edgeDist >= 2 のときのみ
+			const q1 = p2a != null ? this.simpleStep(p2a, d2, 2) : undefined;
+			if (q1 != null && (edgeDist.get(q1) ?? 0) >= 2) GoodInnerset.add(q1);
+			const q2 = p2b != null ? this.simpleStep(p2b, d1, 2) : undefined;
+			if (q2 != null && (edgeDist.get(q2) ?? 0) >= 2) GoodInnerset.add(q2);
+		}
+
+		// Nearset = X ∪ C ∪ Line2（空き角近くの回避対象）
+		const Nearset = new Set<number>([...Xset, ...Cset, ...Line2set]);
+		return { Xset, Cset, GoodEdge2set, GoodInnerset, Line2set, Nearset };
+	}
+
+	/**
+	 * 単純モードの思考。変則盤対応・未来読みなし・必ず1手。角/C/X/GoodEdge2/GoodInner/辺の優先・回避とタイブレーク。
+	 *
+	 * @remarks
+	 * 仕様「リバーシBot仕様（変則ボード対応・未来読みなし・必ず1手）」に従う。スコア表は使わない。
+	 *
+	 * @internal
+	 */
+	private thinkSimple() {
+		if (!this.o || this.botColor == null) return;
+		const o = this.o as any;
+		const cans = o.canPutSomewhere(this.botColor);
+		if (cans.length === 0) return;
+
+		const cornersWithDirs = this.simpleCorners();
+		const emptyCornerPoses = cornersWithDirs.map(c => c.pos).filter(k => this.simpleIsEmpty(k));
+		const edgeDist = this.simpleEdgeDist();
+		const { Xset, Cset, GoodEdge2set, GoodInnerset, Nearset } = this.simpleBuildSets(
+			emptyCornerPoses,
+			cornersWithDirs,
+			edgeDist
+		);
+
+		const cornerSet = new Set(cornersWithDirs.map(c => c.pos));
+		const totalValid = this.simpleTotalValid();
+		const empty = this.simpleCountEmpty();
+		const EMPTY_SWITCH = Math.round(totalValid * 0.31);
+
+		// 回避: 該当を除外し、除外で空になるなら除外しない
+		const avoid = (cand: number[], bad: Set<number>): number[] => {
+			const next = cand.filter(p => !bad.has(p));
+			return next.length > 0 ? next : cand;
+		};
+
+		let cand: number[] = [...cans];
+
+		// A. 回避（X 優先の C/X 回避）
+		cand = avoid(cand, Xset);
+		cand = avoid(cand, Cset);
+
+		// B. 優先（角 → GoodEdge2 → GoodInner → 辺の順で最初にヒットしたら候補を絞り、タイブレークへ）
+		const inCorner = cand.filter(p => cornerSet.has(p));
+		if (inCorner.length > 0) {
+			cand = inCorner;
+		} else {
+			const inGoodEdge2 = cand.filter(p => GoodEdge2set.has(p));
+			if (inGoodEdge2.length > 0) {
+				cand = inGoodEdge2;
+			} else {
+				const inGoodInner = cand.filter(p => GoodInnerset.has(p));
+				if (inGoodInner.length > 0) {
+					cand = inGoodInner;
+				} else {
+					const onEdge = cand.filter(p => this.simpleIsEdge(p));
+					if (onEdge.length > 0) cand = onEdge;
+				}
+			}
+		}
+
+		// C. 優先が一度も当たらなかったときの追加回避
+		cand = avoid(cand, Nearset);
+		const edgeDist1Set = new Set(cand.filter(p => (edgeDist.get(p) ?? 0) === 1));
+		cand = avoid(cand, edgeDist1Set);
+
+		// タイブレーク T1: 空き数で flips 最小/最大
+		const flipVal = (p: number) => this.getFlippedCount(p);
+		if (empty >= EMPTY_SWITCH) {
+			const minF = Math.min(...cand.map(flipVal));
+			cand = cand.filter(p => flipVal(p) === minF);
+		} else {
+			const maxF = Math.max(...cand.map(flipVal));
+			cand = cand.filter(p => flipVal(p) === maxF);
+		}
+
+		// T2: 8近傍の空きが少ない手
+		if (cand.length > 1) {
+			const minN8 = Math.min(...cand.map(p => this.simpleEmptyNeighbors8(p)));
+			cand = cand.filter(p => this.simpleEmptyNeighbors8(p) === minN8);
+		}
+
+		// T3: 辺から遠い手
+		if (cand.length > 1) {
+			const maxEd = Math.max(...cand.map(p => edgeDist.get(p) ?? 0));
+			cand = cand.filter(p => (edgeDist.get(p) ?? 0) === maxEd);
+		}
+
+		// T4: ランダム
+		const pos = cand[Math.floor(Math.random() * cand.length)];
+		this.sendPutStone(pos);
+	}
+
+	/**
+	 * 超単純モードの思考。隅優先 → 角周辺回避（角が空のときのみ）→ C 優先 then X → 反転数最大
+	 *
+	 * @remarks
+	 * 1. 合法手のうち隅に打てるならそのいずれかを選ぶ。
+	 * 2. 隅が無いとき、まだ空いている角に隣接するマスは避ける。すべて角周辺しか無い場合は候補を全合法手にする。
+	 * 3. 角周辺しか打てないとき、C（隅の横／縦隣）を優先、なければ X（隅の斜め隣）を候補にする。
+	 * 4. 候補のうち反転数が最大の手を選ぶ。
+	 *
+	 * @internal
+	 */
+	private thinkSuperSimple() {
+		if (!this.o || this.botColor == null) return;
+		const cans = this.o.canPutSomewhere(this.botColor as any);
+		if (cans.length === 0) return;
+		// 1. 隅に打てる手があればそのいずれかを選ぶ
+		const sumiAvailable = cans.filter((p: number) => this.sumiIndexes.includes(p));
+		if (sumiAvailable.length > 0) {
+			const pos = sumiAvailable[0];
+			this.sendPutStone(pos);
+			return;
+		}
+		// 2. 角がまだ空いているときだけ角周辺を避ける
+		const emptySumi = this.sumiIndexes.filter((i: number) => this.o!.board[i] == null);
+		const avoidNear = emptySumi.length > 0 ? this.sumiNearIndexes : [];
+		let candidates = cans.filter((p: number) => !avoidNear.includes(p));
+		if (candidates.length === 0) candidates = cans;
+		// 3. C（隅の横／縦隣）を優先、なければ X（隅の斜め隣）
+		const cPos = [1, 8, 6, 15, 48, 57, 55, 62];
+		const xPos = [9, 14, 49, 54];
+		const inC = candidates.filter((p: number) => cPos.includes(p));
+		const inX = candidates.filter((p: number) => xPos.includes(p));
+		let finalCandidates = candidates;
+		if (inC.length > 0) finalCandidates = inC;
+		else if (inX.length > 0) finalCandidates = inX;
+		// 4. 候補のうち反転数が最大の手を選ぶ
+		let bestPos = finalCandidates[0];
+		let bestFlip = this.getFlippedCount(bestPos);
+		for (const p of finalCandidates) {
+			const n = this.getFlippedCount(p);
+			if (n > bestFlip) {
+				bestFlip = n;
+				bestPos = p;
+			}
+		}
+		this.sendPutStone(bestPos);
+	}
+}
+
+if (typeof require !== 'undefined' && require.main === module) {
+	new Session();
+}
