@@ -76,7 +76,15 @@ npm start
 | --- | --- | --- |
 | `reversiServiceWsUrl` | string | reversi-service の WebSocket URL（例: `wss://example.com/api/reversi/stream`） |
 | `reversiServiceApiUrl` | string | reversi-service の HTTP API ベース URL（例: `https://example.com`）。invite/create 等に使用 |
-| `reversiServiceToken` | string | MiAuth で取得したセッショントークン |
+| `reversiServiceToken` | string | **reversi-service の session Cookie の値**（下記の取得手順を参照） |
+
+**reversiServiceToken の取得手順**:
+
+1. ブラウザで reversi-service の MiAuth ログインを行う（reversi-service のログイン URL にアクセスし、Misskey で認証する）。
+2. ログイン完了でリダイレクトされた後、ブラウザの開発者ツール（F12）を開く。
+3. **Application**（または **ストレージ**）→ **Cookies** → reversi-service のドメインを選択。
+4. 名前が **`session`** の Cookie の**値**をコピーする。
+5. その値を `reversiServiceToken` にそのまま設定する。
 
 #### 投稿設定
 

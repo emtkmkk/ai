@@ -181,21 +181,81 @@ export default class extends Module {
 	}
 
 	/**
+	 * 永続化されている進行中ゲームに対して reversiGame 接続を開き、sync で状態復帰・手番なら思考する
+	 *
+	 * @remarks
+	 * Bot 再起動時に install() から呼ぶ。接続後サーバーが sync（必要に応じ started）を送り、
+	 * back の onSync で盤面・手番を復元し、自分のターンなら自動で思考を開始する。
+	 *
+	 * @internal
+	 */
+	private reopenOngoingGames() {
+		if (!this.client) return;
+		const games = this.getGames();
+		for (const entry of games) {
+			if (this.client.getGameConnectionCount() >= 5) break;
+			const inviteToken = entry.inviteToken;
+			if (this.gameSessions.has(inviteToken)) continue;
+
+			const sendPutStone = (pos: number) => {
+				this.client!.sendPutStone(inviteToken, pos);
+			};
+			const sendReady = () => {
+				this.client!.sendReady(inviteToken, true);
+			};
+			const onEnded = (resultText: string, winnerId: string | null) => {
+				this.onGameEnded(inviteToken, entry.opponentUserId, entry.replyNoteId, resultText, winnerId);
+				this.client!.closeGame(inviteToken);
+				this.gameSessions.delete(inviteToken);
+			};
+			const gameUrl = config.reversiServiceApiUrl
+				? `${config.reversiServiceApiUrl}/game?invite=${encodeURIComponent(inviteToken)}`
+				: '';
+			const opponentReversi = this.ai.lookupFriend(entry.opponentUserId)?.getPerModulesData(this)
+				?.reversi as { wins?: number; losses?: number } | undefined;
+			const useSimpleMode = (opponentReversi?.wins ?? 0) > (opponentReversi?.losses ?? 0);
+			const session = new ReversiGameSession(
+				inviteToken,
+				this.ai.account,
+				sendPutStone,
+				sendReady,
+				onEnded,
+				gameUrl,
+				useSimpleMode
+			);
+			this.gameSessions.set(inviteToken, session);
+			this.client.setGameHandlers(inviteToken, {
+				onStarted: (b) => session.onStarted(b),
+				onLog: (b) => session.onLog(b),
+				onEnded: (b) => session.onEnded(b),
+				onSync: (b) => session.onSync(b)
+			});
+			this.client.openGameConnection(inviteToken);
+		}
+	}
+
+	/**
 	 * モジュールをインストールし、reversi 専用クライアントを起動する
 	 *
 	 * @returns 有効時は mentionHook と timeoutCallback を返す。無効時は空オブジェクト
+	 *
+	 * @remarks
+	 * 起動時に永続化されている進行中ゲームへ reversiGame 接続を張り直し、sync で復帰する。
+	 *
 	 * @internal
 	 */
 	@autobind
 	public install() {
 		if (!this.enabled) return {};
 
+		const token = (config.reversiServiceToken ?? '').trim();
 		this.client = new ReversiStreamClient(
 			config.reversiServiceWsUrl!,
-			config.reversiServiceToken!,
+			token,
 			(body: { game: any }) => this.onMatched(body)
 		);
 		this.client.connect();
+		this.reopenOngoingGames();
 
 		return {
 			mentionHook: this.mentionHook,
@@ -347,9 +407,14 @@ export default class extends Module {
 		}
 
 		try {
+			// reversi-service は Cookie の session または Authorization: Bearer で認証。トークンは reversi-service の MiAuth ログイン後にブラウザの session Cookie の値（Misskey の check で得たトークンではない）
+			const token = (config.reversiServiceToken ?? '').trim();
+			if (!token) {
+				this.log('reversiServiceToken が未設定または空です。reversi-service の MiAuth ログイン後、ブラウザの session Cookie の値を設定してください。');
+			}
 			const res = await request.post({
 				url: `${config.reversiServiceApiUrl}/api/reversi/invite/create`,
-				headers: { Authorization: `Bearer ${config.reversiServiceToken}` },
+				headers: { Authorization: `Bearer ${token}` },
 				json: true,
 				body: { hostMisskeyUserId: this.ai.account.id, inviteeMisskeyUserId: msg.userId }
 			});
@@ -370,8 +435,16 @@ export default class extends Module {
 			this.setTimeoutWithPersistence(60 * 60 * 1000, { gameId, opponentUserId: msg.userId, replyNoteId: msg.id });
 
 			await msg.reply(serifs.reversi.ok(inviteUrl), { visibility: 'specified' });
-		} catch (e) {
-			this.log(`invite/create error: ${e}`);
+		} catch (e: any) {
+			const statusCode = e?.statusCode ?? e?.response?.statusCode;
+			const body = e?.error ?? e?.response?.body;
+			const is401 = statusCode === 401 || (body && (body as any).error?.code === 'FORBIDDEN_HOST_ONLY');
+			if (is401) {
+				this.log(
+					'reversi-service が Login required を返しました。reversiServiceToken には reversi-service の MiAuth ログイン後にブラウザに設定される「session」Cookie の値を使用してください。Misskey の /api/miauth/xxx/check で得たトークンは使用できません。手順: reversi-service の MiAuth をブラウザで完了 → 開発者ツール → Application → Cookies → session の値をコピー → config の reversiServiceToken に設定'
+				);
+			}
+			this.log(`invite/create error: ${e?.message ?? e}`);
 			msg.reply(serifs.reversi.decline, { visibility: 'specified' });
 		}
 		return true;

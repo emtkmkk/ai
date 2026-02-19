@@ -22,6 +22,7 @@
 - **対局用 最大 5 本**: `matched` のたびに新しい WebSocket を 1 本開き、`channel: 'reversiGame', params: { gameId }` に加入。同時対局は最大 5 件。
 - **招待**: ユーザーが「リバーシ」等でメンション → `invite/create`（Bearer）で招待URL取得 → **招待を依頼した投稿へダイレクトで返信**して招待URLを送る。ゲーム一覧に登録し、1 時間の時間切れタイマーを 1 回だけセット。
 - **切断・復帰**: 対局用接続が切れたら再接続し、サーバーが送る **sync** で盤面・手番を再構築して状態を復帰する。
+- **Bot 再起動時**: 永続化されている進行中ゲーム一覧から **reversiGame 接続を自動で張り直す**。接続後にサーバーが送る sync（および必要に応じ started）で盤面・手番を復元し、**自分のターンであれば自動で思考を開始する**。
 
 ```mermaid
 flowchart LR
@@ -132,11 +133,12 @@ flowchart LR
   "reversiEnabled": true,
   "reversiServiceWsUrl": "wss://your-reversi-service.example.com/api/reversi/stream",
   "reversiServiceApiUrl": "https://your-reversi-service.example.com",
-  "reversiServiceToken": "セッショントークン（MiAuth で取得）"
+  "reversiServiceToken": "reversi-service の MiAuth ログイン後にブラウザに設定される session Cookie の値"
 }
 ```
 
-ストリーム接続時は `?i=` に `reversiServiceToken` を付与。`invite/create` は `reversiServiceApiUrl` に Bearer で送る。
+- **reversiServiceToken**: reversi-service の MiAuth をブラウザで完了した後、開発者ツール → Application → Cookies → **session** の値をコピーして設定する。
+- ストリーム接続時は `?i=` に `reversiServiceToken` を付与。`invite/create` は `reversiServiceApiUrl` に Bearer で送る。
 
 ---
 

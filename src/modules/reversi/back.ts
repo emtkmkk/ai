@@ -515,9 +515,12 @@ export class ReversiGameSession {
 		this.useSimpleMode = useSimpleMode === true;
 	}
 
-	/** 対戦相手の User（user1 が自分なら user2、そうでなければ user1） */
+	/** 対戦相手の User（user1 が自分なら user2、そうでなければ user1）。user1/user2 がオブジェクトの形式にも対応 */
 	private get user(): User {
-		return this.game.user1Id === this.account.id ? this.game.user2 : this.game.user1;
+		const id = String(this.account.id);
+		const isUser1 = this.game.user1Id === id || this.game.user1Id === this.account.id ||
+			(this.game.user1 && String((this.game.user1 as any).id ?? (this.game.user1 as any).userId ?? '') === id);
+		return isUser1 ? this.game.user2 : this.game.user1;
 	}
 
 	/** 対戦相手の表示名（Markdown リンク＋敬称） */
@@ -527,12 +530,38 @@ export class ReversiGameSession {
 	}
 
 	/**
+	 * game オブジェクトとアカウント ID から「自分が黒か」を判定する。
+	 * reversi-service が user1Id/user2Id の代わりに user1.id / user2.id や black を boolean で送る形式にも対応する。
+	 *
+	 * @param game - started / sync で受け取った game オブジェクト
+	 * @param accountId - 藍のアカウント ID
+	 * @returns 黒なら true、白なら false。判定できないときは null
+	 *
+	 * @internal
+	 */
+	private static resolveBotColor(game: any, accountId: string): Color | null {
+		if (!game || accountId == null) return null;
+		const id = String(accountId);
+		const isUser1 = game.user1Id === id || game.user1Id === accountId ||
+			(game.user1 && (String((game.user1 as any).id ?? (game.user1 as any).userId ?? '') === id));
+		const isUser2 = game.user2Id === id || game.user2Id === accountId ||
+			(game.user2 && (String((game.user2 as any).id ?? (game.user2 as any).userId ?? '') === id));
+		// black: 1 or true = user1 が黒、2 or false = user2 が黒（数値は Misskey 互換）
+		if (isUser1 && (game.black === 1 || game.black === true)) return true;
+		if (isUser2 && (game.black === 2 || game.black === false)) return true;
+		if (isUser1 && (game.black === 2 || game.black === false)) return false;
+		if (isUser2 && (game.black === 1 || game.black === true)) return false;
+		return null;
+	}
+
+	/**
 	 * started 受信時の処理。エンジン初期化・隅リスト計算・ready 送信・先手なら思考開始
 	 *
 	 * @param body - メッセージ body（game を含む）
 	 *
 	 * @remarks
 	 * canPutEverywhere が true の game は対応しないため、onEndedCallback で即終了する。
+	 * 先手（黒）はエンジンの turn が黒かつ自分が黒のときにも思考開始する（resolveBotColor が null のときの保険）。
 	 *
 	 * @internal
 	 */
@@ -550,9 +579,16 @@ export class ReversiGameSession {
 		this.maxTurn = this.o.map.filter((p: string) => p === 'empty').length - this.o.board.filter((x: any) => x != null).length;
 		this.currentTurn = 0;
 		this.computeSumiIndexes();
-		this.botColor = (this.game.user1Id === this.account.id && this.game.black === 1) || (this.game.user2Id === this.account.id && this.game.black === 2);
+		this.botColor = ReversiGameSession.resolveBotColor(this.game, this.account.id);
+		if (this.botColor == null) {
+			// game の形式が想定外のとき、エンジン初期手番に合わせて botColor を推定（招待主＝ホストが黒の実装に合わせる）
+			const engineTurn = (this.o as any).turn;
+			if (engineTurn === true) this.botColor = true;
+			else if (engineTurn === false) this.botColor = false;
+		}
 		this.sendReady();
-		if (this.botColor) {
+		const isMyTurn = this.botColor != null && (this.o as any).turn === this.botColor;
+		if (isMyTurn) {
 			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), 500);
 		}
 	}
@@ -560,7 +596,7 @@ export class ReversiGameSession {
 	/**
 	 * log（着手）受信時の処理。エンジンに着手を適用し、次が自分なら思考を開始する
 	 *
-	 * @param body - メッセージ body（color または black, pos を含む）
+	 * @param body - メッセージ body（pos 必須。color / black のほか、reversi-service は hostName/guestName で着手者を送る）
 	 *
 	 * @internal
 	 */
@@ -568,7 +604,16 @@ export class ReversiGameSession {
 		if (!this.o) return;
 		const pos = body.pos;
 		if (pos == null) return;
-		const color = body.color != null ? body.color : (body.black ? 1 : 0);
+		// 色: 明示値 > reversi-service は hostName/guestName で着手者を送るので game.black から推定 > 従来の black
+		let color: boolean;
+		if (body.color != null) {
+			color = body.color === 1 || body.color === true;
+		} else if (body.hostName != null || body.guestName != null) {
+			const hostMoved = body.hostName != null;
+			color = (hostMoved && this.game.black === 1) || (!hostMoved && this.game.black === 2);
+		} else {
+			color = body.black === true || body.black === 1;
+		}
 		this.o.put(color, pos);
 		this.currentTurn++;
 		if ((this.o as any).turn === this.botColor) {
@@ -598,18 +643,35 @@ export class ReversiGameSession {
 			canPutEverywhere: game.canPutEverywhere,
 			loopedBoard: game.loopedBoard
 		});
-		// サーバーから受け取った盤面で上書き（sync で復帰するため）
+		// サーバーから受け取った盤面で上書き（sync で復帰するため）。reversi-service は "empty"|"black"|"white"、エンジンは null|true|false
 		if (body.board != null || body.boardState != null) {
 			const board = body.board || body.boardState;
 			for (let i = 0; i < (this.o as any).board.length; i++) {
-				if (board[i] != null) (this.o as any).board[i] = board[i];
+				const c = board[i];
+				if (c === 'black') (this.o as any).board[i] = true;
+				else if (c === 'white') (this.o as any).board[i] = false;
+				else if (c === 'empty' || c == null) (this.o as any).board[i] = null;
+				else if (c === true || c === false) (this.o as any).board[i] = c;
 			}
 		}
-		if (body.turn != null) (this.o as any).turn = body.turn;
+		// 手番: エンジンは boolean（true=黒）。reversi-service は "host"|"guest"、他は 1/0 の可能性あり
+		if (body.turn != null) {
+			const t = body.turn;
+			if (t === 'host' || t === 'guest') {
+				(this.o as any).turn = (t === 'host' && game.black === 1) || (t === 'guest' && game.black === 2);
+			} else {
+				(this.o as any).turn = t === 1 || t === true ? true : t === 0 || t === false ? false : t;
+			}
+		}
 		this.currentTurn = this.o.board.filter((x: any) => x != null).length - 4;
-		this.botColor = (game.user1Id === this.account.id && game.black === 1) || (game.user2Id === this.account.id && game.black === 2);
+		this.botColor = ReversiGameSession.resolveBotColor(game, this.account.id);
+		if (this.botColor == null) {
+			const engineTurn = (this.o as any).turn;
+			if (engineTurn === true) this.botColor = true;
+			else if (engineTurn === false) this.botColor = false;
+		}
 		this.computeSumiIndexes();
-		if ((this.o as any).turn === this.botColor) {
+		if (this.botColor != null && (this.o as any).turn === this.botColor) {
 			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), 500);
 		}
 	}

@@ -43,7 +43,7 @@ type Config = {
 	reversiServiceWsUrl?: string;
 	/** reversi-service の HTTP API ベース URL（例: https://example.com）。invite/create 等に使用。 */
 	reversiServiceApiUrl?: string;
-	/** reversi-service 用セッショントークン（MiAuth で取得）。Host として着手するために必要。 */
+	/** reversi-service 用セッショントークン。reversi-service の MiAuth をブラウザで完了した後、Cookie の「session」の値を使用する。Host として着手するために必要。 */
 	reversiServiceToken?: string;
 	/** ランダムノート投稿機能の有効/無効 */
 	notingEnabled: boolean;
