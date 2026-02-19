@@ -92,10 +92,16 @@ export class ReversiStreamClient {
 				// syuilo/ai 互換: type === 'channel', body.type === 'matched', body.body または body に game
 				if (msg.type === 'channel' && msg.body?.type === 'matched') {
 					const payload = msg.body.body || msg.body;
+					const game = payload?.game;
+					log(`[reversi] matched received game.id=${game?.id ?? 'none'}`);
 					const ok = this.onMatched(payload);
 					if (ok) {
-						const game = payload.game;
-						if (game?.id) this.openGameConnection(game.id);
+						if (game?.id) {
+							log(`[reversi] matched accepted, opening game connection ${game.id}`);
+							this.openGameConnection(game.id);
+						}
+					} else {
+						log(`[reversi] matched rejected (busy or not in list)`);
 					}
 				}
 			} catch (e) {
@@ -147,12 +153,15 @@ export class ReversiStreamClient {
 				if (msg.type !== 'channel' || !msg.body) return;
 				const body = msg.body.body ?? msg.body;
 				const ev = msg.body.type as ReversiGameMessageType;
+				log(`[reversi] game ${gameId} received: ${ev}`);
 				const handlers = this.gameHandlers.get(gameId);
 				if (handlers) {
 					if (ev === 'started') handlers.onStarted(body);
 					else if (ev === 'log') handlers.onLog(body);
 					else if (ev === 'ended') handlers.onEnded(body);
 					else if (ev === 'sync') handlers.onSync(body);
+				} else {
+					log(`[reversi] game ${gameId} no handlers for ${ev}`);
 				}
 			} catch (e) {
 				log(`[reversi] game ${gameId} message error: ${e}`);
@@ -160,6 +169,7 @@ export class ReversiStreamClient {
 		});
 
 		ws.on('close', () => {
+			log(`[reversi] game ${gameId} connection closed`);
 			this.gameConnections.delete(gameId);
 			this.gameHandlers.delete(gameId);
 			// 再接続は sync で復帰する前提のため、ended で閉じる場合は呼び出し元が closeGame する
@@ -189,8 +199,14 @@ export class ReversiStreamClient {
 	 */
 	sendPutStone(gameId: string, pos: number, id?: string) {
 		const ws = this.gameConnections.get(gameId);
-		if (!ws || ws.readyState !== WebSocket.OPEN) return;
-		this.send(ws, { type: 'putStone', body: { pos, id } });
+		if (!ws || ws.readyState !== WebSocket.OPEN) {
+			log(`[reversi] putStone skipped game ${gameId} pos=${pos}: ws not open`);
+			return;
+		}
+		// reversi-service は putStone の body.id を文字列で必須としている
+		const bodyId = typeof id === 'string' ? id : `bot-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+		log(`[reversi] putStone sending game ${gameId} pos=${pos} id=${bodyId}`);
+		this.send(ws, { type: 'putStone', body: { pos, id: bodyId } });
 	}
 
 	/**
@@ -201,7 +217,11 @@ export class ReversiStreamClient {
 	 */
 	sendReady(gameId: string, id?: boolean) {
 		const ws = this.gameConnections.get(gameId);
-		if (!ws || ws.readyState !== WebSocket.OPEN) return;
+		if (!ws || ws.readyState !== WebSocket.OPEN) {
+			log(`[reversi] ready skipped game ${gameId}: ws not open`);
+			return;
+		}
+		log(`[reversi] ready sending game ${gameId}`);
 		this.send(ws, { type: 'ready', body: { id: id !== undefined ? id : true } });
 	}
 

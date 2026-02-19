@@ -16,6 +16,7 @@ import * as request from 'request-promise-native';
 import Reversi, { Color } from 'misskey-reversi';
 import config from '@/config';
 import serifs from '@/serifs';
+import log from '@/utils/log';
 import { User } from '@/misskey/user';
 
 function getUserName(user) {
@@ -597,8 +598,10 @@ export class ReversiGameSession {
 	 * @internal
 	 */
 	onStarted(body: { game: any }) {
+		log(`[reversi] onStarted gameId=${this.gameId}`);
 		this.game = body.game;
 		if (this.game.canPutEverywhere) {
+			log(`[reversi] onStarted decline (canPutEverywhere)`);
 			this.onEndedCallback(serifs.reversi.decline, null);
 			return; // 変則ルールは未対応
 		}
@@ -617,9 +620,12 @@ export class ReversiGameSession {
 			if (engineTurn === true) this.botColor = true;
 			else if (engineTurn === false) this.botColor = false;
 		}
+		const engineTurn = (this.o as any).turn;
+		const isMyTurn = this.botColor != null && engineTurn === this.botColor;
+		log(`[reversi] onStarted botColor=${this.botColor} engineTurn=${engineTurn} isMyTurn=${isMyTurn}`);
 		this.sendReady();
-		const isMyTurn = this.botColor != null && (this.o as any).turn === this.botColor;
 		if (isMyTurn) {
+			log(`[reversi] onStarted scheduling think in 500ms`);
 			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), 500);
 		}
 	}
@@ -635,6 +641,7 @@ export class ReversiGameSession {
 		if (!this.o) return;
 		const pos = body.pos;
 		if (pos == null) return;
+		log(`[reversi] onLog gameId=${this.gameId} pos=${pos} (opponent move)`);
 		// 色: 明示値 > reversi-service は hostName/guestName で着手者を送るので game.black から推定 > 従来の black
 		let color: boolean;
 		if (body.color != null) {
@@ -647,7 +654,10 @@ export class ReversiGameSession {
 		}
 		this.o.put(color, pos);
 		this.currentTurn++;
-		if ((this.o as any).turn === this.botColor) {
+		const isMyTurn = (this.o as any).turn === this.botColor;
+		log(`[reversi] onLog after put isMyTurn=${isMyTurn}`);
+		if (isMyTurn) {
+			log(`[reversi] onLog scheduling think in 500ms`);
 			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), 500);
 		}
 	}
@@ -663,9 +673,11 @@ export class ReversiGameSession {
 	 * @internal
 	 */
 	onSync(body: any) {
+		log(`[reversi] onSync gameId=${this.gameId}`);
 		const game = body.game || body;
 		this.game = game;
 		if (game.canPutEverywhere) {
+			log(`[reversi] onSync decline (canPutEverywhere)`);
 			this.onEndedCallback(serifs.reversi.decline, null);
 			return;
 		}
@@ -702,7 +714,11 @@ export class ReversiGameSession {
 			else if (engineTurn === false) this.botColor = false;
 		}
 		this.computeSumiIndexes();
-		if (this.botColor != null && (this.o as any).turn === this.botColor) {
+		const engineTurn = (this.o as any).turn;
+		const isMyTurn = this.botColor != null && engineTurn === this.botColor;
+		log(`[reversi] onSync gameId=${this.gameId} botColor=${this.botColor} engineTurn=${engineTurn} isMyTurn=${isMyTurn}`);
+		if (isMyTurn) {
+			log(`[reversi] onSync scheduling think in 500ms`);
 			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), 500);
 		}
 	}
@@ -1066,10 +1082,17 @@ export class ReversiGameSession {
 	 * @internal
 	 */
 	private thinkSimple() {
-		if (!this.o || this.botColor == null) return;
+		log(`[reversi] thinkSimple gameId=${this.gameId}`);
+		if (!this.o || this.botColor == null) {
+			log(`[reversi] thinkSimple skip: no engine or botColor`);
+			return;
+		}
 		const o = this.o as any;
 		const cans = o.canPutSomewhere(this.botColor);
-		if (cans.length === 0) return;
+		if (cans.length === 0) {
+			log(`[reversi] thinkSimple skip: no legal moves`);
+			return;
+		}
 
 		const cornersWithDirs = this.simpleCorners();
 		const emptyCornerPoses = cornersWithDirs.map(c => c.pos).filter(k => this.simpleIsEmpty(k));
@@ -1145,6 +1168,7 @@ export class ReversiGameSession {
 
 		// T4: ランダム
 		const pos = cand[Math.floor(Math.random() * cand.length)];
+		log(`[reversi] thinkSimple gameId=${this.gameId} → putStone pos=${pos}`);
 		this.sendPutStone(pos);
 	}
 
@@ -1160,13 +1184,21 @@ export class ReversiGameSession {
 	 * @internal
 	 */
 	private thinkSuperSimple() {
-		if (!this.o || this.botColor == null) return;
+		log(`[reversi] thinkSuperSimple gameId=${this.gameId}`);
+		if (!this.o || this.botColor == null) {
+			log(`[reversi] thinkSuperSimple skip: no engine or botColor`);
+			return;
+		}
 		const cans = this.o.canPutSomewhere(this.botColor as any);
-		if (cans.length === 0) return;
+		if (cans.length === 0) {
+			log(`[reversi] thinkSuperSimple skip: no legal moves`);
+			return;
+		}
 		// 1. 隅に打てる手があればそのいずれかを選ぶ
 		const sumiAvailable = cans.filter((p: number) => this.sumiIndexes.includes(p));
 		if (sumiAvailable.length > 0) {
 			const pos = sumiAvailable[0];
+			log(`[reversi] thinkSuperSimple gameId=${this.gameId} → putStone pos=${pos} (corner)`);
 			this.sendPutStone(pos);
 			return;
 		}
@@ -1193,6 +1225,7 @@ export class ReversiGameSession {
 				bestPos = p;
 			}
 		}
+		log(`[reversi] thinkSuperSimple gameId=${this.gameId} → putStone pos=${bestPos}`);
 		this.sendPutStone(bestPos);
 	}
 }

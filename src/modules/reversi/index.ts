@@ -20,6 +20,7 @@ import config from '@/config';
 import Message from '@/message';
 import Friend from '@/friend';
 import getDate from '@/utils/get-date';
+import log from '@/utils/log';
 import { ReversiStreamClient } from './reversi-stream';
 import { ReversiGameSession } from './back';
 
@@ -192,10 +193,15 @@ export default class extends Module {
 	private reopenOngoingGames() {
 		if (!this.client) return;
 		const games = this.getGames();
+		log(`[reversi] reopenOngoingGames: ${games.length} game(s) in list`);
 		for (const entry of games) {
-			if (this.client.getGameConnectionCount() >= 5) break;
+			if (this.client.getGameConnectionCount() >= 5) {
+				log(`[reversi] reopenOngoingGames: skip (already 5 connections)`);
+				break;
+			}
 			const inviteToken = entry.inviteToken;
 			if (this.gameSessions.has(inviteToken)) continue;
+			log(`[reversi] reopenOngoingGames: opening connection inviteToken=${inviteToken.slice(0, 8)}...`);
 
 			const sendPutStone = (pos: number) => {
 				this.client!.sendPutStone(inviteToken, pos);
@@ -254,6 +260,7 @@ export default class extends Module {
 			token,
 			(body: { game: any }) => this.onMatched(body)
 		);
+		log('[reversi] install: connecting and reopening ongoing games');
 		this.client.connect();
 		this.reopenOngoingGames();
 
