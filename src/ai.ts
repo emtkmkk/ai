@@ -64,6 +64,23 @@ type ContextHook = (key: any, msg: Message, data?: any) => Promise<void | boolea
  */
 type TimeoutCallback = (data?: any) => void;
 
+type HangReport = {
+	delayMs: number;
+	uptimeSec: number;
+	pid: number;
+	node: string;
+	platform: string;
+	memoryUsage: NodeJS.MemoryUsage;
+	moduleCount: number;
+	mentionHookCount: number;
+	contextCount: number;
+	timerCount: number;
+	lastSleepedAt: number | null;
+	lastWakingAt: number | null;
+	activeFactor: number | null;
+	reportedAt: string;
+};
+
 /**
  * メッセージハンドラーの処理結果
  *
@@ -494,10 +511,11 @@ export default class 藍 {
                 this.hangDetectionTriggered = true;
 
                 this.log(`Hang detected: event loop delayed by ${Math.round(delay)}ms. Restarting...`);
+		const report = this.buildHangReport(delay);
 
                 try {
                         await this.post({
-                                text: `Botのイベントループが${Math.round(delay / 1000)}秒間停止していました。自動的に再起動します。`,
+                                text: this.formatHangReport(report),
                                 visibility: "specified",
 							// NOTE: 管理者のユーザーIDにDMで通知する
                                 visibleUserIds: ["9d5ts6in38"],
@@ -508,6 +526,66 @@ export default class 藍 {
 
                 setTimeout(() => process.exit(1), 3000);
         }
+
+	@autobind
+	private buildHangReport(delay: number): HangReport {
+		const memoryUsage = process.memoryUsage();
+		const meta = this.meta?.findOne({}) ?? null;
+
+		return {
+			delayMs: Math.round(delay),
+			uptimeSec: Math.floor(process.uptime()),
+			pid: process.pid,
+			node: process.version,
+			platform: `${process.platform}/${process.arch}`,
+			memoryUsage,
+			moduleCount: this.modules.length,
+			mentionHookCount: this.mentionHooks.length,
+			contextCount: this.contexts?.count() ?? 0,
+			timerCount: this.timers?.count() ?? 0,
+			lastSleepedAt: this.lastSleepedAt ?? null,
+			lastWakingAt: meta?.lastWakingAt ?? null,
+			activeFactor: this.activeFactor ?? null,
+			reportedAt: new Date().toISOString(),
+		};
+	}
+
+	@autobind
+	private formatHangReport(report: HangReport): string {
+		const mb = 1024 * 1024;
+		const rssMb = Math.round(report.memoryUsage.rss / mb);
+		const heapUsedMb = Math.round(report.memoryUsage.heapUsed / mb);
+		const heapTotalMb = Math.round(report.memoryUsage.heapTotal / mb);
+		const externalMb = Math.round(report.memoryUsage.external / mb);
+		const arrayBuffersMb = Math.round(report.memoryUsage.arrayBuffers / mb);
+
+		const lastSleepedText = report.lastSleepedAt
+			? `${new Date(report.lastSleepedAt).toISOString()} (${Math.round((Date.now() - report.lastSleepedAt) / 1000)}秒前)`
+			: '不明';
+		const lastWakingText = report.lastWakingAt
+			? `${new Date(report.lastWakingAt).toISOString()} (${Math.round((Date.now() - report.lastWakingAt) / 1000)}秒前)`
+			: '不明';
+
+		return [
+			`⚠️ Botのイベントループが${Math.round(report.delayMs / 1000)}秒（${report.delayMs}ms）停止していました。`,
+			'3秒後に自動で再起動します。',
+			'',
+			'【診断情報】',
+			`- reportAt: ${report.reportedAt}`,
+			`- pid: ${report.pid}`,
+			`- uptime: ${report.uptimeSec}秒`,
+			`- node: ${report.node}`,
+			`- platform: ${report.platform}`,
+			`- modules: ${report.moduleCount}`,
+			`- mentionHooks: ${report.mentionHookCount}`,
+			`- contexts: ${report.contextCount}`,
+			`- timers: ${report.timerCount}`,
+			`- activeFactor: ${report.activeFactor ?? '不明'}`,
+			`- lastSleepedAt: ${lastSleepedText}`,
+			`- lastWakingAt: ${lastWakingText}`,
+			`- memory: rss=${rssMb}MB heapUsed=${heapUsedMb}MB heapTotal=${heapTotalMb}MB external=${externalMb}MB arrayBuffers=${arrayBuffersMb}MB`,
+		].join('\n');
+	}
 
 	/**
 	 * ハンドラーの実行にタイムアウト制限（3分）を設ける
