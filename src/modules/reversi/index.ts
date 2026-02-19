@@ -149,9 +149,9 @@ export default class extends Module {
 	}
 
 	/**
-	 * 指定 gameId のゲームが一覧に存在するか検索する
+	 * 指定 gameId（UUID）のゲームが一覧に存在するか検索する
 	 *
-	 * @param gameId - reversi-service のゲーム ID
+	 * @param gameId - reversi-service のゲーム ID（UUID）。タイマー・招待レスポンスの識別用
 	 * @returns 見つかればそのエントリ、なければ undefined
 	 * @internal
 	 */
@@ -160,13 +160,24 @@ export default class extends Module {
 	}
 
 	/**
-	 * 進行中ゲーム一覧から指定 gameId を削除する
+	 * 指定 inviteToken のゲームが一覧に存在するか検索する
 	 *
-	 * @param gameId - 削除するゲーム ID
+	 * @param inviteToken - 招待URLに含まれるトークン。reversi-service の matched では game.id がこれになる
+	 * @returns 見つかればそのエントリ、なければ undefined
 	 * @internal
 	 */
-	private removeGame(gameId: string) {
-		this.setGames(this.getGames().filter(g => g.gameId !== gameId));
+	private findGameByInviteToken(inviteToken: string): ReversiGameEntry | undefined {
+		return this.getGames().find(g => g.inviteToken === inviteToken);
+	}
+
+	/**
+	 * 進行中ゲーム一覧から指定ゲームを削除する
+	 *
+	 * @param gameIdOrInviteToken - 削除するゲームの gameId（UUID）または inviteToken。reversi-service の ended では game.id が inviteToken のため両方で削除可能にする
+	 * @internal
+	 */
+	private removeGame(gameIdOrInviteToken: string) {
+		this.setGames(this.getGames().filter(g => g.gameId !== gameIdOrInviteToken && g.inviteToken !== gameIdOrInviteToken));
 	}
 
 	/**
@@ -200,7 +211,8 @@ export default class extends Module {
 	 *
 	 * @remarks
 	 * 5 件以上のとき、該当する招待依頼者がいれば「忙しいから」とダイレクト返信してから false を返す。
-	 * 一覧に gameId が無い（招待していない game の matched）場合は何もせず false。
+	 * 一覧に game が無い（招待していない game の matched）場合は何もせず false。
+	 * reversi-service の matched では body.game.id が inviteToken のため、inviteToken で一覧を検索する。
 	 * 対戦相手の勝敗（wins > losses）なら単純モードをセッションに渡し、それ以外は超単純モード。
 	 *
 	 * @internal
@@ -212,7 +224,7 @@ export default class extends Module {
 		const games = this.getGames();
 		// 同時対局が上限のときは、この game の招待依頼者に「忙しい」と返信してから拒否
 		if (games.length >= 5) {
-			const entry = games.find(g => g.gameId === game.id);
+			const entry = games.find(g => g.inviteToken === game.id);
 			if (entry) {
 				this.ai.post({
 					replyId: entry.replyNoteId,
@@ -223,8 +235,8 @@ export default class extends Module {
 			}
 			return false;
 		}
-		// 私たちが招待した game のみ受け付ける（一覧に無い matched は無視）
-		const entry = this.findGame(game.id);
+		// 私たちが招待した game のみ受け付ける（一覧に無い matched は無視）。reversi-service の game.id は inviteToken
+		const entry = this.findGameByInviteToken(game.id);
 		if (!entry) return false;
 
 		const sendPutStone = (pos: number) => {
@@ -245,7 +257,7 @@ export default class extends Module {
 			this.client!.closeGame(game.id);
 			this.gameSessions.delete(game.id);
 		};
-		const gameUrl = config.reversiServiceApiUrl ? `${config.reversiServiceApiUrl}/game/${game.id}` : '';
+		const gameUrl = config.reversiServiceApiUrl ? `${config.reversiServiceApiUrl}/game?invite=${encodeURIComponent(game.id)}` : '';
 		const session = new ReversiGameSession(
 			game.id,
 			this.ai.account,
@@ -312,7 +324,7 @@ export default class extends Module {
 		// 同じ相手がすでに 1 対局進行中なら新規招待しない
 		const existingEntry = games.find(g => g.opponentUserId === msg.userId);
 		if (existingEntry) {
-			const gameUrl = config.reversiServiceApiUrl ? `${config.reversiServiceApiUrl}/game/${existingEntry.gameId}` : '';
+			const gameUrl = config.reversiServiceApiUrl ? `${config.reversiServiceApiUrl}/game?invite=${encodeURIComponent(existingEntry.inviteToken)}` : '';
 			msg.reply(serifs.reversi.alreadyPlaying(gameUrl), { visibility: 'specified' });
 			return true;
 		}
@@ -336,7 +348,7 @@ export default class extends Module {
 
 		try {
 			const res = await request.post({
-				url: `${config.reversiServiceApiUrl}/invite/create`,
+				url: `${config.reversiServiceApiUrl}/api/reversi/invite/create`,
 				headers: { Authorization: `Bearer ${config.reversiServiceToken}` },
 				json: true,
 				body: { hostMisskeyUserId: this.ai.account.id, inviteeMisskeyUserId: msg.userId }
@@ -347,9 +359,9 @@ export default class extends Module {
 				msg.reply(serifs.reversi.decline, { visibility: 'specified' });
 				return true;
 			}
-			// 招待URLのクエリから inviteToken を保持（将来の拡張用）
-			const m = inviteUrl.match(/[?&]inviteToken=([^&]+)/);
-			const inviteToken = m ? m[1] : '';
+			// 招待URLのクエリから inviteToken を保持。reversi-service のデフォルトは ?invite=、互換で ?inviteToken= にも対応
+			const m = inviteUrl.match(/[?&](?:inviteToken|invite)=([^&]+)/);
+			const inviteToken = m ? decodeURIComponent(m[1]) : '';
 
 			this.setGames([
 				...this.getGames(),
