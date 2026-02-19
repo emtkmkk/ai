@@ -530,6 +530,37 @@ export class ReversiGameSession {
 	}
 
 	/**
+	 * game.map を misskey-reversi が期待する形式（8行×8文字、'-'/'b'/'w'）に正規化する。
+	 * reversi-service は 64 文字 1 文字列で '1'/'2' を使うため、8x8 配列と 'b'/'w' に変換する。
+	 *
+	 * @param map - game.map（64 文字列または string[]）
+	 * @returns 8 要素の string[]（各要素は 8 文字。'-'=空、'b'=黒、'w'=白）
+	 *
+	 * @internal
+	 */
+	private static normalizeMapForEngine(map: string | string[]): string[] {
+		if (Array.isArray(map)) {
+			if (map.length === 8 && map[0]?.length === 8) return map as string[];
+			const joined = map.join('');
+			if (joined.length !== 64) return map as string[];
+			map = joined;
+		}
+		if (typeof map !== 'string' || map.length !== 64) {
+			return [map as string];
+		}
+		const rows: string[] = [];
+		for (let r = 0; r < 8; r++) {
+			let row = '';
+			for (let c = 0; c < 8; c++) {
+				const ch = map[r * 8 + c];
+				row += ch === '1' ? 'b' : ch === '2' ? 'w' : ch === '-' ? '-' : ch;
+			}
+			rows.push(row);
+		}
+		return rows;
+	}
+
+	/**
 	 * game オブジェクトとアカウント ID から「自分が黒か」を判定する。
 	 * reversi-service が user1Id/user2Id の代わりに user1.id / user2.id や black を boolean で送る形式にも対応する。
 	 *
@@ -571,7 +602,7 @@ export class ReversiGameSession {
 			this.onEndedCallback(serifs.reversi.decline, null);
 			return; // 変則ルールは未対応
 		}
-		this.o = new Reversi(this.game.map, {
+		this.o = new Reversi(ReversiGameSession.normalizeMapForEngine(this.game.map), {
 			isLlotheo: this.game.isLlotheo,
 			canPutEverywhere: this.game.canPutEverywhere,
 			loopedBoard: this.game.loopedBoard
@@ -638,7 +669,7 @@ export class ReversiGameSession {
 			this.onEndedCallback(serifs.reversi.decline, null);
 			return;
 		}
-		this.o = new Reversi(game.map, {
+		this.o = new Reversi(ReversiGameSession.normalizeMapForEngine(game.map), {
 			isLlotheo: game.isLlotheo,
 			canPutEverywhere: game.canPutEverywhere,
 			loopedBoard: game.loopedBoard
