@@ -143,23 +143,31 @@ export class ReversiStreamClient {
 		this.gameConnections.set(gameId, ws);
 
 		ws.on('open', () => {
-			log(`[reversi] game ${gameId} connection open`);
+			log(`[reversi] game ${gameId} connection open, sending connect`);
 			this.send(ws, { type: 'connect', body: { channel: 'reversiGame', params: { gameId } } });
 		});
 
 		ws.on('message', (data: Buffer) => {
 			try {
 				const msg = JSON.parse(data.toString());
-				if (msg.type !== 'channel' || !msg.body) return;
+				const outerType = msg?.type;
+				const innerType = msg?.body?.type;
+				log(`[reversi] game ${gameId} message: type=${outerType} body.type=${innerType ?? 'n/a'}`);
+				if (msg.type !== 'channel' || !msg.body) {
+					log(`[reversi] game ${gameId} skip (need type=channel and body)`);
+					return;
+				}
 				const body = msg.body.body ?? msg.body;
 				const ev = msg.body.type as ReversiGameMessageType;
-				log(`[reversi] game ${gameId} received: ${ev}`);
 				const handlers = this.gameHandlers.get(gameId);
 				if (handlers) {
 					if (ev === 'started') handlers.onStarted(body);
 					else if (ev === 'log') handlers.onLog(body);
 					else if (ev === 'ended') handlers.onEnded(body);
 					else if (ev === 'sync') handlers.onSync(body);
+					else {
+						log(`[reversi] game ${gameId} unhandled event: ${ev}`);
+					}
 				} else {
 					log(`[reversi] game ${gameId} no handlers for ${ev}`);
 				}
