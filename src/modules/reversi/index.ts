@@ -56,6 +56,8 @@ interface ReversiGameEntry {
 interface ReversiModuleData {
 	/** 進行中ゲーム一覧。最大 5 件まで。 */
 	games?: ReversiGameEntry[];
+	/** 初対局が完了した日時（ミリ秒）。段階的な開放条件の基準時刻として使う。 */
+	firstGameCompletedAt?: number;
 }
 
 /**
@@ -106,6 +108,44 @@ export default class extends Module {
 	 */
 	private setGames(games: ReversiGameEntry[]) {
 		this.setData({ ...this.getData(), games });
+	}
+
+	/** 初対局完了時刻を取得する（未記録なら null）。 */
+	private getFirstGameCompletedAt(): number | null {
+		const data = this.getData() as ReversiModuleData;
+		return typeof data?.firstGameCompletedAt === 'number' ? data.firstGameCompletedAt : null;
+	}
+
+	/** 初対局完了時刻を記録する。 */
+	private setFirstGameCompletedAt(timestamp: number) {
+		this.setData({ ...this.getData(), firstGameCompletedAt: timestamp });
+	}
+
+	/** 機能開放初期の管理者判定。 */
+	private isReversiAdmin(msg: Message): boolean {
+		if ((msg.user as any)?.isAdmin === true) return true;
+		return !msg.user.host && config.master != null && msg.user.username === config.master;
+	}
+
+	/** 初対局完了後の現在必要親愛度を計算する。 */
+	private calcRequiredLove(firstGameCompletedAt: number, now: number = Date.now()): number {
+		const dayMs = 24 * 60 * 60 * 1000;
+		const fixedDaysMs = 7 * dayMs;
+		const elapsed = now - firstGameCompletedAt;
+		if (elapsed < fixedDaysMs) return 200;
+		const daysAfterFixedWindow = Math.floor((elapsed - fixedDaysMs) / dayMs) + 1;
+		return Math.max(0, 200 - daysAfterFixedWindow * (100 / 7));
+	}
+
+	/** 現在の好感度で対局可能になるまでの日数を計算する。 */
+	private calcDaysUntilPlayable(firstGameCompletedAt: number, currentLove: number): number {
+		const dayMs = 24 * 60 * 60 * 1000;
+		const now = Date.now();
+		for (let days = 1; days <= 365; days++) {
+			const requiredLove = this.calcRequiredLove(firstGameCompletedAt, now + days * dayMs);
+			if (currentLove > requiredLove) return days;
+		}
+		return 365;
 	}
 
 	/**
@@ -244,6 +284,26 @@ export default class extends Module {
 			return true;
 		}
 
+		const firstGameCompletedAt = this.getFirstGameCompletedAt();
+		if (firstGameCompletedAt == null) {
+			if (!this.isReversiAdmin(msg)) {
+				if (msg.friend.love >= 200) {
+					msg.reply(serifs.reversi.notAvailableWithWait, { visibility: 'specified' });
+				} else {
+					msg.reply(serifs.reversi.notAvailableAboutOneWeek, { visibility: 'specified' });
+				}
+				return true;
+			}
+		} else {
+			const requiredLove = this.calcRequiredLove(firstGameCompletedAt);
+			const currentLove = msg.friend.love;
+			if (currentLove <= requiredLove) {
+				const days = this.calcDaysUntilPlayable(firstGameCompletedAt, currentLove);
+				msg.reply(serifs.reversi.notAvailableInDays(days), { visibility: 'specified' });
+				return true;
+			}
+		}
+
 		const games = this.getGames();
 		if (games.length >= 5) {
 			msg.reply(serifs.reversi.busy, { visibility: 'specified' });
@@ -369,6 +429,10 @@ export default class extends Module {
 		resultText: string,
 		winnerId: string | null
 	) {
+		if (this.getFirstGameCompletedAt() == null) {
+			this.setFirstGameCompletedAt(Date.now());
+		}
+
 		const friend = this.ai.lookupFriend(opponentUserId);
 		if (friend) {
 			const today = getDate();
