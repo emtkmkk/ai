@@ -484,6 +484,8 @@ export class ReversiGameSession {
 	private gameUrl: string;
 	/** 単純モード（変則盤対応・未来読みなし）で思考するか。false のときは超単純モード */
 	private useSimpleMode: boolean;
+	/** 思考を 500ms 後に実行するタイマーを既に張ったか。sync と started の両方でスケジュールしないようガードする */
+	private thinkScheduled = false;
 
 	/**
 	 * 対局セッションを生成する
@@ -624,9 +626,12 @@ export class ReversiGameSession {
 		const isMyTurn = this.botColor != null && engineTurn === this.botColor;
 		log(`[reversi] onStarted botColor=${this.botColor} engineTurn=${engineTurn} isMyTurn=${isMyTurn}`);
 		this.sendReady();
-		if (isMyTurn) {
+		if (isMyTurn && !this.thinkScheduled) {
+			this.thinkScheduled = true;
 			log(`[reversi] onStarted scheduling think in 500ms`);
 			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), 500);
+		} else if (isMyTurn && this.thinkScheduled) {
+			log(`[reversi] onStarted skip schedule (already scheduled by sync)`);
 		}
 	}
 
@@ -717,7 +722,8 @@ export class ReversiGameSession {
 		const engineTurn = (this.o as any).turn;
 		const isMyTurn = this.botColor != null && engineTurn === this.botColor;
 		log(`[reversi] onSync gameId=${this.gameId} botColor=${this.botColor} engineTurn=${engineTurn} isMyTurn=${isMyTurn}`);
-		if (isMyTurn) {
+		if (isMyTurn && !this.thinkScheduled) {
+			this.thinkScheduled = true;
 			log(`[reversi] onSync scheduling think in 500ms`);
 			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), 500);
 		}
@@ -1082,6 +1088,7 @@ export class ReversiGameSession {
 	 * @internal
 	 */
 	private thinkSimple() {
+		this.thinkScheduled = false;
 		log(`[reversi] thinkSimple gameId=${this.gameId}`);
 		if (!this.o || this.botColor == null) {
 			log(`[reversi] thinkSimple skip: no engine or botColor`);
@@ -1184,6 +1191,7 @@ export class ReversiGameSession {
 	 * @internal
 	 */
 	private thinkSuperSimple() {
+		this.thinkScheduled = false;
 		log(`[reversi] thinkSuperSimple gameId=${this.gameId}`);
 		if (!this.o || this.botColor == null) {
 			log(`[reversi] thinkSuperSimple skip: no engine or botColor`);
