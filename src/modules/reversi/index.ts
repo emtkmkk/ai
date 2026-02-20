@@ -290,7 +290,7 @@ export default class extends Module {
 			this.gameSessions.delete(inviteToken);
 		};
 			const gameUrl = config.reversiServiceApiUrl
-				? `${config.reversiServiceApiUrl}/game?invite=${encodeURIComponent(inviteToken)}`
+				? `${config.reversiServiceApiUrl}/game/${encodeURIComponent(inviteToken)}`
 				: '';
 			const opponentReversi = this.ai.lookupFriend(entry.opponentUserId)?.getPerModulesData(this)
 				?.reversi as { wins?: number; losses?: number } | undefined;
@@ -399,7 +399,7 @@ export default class extends Module {
 			this.client!.closeGame(game.id);
 			this.gameSessions.delete(game.id);
 		};
-		const gameUrl = config.reversiServiceApiUrl ? `${config.reversiServiceApiUrl}/game?invite=${encodeURIComponent(game.id)}` : '';
+		const gameUrl = config.reversiServiceApiUrl ? `${config.reversiServiceApiUrl}/game/${encodeURIComponent(game.id)}` : '';
 		const session = new ReversiGameSession(
 			game.id,
 			this.ai.account,
@@ -466,7 +466,7 @@ export default class extends Module {
 		// 同じ相手がすでに 1 対局進行中なら新規招待しない。その対局のストリームに再接続する。
 		const existingEntry = games.find(g => g.opponentUserId === msg.userId);
 		if (existingEntry) {
-			const gameUrl = config.reversiServiceApiUrl ? `${config.reversiServiceApiUrl}/game?invite=${encodeURIComponent(existingEntry.inviteToken)}` : '';
+			const gameUrl = config.reversiServiceApiUrl ? `${config.reversiServiceApiUrl}/game/${encodeURIComponent(existingEntry.inviteToken)}` : '';
 			if (this.client) {
 				const inviteToken = existingEntry.inviteToken;
 				let session = this.gameSessions.get(inviteToken);
@@ -552,9 +552,10 @@ export default class extends Module {
 				msg.reply(serifs.reversi.decline, { visibility: 'specified' });
 				return { reaction: ':mk_hotchicken:' };
 			}
-			// 招待URLのクエリから inviteToken を保持。reversi-service のデフォルトは ?invite=、互換で ?inviteToken= にも対応
-			const m = inviteUrl.match(/[?&](?:inviteToken|invite)=([^&]+)/);
-			const inviteToken = m ? decodeURIComponent(m[1]) : '';
+			// 招待URLから inviteToken を保持。reversi-service はパス形式（/game/:inviteId）を返す。旧形式のクエリ ?invite= / ?inviteToken= も互換で受け付ける
+			const pathMatch = String(inviteUrl).match(/\/game\/([^/?#]+)/);
+			const queryMatch = String(inviteUrl).match(/[?&](?:inviteToken|invite)=([^&]+)/);
+			const inviteToken = (pathMatch?.[1] ?? (queryMatch ? decodeURIComponent(queryMatch[1]) : '')) || '';
 
 			this.setGames([
 				...this.getGames(),
