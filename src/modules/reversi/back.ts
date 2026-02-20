@@ -1148,6 +1148,7 @@ export class ReversiGameSession {
 	 *
 	 * @remarks
 	 * 仕様「リバーシBot仕様（変則ボード対応・未来読みなし・必ず1手）」に従う。スコア表は使わない。
+	 * タイブレークは T1（空き数に応じ反転数が最小または最小+1／最大）→ T2（8近傍の空きが少ない手）→ T3（反転数最小の手）→ T4（辺から遠い手）→ T5（ランダム）の順。
 	 *
 	 * @internal
 	 */
@@ -1215,11 +1216,14 @@ export class ReversiGameSession {
 		const edgeDist1Set = new Set(cand.filter(p => (edgeDist.get(p) ?? 0) === 1));
 		cand = avoid(cand, edgeDist1Set);
 
-		// タイブレーク T1: 空き数で flips 最小/最大
+		// タイブレーク T1: 空き数で 反転数が最小または最小+1／最大
 		const flipVal = (p: number) => this.getFlippedCount(p);
 		if (empty >= EMPTY_SWITCH) {
 			const minF = Math.min(...cand.map(flipVal));
-			cand = cand.filter(p => flipVal(p) === minF);
+			cand = cand.filter(p => {
+				const f = flipVal(p);
+				return f === minF || f === minF + 1;
+			});
 		} else {
 			const maxF = Math.max(...cand.map(flipVal));
 			cand = cand.filter(p => flipVal(p) === maxF);
@@ -1231,13 +1235,19 @@ export class ReversiGameSession {
 			cand = cand.filter(p => this.simpleEmptyNeighbors8(p) === minN8);
 		}
 
-		// T3: 辺から遠い手
+		// T3: 反転数が最小の手
+		if (cand.length > 1) {
+			const minF = Math.min(...cand.map(flipVal));
+			cand = cand.filter(p => flipVal(p) === minF);
+		}
+
+		// T4: 辺から遠い手
 		if (cand.length > 1) {
 			const maxEd = Math.max(...cand.map(p => edgeDist.get(p) ?? 0));
 			cand = cand.filter(p => (edgeDist.get(p) ?? 0) === maxEd);
 		}
 
-		// T4: ランダム
+		// T5: ランダム
 		const pos = cand[Math.floor(Math.random() * cand.length)];
 		log(`[reversi] thinkSimple gameId=${this.gameId} → putStone pos=${pos}`);
 		this.sendPutStone(pos);
