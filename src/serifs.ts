@@ -249,8 +249,11 @@ export default {
 
 		/**
 		 * 勝ったとき。本文のみ（呼び出し側で先頭に @username を付ける）
+		 * @param name - 相手のニックネーム
+		 * @param stoneDiff - 石差（省略時は「n石差で」を付けない）
 		 */
-		iWon: (name: string) => `リバーシで${name}に勝ちました！また遊びましょう！`,
+		iWon: (name: string, stoneDiff?: number) =>
+			stoneDiff != null ? `リバーシで${stoneDiff}石差で${name}に勝ちました！また遊びましょう！` : `リバーシで${name}に勝ちました！また遊びましょう！`,
 
 		/**
 		 * 接待のつもりが勝ってしまったとき
@@ -259,8 +262,15 @@ export default {
 
 		/**
 		 * 負けたとき
+		 * @param name - 相手のニックネーム
+		 * @param stoneDiff - 石差（省略時は「n石差で」を付けない）
+		 * @param streak - 相手の現在連勝数。2以上なら「これであなたがn連勝です！」を「次は負けません！」の前に挿入
 		 */
-		iLose: (name: string) => `リバーシで${name}に負けました！次は負けません！また遊びましょう！`,
+		iLose: (name: string, stoneDiff?: number, streak?: number) => {
+			const prefix = stoneDiff != null ? `リバーシで${stoneDiff}石差で` : 'リバーシで';
+			const mid = (streak != null && streak >= 2) ? `これであなたが${streak}連勝です！` : '';
+			return `${prefix}${name}に負けました！${mid}次は負けません！また遊びましょう！`;
+		},
 
 		/**
 		 * 接待で負けてあげたとき
@@ -298,7 +308,7 @@ export default {
 		/** 同じ相手がすでに進行中対局を持っているときに断る */
 		alreadyPlaying: (url) => `リバーシは既に始まってますよ！\n\nこのURLにアクセスしてください！\n${url}`,
 
-		/** 同一プレイヤー 1日3回制限で断る */
+		/** 同一プレイヤー 1日5回制限で断る */
 		limitPerDay: '今日はもう疲れました・・・ また明日遊びましょう！',
 
 		/** 招待の時間切れ（1時間） */

@@ -6,7 +6,7 @@
  * @remarks
  * 対局は reversi-service にのみ接続する。Misskey のリバーシ機能には依存しない。
  * メンションで招待URLを作成し、招待を依頼した投稿へダイレクトで返信する。
- * 同時対局は最大 5 件。同一プレイヤーは 1 日 3 回まで・同時に 1 対局のみ（管理者は 1 日の対局制限なし）。
+ * 同時対局は最大 5 件。同一プレイヤーは 1 日 5 回まで・同時に 1 対局のみ（管理者は 1 日の対局制限なし）。
  * 終局時に勝敗（wins/losses）を Friend に記録し、相手が勝ち越しているときは単純モードで思考する。
  * 超単純・単純それぞれで、全ユーザー累計の勝数・負数・引き分け・投了・時間切れをモジュール永続データに記録する。
  *
@@ -284,8 +284,8 @@ export default class extends Module {
 			const sendReady = () => {
 				this.client!.sendReady(inviteToken, true);
 			};
-		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean) => {
-			this.onGameEnded(inviteToken, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode);
+		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number) => {
+			this.onGameEnded(inviteToken, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff);
 			this.client!.closeGame(inviteToken);
 			this.gameSessions.delete(inviteToken);
 		};
@@ -393,9 +393,9 @@ export default class extends Module {
 		const useSimpleMode =
 			(opponentReversi?.wins ?? 0) > (opponentReversi?.losses ?? 0);
 
-		// 終局時は結果種別・対戦相手・勝者 ID ・難易度を渡し、index 側で本文と wins/losses・難易度別統計を更新する
-		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean) => {
-			this.onGameEnded(game.id, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode);
+		// 終局時は結果種別・対戦相手・勝者 ID ・難易度・石差を渡し、index 側で本文と wins/losses・連勝・難易度別統計を更新する
+		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number) => {
+			this.onGameEnded(game.id, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff);
 			this.client!.closeGame(game.id);
 			this.gameSessions.delete(game.id);
 		};
@@ -426,7 +426,7 @@ export default class extends Module {
 	 * @returns リバーシ系キーワードにマッチした場合は true（他モジュールに流さない）
 	 *
 	 * @remarks
-	 * チェック順: 無効 → 5 件以上 → 同一プレイヤー進行中 → 同一プレイヤー 3 回/日 → invite/create 呼び出し。
+	 * チェック順: 無効 → 5 件以上 → 同一プレイヤー進行中 → 同一プレイヤー 5 回/日 → invite/create 呼び出し。
 	 *
 	 * @internal
 	 */
@@ -439,8 +439,10 @@ export default class extends Module {
 		}
 
 		const firstGameCompletedAt = this.getFirstGameCompletedAt();
+		// ローカルユーザーには好感度制限を適用しない（msg.user.host が無い = ローカル）
+		const applyLoveRestriction = msg.user.host && !this.isReversiAdmin(msg);
 		if (firstGameCompletedAt == null) {
-			if (!this.isReversiAdmin(msg)) {
+			if (applyLoveRestriction) {
 				if (msg.friend.love >= 200) {
 					msg.reply(serifs.reversi.notAvailableWithWait, { visibility: 'specified' });
 				} else {
@@ -448,7 +450,7 @@ export default class extends Module {
 				}
 				return { reaction: ':mk_hotchicken:' };
 			}
-		} else {
+		} else if (applyLoveRestriction) {
 			const requiredLove = this.calcRequiredLove(firstGameCompletedAt);
 			const currentLove = msg.friend.love;
 			if (currentLove <= requiredLove) {
@@ -484,8 +486,8 @@ export default class extends Module {
 					// セッションがない（例: 再起動後）場合は reopenOngoingGames と同様にセッションを作成して接続
 					const sendPutStone = (pos: number) => this.client!.sendPutStone(inviteToken, pos);
 					const sendReady = () => this.client!.sendReady(inviteToken, true);
-					const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean) => {
-						this.onGameEnded(inviteToken, existingEntry.opponentUserId, existingEntry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode);
+					const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number) => {
+						this.onGameEnded(inviteToken, existingEntry.opponentUserId, existingEntry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff);
 						this.client!.closeGame(inviteToken);
 						this.gameSessions.delete(inviteToken);
 					};
@@ -528,7 +530,7 @@ export default class extends Module {
 				r.lastReversiDate = today;
 				r.gamesPlayedToday = 0;
 			}
-			if ((r.gamesPlayedToday ?? 0) >= 3) {
+			if ((r.gamesPlayedToday ?? 0) >= 5) {
 				msg.reply(serifs.reversi.limitPerDay, { visibility: 'specified' });
 				return { reaction: ':mk_hotchicken:' };
 			}
@@ -632,10 +634,12 @@ export default class extends Module {
 	 * @param opponentUser - 対戦相手の User（decline 時は null）。表示名・@acct 用
 	 * @param winnerId - 勝者のユーザー ID。引き分け・投了・時間切れ時は null
 	 * @param useSimpleMode - 単純モードで対局したか。難易度別統計の加算に使用。decline 等の場合は undefined 可
+	 * @param stoneDiff - 石差（iWon/iLose のときのみ。引き分け・投了・時間切れでは不要）
 	 *
 	 * @remarks
 	 * 結果本文はニックネーム（または「あなた」）と @acct を使用し、プロフィールリンクは付けない。
-	 * 結果は公開範囲「ホーム」で返信し、reversiServiceApiUrl が設定されている場合は改行2つ後に招待URLをそのまま付与する（リザルトテキスト\n\nURL の形式）。
+	 * 勝敗時は「リバーシでn石差で」を付与。2連勝以上で負けたときは「これであなたがn連勝です！」を「次は負けません！」の前に挿入。
+	 * 結果は公開範囲「ホーム」で返信し、reversiServiceApiUrl が設定されている場合は [対局結果ページ](URL) を付与。
 	 * incLove(0.2, 'reversi') で実効 +1。lastPlayedAt が今日と一致する場合は加算しない。
 	 * 勝敗: 相手が勝ったときのみ reversi.wins +1、それ以外（自分勝ち・引き分け・投了）は reversi.losses +1。
 	 * 難易度別統計: useSimpleMode が渡されたとき、超単純/単純の該当項目（勝・負・引き分け・投了・時間切れ）を 1 加算する。
@@ -649,7 +653,8 @@ export default class extends Module {
 		resultType: string,
 		opponentUser: User | null,
 		winnerId: string | null,
-		useSimpleMode?: boolean
+		useSimpleMode?: boolean,
+		stoneDiff?: number
 	) {
 		if (this.getFirstGameCompletedAt() == null) {
 			this.setFirstGameCompletedAt(Date.now());
@@ -679,6 +684,10 @@ export default class extends Module {
 				lastPlayedAt?: string;
 				wins?: number;
 				losses?: number;
+				/** 現在の連勝数。引き分けは増えず切れず、負け・投了・時間切れで0にリセット */
+				currentStreak?: number;
+				/** 最高連勝数 */
+				maxStreak?: number;
 			};
 			if (r.lastReversiDate !== today) {
 				r.lastReversiDate = today;
@@ -688,8 +697,14 @@ export default class extends Module {
 			// 相手が勝ったときのみ wins、それ以外（自分勝ち・引き分け・投了）は losses
 			if (winnerId === opponentUserId) {
 				r.wins = (r.wins ?? 0) + 1;
+				r.currentStreak = (r.currentStreak ?? 0) + 1;
+				r.maxStreak = Math.max(r.maxStreak ?? 0, r.currentStreak);
 			} else {
 				r.losses = (r.losses ?? 0) + 1;
+				// 引き分けは連勝を変更しない。負け・投了・時間切れで連勝を切る
+				if (resultType !== 'drawn') {
+					r.currentStreak = 0;
+				}
 			}
 			const wasPlayedToday = r.lastPlayedAt === today;
 			if (!wasPlayedToday) r.lastPlayedAt = today;
@@ -705,8 +720,17 @@ export default class extends Module {
 			const replyTargetUser = friend?.doc?.user;
 			if (replyTargetUser?.username != null) {
 				const name = friend?.name ?? 'あなた';
-				const fn = (serifs.reversi as any)[resultType];
-				const body = typeof fn === 'function' ? fn(name) : serifs.reversi.iWon(name);
+				const r = friend?.getPerModulesData(this)?.reversi as { currentStreak?: number } | undefined;
+				const streak = r?.currentStreak;
+				let body: string;
+				if (resultType === 'iWon') {
+					body = serifs.reversi.iWon(name, stoneDiff);
+				} else if (resultType === 'iLose') {
+					body = serifs.reversi.iLose(name, stoneDiff, streak);
+				} else {
+					const fn = (serifs.reversi as any)[resultType];
+					body = typeof fn === 'function' ? fn(name) : serifs.reversi.iWon(name);
+				}
 				resultText = `${acct(replyTargetUser)} ${body}`;
 			}
 		} else {
@@ -715,12 +739,12 @@ export default class extends Module {
 
 		if (resultText !== null) {
 			try {
-				// 招待URLを本文に含める（もう一度遊ぶ用）。gameId は reversi-service では inviteToken と同一
+				// 対局結果ページのリンクを付与。gameId は reversi-service では inviteToken と同一
 				const inviteUrl = config.reversiServiceApiUrl
 					? `${config.reversiServiceApiUrl}/game/${encodeURIComponent(gameId)}`
 					: '';
 				const textWithUrl = inviteUrl
-					? `${resultText}\n\n${inviteUrl}`
+					? `${resultText}\n\n?[対局結果ページ](${inviteUrl})`
 					: resultText;
 				await this.ai.post({
 					replyId: replyNoteId,

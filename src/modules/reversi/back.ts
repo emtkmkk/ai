@@ -472,8 +472,8 @@ export class ReversiGameSession {
 	private account: User;
 	private sendPutStone: (pos: number) => void;
 	private sendReady: () => void;
-	/** 終局時: (結果種別, 対戦相手 User, winnerId, 単純モードか)。decline のときは ('decline', null, null, false) */
-	private onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean) => void;
+	/** 終局時: (結果種別, 対戦相手 User, winnerId, 単純モードか, 石差)。decline のときは ('decline', null, null, false)。石差は iWon/iLose のときのみ渡す */
+	private onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number) => void;
 	/** 現在の game オブジェクト（started / sync でセット）。user1, user2 等を含む */
 	private game: any;
 	/** リバーシエンジン（misskey-reversi）。started / sync で初期化、log で着手を適用 */
@@ -499,7 +499,7 @@ export class ReversiGameSession {
 	 * @param account - 藍のアカウント（手番判定に使用）
 	 * @param sendPutStone - 石を置く手を送信するコールバック
 	 * @param sendReady - ready を送信するコールバック
-	 * @param onEndedCallback - 終局時に結果種別・対戦相手・勝者 ID ・単純モードかを渡して呼ぶコールバック
+	 * @param onEndedCallback - 終局時に結果種別・対戦相手・勝者 ID ・単純モード・石差（任意）を渡して呼ぶコールバック
 	 * @param gameUrl - 観戦用 URL（省略可）
 	 * @param useSimpleMode - 単純モードで思考するか。省略時は false（超単純）
 	 *
@@ -510,7 +510,7 @@ export class ReversiGameSession {
 		account: User,
 		sendPutStone: (pos: number) => void,
 		sendReady: () => void,
-		onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean) => void,
+		onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number) => void,
 		gameUrl?: string,
 		useSimpleMode?: boolean
 	) {
@@ -759,7 +759,15 @@ export class ReversiGameSession {
 		} else {
 			resultType = 'drawn';
 		}
-		this.onEndedCallback(resultType, opponentUser, winnerId, this.useSimpleMode);
+		// 勝敗が決まったときのみ石差を計算（エンジンの盤面から黒/白の数を数える）
+		let stoneDiff: number | undefined;
+		if ((resultType === 'iWon' || resultType === 'iLose') && this.o?.board) {
+			const board = (this.o as any).board as (boolean | null)[];
+			const black = board.filter(x => x === true).length;
+			const white = board.filter(x => x === false).length;
+			stoneDiff = Math.abs(black - white);
+		}
+		this.onEndedCallback(resultType, opponentUser, winnerId, this.useSimpleMode, stoneDiff);
 	}
 
 	/** 隅（sumiIndexes）と隅に隣接するマス（sumiNearIndexes）を map から計算する。超単純思考で使用。 */
