@@ -7,6 +7,7 @@
  * 既存の Misskey 用 {@link Stream} は使わず、reversi-service の GET /api/reversi/stream に
  * 専用接続する。matched 用 1 本を常時維持し、matched 受信ごとに最大 5 本まで対局用接続を張る。
  * 切断時は再接続し、サーバーが送る sync で状態を復帰する。
+ * 相手の応答が遅い場合の切断を防ぐため、matched 接続と各対局接続で定期的に ping を送る。
  *
  * @internal
  */
@@ -14,6 +15,9 @@
 import * as WebSocket from 'ws';
 import config from '@/config';
 import log from '@/utils/log';
+
+/** ping 送信間隔（ミリ秒）。アイドル切断を防ぐ。 */
+const PING_INTERVAL_MS = 30 * 1000;
 
 /** 進行中ゲーム 1 件あたりの接続で受信するメッセージの body.type */
 export type ReversiGameMessageType = 'started' | 'log' | 'ended' | 'sync';
@@ -55,7 +59,11 @@ export class ReversiStreamClient {
 	private token: string;
 	private matchedWs: WebSocket | null = null;
 	private matchedWsReconnectTimer: ReturnType<typeof setTimeout> | null = null;
+	/** matched 接続の ping 用タイマー。切断時にクリアする。 */
+	private matchedPingTimer: ReturnType<typeof setInterval> | null = null;
 	private gameConnections: Map<string, WebSocket> = new Map();
+	/** 各対局接続の ping 用タイマー。切断時にクリアする。 */
+	private gamePingTimers: Map<string, ReturnType<typeof setInterval>> = new Map();
 	private gameHandlers: Map<string, ReversiGameHandlers> = new Map();
 	private onMatched: OnMatchedCallback;
 	private maxGameConnections = 5;
@@ -85,6 +93,7 @@ export class ReversiStreamClient {
 			log('[reversi] matched connection open');
 			// reversi-service は connect の body.id を必須としており、未送信だと接続を登録しない
 			this.send(ws, { type: 'connect', body: { channel: 'reversi', id: 'reversi-matched' } });
+			this.startMatchedPing();
 		});
 
 		ws.on('message', (data: Buffer) => {
@@ -112,6 +121,7 @@ export class ReversiStreamClient {
 
 		ws.on('close', () => {
 			log('[reversi] matched connection closed, reconnecting...');
+			this.stopMatchedPing();
 			this.matchedWs = null;
 			this.scheduleMatchedReconnect();
 		});
@@ -121,6 +131,23 @@ export class ReversiStreamClient {
 		});
 	}
 
+	/** matched 用接続で定期的に ping を送り、アイドル切断を防ぐ */
+	private startMatchedPing() {
+		this.stopMatchedPing();
+		this.matchedPingTimer = setInterval(() => {
+			if (this.matchedWs?.readyState === WebSocket.OPEN) {
+				this.matchedWs.ping();
+			}
+		}, PING_INTERVAL_MS);
+	}
+
+	private stopMatchedPing() {
+		if (this.matchedPingTimer != null) {
+			clearInterval(this.matchedPingTimer);
+			this.matchedPingTimer = null;
+		}
+	}
+
 	/** matched 用接続が切れたとき、5 秒後に再接続を試みる（二重登録防止あり） */
 	private scheduleMatchedReconnect() {
 		if (this.matchedWsReconnectTimer != null) return;
@@ -128,6 +155,25 @@ export class ReversiStreamClient {
 			this.matchedWsReconnectTimer = null;
 			this.connect();
 		}, 5000);
+	}
+
+	/** 対局用接続で定期的に ping を送り、アイドル切断を防ぐ */
+	private startGamePing(gameId: string, ws: WebSocket) {
+		this.stopGamePing(gameId);
+		const timer = setInterval(() => {
+			if (ws.readyState === WebSocket.OPEN) {
+				ws.ping();
+			}
+		}, PING_INTERVAL_MS);
+		this.gamePingTimers.set(gameId, timer);
+	}
+
+	private stopGamePing(gameId: string) {
+		const timer = this.gamePingTimers.get(gameId);
+		if (timer != null) {
+			clearInterval(timer);
+			this.gamePingTimers.delete(gameId);
+		}
 	}
 
 	/**
@@ -147,6 +193,7 @@ export class ReversiStreamClient {
 			log(`[reversi] game ${gameId} connection open, sending connect`);
 			// reversi-service は connect の body.id を必須としており、未送信だと接続を登録せず sync/started が届かない
 			this.send(ws, { type: 'connect', body: { channel: 'reversiGame', id: gameId, params: { gameId } } });
+			this.startGamePing(gameId, ws);
 		});
 
 		ws.on('message', (data: Buffer) => {
@@ -180,6 +227,7 @@ export class ReversiStreamClient {
 
 		ws.on('close', () => {
 			log(`[reversi] game ${gameId} connection closed`);
+			this.stopGamePing(gameId);
 			this.gameConnections.delete(gameId);
 			this.gameHandlers.delete(gameId);
 			// 再接続は sync で復帰する前提のため、ended で閉じる場合は呼び出し元が closeGame する
@@ -241,6 +289,7 @@ export class ReversiStreamClient {
 	 * @internal
 	 */
 	closeGame(gameId: string) {
+		this.stopGamePing(gameId);
 		const ws = this.gameConnections.get(gameId);
 		if (ws) {
 			this.gameConnections.delete(gameId);
@@ -272,9 +321,13 @@ export class ReversiStreamClient {
 			clearTimeout(this.matchedWsReconnectTimer);
 			this.matchedWsReconnectTimer = null;
 		}
+		this.stopMatchedPing();
 		if (this.matchedWs != null) {
 			try { this.matchedWs.close(); } catch (_) {}
 			this.matchedWs = null;
+		}
+		for (const gameId of Array.from(this.gamePingTimers.keys())) {
+			this.stopGamePing(gameId);
 		}
 		for (const [gameId, ws] of this.gameConnections) {
 			try { ws.close(); } catch (_) {}

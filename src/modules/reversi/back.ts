@@ -826,14 +826,18 @@ export class ReversiGameSession {
 	/**
 	 * 現在の局面の合法手の数から思考待機時間（ミリ秒）を算出する。
 	 *
-	 * @returns 待機時間（ミリ秒）。エンジン未初期化時は 500。自身が先手の 1 手目は常に 500。
+	 * @returns 待機時間（ミリ秒）。エンジン未初期化時は 500。自身が先手の 1 手目は常に 500。角が打てる場合は最短（超単純 2 秒・単純 0.5 秒）。
 	 * @internal
 	 */
 	private getThinkDelayMs(): number {
 		if (!this.o || this.botColor == null) return 500;
 		// 自身が先手（黒）の 1 手目は常に 0.5 秒
 		if (this.botColor === true && this.currentTurn === 0) return 500;
-		const numLegalMoves = (this.o as any).canPutSomewhere(this.botColor).length;
+		const legalMoves = (this.o as any).canPutSomewhere(this.botColor) as number[];
+		// 角が打てる場合は常に最短（超単純 2 秒・単純 0.5 秒）
+		const canTakeCorner = legalMoves.some((pos: number) => this.sumiIndexes.includes(pos));
+		if (canTakeCorner) return this.useSimpleMode ? 500 : 2000;
+		const numLegalMoves = legalMoves.length;
 		return this.useSimpleMode
 			? this.calcThinkDelaySimple(numLegalMoves)
 			: this.calcThinkDelaySuperSimple(numLegalMoves);

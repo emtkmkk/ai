@@ -390,10 +390,55 @@ export default class extends Module {
 			msg.reply(serifs.reversi.busy, { visibility: 'specified' });
 			return true;
 		}
-		// 同じ相手がすでに 1 対局進行中なら新規招待しない
+		// 同じ相手がすでに 1 対局進行中なら新規招待しない。その対局のストリームに再接続する。
 		const existingEntry = games.find(g => g.opponentUserId === msg.userId);
 		if (existingEntry) {
 			const gameUrl = config.reversiServiceApiUrl ? `${config.reversiServiceApiUrl}/game?invite=${encodeURIComponent(existingEntry.inviteToken)}` : '';
+			if (this.client) {
+				const inviteToken = existingEntry.inviteToken;
+				let session = this.gameSessions.get(inviteToken);
+				if (session) {
+					// セッションがある場合はハンドラを再登録して接続を開き直す（切断されていれば新規接続になる）
+					this.client.openGameConnection(inviteToken);
+					this.client.setGameHandlers(inviteToken, {
+						onStarted: (b) => session!.onStarted(b),
+						onLog: (b) => session!.onLog(b),
+						onEnded: (b) => session!.onEnded(b),
+						onSync: (b) => session!.onSync(b)
+					});
+					log(`[reversi] mentionHook: reconnected stream for existing game inviteToken=${inviteToken.slice(0, 8)}...`);
+				} else if (this.client.getGameConnectionCount() < 5) {
+					// セッションがない（例: 再起動後）場合は reopenOngoingGames と同様にセッションを作成して接続
+					const sendPutStone = (pos: number) => this.client!.sendPutStone(inviteToken, pos);
+					const sendReady = () => this.client!.sendReady(inviteToken, true);
+					const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null) => {
+						this.onGameEnded(inviteToken, existingEntry.opponentUserId, existingEntry.replyNoteId, resultType, opponentUser, winnerId);
+						this.client!.closeGame(inviteToken);
+						this.gameSessions.delete(inviteToken);
+					};
+					const opponentReversi = this.ai.lookupFriend(existingEntry.opponentUserId)?.getPerModulesData(this)
+						?.reversi as { wins?: number; losses?: number } | undefined;
+					const useSimpleMode = (opponentReversi?.wins ?? 0) > (opponentReversi?.losses ?? 0);
+					const newSession = new ReversiGameSession(
+						inviteToken,
+						this.ai.account,
+						sendPutStone,
+						sendReady,
+						onEnded,
+						gameUrl,
+						useSimpleMode
+					);
+					this.gameSessions.set(inviteToken, newSession);
+					this.client.setGameHandlers(inviteToken, {
+						onStarted: (b) => newSession.onStarted(b),
+						onLog: (b) => newSession.onLog(b),
+						onEnded: (b) => newSession.onEnded(b),
+						onSync: (b) => newSession.onSync(b)
+					});
+					this.client.openGameConnection(inviteToken);
+					log(`[reversi] mentionHook: created session and opened stream for existing game inviteToken=${inviteToken.slice(0, 8)}...`);
+				}
+			}
 			msg.reply(serifs.reversi.alreadyPlaying(gameUrl), { visibility: 'specified' });
 			return true;
 		}
