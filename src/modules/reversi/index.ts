@@ -6,7 +6,7 @@
  * @remarks
  * 対局は reversi-service にのみ接続する。Misskey のリバーシ機能には依存しない。
  * メンションで招待URLを作成し、招待を依頼した投稿へダイレクトで返信する。
- * 同時対局は最大 5 件。同一プレイヤーは 1 日 3 回まで・同時に 1 対局のみ。
+ * 同時対局は最大 5 件。同一プレイヤーは 1 日 3 回まで・同時に 1 対局のみ（管理者は 1 日の対局制限なし）。
  * 終局時に勝敗（wins/losses）を Friend に記録し、相手が勝ち越しているときは単純モードで思考する。
  *
  * @public
@@ -399,7 +399,8 @@ export default class extends Module {
 		}
 
 		const friend = this.ai.lookupFriend(msg.userId);
-		if (friend) {
+		// 管理者は 1 日の対局制限を適用しない
+		if (friend && !this.isReversiAdmin(msg)) {
 			const data = friend.getPerModulesData(this);
 			if (!data.reversi) data.reversi = {};
 			const r = data.reversi as { lastReversiDate?: string; gamesPlayedToday?: number };
@@ -564,7 +565,7 @@ export default class extends Module {
 			resultText = serifs.reversi.decline;
 		} else if (opponentUser) {
 			// 返信先（対戦相手）の情報のみ使用。先頭に @username、本文は「リバーシで◯◯に勝ちました！」形式
-			const name = friend?.name ?? friend?.doc?.user?.name ?? opponentUser?.name ?? 'あなた';
+			const name = friend?.name ?? 'あなた';
 			const fn = (serifs.reversi as any)[resultType];
 			const body = typeof fn === 'function' ? fn(name) : serifs.reversi.iWon(name);
 			resultText = `${acct(opponentUser)} ${body}`;
