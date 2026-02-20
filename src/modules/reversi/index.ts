@@ -635,6 +635,7 @@ export default class extends Module {
 	 *
 	 * @remarks
 	 * 結果本文はニックネーム（または「あなた」）と @acct を使用し、プロフィールリンクは付けない。
+	 * 結果は公開範囲「ホーム」で返信し、reversiServiceApiUrl が設定されている場合は改行2つ後に招待URLをそのまま付与する（リザルトテキスト\n\nURL の形式）。
 	 * incLove(0.2, 'reversi') で実効 +1。lastPlayedAt が今日と一致する場合は加算しない。
 	 * 勝敗: 相手が勝ったときのみ reversi.wins +1、それ以外（自分勝ち・引き分け・投了）は reversi.losses +1。
 	 * 難易度別統計: useSimpleMode が渡されたとき、超単純/単純の該当項目（勝・負・引き分け・投了・時間切れ）を 1 加算する。
@@ -714,11 +715,17 @@ export default class extends Module {
 
 		if (resultText !== null) {
 			try {
+				// 招待URLを本文に含める（もう一度遊ぶ用）。gameId は reversi-service では inviteToken と同一
+				const inviteUrl = config.reversiServiceApiUrl
+					? `${config.reversiServiceApiUrl}/game/${encodeURIComponent(gameId)}`
+					: '';
+				const textWithUrl = inviteUrl
+					? `${resultText}\n\n${inviteUrl}`
+					: resultText;
 				await this.ai.post({
 					replyId: replyNoteId,
-					text: resultText,
-					visibility: 'specified',
-					visibleUserIds: [opponentUserId]
+					text: textWithUrl,
+					visibility: 'home'
 				});
 			} catch (_) {}
 		}
