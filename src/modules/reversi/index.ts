@@ -435,7 +435,7 @@ export default class extends Module {
 		if (!msg.includes(['リバーシ', 'オセロ', 'reversi', 'othello'])) return false;
 		if (!this.enabled) {
 			msg.reply(serifs.reversi.decline, { visibility: 'specified' });
-			return true;
+			return { reaction: ':mk_hotchicken:' };
 		}
 
 		const firstGameCompletedAt = this.getFirstGameCompletedAt();
@@ -446,7 +446,7 @@ export default class extends Module {
 				} else {
 					msg.reply(serifs.reversi.notAvailableAboutOneWeek, { visibility: 'specified' });
 				}
-				return true;
+				return { reaction: ':mk_hotchicken:' };
 			}
 		} else {
 			const requiredLove = this.calcRequiredLove(firstGameCompletedAt);
@@ -454,14 +454,14 @@ export default class extends Module {
 			if (currentLove <= requiredLove) {
 				const days = this.calcDaysUntilPlayable(firstGameCompletedAt, currentLove);
 				msg.reply(serifs.reversi.notAvailableInDays(days), { visibility: 'specified' });
-				return true;
+				return { reaction: ':mk_hotchicken:' };
 			}
 		}
 
 		const games = this.getGames();
 		if (games.length >= 5) {
 			msg.reply(serifs.reversi.busy, { visibility: 'specified' });
-			return true;
+			return { reaction: ':mk_hotchicken:' };
 		}
 		// 同じ相手がすでに 1 対局進行中なら新規招待しない。その対局のストリームに再接続する。
 		const existingEntry = games.find(g => g.opponentUserId === msg.userId);
@@ -513,7 +513,7 @@ export default class extends Module {
 				}
 			}
 			msg.reply(serifs.reversi.alreadyPlaying(gameUrl), { visibility: 'specified' });
-			return true;
+			return { reaction: ':mk_hotchicken:' };
 		}
 
 		const friend = this.ai.lookupFriend(msg.userId);
@@ -530,7 +530,7 @@ export default class extends Module {
 			}
 			if ((r.gamesPlayedToday ?? 0) >= 3) {
 				msg.reply(serifs.reversi.limitPerDay, { visibility: 'specified' });
-				return true;
+				return { reaction: ':mk_hotchicken:' };
 			}
 		}
 
@@ -550,7 +550,7 @@ export default class extends Module {
 			const gameId = res?.gameId ?? res?.game?.id;
 			if (!inviteUrl || !gameId) {
 				msg.reply(serifs.reversi.decline, { visibility: 'specified' });
-				return true;
+				return { reaction: ':mk_hotchicken:' };
 			}
 			// 招待URLのクエリから inviteToken を保持。reversi-service のデフォルトは ?invite=、互換で ?inviteToken= にも対応
 			const m = inviteUrl.match(/[?&](?:inviteToken|invite)=([^&]+)/);
@@ -563,6 +563,7 @@ export default class extends Module {
 			this.setTimeoutWithPersistence(60 * 60 * 1000, { gameId, opponentUserId: msg.userId, replyNoteId: msg.id });
 
 			await msg.reply(serifs.reversi.ok(inviteUrl), { visibility: 'specified' });
+			return { reaction: 'love' };
 		} catch (e: any) {
 			const statusCode = e?.statusCode ?? e?.response?.statusCode;
 			const body = e?.error ?? e?.response?.body;
@@ -575,7 +576,7 @@ export default class extends Module {
 			this.log(`invite/create error: ${e?.message ?? e}`);
 			msg.reply(serifs.reversi.decline, { visibility: 'specified' });
 		}
-		return true;
+		return { reaction: ':mk_hotchicken:' };
 	}
 
 	/**
