@@ -17,6 +17,7 @@ import Reversi, { Color } from 'misskey-reversi';
 import config from '@/config';
 import serifs from '@/serifs';
 import log from '@/utils/log';
+import { acct } from '@/utils/acct';
 import { User } from '@/misskey/user';
 
 function getUserName(user) {
@@ -222,33 +223,36 @@ class Session {
 
 		let text: string;
 
+		const name = getUserName(this.user);
+		const at = acct(this.user);
 		if (msg.game.surrendered) {
 			if (this.isSettai) {
-				text = serifs.reversi.settaiButYouSurrendered(this.userName);
+				text = serifs.reversi.settaiButYouSurrendered(name);
 			} else {
-				text = serifs.reversi.youSurrendered(this.userName);
+				text = serifs.reversi.youSurrendered(name);
 			}
 		} else if (msg.winnerId) {
 			if (msg.winnerId == this.account.id) {
 				if (this.isSettai) {
-					text = serifs.reversi.iWonButSettai(this.userName);
+					text = serifs.reversi.iWonButSettai(name);
 				} else {
-					text = serifs.reversi.iWon(this.userName);
+					text = serifs.reversi.iWon(name);
 				}
 			} else {
 				if (this.isSettai) {
-					text = serifs.reversi.iLoseButSettai(this.userName);
+					text = serifs.reversi.iLoseButSettai(name);
 				} else {
-					text = serifs.reversi.iLose(this.userName);
+					text = serifs.reversi.iLose(name);
 				}
 			}
 		} else {
 			if (this.isSettai) {
-				text = serifs.reversi.drawnSettai(this.userName);
+				text = serifs.reversi.drawnSettai(name);
 			} else {
-				text = serifs.reversi.drawn(this.userName);
+				text = serifs.reversi.drawn(name);
 			}
 		}
+		text = `${at} ${text}`;
 
 		await this.post(text, this.startedNote);
 
@@ -468,7 +472,8 @@ export class ReversiGameSession {
 	private account: User;
 	private sendPutStone: (pos: number) => void;
 	private sendReady: () => void;
-	private onEndedCallback: (resultText: string, winnerId: string | null) => void;
+	/** 終局時: (結果種別, 対戦相手 User, winnerId)。decline のときは ('decline', null, null) */
+	private onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null) => void;
 	/** 現在の game オブジェクト（started / sync でセット）。user1, user2 等を含む */
 	private game: any;
 	/** リバーシエンジン（misskey-reversi）。started / sync で初期化、log で着手を適用 */
@@ -494,7 +499,7 @@ export class ReversiGameSession {
 	 * @param account - 藍のアカウント（手番判定に使用）
 	 * @param sendPutStone - 石を置く手を送信するコールバック
 	 * @param sendReady - ready を送信するコールバック
-	 * @param onEndedCallback - 終局時に結果テキストと勝者 ID を渡して呼ぶコールバック
+	 * @param onEndedCallback - 終局時に結果種別・対戦相手・勝者 ID を渡して呼ぶコールバック
 	 * @param gameUrl - 観戦用 URL（省略可）
 	 * @param useSimpleMode - 単純モードで思考するか。省略時は false（超単純）
 	 *
@@ -505,7 +510,7 @@ export class ReversiGameSession {
 		account: User,
 		sendPutStone: (pos: number) => void,
 		sendReady: () => void,
-		onEndedCallback: (resultText: string, winnerId: string | null) => void,
+		onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null) => void,
 		gameUrl?: string,
 		useSimpleMode?: boolean
 	) {
@@ -604,7 +609,7 @@ export class ReversiGameSession {
 		this.game = body.game;
 		if (this.game.canPutEverywhere) {
 			log(`[reversi] onStarted decline (canPutEverywhere)`);
-			this.onEndedCallback(serifs.reversi.decline, null);
+			this.onEndedCallback('decline', null, null);
 			return; // 変則ルールは未対応
 		}
 		this.o = new Reversi(ReversiGameSession.normalizeMapForEngine(this.game.map), {
@@ -628,8 +633,9 @@ export class ReversiGameSession {
 		this.sendReady();
 		if (isMyTurn && !this.thinkScheduled) {
 			this.thinkScheduled = true;
-			log(`[reversi] onStarted scheduling think in 500ms`);
-			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), 500);
+			const delayMs = this.getThinkDelayMs();
+			log(`[reversi] onStarted scheduling think in ${delayMs}ms`);
+			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), delayMs);
 		} else if (isMyTurn && this.thinkScheduled) {
 			log(`[reversi] onStarted skip schedule (already scheduled by sync)`);
 		}
@@ -662,8 +668,9 @@ export class ReversiGameSession {
 		const isMyTurn = (this.o as any).turn === this.botColor;
 		log(`[reversi] onLog after put isMyTurn=${isMyTurn}`);
 		if (isMyTurn) {
-			log(`[reversi] onLog scheduling think in 500ms`);
-			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), 500);
+			const delayMs = this.getThinkDelayMs();
+			log(`[reversi] onLog scheduling think in ${delayMs}ms`);
+			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), delayMs);
 		}
 	}
 
@@ -683,7 +690,7 @@ export class ReversiGameSession {
 		this.game = game;
 		if (game.canPutEverywhere) {
 			log(`[reversi] onSync decline (canPutEverywhere)`);
-			this.onEndedCallback(serifs.reversi.decline, null);
+			this.onEndedCallback('decline', null, null);
 			return;
 		}
 		this.o = new Reversi(ReversiGameSession.normalizeMapForEngine(game.map), {
@@ -724,8 +731,9 @@ export class ReversiGameSession {
 		log(`[reversi] onSync gameId=${this.gameId} botColor=${this.botColor} engineTurn=${engineTurn} isMyTurn=${isMyTurn}`);
 		if (isMyTurn && !this.thinkScheduled) {
 			this.thinkScheduled = true;
-			log(`[reversi] onSync scheduling think in 500ms`);
-			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), 500);
+			const delayMs = this.getThinkDelayMs();
+			log(`[reversi] onSync scheduling think in ${delayMs}ms`);
+			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), delayMs);
 		}
 	}
 
@@ -737,22 +745,18 @@ export class ReversiGameSession {
 	 * @internal
 	 */
 	onEnded(body: any) {
-		let text: string;
 		const msg = body.game ? body : { game: body };
 		const winnerId: string | null = msg.winnerId ?? msg.game?.winnerId ?? null;
-		// 投了・勝者あり・引き分けで結果テキストを組み立て、コールバックに winnerId も渡す（勝敗記録用）
+		const opponentUser = this.user as User;
+		let resultType: string;
 		if (msg.game?.surrendered) {
-			text = serifs.reversi.youSurrendered(this.userName);
+			resultType = 'youSurrendered';
 		} else if (winnerId) {
-			if (winnerId === this.account.id) {
-				text = serifs.reversi.iWon(this.userName);
-			} else {
-				text = serifs.reversi.iLose(this.userName);
-			}
+			resultType = winnerId === this.account.id ? 'iWon' : 'iLose';
 		} else {
-			text = serifs.reversi.drawn(this.userName);
+			resultType = 'drawn';
 		}
-		this.onEndedCallback(text, winnerId);
+		this.onEndedCallback(resultType, opponentUser, winnerId);
 	}
 
 	/** 隅（sumiIndexes）と隅に隣接するマス（sumiNearIndexes）を map から計算する。超単純思考で使用。 */
@@ -788,6 +792,49 @@ export class ReversiGameSession {
 				this.sumiNearIndexes.push(i);
 			}
 		});
+	}
+
+	/**
+	 * 超単純モードの思考待機時間（ミリ秒）。打てる手が多いほど長く、2〜5 秒＋±1.5 秒の揺らぎ。
+	 *
+	 * @param numLegalMoves - 合法手の数
+	 * @returns 待機時間（ミリ秒）。2000〜5000
+	 * @internal
+	 */
+	private calcThinkDelaySuperSimple(numLegalMoves: number): number {
+		const baseSec = 2 + Math.min(3, numLegalMoves / 10);
+		const jitterSec = (Math.random() * 3 - 1.5);
+		const sec = Math.max(2, Math.min(5, baseSec + jitterSec));
+		return Math.round(sec * 1000);
+	}
+
+	/**
+	 * 単純モードの思考待機時間（ミリ秒）。1 手あたり 0.5 秒、±50% ランダム。1 手のみのときは 0.5 秒固定。
+	 *
+	 * @param numLegalMoves - 合法手の数
+	 * @returns 待機時間（ミリ秒）。500〜5000
+	 * @internal
+	 */
+	private calcThinkDelaySimple(numLegalMoves: number): number {
+		if (numLegalMoves <= 1) return 500;
+		const baseMs = numLegalMoves * 500;
+		const factor = 0.5 + Math.random();
+		const ms = Math.round(baseMs * factor);
+		return Math.max(500, Math.min(5000, ms));
+	}
+
+	/**
+	 * 現在の局面の合法手の数から思考待機時間（ミリ秒）を算出する。
+	 *
+	 * @returns 待機時間（ミリ秒）。エンジン未初期化時は 500
+	 * @internal
+	 */
+	private getThinkDelayMs(): number {
+		if (!this.o || this.botColor == null) return 500;
+		const numLegalMoves = (this.o as any).canPutSomewhere(this.botColor).length;
+		return this.useSimpleMode
+			? this.calcThinkDelaySimple(numLegalMoves)
+			: this.calcThinkDelaySuperSimple(numLegalMoves);
 	}
 
 	/**

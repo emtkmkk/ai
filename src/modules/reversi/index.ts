@@ -21,8 +21,10 @@ import Message from '@/message';
 import Friend from '@/friend';
 import getDate from '@/utils/get-date';
 import log from '@/utils/log';
+import { acct } from '@/utils/acct';
 import { ReversiStreamClient } from './reversi-stream';
 import { ReversiGameSession } from './back';
+import type { User } from '@/misskey/user';
 
 /**
  * 進行中ゲーム 1 件の永続データ
@@ -209,11 +211,11 @@ export default class extends Module {
 			const sendReady = () => {
 				this.client!.sendReady(inviteToken, true);
 			};
-			const onEnded = (resultText: string, winnerId: string | null) => {
-				this.onGameEnded(inviteToken, entry.opponentUserId, entry.replyNoteId, resultText, winnerId);
-				this.client!.closeGame(inviteToken);
-				this.gameSessions.delete(inviteToken);
-			};
+		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null) => {
+			this.onGameEnded(inviteToken, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId);
+			this.client!.closeGame(inviteToken);
+			this.gameSessions.delete(inviteToken);
+		};
 			const gameUrl = config.reversiServiceApiUrl
 				? `${config.reversiServiceApiUrl}/game?invite=${encodeURIComponent(inviteToken)}`
 				: '';
@@ -318,9 +320,9 @@ export default class extends Module {
 		const useSimpleMode =
 			(opponentReversi?.wins ?? 0) > (opponentReversi?.losses ?? 0);
 
-		// 終局時は結果テキストと勝者 ID を渡し、index 側で wins/losses を更新する
-		const onEnded = (resultText: string, winnerId: string | null) => {
-			this.onGameEnded(game.id, entry.opponentUserId, entry.replyNoteId, resultText, winnerId);
+		// 終局時は結果種別・対戦相手・勝者 ID を渡し、index 側で本文（ニックネーム＋@acct）を組み立てて wins/losses を更新する
+		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null) => {
+			this.onGameEnded(game.id, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId);
 			this.client!.closeGame(game.id);
 			this.gameSessions.delete(game.id);
 		};
@@ -505,10 +507,12 @@ export default class extends Module {
 	 * @param gameId - 終了したゲーム ID
 	 * @param opponentUserId - 対戦相手（招待依頼者）のユーザー ID
 	 * @param replyNoteId - 結果を返信する先のノート ID
-	 * @param resultText - 投稿する結果テキスト（勝敗・投了・引き分けのセリフ）
+	 * @param resultType - 結果種別（'iWon' | 'iLose' | 'drawn' | 'youSurrendered' | 'decline'）
+	 * @param opponentUser - 対戦相手の User（decline 時は null）。表示名・@acct 用
 	 * @param winnerId - 勝者のユーザー ID。引き分け・投了時は null
 	 *
 	 * @remarks
+	 * 結果本文はニックネーム（または「あなた」）と @acct を使用し、プロフィールリンクは付けない。
 	 * incLove(0.2, 'reversi') で実効 +1。lastPlayedAt が今日と一致する場合は加算しない。
 	 * 勝敗: 相手が勝ったときのみ reversi.wins +1、それ以外（自分勝ち・引き分け・投了）は reversi.losses +1。
 	 *
@@ -518,7 +522,8 @@ export default class extends Module {
 		gameId: string,
 		opponentUserId: string,
 		replyNoteId: string,
-		resultText: string,
+		resultType: string,
+		opponentUser: User | null,
 		winnerId: string | null
 	) {
 		if (this.getFirstGameCompletedAt() == null) {
@@ -552,6 +557,19 @@ export default class extends Module {
 			if (!wasPlayedToday) r.lastPlayedAt = today;
 			friend.setPerModulesData(this, d);
 			if (!wasPlayedToday) friend.incLove(0.2, 'reversi');
+		}
+
+		let resultText: string;
+		if (resultType === 'decline') {
+			resultText = serifs.reversi.decline;
+		} else if (opponentUser) {
+			// 返信先（対戦相手）の情報のみ使用。先頭に @username、本文は「リバーシで◯◯に勝ちました！」形式
+			const name = friend?.name ?? friend?.doc?.user?.name ?? opponentUser?.name ?? 'あなた';
+			const fn = (serifs.reversi as any)[resultType];
+			const body = typeof fn === 'function' ? fn(name) : serifs.reversi.iWon(name);
+			resultText = `${acct(opponentUser)} ${body}`;
+		} else {
+			resultText = serifs.reversi.decline;
 		}
 
 		try {

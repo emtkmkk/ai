@@ -248,44 +248,44 @@ export default {
 		startedSettai: name => `(${name}の接待を始めました)`,
 
 		/**
-		 * 勝ったとき
+		 * 勝ったとき。本文のみ（呼び出し側で先頭に @username を付ける）
 		 */
-		iWon: name => `リバーシで${name}に勝ちました！また遊びましょう！`,
+		iWon: (name: string) => `リバーシで${name}に勝ちました！また遊びましょう！`,
 
 		/**
 		 * 接待のつもりが勝ってしまったとき
 		 */
-		iWonButSettai: name => ``,
+		iWonButSettai: (_name: string) => ``,
 
 		/**
 		 * 負けたとき
 		 */
-		iLose: name => `リバーシで${name}に負けました！次は負けません！また遊びましょう！`,
+		iLose: (name: string) => `リバーシで${name}に負けました！次は負けません！また遊びましょう！`,
 
 		/**
 		 * 接待で負けてあげたとき
 		 */
-		iLoseButSettai: name => ``,
+		iLoseButSettai: (_name: string) => ``,
 
 		/**
 		 * 引き分けたとき
 		 */
-		drawn: name => `リバーシで${name}と引き分けました！また遊びましょう！`,
+		drawn: (name: string) => `リバーシで${name}と引き分けました！また遊びましょう！`,
 
 		/**
 		 * 接待で引き分けたとき
 		 */
-		drawnSettai: name => ``,
+		drawnSettai: (_name: string) => ``,
 
 		/**
 		 * 相手が投了したとき
 		 */
-		youSurrendered: name => `リバーシで${name}が投了しました！また遊びましょう！`,
+		youSurrendered: (name: string) => `リバーシで${name}が投了しました！また遊びましょう！`,
 
 		/**
 		 * 接待してたら相手が投了したとき
 		 */
-		settaiButYouSurrendered: name => ``,
+		settaiButYouSurrendered: (_name: string) => ``,
 
 		/** 同時対局が上限（5件）のときに断る */
 		busy: 'いま忙しいので、あとでまた試してみてください！',
