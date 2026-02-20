@@ -83,7 +83,8 @@ export class ReversiStreamClient {
 
 		ws.on('open', () => {
 			log('[reversi] matched connection open');
-			this.send(ws, { type: 'connect', body: { channel: 'reversi' } });
+			// reversi-service は connect の body.id を必須としており、未送信だと接続を登録しない
+			this.send(ws, { type: 'connect', body: { channel: 'reversi', id: 'reversi-matched' } });
 		});
 
 		ws.on('message', (data: Buffer) => {
@@ -144,7 +145,8 @@ export class ReversiStreamClient {
 
 		ws.on('open', () => {
 			log(`[reversi] game ${gameId} connection open, sending connect`);
-			this.send(ws, { type: 'connect', body: { channel: 'reversiGame', params: { gameId } } });
+			// reversi-service は connect の body.id を必須としており、未送信だと接続を登録せず sync/started が届かない
+			this.send(ws, { type: 'connect', body: { channel: 'reversiGame', id: gameId, params: { gameId } } });
 		});
 
 		ws.on('message', (data: Buffer) => {
