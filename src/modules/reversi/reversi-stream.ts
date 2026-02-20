@@ -7,6 +7,7 @@
  * 既存の Misskey 用 {@link Stream} は使わず、reversi-service の GET /api/reversi/stream に
  * 専用接続する。matched 用 1 本を常時維持し、matched 受信ごとに最大 5 本まで対局用接続を張る。
  * 切断時は再接続し、サーバーが送る sync で状態を復帰する。
+ * 対局用接続が意図せず切断された場合は onGameConnectionClosed で通知し、呼び出し元が遅延後に再接続する。
  * 相手の応答が遅い場合の切断を防ぐため、matched 接続と各対局接続で定期的に ping を送る。
  *
  * @internal
@@ -44,6 +45,19 @@ export interface ReversiGameHandlers {
 /** matched 受信時のコールバック。ゲームを開始するなら true、忙しい等で無視するなら false。 */
 export type OnMatchedCallback = (body: { game: any }) => boolean;
 
+/** 対局用接続が意図せず切断されたときに呼ぶコールバック（再接続の試行は呼び出し元で行う）。 */
+export type OnGameConnectionClosedCallback = (gameId: string) => void;
+
+/**
+ * ReversiStreamClient のコンストラクタオプション
+ *
+ * @internal
+ */
+export interface ReversiStreamClientOptions {
+	/** 対局用接続が意図せず切断されたときに呼ぶコールバック。closeGame で閉じた場合は呼ばれない。 */
+	onGameConnectionClosed?: OnGameConnectionClosedCallback;
+}
+
 /**
  * reversi-service 用 WebSocket クライアント
  *
@@ -66,17 +80,22 @@ export class ReversiStreamClient {
 	private gamePingTimers: Map<string, ReturnType<typeof setInterval>> = new Map();
 	private gameHandlers: Map<string, ReversiGameHandlers> = new Map();
 	private onMatched: OnMatchedCallback;
+	private onGameConnectionClosed?: OnGameConnectionClosedCallback;
 	private maxGameConnections = 5;
+	/** closeGame で意図的に閉じた gameId。close イベントで再接続コールバックを呼ばないために使用。 */
+	private intentionallyClosedGameIds: Set<string> = new Set();
 
 	/**
 	 * @param wsUrl - reversi-service の WebSocket URL（例: wss://example.com/api/reversi/stream）
 	 * @param token - セッショントークン（?i= で付与）
 	 * @param onMatched - matched 受信時のコールバック。true で対局用接続を開く
+	 * @param options - オプション。onGameConnectionClosed で対局用接続の意図しない切断を通知
 	 */
-	constructor(wsUrl: string, token: string, onMatched: OnMatchedCallback) {
+	constructor(wsUrl: string, token: string, onMatched: OnMatchedCallback, options?: ReversiStreamClientOptions) {
 		this.wsUrl = wsUrl;
 		this.token = token;
 		this.onMatched = onMatched;
+		this.onGameConnectionClosed = options?.onGameConnectionClosed;
 	}
 
 	/**
@@ -230,7 +249,11 @@ export class ReversiStreamClient {
 			this.stopGamePing(gameId);
 			this.gameConnections.delete(gameId);
 			this.gameHandlers.delete(gameId);
-			// 再接続は sync で復帰する前提のため、ended で閉じる場合は呼び出し元が closeGame する
+			if (this.intentionallyClosedGameIds.has(gameId)) {
+				this.intentionallyClosedGameIds.delete(gameId);
+				return;
+			}
+			this.onGameConnectionClosed?.(gameId);
 		});
 
 		ws.on('error', (err) => {
@@ -292,6 +315,7 @@ export class ReversiStreamClient {
 		this.stopGamePing(gameId);
 		const ws = this.gameConnections.get(gameId);
 		if (ws) {
+			this.intentionallyClosedGameIds.add(gameId);
 			this.gameConnections.delete(gameId);
 			this.gameHandlers.delete(gameId);
 			try { ws.close(); } catch (_) {}
@@ -330,6 +354,7 @@ export class ReversiStreamClient {
 			this.stopGamePing(gameId);
 		}
 		for (const [gameId, ws] of this.gameConnections) {
+			this.intentionallyClosedGameIds.add(gameId);
 			try { ws.close(); } catch (_) {}
 		}
 		this.gameConnections.clear();

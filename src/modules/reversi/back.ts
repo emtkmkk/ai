@@ -489,8 +489,10 @@ export class ReversiGameSession {
 	private gameUrl: string;
 	/** 単純モード（変則盤対応・未来読みなし）で思考するか。false のときは超単純モード */
 	private useSimpleMode: boolean;
-	/** 思考を 500ms 後に実行するタイマーを既に張ったか。sync と started の両方でスケジュールしないようガードする */
+	/** 思考実行を既にスケジュールしたか。sync と started の両方で二重スケジュールしないようガードする */
 	private thinkScheduled = false;
+	/** 思考開始時刻（Date.now()）。着手決定後に思考時間が足りない場合の待ち時間計算に使用 */
+	private thinkStartTime = 0;
 
 	/**
 	 * 対局セッションを生成する
@@ -633,9 +635,9 @@ export class ReversiGameSession {
 		this.sendReady();
 		if (isMyTurn && !this.thinkScheduled) {
 			this.thinkScheduled = true;
-			const delayMs = this.getThinkDelayMs();
-			log(`[reversi] onStarted scheduling think in ${delayMs}ms`);
-			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), delayMs);
+			this.thinkStartTime = Date.now();
+			log(`[reversi] onStarted scheduling think (decide then wait if needed)`);
+			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), 0);
 		} else if (isMyTurn && this.thinkScheduled) {
 			log(`[reversi] onStarted skip schedule (already scheduled by sync)`);
 		}
@@ -668,9 +670,9 @@ export class ReversiGameSession {
 		const isMyTurn = (this.o as any).turn === this.botColor;
 		log(`[reversi] onLog after put isMyTurn=${isMyTurn}`);
 		if (isMyTurn) {
-			const delayMs = this.getThinkDelayMs();
-			log(`[reversi] onLog scheduling think in ${delayMs}ms`);
-			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), delayMs);
+			this.thinkStartTime = Date.now();
+			log(`[reversi] onLog scheduling think (decide then wait if needed)`);
+			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), 0);
 		}
 	}
 
@@ -731,9 +733,9 @@ export class ReversiGameSession {
 		log(`[reversi] onSync gameId=${this.gameId} botColor=${this.botColor} engineTurn=${engineTurn} isMyTurn=${isMyTurn}`);
 		if (isMyTurn && !this.thinkScheduled) {
 			this.thinkScheduled = true;
-			const delayMs = this.getThinkDelayMs();
-			log(`[reversi] onSync scheduling think in ${delayMs}ms`);
-			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), delayMs);
+			this.thinkStartTime = Date.now();
+			log(`[reversi] onSync scheduling think (decide then wait if needed)`);
+			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), 0);
 		}
 	}
 
@@ -852,6 +854,28 @@ export class ReversiGameSession {
 		return this.useSimpleMode
 			? this.calcThinkDelaySimple(numLegalMoves)
 			: this.calcThinkDelaySuperSimple(numLegalMoves);
+	}
+
+	/**
+	 * 着手を送信する。思考時間が足りていない場合は最低思考時間まで待ってから送る。
+	 *
+	 * @param pos - 着手するマス位置（既に着手場所は決定済み）
+	 *
+	 * @remarks
+	 * 着手場所を決めてから、まだ思考時間が足りない場合のみその時間まで待って sendPutStone を呼ぶ。
+	 *
+	 * @internal
+	 */
+	private commitMove(pos: number): void {
+		const requiredMs = this.getThinkDelayMs();
+		const elapsed = Date.now() - this.thinkStartTime;
+		const remaining = Math.max(0, requiredMs - elapsed);
+		if (remaining > 0) {
+			log(`[reversi] wait ${remaining}ms to satisfy think time (required=${requiredMs}ms elapsed=${elapsed}ms)`);
+			setTimeout(() => this.sendPutStone(pos), remaining);
+		} else {
+			this.sendPutStone(pos);
+		}
 	}
 
 	/**
@@ -1076,11 +1100,31 @@ export class ReversiGameSession {
 	 * 位置 p の 8 近傍のうち空きマスの個数
 	 *
 	 * @param p - マス位置
-	 * @returns 空きの 8 近傍数。タイブレーク T2 で最小の手を残すために使用
+	 * @returns 空きの 8 近傍数。タイブレーク T3 で最小の手を残すために使用
 	 * @internal
 	 */
 	private simpleEmptyNeighbors8(p: number): number {
 		return this.simpleNeighbors8(p).filter(q => this.simpleIsEmpty(q)).length;
+	}
+
+	/**
+	 * 着手 pos で反転するマスそれぞれの 8 近傍の空きマス数の合計
+	 *
+	 * @param pos - 着手位置
+	 * @returns 反転マス一覧（effects）の各マスについて simpleEmptyNeighbors8 を加算した値。エンジン未初期化時は 0
+	 * @remarks
+	 * タイブレーク T2「返せる石の周りの空白が少ない手」で使用。put は行わず effects のみで取得する。
+	 * @internal
+	 */
+	private simpleEmptyAroundFlipped(pos: number): number {
+		if (!this.o) return 0;
+		const o = this.o as any;
+		const effects = o.effects(o.turn, pos) as number[];
+		let sum = 0;
+		for (const f of effects) {
+			sum += this.simpleEmptyNeighbors8(f);
+		}
+		return sum;
 	}
 
 	/**
@@ -1148,7 +1192,7 @@ export class ReversiGameSession {
 	 *
 	 * @remarks
 	 * 仕様「リバーシBot仕様（変則ボード対応・未来読みなし・必ず1手）」に従う。スコア表は使わない。
-	 * タイブレークは T1（空き数に応じ反転数が最小または最小+1／最大）→ T2（8近傍の空きが少ない手）→ T3（反転数最小の手）→ T4（辺から遠い手）→ T5（ランダム）の順。
+	 * タイブレークは T1（空き数に応じ反転数が最小または最小+1／最大）→ T2（返せる石の周りの空白が少ない手）→ T3（8近傍の空きが少ない手）→ T4（反転数最小の手）→ T5（辺から遠い手）→ T6（ランダム）の順。
 	 *
 	 * @internal
 	 */
@@ -1229,28 +1273,35 @@ export class ReversiGameSession {
 			cand = cand.filter(p => flipVal(p) === maxF);
 		}
 
-		// T2: 8近傍の空きが少ない手
+		// T2: 返せる石の周りの空白が少ない手
+		if (cand.length > 1) {
+			const emptyAroundFlipped = (p: number) => this.simpleEmptyAroundFlipped(p);
+			const minE = Math.min(...cand.map(emptyAroundFlipped));
+			cand = cand.filter(p => emptyAroundFlipped(p) === minE);
+		}
+
+		// T3: 8近傍の空きが少ない手
 		if (cand.length > 1) {
 			const minN8 = Math.min(...cand.map(p => this.simpleEmptyNeighbors8(p)));
 			cand = cand.filter(p => this.simpleEmptyNeighbors8(p) === minN8);
 		}
 
-		// T3: 反転数が最小の手
+		// T4: 反転数が最小の手
 		if (cand.length > 1) {
 			const minF = Math.min(...cand.map(flipVal));
 			cand = cand.filter(p => flipVal(p) === minF);
 		}
 
-		// T4: 辺から遠い手
+		// T5: 辺から遠い手
 		if (cand.length > 1) {
 			const maxEd = Math.max(...cand.map(p => edgeDist.get(p) ?? 0));
 			cand = cand.filter(p => (edgeDist.get(p) ?? 0) === maxEd);
 		}
 
-		// T5: ランダム
+		// T6: ランダム
 		const pos = cand[Math.floor(Math.random() * cand.length)];
 		log(`[reversi] thinkSimple gameId=${this.gameId} → putStone pos=${pos}`);
-		this.sendPutStone(pos);
+		this.commitMove(pos);
 	}
 
 	/**
@@ -1281,7 +1332,7 @@ export class ReversiGameSession {
 		if (sumiAvailable.length > 0) {
 			const pos = sumiAvailable[0];
 			log(`[reversi] thinkSuperSimple gameId=${this.gameId} → putStone pos=${pos} (corner)`);
-			this.sendPutStone(pos);
+			this.commitMove(pos);
 			return;
 		}
 		// 2. 角がまだ空いているときだけ角周辺を避ける
@@ -1308,7 +1359,7 @@ export class ReversiGameSession {
 			}
 		}
 		log(`[reversi] thinkSuperSimple gameId=${this.gameId} → putStone pos=${bestPos}`);
-		this.sendPutStone(bestPos);
+		this.commitMove(bestPos);
 	}
 }
 

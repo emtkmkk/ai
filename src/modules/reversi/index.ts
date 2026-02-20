@@ -98,6 +98,9 @@ const DEFAULT_DIFFICULTY_STATS: DifficultyStats = {
 	timeout: 0
 };
 
+/** 対局用ストリーム切断後の自動再接続を試みるまでの遅延（ミリ秒）。 */
+const GAME_RECONNECT_DELAY_MS = 5000;
+
 /**
  * リバーシモジュールクラス（reversi-service 前提）
  *
@@ -114,6 +117,8 @@ export default class extends Module {
 	private client: ReversiStreamClient | null = null;
 	/** 対局ごとの ReversiGameSession。gameId → セッション。 */
 	private gameSessions: Map<string, ReversiGameSession> = new Map();
+	/** 対局用ストリーム切断後、再接続を予約している gameId → setTimeout の戻り値。 */
+	private gameReconnectTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
 
 	/**
 	 * リバーシ機能が有効かどうか
@@ -257,6 +262,66 @@ export default class extends Module {
 	}
 
 	/**
+	 * 対局用ストリームが意図せず切断されたときに呼ばれ、遅延後に再接続を試みる
+	 *
+	 * @param gameId - 切断されたゲームの inviteToken（reversi-service の game.id）
+	 *
+	 * @remarks
+	 * 進行中一覧に残っておりセッションがまだある場合のみ、GAME_RECONNECT_DELAY_MS 後に
+	 * openGameConnection と setGameHandlers で再接続する。再接続後はサーバーが sync を送り状態が復帰する。
+	 *
+	 * @internal
+	 */
+	@autobind
+	private scheduleGameReconnect(gameId: string) {
+		this.cancelGameReconnect(gameId);
+		const entry = this.findGameByInviteToken(gameId);
+		if (!entry || !this.gameSessions.has(gameId) || !this.client) return;
+		if (this.client.getGameConnectionCount() >= 5) {
+			log(`[reversi] scheduleGameReconnect: skip game ${gameId.slice(0, 8)}... (already 5 connections)`);
+			return;
+		}
+		log(`[reversi] scheduleGameReconnect: will reconnect game ${gameId.slice(0, 8)}... in ${GAME_RECONNECT_DELAY_MS}ms`);
+		const timer = setTimeout(() => {
+			this.gameReconnectTimers.delete(gameId);
+			if (!this.client) return;
+			const session = this.gameSessions.get(gameId);
+			const stillInList = this.getGames().some(g => g.inviteToken === gameId);
+			if (!session || !stillInList) {
+				log(`[reversi] scheduleGameReconnect: game ${gameId.slice(0, 8)}... no longer ongoing, skip`);
+				return;
+			}
+			if (this.client.getGameConnectionCount() >= 5) {
+				log(`[reversi] scheduleGameReconnect: game ${gameId.slice(0, 8)}... skip (already 5 connections)`);
+				return;
+			}
+			this.client.openGameConnection(gameId);
+			this.client.setGameHandlers(gameId, {
+				onStarted: (b) => session.onStarted(b),
+				onLog: (b) => session.onLog(b),
+				onEnded: (b) => session.onEnded(b),
+				onSync: (b) => session.onSync(b)
+			});
+			log(`[reversi] scheduleGameReconnect: reconnected game ${gameId.slice(0, 8)}...`);
+		}, GAME_RECONNECT_DELAY_MS);
+		this.gameReconnectTimers.set(gameId, timer);
+	}
+
+	/**
+	 * 指定ゲームの再接続予約をキャンセルする（終局時に呼ぶ）
+	 *
+	 * @param gameId - ゲームの inviteToken
+	 * @internal
+	 */
+	private cancelGameReconnect(gameId: string) {
+		const timer = this.gameReconnectTimers.get(gameId);
+		if (timer != null) {
+			clearTimeout(timer);
+			this.gameReconnectTimers.delete(gameId);
+		}
+	}
+
+	/**
 	 * 永続化されている進行中ゲームに対して reversiGame 接続を開き、sync で状態復帰・手番なら思考する
 	 *
 	 * @remarks
@@ -286,6 +351,7 @@ export default class extends Module {
 			};
 		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number) => {
 			this.onGameEnded(inviteToken, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff);
+			this.cancelGameReconnect(inviteToken);
 			this.client!.closeGame(inviteToken);
 			this.gameSessions.delete(inviteToken);
 		};
@@ -333,7 +399,8 @@ export default class extends Module {
 		this.client = new ReversiStreamClient(
 			config.reversiServiceWsUrl!,
 			token,
-			(body: { game: any }) => this.onMatched(body)
+			(body: { game: any }) => this.onMatched(body),
+			{ onGameConnectionClosed: (gameId) => this.scheduleGameReconnect(gameId) }
 		);
 		log('[reversi] install: connecting and reopening ongoing games');
 		this.client.connect();
@@ -396,6 +463,7 @@ export default class extends Module {
 		// 終局時は結果種別・対戦相手・勝者 ID ・難易度・石差を渡し、index 側で本文と wins/losses・連勝・難易度別統計を更新する
 		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number) => {
 			this.onGameEnded(game.id, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff);
+			this.cancelGameReconnect(game.id);
 			this.client!.closeGame(game.id);
 			this.gameSessions.delete(game.id);
 		};
@@ -488,6 +556,7 @@ export default class extends Module {
 					const sendReady = () => this.client!.sendReady(inviteToken, true);
 					const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number) => {
 						this.onGameEnded(inviteToken, existingEntry.opponentUserId, existingEntry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff);
+						this.cancelGameReconnect(inviteToken);
 						this.client!.closeGame(inviteToken);
 						this.gameSessions.delete(inviteToken);
 					};
