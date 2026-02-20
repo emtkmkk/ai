@@ -472,8 +472,8 @@ export class ReversiGameSession {
 	private account: User;
 	private sendPutStone: (pos: number) => void;
 	private sendReady: () => void;
-	/** 終局時: (結果種別, 対戦相手 User, winnerId)。decline のときは ('decline', null, null) */
-	private onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null) => void;
+	/** 終局時: (結果種別, 対戦相手 User, winnerId, 単純モードか)。decline のときは ('decline', null, null, false) */
+	private onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean) => void;
 	/** 現在の game オブジェクト（started / sync でセット）。user1, user2 等を含む */
 	private game: any;
 	/** リバーシエンジン（misskey-reversi）。started / sync で初期化、log で着手を適用 */
@@ -499,7 +499,7 @@ export class ReversiGameSession {
 	 * @param account - 藍のアカウント（手番判定に使用）
 	 * @param sendPutStone - 石を置く手を送信するコールバック
 	 * @param sendReady - ready を送信するコールバック
-	 * @param onEndedCallback - 終局時に結果種別・対戦相手・勝者 ID を渡して呼ぶコールバック
+	 * @param onEndedCallback - 終局時に結果種別・対戦相手・勝者 ID ・単純モードかを渡して呼ぶコールバック
 	 * @param gameUrl - 観戦用 URL（省略可）
 	 * @param useSimpleMode - 単純モードで思考するか。省略時は false（超単純）
 	 *
@@ -510,7 +510,7 @@ export class ReversiGameSession {
 		account: User,
 		sendPutStone: (pos: number) => void,
 		sendReady: () => void,
-		onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null) => void,
+		onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean) => void,
 		gameUrl?: string,
 		useSimpleMode?: boolean
 	) {
@@ -609,7 +609,7 @@ export class ReversiGameSession {
 		this.game = body.game;
 		if (this.game.canPutEverywhere) {
 			log(`[reversi] onStarted decline (canPutEverywhere)`);
-			this.onEndedCallback('decline', null, null);
+			this.onEndedCallback('decline', null, null, this.useSimpleMode);
 			return; // 変則ルールは未対応
 		}
 		this.o = new Reversi(ReversiGameSession.normalizeMapForEngine(this.game.map), {
@@ -690,7 +690,7 @@ export class ReversiGameSession {
 		this.game = game;
 		if (game.canPutEverywhere) {
 			log(`[reversi] onSync decline (canPutEverywhere)`);
-			this.onEndedCallback('decline', null, null);
+			this.onEndedCallback('decline', null, null, this.useSimpleMode);
 			return;
 		}
 		this.o = new Reversi(ReversiGameSession.normalizeMapForEngine(game.map), {
@@ -749,14 +749,17 @@ export class ReversiGameSession {
 		const winnerId: string | null = msg.winnerId ?? msg.game?.winnerId ?? null;
 		const opponentUser = this.user as User;
 		let resultType: string;
-		if (msg.game?.surrendered) {
+		// NOTE: 対局中の時間切れは reversi-service が body に timeout を付与する想定。未送信の場合は drawn 扱いになる
+		if (msg.game?.timeout === true || msg.timeout === true) {
+			resultType = 'timeout';
+		} else if (msg.game?.surrendered) {
 			resultType = 'youSurrendered';
 		} else if (winnerId) {
 			resultType = winnerId === this.account.id ? 'iWon' : 'iLose';
 		} else {
 			resultType = 'drawn';
 		}
-		this.onEndedCallback(resultType, opponentUser, winnerId);
+		this.onEndedCallback(resultType, opponentUser, winnerId, this.useSimpleMode);
 	}
 
 	/** 隅（sumiIndexes）と隅に隣接するマス（sumiNearIndexes）を map から計算する。超単純思考で使用。 */

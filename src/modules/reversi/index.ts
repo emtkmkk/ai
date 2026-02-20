@@ -8,6 +8,7 @@
  * メンションで招待URLを作成し、招待を依頼した投稿へダイレクトで返信する。
  * 同時対局は最大 5 件。同一プレイヤーは 1 日 3 回まで・同時に 1 対局のみ（管理者は 1 日の対局制限なし）。
  * 終局時に勝敗（wins/losses）を Friend に記録し、相手が勝ち越しているときは単純モードで思考する。
+ * 超単純・単純それぞれで、全ユーザー累計の勝数・負数・引き分け・投了・時間切れをモジュール永続データに記録する。
  *
  * @public
  */
@@ -49,6 +50,27 @@ interface ReversiGameEntry {
 }
 
 /**
+ * 難易度ごとの全ユーザー累計成績（勝敗・引き分け・投了・時間切れ）
+ *
+ * @remarks
+ * 超単純／単純それぞれで、全ユーザー累計の件数を保持する。
+ *
+ * @internal
+ */
+interface DifficultyStats {
+	/** 藍が勝った数 */
+	wins: number;
+	/** 藍が負けた数 */
+	losses: number;
+	/** 引き分け数 */
+	draws: number;
+	/** 相手が投了した数 */
+	surrendered: number;
+	/** 時間切れで終了した数（対局中の時間切れ。招待期限切れは含まない） */
+	timeout: number;
+}
+
+/**
  * モジュール永続データの型
  *
  * @remarks
@@ -61,7 +83,20 @@ interface ReversiModuleData {
 	games?: ReversiGameEntry[];
 	/** 初対局が完了した日時（ミリ秒）。段階的な開放条件の基準時刻として使う。 */
 	firstGameCompletedAt?: number;
+	/** 超単純モードの全ユーザー累計統計 */
+	difficultyStatsSuperSimple?: DifficultyStats;
+	/** 単純モードの全ユーザー累計統計 */
+	difficultyStatsSimple?: DifficultyStats;
 }
+
+/** 難易度別統計のデフォルト値（未初期化時用） */
+const DEFAULT_DIFFICULTY_STATS: DifficultyStats = {
+	wins: 0,
+	losses: 0,
+	draws: 0,
+	surrendered: 0,
+	timeout: 0
+};
 
 /**
  * リバーシモジュールクラス（reversi-service 前提）
@@ -122,6 +157,44 @@ export default class extends Module {
 	/** 初対局完了時刻を記録する。 */
 	private setFirstGameCompletedAt(timestamp: number) {
 		this.setData({ ...this.getData(), firstGameCompletedAt: timestamp });
+	}
+
+	/**
+	 * 指定難易度の統計を取得する（未初期化時はゼロのオブジェクト）
+	 *
+	 * @param useSimpleMode - 単純モードなら true、超単純なら false
+	 * @returns その難易度の全ユーザー累計統計
+	 * @internal
+	 */
+	private getDifficultyStats(useSimpleMode: boolean): DifficultyStats {
+		const data = this.getData() as ReversiModuleData;
+		const key = useSimpleMode ? 'difficultyStatsSimple' : 'difficultyStatsSuperSimple';
+		const raw = data?.[key];
+		if (raw && typeof raw.wins === 'number' && typeof raw.losses === 'number') {
+			return {
+				wins: raw.wins ?? 0,
+				losses: raw.losses ?? 0,
+				draws: raw.draws ?? 0,
+				surrendered: raw.surrendered ?? 0,
+				timeout: raw.timeout ?? 0
+			};
+		}
+		return { ...DEFAULT_DIFFICULTY_STATS };
+	}
+
+	/**
+	 * 指定難易度の統計のいずれか 1 つを 1 加算して永続化する
+	 *
+	 * @param useSimpleMode - 単純モードなら true、超単純なら false
+	 * @param key - 加算する項目（wins / losses / draws / surrendered / timeout）
+	 * @internal
+	 */
+	private incrementDifficultyStat(useSimpleMode: boolean, key: keyof DifficultyStats) {
+		const data = this.getData() as ReversiModuleData;
+		const statKey = useSimpleMode ? 'difficultyStatsSimple' : 'difficultyStatsSuperSimple';
+		const current = this.getDifficultyStats(useSimpleMode);
+		current[key] += 1;
+		this.setData({ ...data, [statKey]: current });
 	}
 
 	/** 機能開放初期の管理者判定。 */
@@ -211,8 +284,8 @@ export default class extends Module {
 			const sendReady = () => {
 				this.client!.sendReady(inviteToken, true);
 			};
-		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null) => {
-			this.onGameEnded(inviteToken, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId);
+		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean) => {
+			this.onGameEnded(inviteToken, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode);
 			this.client!.closeGame(inviteToken);
 			this.gameSessions.delete(inviteToken);
 		};
@@ -320,9 +393,9 @@ export default class extends Module {
 		const useSimpleMode =
 			(opponentReversi?.wins ?? 0) > (opponentReversi?.losses ?? 0);
 
-		// 終局時は結果種別・対戦相手・勝者 ID を渡し、index 側で本文（ニックネーム＋@acct）を組み立てて wins/losses を更新する
-		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null) => {
-			this.onGameEnded(game.id, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId);
+		// 終局時は結果種別・対戦相手・勝者 ID ・難易度を渡し、index 側で本文と wins/losses・難易度別統計を更新する
+		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean) => {
+			this.onGameEnded(game.id, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode);
 			this.client!.closeGame(game.id);
 			this.gameSessions.delete(game.id);
 		};
@@ -411,8 +484,8 @@ export default class extends Module {
 					// セッションがない（例: 再起動後）場合は reopenOngoingGames と同様にセッションを作成して接続
 					const sendPutStone = (pos: number) => this.client!.sendPutStone(inviteToken, pos);
 					const sendReady = () => this.client!.sendReady(inviteToken, true);
-					const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null) => {
-						this.onGameEnded(inviteToken, existingEntry.opponentUserId, existingEntry.replyNoteId, resultType, opponentUser, winnerId);
+					const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean) => {
+						this.onGameEnded(inviteToken, existingEntry.opponentUserId, existingEntry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode);
 						this.client!.closeGame(inviteToken);
 						this.gameSessions.delete(inviteToken);
 					};
@@ -553,14 +626,16 @@ export default class extends Module {
 	 * @param gameId - 終了したゲーム ID
 	 * @param opponentUserId - 対戦相手（招待依頼者）のユーザー ID
 	 * @param replyNoteId - 結果を返信する先のノート ID
-	 * @param resultType - 結果種別（'iWon' | 'iLose' | 'drawn' | 'youSurrendered' | 'decline'）
+	 * @param resultType - 結果種別（'iWon' | 'iLose' | 'drawn' | 'youSurrendered' | 'timeout' | 'decline'）
 	 * @param opponentUser - 対戦相手の User（decline 時は null）。表示名・@acct 用
-	 * @param winnerId - 勝者のユーザー ID。引き分け・投了時は null
+	 * @param winnerId - 勝者のユーザー ID。引き分け・投了・時間切れ時は null
+	 * @param useSimpleMode - 単純モードで対局したか。難易度別統計の加算に使用。decline 等の場合は undefined 可
 	 *
 	 * @remarks
 	 * 結果本文はニックネーム（または「あなた」）と @acct を使用し、プロフィールリンクは付けない。
 	 * incLove(0.2, 'reversi') で実効 +1。lastPlayedAt が今日と一致する場合は加算しない。
 	 * 勝敗: 相手が勝ったときのみ reversi.wins +1、それ以外（自分勝ち・引き分け・投了）は reversi.losses +1。
+	 * 難易度別統計: useSimpleMode が渡されたとき、超単純/単純の該当項目（勝・負・引き分け・投了・時間切れ）を 1 加算する。
 	 *
 	 * @internal
 	 */
@@ -570,10 +645,24 @@ export default class extends Module {
 		replyNoteId: string,
 		resultType: string,
 		opponentUser: User | null,
-		winnerId: string | null
+		winnerId: string | null,
+		useSimpleMode?: boolean
 	) {
 		if (this.getFirstGameCompletedAt() == null) {
 			this.setFirstGameCompletedAt(Date.now());
+		}
+
+		// 難易度別の全ユーザー累計統計（超単純・単純それぞれで勝敗・引き分け・投了・時間切れを記録）
+		if (typeof useSimpleMode === 'boolean') {
+			const statKey: keyof DifficultyStats | null =
+				resultType === 'iWon' ? 'wins' :
+				resultType === 'iLose' ? 'losses' :
+				resultType === 'drawn' ? 'draws' :
+				resultType === 'youSurrendered' ? 'surrendered' :
+				resultType === 'timeout' ? 'timeout' : null;
+			if (statKey !== null) {
+				this.incrementDifficultyStat(useSimpleMode, statKey);
+			}
 		}
 
 		const friend = this.ai.lookupFriend(opponentUserId);
@@ -605,27 +694,32 @@ export default class extends Module {
 			if (!wasPlayedToday) friend.incLove(0.2, 'reversi');
 		}
 
-		let resultText: string;
+		// 返信する場合は返信先（招待依頼者）のユーザが取得できるときのみ。friend が無いなどで取れない場合は返信をスキップする
+		let resultText: string | null = null;
 		if (resultType === 'decline') {
 			resultText = serifs.reversi.decline;
 		} else if (opponentUser) {
-			// 返信先（対戦相手）の情報のみ使用。先頭に @username、本文は「リバーシで◯◯に勝ちました！」形式
-			const name = friend?.name ?? 'あなた';
-			const fn = (serifs.reversi as any)[resultType];
-			const body = typeof fn === 'function' ? fn(name) : serifs.reversi.iWon(name);
-			resultText = `${acct(opponentUser)} ${body}`;
+			const replyTargetUser = friend?.doc?.user;
+			if (replyTargetUser?.username != null) {
+				const name = friend?.name ?? 'あなた';
+				const fn = (serifs.reversi as any)[resultType];
+				const body = typeof fn === 'function' ? fn(name) : serifs.reversi.iWon(name);
+				resultText = `${acct(replyTargetUser)} ${body}`;
+			}
 		} else {
 			resultText = serifs.reversi.decline;
 		}
 
-		try {
-			await this.ai.post({
-				replyId: replyNoteId,
-				text: resultText,
-				visibility: 'specified',
-				visibleUserIds: [opponentUserId]
-			});
-		} catch (_) {}
+		if (resultText !== null) {
+			try {
+				await this.ai.post({
+					replyId: replyNoteId,
+					text: resultText,
+					visibility: 'specified',
+					visibleUserIds: [opponentUserId]
+				});
+			} catch (_) {}
+		}
 		this.removeGame(gameId);
 	}
 }

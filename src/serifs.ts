@@ -283,6 +283,11 @@ export default {
 		youSurrendered: (name: string) => `リバーシで${name}が投了しました！また遊びましょう！`,
 
 		/**
+		 * 対局中に時間切れになったとき
+		 */
+		timeout: (name: string) => `リバーシで${name}との対局が時間切れになりました。また遊びましょう！`,
+
+		/**
 		 * 接待してたら相手が投了したとき
 		 */
 		settaiButYouSurrendered: (_name: string) => ``,

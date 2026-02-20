@@ -124,6 +124,8 @@ flowchart LR
 
 **Friend の reversi 永続データ**: `lastReversiDate`、`gamesPlayedToday`、`lastPlayedAt` に加え、`wins`（その相手に勝った回数）と `losses`（その相手に負けた回数・引き分け・投了を含む）を保持する。難易度切り替え（勝ち越し時は単純モード）に利用する。
 
+**モジュール永続データの難易度別統計**: 超単純・単純それぞれで、**全ユーザー累計**の「勝った数」「負けた数」「引き分け数」「投了数」「時間切れ数」を `difficultyStatsSuperSimple` / `difficultyStatsSimple` に保持する。終局時に `resultType`（iWon / iLose / drawn / youSurrendered / timeout）に応じて該当難易度の該当項目を +1 する。招待期限切れは時間切れ数に含めない。
+
 ---
 
 ## 設定例 (config.json)
