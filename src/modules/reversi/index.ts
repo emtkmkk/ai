@@ -251,10 +251,24 @@ export default class extends Module {
 		return modeMultiplier * resultMultiplier;
 	}
 
+	/**
+	 * 終局時の総石数が全マス数より少ない場合の補正倍率を返す。
+	 * 補正値は `1 / (総石数 / 全マス数)` で、総石数が 0 の場合は安全のため 1.0 とする。
+	 */
+	private getThinkingStoneFillCorrection(boardSnapshot?: { blackStones: number; whiteStones: number; totalCells: number }): number {
+		if (!boardSnapshot) return 1.0;
+		const totalCells = Math.max(0, boardSnapshot.totalCells ?? 0);
+		if (totalCells <= 0) return 1.0;
+		const totalStones = Math.max(0, (boardSnapshot.blackStones ?? 0) + (boardSnapshot.whiteStones ?? 0));
+		if (totalStones <= 0 || totalStones >= totalCells) return 1.0;
+		return totalCells / totalStones;
+	}
+
 	/** 相手思考時間（ms）へ終局結果・難易度ボーナスを適用した値を返す。 */
-	private calcReversiAdjustedThinkingMs(totalOpponentThinkingMs: number, resultType: string, useSimpleMode: boolean): number {
+	private calcReversiAdjustedThinkingMs(totalOpponentThinkingMs: number, resultType: string, useSimpleMode: boolean, boardSnapshot?: { blackStones: number; whiteStones: number; totalCells: number }): number {
 		const multiplier = this.getThinkingBonusMultiplier(resultType, useSimpleMode);
-		return Math.max(0, totalOpponentThinkingMs) * multiplier;
+		const stoneFillCorrection = this.getThinkingStoneFillCorrection(boardSnapshot);
+		return Math.max(0, totalOpponentThinkingMs) * multiplier * stoneFillCorrection;
 	}
 
 	/**
@@ -377,7 +391,7 @@ export default class extends Module {
 			const sendReady = () => {
 				this.client!.sendReady(inviteToken, true);
 			};
-		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number }) => {
+		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number; totalCells: number }) => {
 			this.onGameEnded(inviteToken, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff, totalOpponentThinkingMs, gameStartedAtMs, boardSnapshot);
 			this.cancelGameReconnect(inviteToken);
 			this.client!.closeGame(inviteToken);
@@ -489,7 +503,7 @@ export default class extends Module {
 			(opponentReversi?.wins ?? 0) > (opponentReversi?.losses ?? 0);
 
 		// 終局時は結果種別・対戦相手・勝者 ID ・難易度・石差を渡し、index 側で本文と wins/losses・連勝・難易度別統計を更新する
-		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number }) => {
+		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number; totalCells: number }) => {
 			this.onGameEnded(game.id, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff, totalOpponentThinkingMs, gameStartedAtMs, boardSnapshot);
 			this.cancelGameReconnect(game.id);
 			this.client!.closeGame(game.id);
@@ -754,7 +768,7 @@ export default class extends Module {
 		stoneDiff?: number,
 		totalOpponentThinkingMs?: number,
 		gameStartedAtMs?: number,
-		boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number }
+		boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number; totalCells: number }
 	) {
 		if (this.getFirstGameCompletedAt() == null) {
 			this.setFirstGameCompletedAt(Date.now());
@@ -776,7 +790,8 @@ export default class extends Module {
 		const friend = this.ai.lookupFriend(opponentUserId);
 		const rawOpponentThinkingMs = Math.max(0, typeof totalOpponentThinkingMs === 'number' ? totalOpponentThinkingMs : 0);
 		const thinkingBonusMultiplier = this.getThinkingBonusMultiplier(resultType, useSimpleMode === true);
-		const adjustedThinkingMsForLog = this.calcReversiAdjustedThinkingMs(rawOpponentThinkingMs, resultType, useSimpleMode === true);
+		const thinkingStoneFillCorrection = this.getThinkingStoneFillCorrection(boardSnapshot);
+		const adjustedThinkingMsForLog = this.calcReversiAdjustedThinkingMs(rawOpponentThinkingMs, resultType, useSimpleMode === true, boardSnapshot);
 		const inviteUrl = config.reversiServiceApiUrl
 			? `${config.reversiServiceApiUrl}/game/${encodeURIComponent(gameId)}`
 			: '';
@@ -827,7 +842,7 @@ export default class extends Module {
 			}
 			const playDate = typeof gameStartedAtMs === 'number' ? this.formatDateFromMs(gameStartedAtMs) : today;
 			const currentTotalThinkingMs = typeof totalOpponentThinkingMs === 'number' ? totalOpponentThinkingMs : 0;
-			const adjustedThinkingMs = this.calcReversiAdjustedThinkingMs(currentTotalThinkingMs, resultType, useSimpleMode === true);
+			const adjustedThinkingMs = this.calcReversiAdjustedThinkingMs(currentTotalThinkingMs, resultType, useSimpleMode === true, boardSnapshot);
 			const baseCarryMs = r.loveChunkDate === playDate
 				? Math.max(0, r.loveThinkingCarryMs ?? 0)
 				: 0;
@@ -855,7 +870,7 @@ export default class extends Module {
 		const callerAcct = opponentUser
 			? `${opponentUser.username}${opponentUser.host ? `@${opponentUser.host}` : ''}`
 			: `(unknown:${opponentUserId})`;
-		log(`[reversi] game summary: result=${resultType} winnerId=${winnerId ?? 'none'} caller=${callerAcct} callerId=${opponentUserId} botStone=${boardSnapshot?.botStoneColor ?? 'unknown'} stones=${boardSnapshot?.blackStones ?? 0}-${boardSnapshot?.whiteStones ?? 0} level=${useSimpleMode ? 'simple' : 'super-simple'} opponentThinkingMsRaw=${rawOpponentThinkingMs} bonusMultiplier=${thinkingBonusMultiplier.toFixed(2)} opponentThinkingMsAdjusted=${Math.round(adjustedThinkingMsForLog)} loveBefore=${beforeLoveChunksAppliedToday}/${Math.round(beforeLoveThinkingCarryMs / 1000)}s loveAfter=${afterLoveChunksAppliedToday}/${Math.round(afterLoveThinkingCarryMs / 1000)}s inviteUrl=${inviteUrl || '(none)'}`);
+		log(`[reversi] game summary: result=${resultType} winnerId=${winnerId ?? 'none'} caller=${callerAcct} callerId=${opponentUserId} botStone=${boardSnapshot?.botStoneColor ?? 'unknown'} stones=${boardSnapshot?.blackStones ?? 0}-${boardSnapshot?.whiteStones ?? 0} level=${useSimpleMode ? 'simple' : 'super-simple'} opponentThinkingMsRaw=${rawOpponentThinkingMs} bonusMultiplier=${thinkingBonusMultiplier.toFixed(2)} stoneFillCorrection=${thinkingStoneFillCorrection.toFixed(2)} opponentThinkingMsAdjusted=${Math.round(adjustedThinkingMsForLog)} loveBefore=${beforeLoveChunksAppliedToday}/${Math.round(beforeLoveThinkingCarryMs / 1000)}s loveAfter=${afterLoveChunksAppliedToday}/${Math.round(afterLoveThinkingCarryMs / 1000)}s inviteUrl=${inviteUrl || '(none)'}`);
 
 		// 返信する場合は返信先（招待依頼者）のユーザが取得できるときのみ。friend が無いなどで取れない場合は返信をスキップする
 		let resultText: string | null = null;

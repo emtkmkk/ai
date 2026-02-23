@@ -473,7 +473,7 @@ export class ReversiGameSession {
 	private sendPutStone: (pos: number) => void;
 	private sendReady: () => void;
 	/** 終局時: (結果種別, 対戦相手 User, winnerId, 単純モードか, 石差)。decline のときは ('decline', null, null, false)。石差は iWon/iLose のときのみ渡す */
-	private onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number }) => void;
+	private onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number; totalCells: number }) => void;
 	/** 現在の game オブジェクト（started / sync でセット）。user1, user2 等を含む */
 	private game: any;
 	/** リバーシエンジン（misskey-reversi）。started / sync で初期化、log で着手を適用 */
@@ -520,7 +520,7 @@ export class ReversiGameSession {
 		account: User,
 		sendPutStone: (pos: number) => void,
 		sendReady: () => void,
-		onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number }) => void,
+		onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number; totalCells: number }) => void,
 		gameUrl?: string,
 		useSimpleMode?: boolean
 	) {
@@ -792,10 +792,13 @@ export class ReversiGameSession {
 		let stoneDiff: number | undefined;
 		let blackStones = 0;
 		let whiteStones = 0;
+		let totalCells = 0;
 		if (this.o?.board) {
 			const board = (this.o as any).board as (boolean | null)[];
+			const map = (this.o as any).map as string[] | undefined;
 			blackStones = board.filter(x => x === true).length;
 			whiteStones = board.filter(x => x === false).length;
+			totalCells = Array.isArray(map) ? map.filter(x => x !== 'null').length : board.length;
 			if (resultType === 'iWon' || resultType === 'iLose') {
 				stoneDiff = Math.abs(blackStones - whiteStones);
 			}
@@ -804,7 +807,8 @@ export class ReversiGameSession {
 		this.onEndedCallback(resultType, opponentUser, winnerId, this.useSimpleMode, stoneDiff, totalOpponentThinkingMs, this.gameStartedAtMs ?? undefined, {
 			botStoneColor: this.botColor === true ? 'black' : this.botColor === false ? 'white' : 'unknown',
 			blackStones,
-			whiteStones
+			whiteStones,
+			totalCells
 		});
 	}
 
