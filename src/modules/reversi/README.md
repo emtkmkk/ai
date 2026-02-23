@@ -13,6 +13,14 @@
 - `config.reversiServiceApiUrl`（HTTP: 例 `https://example.com`）
 - `config.reversiServiceToken`（MiAuth で取得したセッショントークン）
 
+## 対局開放条件（好感度制限）
+
+- **ローカルユーザー**（`msg.user.host` がない）は好感度制限の対象外。
+- **管理者**（`isAdmin === true` または `config.master`）も好感度制限の対象外。
+- それ以外のリモートユーザーは、次の条件を満たすときのみ招待できる。
+  - 初回対局完了前（`firstGameCompletedAt` 未記録）: 親愛度 `love > 200`
+  - 初回対局完了後: 最初の 7 日間は必要親愛度 200、その後 7 日間で 0 まで日次で段階的に低下
+
 ---
 
 ## アーキテクチャ
