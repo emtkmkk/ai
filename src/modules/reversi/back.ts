@@ -473,7 +473,7 @@ export class ReversiGameSession {
 	private sendPutStone: (pos: number) => void;
 	private sendReady: () => void;
 	/** 終局時: (結果種別, 対戦相手 User, winnerId, 単純モードか, 石差)。decline のときは ('decline', null, null, false)。石差は iWon/iLose のときのみ渡す */
-	private onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number) => void;
+	private onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number) => void;
 	/** 現在の game オブジェクト（started / sync でセット）。user1, user2 等を含む */
 	private game: any;
 	/** リバーシエンジン（misskey-reversi）。started / sync で初期化、log で着手を適用 */
@@ -493,6 +493,14 @@ export class ReversiGameSession {
 	private thinkScheduled = false;
 	/** 思考開始時刻（Date.now()）。着手決定後に思考時間が足りない場合の待ち時間計算に使用 */
 	private thinkStartTime = 0;
+	/** 相手の 1 手の思考開始時刻（Date.now()）。自分の手番に戻った時点で消費時間を加算する */
+	private opponentTurnStartedAt: number | null = null;
+	/** 相手の思考時間の合計（ミリ秒）。1手ごとに最大 5 秒まで加算する */
+	private totalOpponentThinkingMs = 0;
+	/** 相手 1 手あたりで加算できる思考時間の上限（ミリ秒） */
+	private static readonly OPPONENT_THINKING_MS_PER_TURN_CAP = 5000;
+	/** started/sync で確定した対局開始時刻（ミリ秒）。日付跨ぎ時の集計基準に使う */
+	private gameStartedAtMs: number | null = null;
 
 	/**
 	 * 対局セッションを生成する
@@ -512,7 +520,7 @@ export class ReversiGameSession {
 		account: User,
 		sendPutStone: (pos: number) => void,
 		sendReady: () => void,
-		onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number) => void,
+		onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number) => void,
 		gameUrl?: string,
 		useSimpleMode?: boolean
 	) {
@@ -580,6 +588,31 @@ export class ReversiGameSession {
 	 *
 	 * @internal
 	 */
+
+	/** 現在の手番に応じて相手思考時間計測の開始/停止を更新する。 */
+	private updateOpponentTurnTracking() {
+		if (!this.o || this.botColor == null) return;
+		const isOpponentTurn = (this.o as any).turn !== this.botColor;
+		if (isOpponentTurn && this.opponentTurnStartedAt == null) {
+			this.opponentTurnStartedAt = Date.now();
+		}
+		if (!isOpponentTurn && this.opponentTurnStartedAt != null) {
+			const elapsed = Math.max(0, Date.now() - this.opponentTurnStartedAt);
+			this.totalOpponentThinkingMs += Math.min(elapsed, ReversiGameSession.OPPONENT_THINKING_MS_PER_TURN_CAP);
+			this.opponentTurnStartedAt = null;
+		}
+	}
+
+	/** 対局終了時に未確定の相手思考時間を取り込み、合計ミリ秒を返す。 */
+	private finalizeOpponentThinkingMs(): number {
+		if (this.opponentTurnStartedAt != null) {
+			const elapsed = Math.max(0, Date.now() - this.opponentTurnStartedAt);
+			this.totalOpponentThinkingMs += Math.min(elapsed, ReversiGameSession.OPPONENT_THINKING_MS_PER_TURN_CAP);
+			this.opponentTurnStartedAt = null;
+		}
+		return Math.max(0, Math.round(this.totalOpponentThinkingMs));
+	}
+
 	private static resolveBotColor(game: any, accountId: string): Color | null {
 		if (!game || accountId == null) return null;
 		const id = String(accountId);
@@ -622,6 +655,9 @@ export class ReversiGameSession {
 		this.maxTurn = this.o.map.filter((p: string) => p === 'empty').length - this.o.board.filter((x: any) => x != null).length;
 		this.currentTurn = 0;
 		this.computeSumiIndexes();
+		this.totalOpponentThinkingMs = 0;
+		this.opponentTurnStartedAt = null;
+		this.gameStartedAtMs = Date.now();
 		this.botColor = ReversiGameSession.resolveBotColor(this.game, this.account.id);
 		if (this.botColor == null) {
 			// game の形式が想定外のとき、エンジン初期手番に合わせて botColor を推定（招待主＝ホストが黒の実装に合わせる）
@@ -631,6 +667,7 @@ export class ReversiGameSession {
 		}
 		const engineTurn = (this.o as any).turn;
 		const isMyTurn = this.botColor != null && engineTurn === this.botColor;
+		this.updateOpponentTurnTracking();
 		log(`[reversi] onStarted botColor=${this.botColor} engineTurn=${engineTurn} isMyTurn=${isMyTurn}`);
 		this.sendReady();
 		if (isMyTurn && !this.thinkScheduled) {
@@ -667,6 +704,7 @@ export class ReversiGameSession {
 		}
 		this.o.put(color, pos);
 		this.currentTurn++;
+		this.updateOpponentTurnTracking();
 		const isMyTurn = (this.o as any).turn === this.botColor;
 		log(`[reversi] onLog after put isMyTurn=${isMyTurn}`);
 		if (isMyTurn) {
@@ -690,6 +728,7 @@ export class ReversiGameSession {
 		log(`[reversi] onSync gameId=${this.gameId}`);
 		const game = body.game || body;
 		this.game = game;
+		if (this.gameStartedAtMs == null) this.gameStartedAtMs = Date.now();
 		if (game.canPutEverywhere) {
 			log(`[reversi] onSync decline (canPutEverywhere)`);
 			this.onEndedCallback('decline', null, null, this.useSimpleMode);
@@ -730,6 +769,7 @@ export class ReversiGameSession {
 		this.computeSumiIndexes();
 		const engineTurn = (this.o as any).turn;
 		const isMyTurn = this.botColor != null && engineTurn === this.botColor;
+		this.updateOpponentTurnTracking();
 		log(`[reversi] onSync gameId=${this.gameId} botColor=${this.botColor} engineTurn=${engineTurn} isMyTurn=${isMyTurn}`);
 		if (isMyTurn && !this.thinkScheduled) {
 			this.thinkScheduled = true;
@@ -769,7 +809,8 @@ export class ReversiGameSession {
 			const white = board.filter(x => x === false).length;
 			stoneDiff = Math.abs(black - white);
 		}
-		this.onEndedCallback(resultType, opponentUser, winnerId, this.useSimpleMode, stoneDiff);
+		const totalOpponentThinkingMs = this.finalizeOpponentThinkingMs();
+		this.onEndedCallback(resultType, opponentUser, winnerId, this.useSimpleMode, stoneDiff, totalOpponentThinkingMs, this.gameStartedAtMs ?? undefined);
 	}
 
 	/** 隅（sumiIndexes）と隅に隣接するマス（sumiNearIndexes）を map から計算する。超単純思考で使用。 */
