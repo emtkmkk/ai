@@ -239,13 +239,16 @@ export default class extends Module {
 	/**
 	 * 終局結果と難易度に応じた思考時間ボーナス倍率を返す。
 	 * iWon は Bot 勝利（プレイヤー負け）、iLose は Bot 敗北（プレイヤー勝ち）。
-	 * プレイヤー勝ちのとき（iLose）に、より高い倍率を適用する。
+	 * 単純モード時は常に基礎倍率 1.35、それ以外は 1.0 を掛ける。
+	 * さらにプレイヤー結果に応じて、勝利 2.0 / 引き分け 1.5 / 敗北・投了・時間切れ 1.0 を掛ける。
 	 */
 	private getThinkingBonusMultiplier(resultType: string, useSimpleMode: boolean): number {
-		if (resultType === 'youSurrendered' || resultType === 'timeout') return 0;
-		if (resultType === 'iWon') return useSimpleMode ? 1.35 : 1.0;
-		if (resultType === 'iLose') return useSimpleMode ? 2.7 : 2.0;
-		return 1.0;
+		const modeMultiplier = useSimpleMode ? 1.35 : 1.0;
+		const resultMultiplier =
+			resultType === 'iLose' ? 2.0 :
+			resultType === 'drawn' ? 1.5 :
+			1.0;
+		return modeMultiplier * resultMultiplier;
 	}
 
 	/** 相手思考時間（ms）へ終局結果・難易度ボーナスを適用した値を返す。 */
