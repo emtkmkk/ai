@@ -499,6 +499,8 @@ export class ReversiGameSession {
 	private totalOpponentThinkingMs = 0;
 	/** 相手 1 手あたりで加算できる思考時間の上限（ミリ秒） */
 	private static readonly OPPONENT_THINKING_MS_PER_TURN_CAP = 5000;
+	/** 相手が着手（通常手・パス）したことが確定したときに加算する最小思考時間（ミリ秒） */
+	private static readonly OPPONENT_THINKING_MS_MIN_CONFIRMED_ACTION = 100;
 	/** started/sync で確定した対局開始時刻（ミリ秒）。日付跨ぎ時の集計基準に使う */
 	private gameStartedAtMs: number | null = null;
 
@@ -599,10 +601,46 @@ export class ReversiGameSession {
 			this.opponentTurnStartedAt = Date.now();
 		}
 		if (!isOpponentTurn && this.opponentTurnStartedAt != null) {
-			const elapsed = Math.max(0, Date.now() - this.opponentTurnStartedAt);
-			this.totalOpponentThinkingMs += Math.min(elapsed, ReversiGameSession.OPPONENT_THINKING_MS_PER_TURN_CAP);
-			this.opponentTurnStartedAt = null;
+			this.commitOpponentThinkingMs(false);
 		}
+	}
+
+	/**
+	 * 計測中の相手思考時間を合計へ加算して計測状態をリセットする。
+	 *
+	 * @param useMinimumGuard - true のとき、確定アクションとして最小加算ガードを適用する
+	 */
+	private commitOpponentThinkingMs(useMinimumGuard: boolean) {
+		if (this.opponentTurnStartedAt == null) return;
+		const elapsed = Math.max(0, Date.now() - this.opponentTurnStartedAt);
+		const capped = Math.min(elapsed, ReversiGameSession.OPPONENT_THINKING_MS_PER_TURN_CAP);
+		const guarded = useMinimumGuard
+			? Math.max(ReversiGameSession.OPPONENT_THINKING_MS_MIN_CONFIRMED_ACTION, capped)
+			: capped;
+		this.totalOpponentThinkingMs += Math.max(0, guarded);
+		this.opponentTurnStartedAt = null;
+	}
+
+	/** log / sync の turn 表現をエンジン形式（boolean: true=黒）へ変換する。 */
+	private resolveEngineTurn(turn: any): boolean | null {
+		if (turn == null) return null;
+		if (turn === 'host' || turn === 'guest') {
+			return (turn === 'host' && this.game.black === 1) || (turn === 'guest' && this.game.black === 2);
+		}
+		if (turn === 1 || turn === true) return true;
+		if (turn === 0 || turn === false) return false;
+		return null;
+	}
+
+	/** log の body から着手者の色を推定する。 */
+	private resolveMoveColorFromLog(body: any): boolean | null {
+		if (body?.color != null) return body.color === 1 || body.color === true;
+		if (body?.hostName != null || body?.guestName != null) {
+			const hostMoved = body.hostName != null;
+			return (hostMoved && this.game.black === 1) || (!hostMoved && this.game.black === 2);
+		}
+		if (body?.black != null) return body.black === true || body.black === 1;
+		return null;
 	}
 
 	/** 対局終了時の相手思考時間合計（ms）を返す。
@@ -683,20 +721,20 @@ export class ReversiGameSession {
 	 */
 	onLog(body: any) {
 		if (!this.o) return;
-		const pos = body.pos;
-		if (pos == null) return;
-		// 色: 明示値 > reversi-service は hostName/guestName で着手者を送るので game.black から推定 > 従来の black
-		let color: boolean;
-		if (body.color != null) {
-			color = body.color === 1 || body.color === true;
-		} else if (body.hostName != null || body.guestName != null) {
-			const hostMoved = body.hostName != null;
-			color = (hostMoved && this.game.black === 1) || (!hostMoved && this.game.black === 2);
-		} else {
-			color = body.black === true || body.black === 1;
+		const color = this.resolveMoveColorFromLog(body);
+		if (color != null && this.botColor != null && color !== this.botColor) {
+			this.commitOpponentThinkingMs(true);
 		}
-		this.o.put(color, pos);
-		this.currentTurn++;
+		const pos = body.pos;
+		if (pos != null && color != null) {
+			this.o.put(color, pos);
+			this.currentTurn++;
+		} else if (body?.turn != null) {
+			const resolvedTurn = this.resolveEngineTurn(body.turn);
+			if (resolvedTurn != null) {
+				(this.o as any).turn = resolvedTurn;
+			}
+		}
 		this.updateOpponentTurnTracking();
 		const isMyTurn = (this.o as any).turn === this.botColor;
 		if (isMyTurn) {
@@ -741,11 +779,9 @@ export class ReversiGameSession {
 		}
 		// 手番: エンジンは boolean（true=黒）。reversi-service は "host"|"guest"、他は 1/0 の可能性あり
 		if (body.turn != null) {
-			const t = body.turn;
-			if (t === 'host' || t === 'guest') {
-				(this.o as any).turn = (t === 'host' && game.black === 1) || (t === 'guest' && game.black === 2);
-			} else {
-				(this.o as any).turn = t === 1 || t === true ? true : t === 0 || t === false ? false : t;
+			const resolvedTurn = this.resolveEngineTurn(body.turn);
+			if (resolvedTurn != null) {
+				(this.o as any).turn = resolvedTurn;
 			}
 		}
 		this.currentTurn = this.o.board.filter((x: any) => x != null).length - 4;
