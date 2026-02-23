@@ -1248,6 +1248,12 @@ export class ReversiGameSession {
 			log(`[reversi] thinkSimple skip: no legal moves`);
 			return;
 		}
+		if (cans.length === 1) {
+			const pos = cans[0];
+			log(`[reversi] thinkSimple gameId=${this.gameId} → putStone pos=${pos} (single legal move)`);
+			this.commitMove(pos);
+			return;
+		}
 
 		const cornersWithDirs = this.simpleCorners();
 		const emptyCornerPoses = cornersWithDirs.map(c => c.pos).filter(k => this.simpleIsEmpty(k));
@@ -1364,6 +1370,12 @@ export class ReversiGameSession {
 		const cans = this.o.canPutSomewhere(this.botColor as any);
 		if (cans.length === 0) {
 			log(`[reversi] thinkSuperSimple skip: no legal moves`);
+			return;
+		}
+		if (cans.length === 1) {
+			const pos = cans[0];
+			log(`[reversi] thinkSuperSimple gameId=${this.gameId} → putStone pos=${pos} (single legal move)`);
+			this.commitMove(pos);
 			return;
 		}
 		// 1. 隅に打てる手があればそのいずれかを選ぶ
