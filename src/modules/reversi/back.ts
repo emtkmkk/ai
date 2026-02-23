@@ -473,7 +473,7 @@ export class ReversiGameSession {
 	private sendPutStone: (pos: number) => void;
 	private sendReady: () => void;
 	/** 終局時: (結果種別, 対戦相手 User, winnerId, 単純モードか, 石差)。decline のときは ('decline', null, null, false)。石差は iWon/iLose のときのみ渡す */
-	private onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number) => void;
+	private onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number }) => void;
 	/** 現在の game オブジェクト（started / sync でセット）。user1, user2 等を含む */
 	private game: any;
 	/** リバーシエンジン（misskey-reversi）。started / sync で初期化、log で着手を適用 */
@@ -520,7 +520,7 @@ export class ReversiGameSession {
 		account: User,
 		sendPutStone: (pos: number) => void,
 		sendReady: () => void,
-		onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number) => void,
+		onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number }) => void,
 		gameUrl?: string,
 		useSimpleMode?: boolean
 	) {
@@ -640,10 +640,8 @@ export class ReversiGameSession {
 	 * @internal
 	 */
 	onStarted(body: { game: any }) {
-		log(`[reversi] onStarted gameId=${this.gameId}`);
 		this.game = body.game;
 		if (this.game.canPutEverywhere) {
-			log(`[reversi] onStarted decline (canPutEverywhere)`);
 			this.onEndedCallback('decline', null, null, this.useSimpleMode);
 			return; // 変則ルールは未対応
 		}
@@ -668,15 +666,11 @@ export class ReversiGameSession {
 		const engineTurn = (this.o as any).turn;
 		const isMyTurn = this.botColor != null && engineTurn === this.botColor;
 		this.updateOpponentTurnTracking();
-		log(`[reversi] onStarted botColor=${this.botColor} engineTurn=${engineTurn} isMyTurn=${isMyTurn}`);
 		this.sendReady();
 		if (isMyTurn && !this.thinkScheduled) {
 			this.thinkScheduled = true;
 			this.thinkStartTime = Date.now();
-			log(`[reversi] onStarted scheduling think (decide then wait if needed)`);
 			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), 0);
-		} else if (isMyTurn && this.thinkScheduled) {
-			log(`[reversi] onStarted skip schedule (already scheduled by sync)`);
 		}
 	}
 
@@ -691,7 +685,6 @@ export class ReversiGameSession {
 		if (!this.o) return;
 		const pos = body.pos;
 		if (pos == null) return;
-		log(`[reversi] onLog gameId=${this.gameId} pos=${pos} (opponent move)`);
 		// 色: 明示値 > reversi-service は hostName/guestName で着手者を送るので game.black から推定 > 従来の black
 		let color: boolean;
 		if (body.color != null) {
@@ -706,10 +699,8 @@ export class ReversiGameSession {
 		this.currentTurn++;
 		this.updateOpponentTurnTracking();
 		const isMyTurn = (this.o as any).turn === this.botColor;
-		log(`[reversi] onLog after put isMyTurn=${isMyTurn}`);
 		if (isMyTurn) {
 			this.thinkStartTime = Date.now();
-			log(`[reversi] onLog scheduling think (decide then wait if needed)`);
 			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), 0);
 		}
 	}
@@ -725,12 +716,10 @@ export class ReversiGameSession {
 	 * @internal
 	 */
 	onSync(body: any) {
-		log(`[reversi] onSync gameId=${this.gameId}`);
 		const game = body.game || body;
 		this.game = game;
 		if (this.gameStartedAtMs == null) this.gameStartedAtMs = Date.now();
 		if (game.canPutEverywhere) {
-			log(`[reversi] onSync decline (canPutEverywhere)`);
 			this.onEndedCallback('decline', null, null, this.useSimpleMode);
 			return;
 		}
@@ -770,11 +759,9 @@ export class ReversiGameSession {
 		const engineTurn = (this.o as any).turn;
 		const isMyTurn = this.botColor != null && engineTurn === this.botColor;
 		this.updateOpponentTurnTracking();
-		log(`[reversi] onSync gameId=${this.gameId} botColor=${this.botColor} engineTurn=${engineTurn} isMyTurn=${isMyTurn}`);
 		if (isMyTurn && !this.thinkScheduled) {
 			this.thinkScheduled = true;
 			this.thinkStartTime = Date.now();
-			log(`[reversi] onSync scheduling think (decide then wait if needed)`);
 			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), 0);
 		}
 	}
@@ -803,14 +790,22 @@ export class ReversiGameSession {
 		}
 		// 勝敗が決まったときのみ石差を計算（エンジンの盤面から黒/白の数を数える）
 		let stoneDiff: number | undefined;
-		if ((resultType === 'iWon' || resultType === 'iLose') && this.o?.board) {
+		let blackStones = 0;
+		let whiteStones = 0;
+		if (this.o?.board) {
 			const board = (this.o as any).board as (boolean | null)[];
-			const black = board.filter(x => x === true).length;
-			const white = board.filter(x => x === false).length;
-			stoneDiff = Math.abs(black - white);
+			blackStones = board.filter(x => x === true).length;
+			whiteStones = board.filter(x => x === false).length;
+			if (resultType === 'iWon' || resultType === 'iLose') {
+				stoneDiff = Math.abs(blackStones - whiteStones);
+			}
 		}
 		const totalOpponentThinkingMs = this.finalizeOpponentThinkingMs();
-		this.onEndedCallback(resultType, opponentUser, winnerId, this.useSimpleMode, stoneDiff, totalOpponentThinkingMs, this.gameStartedAtMs ?? undefined);
+		this.onEndedCallback(resultType, opponentUser, winnerId, this.useSimpleMode, stoneDiff, totalOpponentThinkingMs, this.gameStartedAtMs ?? undefined, {
+			botStoneColor: this.botColor === true ? 'black' : this.botColor === false ? 'white' : 'unknown',
+			blackStones,
+			whiteStones
+		});
 	}
 
 	/** 隅（sumiIndexes）と隅に隣接するマス（sumiNearIndexes）を map から計算する。超単純思考で使用。 */
@@ -912,7 +907,6 @@ export class ReversiGameSession {
 		const elapsed = Date.now() - this.thinkStartTime;
 		const remaining = Math.max(0, requiredMs - elapsed);
 		if (remaining > 0) {
-			log(`[reversi] wait ${remaining}ms to satisfy think time (required=${requiredMs}ms elapsed=${elapsed}ms)`);
 			setTimeout(() => this.sendPutStone(pos), remaining);
 		} else {
 			this.sendPutStone(pos);
