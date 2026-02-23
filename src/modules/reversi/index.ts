@@ -738,7 +738,7 @@ export default class extends Module {
 	 * 勝敗時は「リバーシでn石差で」を付与。2連勝以上で負けたときは「これであなたがn連勝です！」を「次は負けません！」の前に挿入。
 	 * 結果は公開範囲「ホーム」で返信し、reversiServiceApiUrl が設定されている場合は [対局結果ページ](URL) を付与。
 	 * 相手の思考時間合計（1手ごとに最大5秒）を終局時に集計し、40秒ごとに実効 +0.5 相当で親愛度を離散加算する。端数時間は同日内のみ繰り越し、日付を跨いだら破棄する。加算回数は1日あたり最大6チャンク。日付判定は対局開始時刻を使用する。
-	 * 勝敗: 相手が勝ったときのみ reversi.wins +1、それ以外（自分勝ち・引き分け・投了）は reversi.losses +1。
+	 * 勝敗: 相手が勝ったときのみ reversi.wins +1、それ以外（自分勝ち・引き分け・投了・時間切れ）は reversi.losses +1。decline は対局不成立として勝敗を記録しない。
 	 * 難易度別統計: useSimpleMode が渡されたとき、超単純/単純の該当項目（勝・負・引き分け・投了・時間切れ）を 1 加算する。
 	 *
 	 * @internal
@@ -773,7 +773,7 @@ export default class extends Module {
 		}
 
 		const friend = this.ai.lookupFriend(opponentUserId);
-		if (friend) {
+		if (friend && resultType !== 'decline') {
 			const today = getDate();
 			const d = friend.getPerModulesData(this);
 			if (!d.reversi) d.reversi = {};
