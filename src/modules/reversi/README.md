@@ -131,14 +131,15 @@ flowchart LR
    - `drawn` / `decline`: `×1.0`
    - `youSurrendered` / `timeout`: `×0`（この対局分は加算対象外）
 3. **チャンク化して加算**
-   - `調整後思考時間 + 既存繰越(loveThinkingCarryMs)` を 40 秒単位で区切り、チャンク数を計算。
+   - `調整後思考時間 + 同日内の既存繰越(loveThinkingCarryMs)` を 40 秒単位で区切り、チャンク数を計算。
    - 1チャンクごとに `friend.incLove(0.1, "reversi-chunk-日付-連番")` を 1 回実行（まとめては加算しない）。
 4. **日次上限**
    - 1日あたり最大 6 チャンクまで反映（理論上の上限は +0.6）。
-   - その日の残り枠を超えた分は `loveThinkingCarryMs` に繰り越し。
+   - その日の残り枠を超えた分は `loveThinkingCarryMs` に繰り越し（同日内のみ有効）。
 5. **日付の扱い**
    - 上限判定の日付は**対局開始時刻**（`gameStartedAtMs`）基準。
    - 対局中に日付を跨いでも、開始日の枠を使う。
+   - `loveThinkingCarryMs` は `loveChunkDate` と対局日が一致する場合のみ利用し、日付を跨いだ端数は破棄する。
 
 
 ### 好感度開放の挙動メモ
@@ -147,7 +148,7 @@ flowchart LR
 - 好感度が条件未達の場合は、現時点の好感度で対局可能になるまでの見込み日数（最大 365 日）を案内する。
 - 判定が `>` のため、必要値とちょうど同値ではまだ対局できない（例: 必要 200 の期間は 200 ちょうどでは不可）。
 
-**Friend の reversi 永続データ**: `lastReversiDate`、`gamesPlayedToday`、`lastPlayedAt` に加え、`wins`（その相手に勝った回数）と `losses`（その相手に負けた回数・引き分け・投了を含む）、`loveThinkingCarryMs`（40秒未満の繰越ms）、`loveChunkDate`（チャンク加算管理日付）、`loveChunksAppliedToday`（当日反映済みチャンク数）を保持する。難易度切り替え（勝ち越し時は単純モード）に利用する。
+**Friend の reversi 永続データ**: `lastReversiDate`、`gamesPlayedToday`、`lastPlayedAt` に加え、`wins`（その相手に勝った回数）と `losses`（その相手に負けた回数・引き分け・投了を含む）、`loveThinkingCarryMs`（40秒未満の繰越ms。同日内のみ有効）、`loveChunkDate`（チャンク加算管理日付）、`loveChunksAppliedToday`（当日反映済みチャンク数）を保持する。難易度切り替え（勝ち越し時は単純モード）に利用する。
 
 **モジュール永続データの難易度別統計**: 超単純・単純それぞれで、**全ユーザー累計**の「勝った数」「負けた数」「引き分け数」「投了数」「時間切れ数」を `difficultyStatsSuperSimple` / `difficultyStatsSimple` に保持する。終局時に `resultType`（iWon / iLose / drawn / youSurrendered / timeout）に応じて該当難易度の該当項目を +1 する。招待期限切れは時間切れ数に含めない。
 
