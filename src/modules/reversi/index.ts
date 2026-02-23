@@ -391,8 +391,8 @@ export default class extends Module {
 			const sendReady = () => {
 				this.client!.sendReady(inviteToken, true);
 			};
-		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number; totalCells: number }) => {
-			this.onGameEnded(inviteToken, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff, totalOpponentThinkingMs, gameStartedAtMs, boardSnapshot);
+		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number; totalCells: number }, winnerHostOrGuest?: 'host' | 'guest') => {
+			this.onGameEnded(inviteToken, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff, totalOpponentThinkingMs, gameStartedAtMs, boardSnapshot, winnerHostOrGuest);
 			this.cancelGameReconnect(inviteToken);
 			this.client!.closeGame(inviteToken);
 			this.gameSessions.delete(inviteToken);
@@ -503,8 +503,8 @@ export default class extends Module {
 			(opponentReversi?.wins ?? 0) > (opponentReversi?.losses ?? 0);
 
 		// 終局時は結果種別・対戦相手・勝者 ID ・難易度・石差を渡し、index 側で本文と wins/losses・連勝・難易度別統計を更新する
-		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number; totalCells: number }) => {
-			this.onGameEnded(game.id, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff, totalOpponentThinkingMs, gameStartedAtMs, boardSnapshot);
+		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number; totalCells: number }, winnerHostOrGuest?: 'host' | 'guest') => {
+			this.onGameEnded(game.id, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff, totalOpponentThinkingMs, gameStartedAtMs, boardSnapshot, winnerHostOrGuest);
 			this.cancelGameReconnect(game.id);
 			this.client!.closeGame(game.id);
 			this.gameSessions.delete(game.id);
@@ -536,13 +536,63 @@ export default class extends Module {
 	 * @returns リバーシ系キーワードにマッチした場合は true（他モジュールに流さない）
 	 *
 	 * @remarks
-	 * チェック順: 無効 → 5 件以上 → 同一プレイヤー進行中 → 同一プレイヤー 5 回/日 → invite/create 呼び出し。
+	 * 管理者のみ: 「リバーシ リセット [userId]」で該当ユーザーの勝敗を 0 にリセット、「リバーシ セット [userId] [number]」で勝利数を number・敗北数を 0 に設定する。
+	 * チェック順: 管理者コマンド（該当時）→ 無効 → 5 件以上 → 同一プレイヤー進行中 → 同一プレイヤー 5 回/日 → invite/create 呼び出し。
 	 *
 	 * @internal
 	 */
 	@autobind
 	private async mentionHook(msg: Message) {
 		if (!msg.includes(['リバーシ', 'オセロ', 'reversi', 'othello'])) return false;
+
+		// 管理者専用: リバーシ リセット [userId] / リバーシ セット [userId] [number]
+		if (this.isReversiAdmin(msg)) {
+			const trimmed = msg.extractedText.trim();
+			const parts = trimmed.split(/\s+/);
+			const cmd = parts[1];
+			if (cmd === 'リセット' && parts[2]) {
+				const targetUserId = parts[2];
+				const friend = this.ai.lookupFriend(targetUserId);
+				if (!friend) {
+					msg.reply(serifs.reversi.adminUserNotFound, { visibility: 'specified' });
+					return { reaction: ':mk_hotchicken:' };
+				}
+				const d = friend.getPerModulesData(this);
+				if (!d.reversi) d.reversi = {};
+				const r = d.reversi as { wins?: number; losses?: number; currentStreak?: number; maxStreak?: number };
+				r.wins = 0;
+				r.losses = 0;
+				r.currentStreak = 0;
+				r.maxStreak = 0;
+				friend.setPerModulesData(this, d);
+				msg.reply(serifs.reversi.adminResetDone(targetUserId), { visibility: 'specified' });
+				return { reaction: 'love' };
+			}
+			if (cmd === 'セット' && parts[2] !== undefined && parts[3] !== undefined) {
+				const targetUserId = parts[2];
+				const num = parseInt(parts[3], 10);
+				if (!Number.isInteger(num) || num < 0) {
+					msg.reply(serifs.reversi.adminSetInvalidNumber, { visibility: 'specified' });
+					return { reaction: ':mk_hotchicken:' };
+				}
+				const friend = this.ai.lookupFriend(targetUserId);
+				if (!friend) {
+					msg.reply(serifs.reversi.adminUserNotFound, { visibility: 'specified' });
+					return { reaction: ':mk_hotchicken:' };
+				}
+				const d = friend.getPerModulesData(this);
+				if (!d.reversi) d.reversi = {};
+				const r = d.reversi as { wins?: number; losses?: number; currentStreak?: number; maxStreak?: number };
+				r.wins = num;
+				r.losses = 0;
+				r.currentStreak = num > 0 ? num : 0;
+				r.maxStreak = num > 0 ? num : 0;
+				friend.setPerModulesData(this, d);
+				msg.reply(serifs.reversi.adminSetDone(targetUserId, num), { visibility: 'specified' });
+				return { reaction: 'love' };
+			}
+		}
+
 		if (!this.enabled) {
 			msg.reply(serifs.reversi.decline, { visibility: 'specified' });
 			return { reaction: ':mk_hotchicken:' };
@@ -596,8 +646,8 @@ export default class extends Module {
 					// セッションがない（例: 再起動後）場合は reopenOngoingGames と同様にセッションを作成して接続
 					const sendPutStone = (pos: number) => this.client!.sendPutStone(inviteToken, pos);
 					const sendReady = () => this.client!.sendReady(inviteToken, true);
-					const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number) => {
-						this.onGameEnded(inviteToken, existingEntry.opponentUserId, existingEntry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff, totalOpponentThinkingMs, gameStartedAtMs);
+					const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number; totalCells: number }, winnerHostOrGuest?: 'host' | 'guest') => {
+						this.onGameEnded(inviteToken, existingEntry.opponentUserId, existingEntry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff, totalOpponentThinkingMs, gameStartedAtMs, boardSnapshot, winnerHostOrGuest);
 						this.cancelGameReconnect(inviteToken);
 						this.client!.closeGame(inviteToken);
 						this.gameSessions.delete(inviteToken);
@@ -746,6 +796,7 @@ export default class extends Module {
 	 * @param winnerId - 勝者のユーザー ID。引き分け・投了・時間切れ時は null
 	 * @param useSimpleMode - 単純モードで対局したか。難易度別統計の加算に使用。decline 等の場合は undefined 可
 	 * @param stoneDiff - 石差（iWon/iLose のときのみ。引き分け・投了・時間切れでは不要）
+	 * @param winnerHostOrGuest - reversi-service が返す場合の勝者（'host'|'guest'）。'guest' のときは相手の勝ちとして wins に加算する
 	 *
 	 * @remarks
 	 * 結果本文はニックネーム（または「あなた」）と @acct を使用し、プロフィールリンクは付けない。
@@ -753,6 +804,7 @@ export default class extends Module {
 	 * 結果は公開範囲「ホーム」で返信し、reversiServiceApiUrl が設定されている場合は [対局結果ページ](URL) を付与。
 	 * 相手の思考時間合計（1手ごとに最大5秒）を終局時に集計し、40秒ごとに実効 +0.5 相当で親愛度を離散加算する。端数時間は同日内のみ繰り越し、日付を跨いだら破棄する。加算回数は1日あたり最大6チャンク。日付判定は対局開始時刻を使用する。
 	 * 勝敗: 相手が勝ったときのみ reversi.wins +1、それ以外（自分勝ち・引き分け・投了・時間切れ）は reversi.losses +1。decline は対局不成立として勝敗を記録しない。
+	 * winnerId が opponentUserId と一致しない場合（ゲストでプレイした場合など）は、boardSnapshot の石数・winnerHostOrGuest === 'guest'・resultType === 'iLose' の順でフォールバックして相手の勝ちを判定する。
 	 * 難易度別統計: useSimpleMode が渡されたとき、超単純/単純の該当項目（勝・負・引き分け・投了・時間切れ）を 1 加算する。
 	 *
 	 * @internal
@@ -768,7 +820,8 @@ export default class extends Module {
 		stoneDiff?: number,
 		totalOpponentThinkingMs?: number,
 		gameStartedAtMs?: number,
-		boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number; totalCells: number }
+		boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number; totalCells: number },
+		winnerHostOrGuest?: 'host' | 'guest'
 	) {
 		if (this.getFirstGameCompletedAt() == null) {
 			this.setFirstGameCompletedAt(Date.now());
@@ -829,8 +882,25 @@ export default class extends Module {
 				r.gamesPlayedToday = 0;
 			}
 			r.gamesPlayedToday = (r.gamesPlayedToday ?? 0) + 1;
-			// 相手が勝ったときのみ wins、それ以外（自分勝ち・引き分け・投了）は losses
+			// 相手が勝ったときのみ wins、それ以外（自分勝ち・引き分け・投了）は losses。
+			// winnerId が opponentUserId と一致しない場合（ゲスト等）は、(1) 石数で相手の勝ちを判定するガード、(2) winnerHostOrGuest === 'guest'（reversi-service が返す場合）、(3) resultType === 'iLose' を信頼するフォールバックを行う。
+			let opponentWon: boolean;
 			if (winnerId === opponentUserId) {
+				opponentWon = true;
+			} else if (boardSnapshot && boardSnapshot.botStoneColor !== 'unknown') {
+				const botStones = boardSnapshot.botStoneColor === 'black' ? boardSnapshot.blackStones : boardSnapshot.whiteStones;
+				const opponentStones = boardSnapshot.botStoneColor === 'black' ? boardSnapshot.whiteStones : boardSnapshot.blackStones;
+				opponentWon = opponentStones > botStones;
+			} else if (winnerHostOrGuest === 'guest') {
+				// ホスト＝藍・相手＝ゲスト。reversi-service が winner: 'guest' を返した場合は相手の勝ち
+				opponentWon = true;
+			} else if (resultType === 'iLose') {
+				// 藍が負けた＝相手が勝った。winnerId が一致しなくても resultType を信頼する（ゲスト時など）
+				opponentWon = true;
+			} else {
+				opponentWon = false;
+			}
+			if (opponentWon) {
 				r.wins = (r.wins ?? 0) + 1;
 				r.currentStreak = (r.currentStreak ?? 0) + 1;
 				r.maxStreak = Math.max(r.maxStreak ?? 0, r.currentStreak);

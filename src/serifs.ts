@@ -322,6 +322,15 @@ export default {
 
 		/** 管理者未プレイかつ好感度200未満のとき */
 		notAvailableAboutOneWeek: 'あなたとはまだリバーシでは遊べないみたいです。1週間程度時間をおいて、また試してみてね！',
+
+		/** 管理者コマンド: 指定ユーザーが友達にいない */
+		adminUserNotFound: 'そのユーザーは友達に登録されていません。',
+		/** 管理者コマンド: リセット完了 */
+		adminResetDone: (userId: string) => `リバーシの勝敗をリセットしました（userId: ${userId}）。`,
+		/** 管理者コマンド: セットの数値が不正 */
+		adminSetInvalidNumber: '勝利数には 0 以上の整数を指定してください。',
+		/** 管理者コマンド: セット完了 */
+		adminSetDone: (userId: string, wins: number) => `リバーシの勝利数を ${wins} に設定しました（userId: ${userId}）。敗北数は 0 にしました。`,
 	},
 
 	/**
