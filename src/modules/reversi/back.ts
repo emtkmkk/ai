@@ -589,7 +589,9 @@ export class ReversiGameSession {
 	 * @internal
 	 */
 
-	/** 現在の手番に応じて相手思考時間計測の開始/停止を更新する。 */
+	/** 現在の手番に応じて相手思考時間計測の開始/停止を更新する。
+	 * 相手が実際に着手して手番が移るタイミングでのみ合計へ反映する。
+	 */
 	private updateOpponentTurnTracking() {
 		if (!this.o || this.botColor == null) return;
 		const isOpponentTurn = (this.o as any).turn !== this.botColor;
@@ -603,13 +605,11 @@ export class ReversiGameSession {
 		}
 	}
 
-	/** 対局終了時に未確定の相手思考時間を取り込み、合計ミリ秒を返す。 */
+	/** 対局終了時の相手思考時間合計（ms）を返す。
+	 * まだ着手が確定していない相手手番の経過時間は加算しない。
+	 */
 	private finalizeOpponentThinkingMs(): number {
-		if (this.opponentTurnStartedAt != null) {
-			const elapsed = Math.max(0, Date.now() - this.opponentTurnStartedAt);
-			this.totalOpponentThinkingMs += Math.min(elapsed, ReversiGameSession.OPPONENT_THINKING_MS_PER_TURN_CAP);
-			this.opponentTurnStartedAt = null;
-		}
+		this.opponentTurnStartedAt = null;
 		return Math.max(0, Math.round(this.totalOpponentThinkingMs));
 	}
 
