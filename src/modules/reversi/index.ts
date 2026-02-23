@@ -236,11 +236,15 @@ export default class extends Module {
 		return `${dt.getFullYear()}/${dt.getMonth() + 1}/${dt.getDate()}`;
 	}
 
-	/** 終局結果と難易度に応じた思考時間ボーナス倍率を返す。 */
+	/**
+	 * 終局結果と難易度に応じた思考時間ボーナス倍率を返す。
+	 * iWon は Bot 勝利（プレイヤー負け）、iLose は Bot 敗北（プレイヤー勝ち）。
+	 * プレイヤー勝ちのとき（iLose）に、より高い倍率を適用する。
+	 */
 	private getThinkingBonusMultiplier(resultType: string, useSimpleMode: boolean): number {
 		if (resultType === 'youSurrendered' || resultType === 'timeout') return 0;
-		if (resultType === 'iWon') return useSimpleMode ? 2.7 : 2.0;
-		if (resultType === 'iLose') return useSimpleMode ? 1.35 : 1.0;
+		if (resultType === 'iWon') return useSimpleMode ? 1.35 : 1.0;
+		if (resultType === 'iLose') return useSimpleMode ? 2.7 : 2.0;
 		return 1.0;
 	}
 
