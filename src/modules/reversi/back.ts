@@ -908,7 +908,12 @@ export class ReversiGameSession {
 	 */
 	private commitMove(pos: number): void {
 		const requiredMs = this.getThinkDelayMs();
-		const elapsed = Date.now() - this.thinkStartTime;
+		const now = Date.now();
+		if (this.thinkStartTime <= 0) {
+			// 安全策: 何らかの理由で手番開始時刻が未設定でも、最低待機時間を守る
+			this.thinkStartTime = now;
+		}
+		const elapsed = now - this.thinkStartTime;
 		const remaining = Math.max(0, requiredMs - elapsed);
 		if (remaining > 0) {
 			setTimeout(() => this.sendPutStone(pos), remaining);
@@ -1248,6 +1253,12 @@ export class ReversiGameSession {
 			log(`[reversi] thinkSimple skip: no legal moves`);
 			return;
 		}
+		if (cans.length === 1) {
+			const pos = cans[0];
+			log(`[reversi] thinkSimple gameId=${this.gameId} → putStone pos=${pos} (single legal move)`);
+			this.commitMove(pos);
+			return;
+		}
 
 		const cornersWithDirs = this.simpleCorners();
 		const emptyCornerPoses = cornersWithDirs.map(c => c.pos).filter(k => this.simpleIsEmpty(k));
@@ -1364,6 +1375,12 @@ export class ReversiGameSession {
 		const cans = this.o.canPutSomewhere(this.botColor as any);
 		if (cans.length === 0) {
 			log(`[reversi] thinkSuperSimple skip: no legal moves`);
+			return;
+		}
+		if (cans.length === 1) {
+			const pos = cans[0];
+			log(`[reversi] thinkSuperSimple gameId=${this.gameId} → putStone pos=${pos} (single legal move)`);
+			this.commitMove(pos);
 			return;
 		}
 		// 1. 隅に打てる手があればそのいずれかを選ぶ
