@@ -837,6 +837,11 @@ export class ReversiGameSession {
 			totalCells = Array.isArray(map) ? map.filter(x => x !== 'null').length : board.length;
 			if (resultType === 'iWon' || resultType === 'iLose') {
 				stoneDiff = Math.abs(blackStones - whiteStones);
+				// reversi-service 側が winnerId を返しても、石数が同数なら引き分けとして扱う
+				if (stoneDiff === 0 && totalCells > 0) {
+					resultType = 'drawn';
+					stoneDiff = undefined;
+				}
 			}
 		}
 		const totalOpponentThinkingMs = this.finalizeOpponentThinkingMs();
