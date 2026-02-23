@@ -286,7 +286,6 @@ export class ReversiStreamClient {
 		}
 		// reversi-service は putStone の body.id を文字列で必須としている
 		const bodyId = typeof id === 'string' ? id : `bot-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-		log(`[reversi] putStone sending game ${gameId} pos=${pos} id=${bodyId}`);
 		this.send(ws, { type: 'putStone', body: { pos, id: bodyId } });
 	}
 

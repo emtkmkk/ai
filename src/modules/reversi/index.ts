@@ -229,6 +229,34 @@ export default class extends Module {
 		return 365;
 	}
 
+
+	/** 指定時刻（ms）を `YYYY/M/D` 形式に変換する。 */
+	private formatDateFromMs(timestampMs: number): string {
+		const dt = new Date(timestampMs);
+		return `${dt.getFullYear()}/${dt.getMonth() + 1}/${dt.getDate()}`;
+	}
+
+	/**
+	 * 終局結果と難易度に応じた思考時間ボーナス倍率を返す。
+	 * iWon は Bot 勝利（プレイヤー負け）、iLose は Bot 敗北（プレイヤー勝ち）。
+	 * 単純モード時は常に基礎倍率 1.35、それ以外は 1.0 を掛ける。
+	 * さらにプレイヤー結果に応じて、勝利 2.0 / 引き分け 1.5 / 敗北・投了・時間切れ 1.0 を掛ける。
+	 */
+	private getThinkingBonusMultiplier(resultType: string, useSimpleMode: boolean): number {
+		const modeMultiplier = useSimpleMode ? 1.35 : 1.0;
+		const resultMultiplier =
+			resultType === 'iLose' ? 2.0 :
+			resultType === 'drawn' ? 1.5 :
+			1.0;
+		return modeMultiplier * resultMultiplier;
+	}
+
+	/** 相手思考時間（ms）へ終局結果・難易度ボーナスを適用した値を返す。 */
+	private calcReversiAdjustedThinkingMs(totalOpponentThinkingMs: number, resultType: string, useSimpleMode: boolean): number {
+		const multiplier = this.getThinkingBonusMultiplier(resultType, useSimpleMode);
+		return Math.max(0, totalOpponentThinkingMs) * multiplier;
+	}
+
 	/**
 	 * 指定 gameId（UUID）のゲームが一覧に存在するか検索する
 	 *
@@ -349,8 +377,8 @@ export default class extends Module {
 			const sendReady = () => {
 				this.client!.sendReady(inviteToken, true);
 			};
-		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number) => {
-			this.onGameEnded(inviteToken, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff);
+		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number }) => {
+			this.onGameEnded(inviteToken, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff, totalOpponentThinkingMs, gameStartedAtMs, boardSnapshot);
 			this.cancelGameReconnect(inviteToken);
 			this.client!.closeGame(inviteToken);
 			this.gameSessions.delete(inviteToken);
@@ -461,8 +489,8 @@ export default class extends Module {
 			(opponentReversi?.wins ?? 0) > (opponentReversi?.losses ?? 0);
 
 		// 終局時は結果種別・対戦相手・勝者 ID ・難易度・石差を渡し、index 側で本文と wins/losses・連勝・難易度別統計を更新する
-		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number) => {
-			this.onGameEnded(game.id, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff);
+		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number }) => {
+			this.onGameEnded(game.id, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff, totalOpponentThinkingMs, gameStartedAtMs, boardSnapshot);
 			this.cancelGameReconnect(game.id);
 			this.client!.closeGame(game.id);
 			this.gameSessions.delete(game.id);
@@ -554,8 +582,8 @@ export default class extends Module {
 					// セッションがない（例: 再起動後）場合は reopenOngoingGames と同様にセッションを作成して接続
 					const sendPutStone = (pos: number) => this.client!.sendPutStone(inviteToken, pos);
 					const sendReady = () => this.client!.sendReady(inviteToken, true);
-					const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number) => {
-						this.onGameEnded(inviteToken, existingEntry.opponentUserId, existingEntry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff);
+					const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number) => {
+						this.onGameEnded(inviteToken, existingEntry.opponentUserId, existingEntry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff, totalOpponentThinkingMs, gameStartedAtMs);
 						this.cancelGameReconnect(inviteToken);
 						this.client!.closeGame(inviteToken);
 						this.gameSessions.delete(inviteToken);
@@ -709,8 +737,8 @@ export default class extends Module {
 	 * 結果本文はニックネーム（または「あなた」）と @acct を使用し、プロフィールリンクは付けない。
 	 * 勝敗時は「リバーシでn石差で」を付与。2連勝以上で負けたときは「これであなたがn連勝です！」を「次は負けません！」の前に挿入。
 	 * 結果は公開範囲「ホーム」で返信し、reversiServiceApiUrl が設定されている場合は [対局結果ページ](URL) を付与。
-	 * incLove(0.2, 'reversi') で実効 +1。lastPlayedAt が今日と一致する場合は加算しない。
-	 * 勝敗: 相手が勝ったときのみ reversi.wins +1、それ以外（自分勝ち・引き分け・投了）は reversi.losses +1。
+	 * 相手の思考時間合計（1手ごとに最大5秒）を終局時に集計し、40秒ごとに実効 +0.5 相当で親愛度を離散加算する。端数時間は同日内のみ繰り越し、日付を跨いだら破棄する。加算回数は1日あたり最大6チャンク。日付判定は対局開始時刻を使用する。
+	 * 勝敗: 相手が勝ったときのみ reversi.wins +1、それ以外（自分勝ち・引き分け・投了・時間切れ）は reversi.losses +1。decline は対局不成立として勝敗を記録しない。
 	 * 難易度別統計: useSimpleMode が渡されたとき、超単純/単純の該当項目（勝・負・引き分け・投了・時間切れ）を 1 加算する。
 	 *
 	 * @internal
@@ -723,7 +751,10 @@ export default class extends Module {
 		opponentUser: User | null,
 		winnerId: string | null,
 		useSimpleMode?: boolean,
-		stoneDiff?: number
+		stoneDiff?: number,
+		totalOpponentThinkingMs?: number,
+		gameStartedAtMs?: number,
+		boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number }
 	) {
 		if (this.getFirstGameCompletedAt() == null) {
 			this.setFirstGameCompletedAt(Date.now());
@@ -743,7 +774,18 @@ export default class extends Module {
 		}
 
 		const friend = this.ai.lookupFriend(opponentUserId);
-		if (friend) {
+		const rawOpponentThinkingMs = Math.max(0, typeof totalOpponentThinkingMs === 'number' ? totalOpponentThinkingMs : 0);
+		const thinkingBonusMultiplier = this.getThinkingBonusMultiplier(resultType, useSimpleMode === true);
+		const adjustedThinkingMsForLog = this.calcReversiAdjustedThinkingMs(rawOpponentThinkingMs, resultType, useSimpleMode === true);
+		const inviteUrl = config.reversiServiceApiUrl
+			? `${config.reversiServiceApiUrl}/game/${encodeURIComponent(gameId)}`
+			: '';
+		const startedDate = typeof gameStartedAtMs === 'number' ? this.formatDateFromMs(gameStartedAtMs) : getDate();
+		let beforeLoveChunksAppliedToday = 0;
+		let beforeLoveThinkingCarryMs = 0;
+		let afterLoveChunksAppliedToday = 0;
+		let afterLoveThinkingCarryMs = 0;
+		if (friend && resultType !== 'decline') {
 			const today = getDate();
 			const d = friend.getPerModulesData(this);
 			if (!d.reversi) d.reversi = {};
@@ -757,7 +799,15 @@ export default class extends Module {
 				currentStreak?: number;
 				/** 最高連勝数 */
 				maxStreak?: number;
+				/** 40秒チャンクに満たない思考時間の繰越（ms）。同日内のみ保持する */
+				loveThinkingCarryMs?: number;
+				/** 40秒チャンク加算の管理日付 */
+				loveChunkDate?: string;
+				/** 当日に加算済みの40秒チャンク数（最大6） */
+				loveChunksAppliedToday?: number;
 			};
+			beforeLoveChunksAppliedToday = r.loveChunkDate === startedDate ? (r.loveChunksAppliedToday ?? 0) : 0;
+			beforeLoveThinkingCarryMs = r.loveChunkDate === startedDate ? Math.max(0, r.loveThinkingCarryMs ?? 0) : 0;
 			if (r.lastReversiDate !== today) {
 				r.lastReversiDate = today;
 				r.gamesPlayedToday = 0;
@@ -775,11 +825,37 @@ export default class extends Module {
 					r.currentStreak = 0;
 				}
 			}
-			const wasPlayedToday = r.lastPlayedAt === today;
-			if (!wasPlayedToday) r.lastPlayedAt = today;
+			const playDate = typeof gameStartedAtMs === 'number' ? this.formatDateFromMs(gameStartedAtMs) : today;
+			const currentTotalThinkingMs = typeof totalOpponentThinkingMs === 'number' ? totalOpponentThinkingMs : 0;
+			const adjustedThinkingMs = this.calcReversiAdjustedThinkingMs(currentTotalThinkingMs, resultType, useSimpleMode === true);
+			const baseCarryMs = r.loveChunkDate === playDate
+				? Math.max(0, r.loveThinkingCarryMs ?? 0)
+				: 0;
+			const totalMs = baseCarryMs + adjustedThinkingMs;
+			const previousChunkDate = r.loveChunkDate;
+			const appliedToday = previousChunkDate === playDate ? (r.loveChunksAppliedToday ?? 0) : 0;
+			const remainingDailyQuota = Math.max(0, 6 - appliedToday);
+			const totalChunks = Math.floor(totalMs / 40000);
+			const appliedChunks = Math.min(totalChunks, remainingDailyQuota);
+			const carryMs = totalMs - (appliedChunks * 40000);
+			r.loveThinkingCarryMs = Math.max(0, carryMs);
+			r.loveChunkDate = playDate;
+			r.loveChunksAppliedToday = appliedToday;
+			for (let i = 0; i < appliedChunks; i++) {
+				r.loveChunksAppliedToday += 1;
+				friend.incLove(0.1, `reversi-chunk-${playDate}-${r.loveChunksAppliedToday}`);
+			}
+			r.lastPlayedAt = playDate;
+			afterLoveChunksAppliedToday = r.loveChunksAppliedToday ?? 0;
+			afterLoveThinkingCarryMs = Math.max(0, r.loveThinkingCarryMs ?? 0);
 			friend.setPerModulesData(this, d);
-			if (!wasPlayedToday) friend.incLove(0.2, 'reversi');
 		}
+
+
+		const callerAcct = opponentUser
+			? `${opponentUser.username}${opponentUser.host ? `@${opponentUser.host}` : ''}`
+			: `(unknown:${opponentUserId})`;
+		log(`[reversi] game summary: result=${resultType} winnerId=${winnerId ?? 'none'} caller=${callerAcct} callerId=${opponentUserId} botStone=${boardSnapshot?.botStoneColor ?? 'unknown'} stones=${boardSnapshot?.blackStones ?? 0}-${boardSnapshot?.whiteStones ?? 0} level=${useSimpleMode ? 'simple' : 'super-simple'} opponentThinkingMsRaw=${rawOpponentThinkingMs} bonusMultiplier=${thinkingBonusMultiplier.toFixed(2)} opponentThinkingMsAdjusted=${Math.round(adjustedThinkingMsForLog)} loveBefore=${beforeLoveChunksAppliedToday}/${Math.round(beforeLoveThinkingCarryMs / 1000)}s loveAfter=${afterLoveChunksAppliedToday}/${Math.round(afterLoveThinkingCarryMs / 1000)}s inviteUrl=${inviteUrl || '(none)'}`);
 
 		// 返信する場合は返信先（招待依頼者）のユーザが取得できるときのみ。friend が無いなどで取れない場合は返信をスキップする
 		let resultText: string | null = null;
@@ -809,9 +885,6 @@ export default class extends Module {
 		if (resultText !== null) {
 			try {
 				// 対局結果ページのリンクを付与。gameId は reversi-service では inviteToken と同一
-				const inviteUrl = config.reversiServiceApiUrl
-					? `${config.reversiServiceApiUrl}/game/${encodeURIComponent(gameId)}`
-					: '';
 				const textWithUrl = inviteUrl
 					? `${resultText}\n\n?[対局結果ページ](${inviteUrl})`
 					: resultText;
