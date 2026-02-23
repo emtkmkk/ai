@@ -800,6 +800,7 @@ export default class extends Module {
 		let beforeLoveThinkingCarryMs = 0;
 		let afterLoveChunksAppliedToday = 0;
 		let afterLoveThinkingCarryMs = 0;
+		let reachedDailyLoveChunkLimit = false;
 		if (friend && resultType !== 'decline') {
 			const today = getDate();
 			const d = friend.getPerModulesData(this);
@@ -863,6 +864,7 @@ export default class extends Module {
 			r.lastPlayedAt = playDate;
 			afterLoveChunksAppliedToday = r.loveChunksAppliedToday ?? 0;
 			afterLoveThinkingCarryMs = Math.max(0, r.loveThinkingCarryMs ?? 0);
+			reachedDailyLoveChunkLimit = afterLoveChunksAppliedToday >= 6;
 			friend.setPerModulesData(this, d);
 		}
 
@@ -899,6 +901,9 @@ export default class extends Module {
 
 		if (resultText !== null) {
 			try {
+				if (reachedDailyLoveChunkLimit) {
+					resultText += '！';
+				}
 				// 対局結果ページのリンクを付与。gameId は reversi-service では inviteToken と同一
 				const textWithUrl = inviteUrl
 					? `${resultText}\n\n?[対局結果ページ](${inviteUrl})`
