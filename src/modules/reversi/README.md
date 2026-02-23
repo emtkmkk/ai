@@ -117,12 +117,12 @@ flowchart LR
 
 | アクション | 内容 |
 | --- | --- |
-| 対局終了 | 対戦相手の親愛度を **実効 +1**（`incLove(0.2, 'reversi')`）。**1 日 1 回のみ**（同じ相手に対して）。今日の対局数 +1。勝敗を `reversi.wins` / `reversi.losses` に記録（相手勝ちのみ wins +1、それ以外は losses +1）。 |
-| 時間切れ | 今日の対局数 +1。親愛度は変化なし。 |
+| 対局終了 | 対戦相手の思考時間（1手ごとに最大5秒）を合計し、終局結果・難易度ボーナスを掛けた後、**40秒ごとに実効 +0.5**（`incLove(0.1)`）を加算。端数時間は `loveThinkingCarryMs` に繰り越し、1日最大6チャンクまで反映。加算時は `incLove(0.1)` を回数分だけ個別に呼ぶ。今日の対局数 +1。勝敗を `reversi.wins` / `reversi.losses` に記録（相手勝ちのみ wins +1、それ以外は losses +1）。 |
+| 時間切れ | 今日の対局数 +1。親愛度加算ボーナスは 0 倍（思考時間は繰越されない）。 |
 
-「今日」の基準はサーバー（藍）の日付（`getDate()`）。
+「日次チャンク上限」の日付基準は**対局開始時刻**。対局中に日付を跨いだ場合でも開始日の分として扱う。
 
-**Friend の reversi 永続データ**: `lastReversiDate`、`gamesPlayedToday`、`lastPlayedAt` に加え、`wins`（その相手に勝った回数）と `losses`（その相手に負けた回数・引き分け・投了を含む）を保持する。難易度切り替え（勝ち越し時は単純モード）に利用する。
+**Friend の reversi 永続データ**: `lastReversiDate`、`gamesPlayedToday`、`lastPlayedAt` に加え、`wins`（その相手に勝った回数）と `losses`（その相手に負けた回数・引き分け・投了を含む）、`loveThinkingCarryMs`（40秒未満の繰越ms）、`loveChunkDate`（チャンク加算管理日付）、`loveChunksAppliedToday`（当日反映済みチャンク数）を保持する。難易度切り替え（勝ち越し時は単純モード）に利用する。
 
 **モジュール永続データの難易度別統計**: 超単純・単純それぞれで、**全ユーザー累計**の「勝った数」「負けた数」「引き分け数」「投了数」「時間切れ数」を `difficultyStatsSuperSimple` / `difficultyStatsSimple` に保持する。終局時に `resultType`（iWon / iLose / drawn / youSurrendered / timeout）に応じて該当難易度の該当項目を +1 する。招待期限切れは時間切れ数に含めない。
 
