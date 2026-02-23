@@ -13,6 +13,14 @@
 - `config.reversiServiceApiUrl`（HTTP: 例 `https://example.com`）
 - `config.reversiServiceToken`（MiAuth で取得したセッショントークン）
 
+## 対局開放条件（好感度制限）
+
+- **ローカルユーザー**（`msg.user.host` がない）は好感度制限の対象外。
+- **管理者**（`isAdmin === true` または `config.master`）も好感度制限の対象外。
+- それ以外のリモートユーザーは、次の条件を満たすときのみ招待できる。
+  - 初回対局完了前（`firstGameCompletedAt` 未記録）: 親愛度 `love > 200`
+  - 初回対局完了後: 最初の 7 日間は必要親愛度 200、その後 7 日間で 0 まで日次で段階的に低下
+
 ---
 
 ## アーキテクチャ
@@ -109,7 +117,7 @@ flowchart LR
 | 招待の有効期限 | 1 時間。期限切れ時はダイレクト返信で時間切れを通知し、今日の対局数に加算 |
 | 同時対局 | 最大 5 件。6 件目は「いま忙しいから、あとでまた試してみて」とダイレクト返信で断る |
 | 同一プレイヤー | 同じ相手とは同時に 1 対局まで。進行中がある場合は新規招待を断る |
-| 1 日あたり | 同じ相手とは 1 日 5 回まで。6 回目以降の招待は断る |
+| 1 日あたり | 同じ相手とは 1 日 5 回まで。6 回目以降の招待は断る（管理者はこの日次制限の対象外） |
 
 ---
 
@@ -122,7 +130,7 @@ flowchart LR
 
 「今日」の基準はサーバー（藍）の日付（`getDate()`）。
 
-**Friend の reversi 永続データ**: `lastReversiDate`、`gamesPlayedToday`、`lastPlayedAt` に加え、`wins`（その相手に勝った回数）と `losses`（その相手に負けた回数・引き分け・投了を含む）を保持する。難易度切り替え（勝ち越し時は単純モード）に利用する。
+**Friend の reversi 永続データ**: `lastReversiDate`、`gamesPlayedToday`、`lastPlayedAt` に加え、`wins`（その相手に勝った回数）と `losses`（その相手に負けた回数・引き分け・投了を含む）を保持する。さらに連勝用に `currentStreak` と `maxStreak` も保持する（引き分けでは `currentStreak` を維持、負け・投了・時間切れで 0 にリセット）。難易度切り替え（勝ち越し時は単純モード）にも `wins/losses` を利用する。
 
 **モジュール永続データの難易度別統計**: 超単純・単純それぞれで、**全ユーザー累計**の「勝った数」「負けた数」「引き分け数」「投了数」「時間切れ数」を `difficultyStatsSuperSimple` / `difficultyStatsSimple` に保持する。終局時に `resultType`（iWon / iLose / drawn / youSurrendered / timeout）に応じて該当難易度の該当項目を +1 する。招待期限切れは時間切れ数に含めない。
 
