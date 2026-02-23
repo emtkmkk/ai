@@ -908,7 +908,12 @@ export class ReversiGameSession {
 	 */
 	private commitMove(pos: number): void {
 		const requiredMs = this.getThinkDelayMs();
-		const elapsed = Date.now() - this.thinkStartTime;
+		const now = Date.now();
+		if (this.thinkStartTime <= 0) {
+			// 安全策: 何らかの理由で手番開始時刻が未設定でも、最低待機時間を守る
+			this.thinkStartTime = now;
+		}
+		const elapsed = now - this.thinkStartTime;
 		const remaining = Math.max(0, requiredMs - elapsed);
 		if (remaining > 0) {
 			setTimeout(() => this.sendPutStone(pos), remaining);
