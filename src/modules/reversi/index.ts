@@ -734,7 +734,7 @@ export default class extends Module {
 	 * 結果本文はニックネーム（または「あなた」）と @acct を使用し、プロフィールリンクは付けない。
 	 * 勝敗時は「リバーシでn石差で」を付与。2連勝以上で負けたときは「これであなたがn連勝です！」を「次は負けません！」の前に挿入。
 	 * 結果は公開範囲「ホーム」で返信し、reversiServiceApiUrl が設定されている場合は [対局結果ページ](URL) を付与。
-	 * 相手の思考時間合計（1手ごとに最大5秒）を終局時に集計し、40秒ごとに実効 +0.5 相当で親愛度を離散加算する。端数時間と加算回数は保存し、1日あたり最大6チャンクまで反映する。日付判定は対局開始時刻を使用する。
+	 * 相手の思考時間合計（1手ごとに最大5秒）を終局時に集計し、40秒ごとに実効 +0.5 相当で親愛度を離散加算する。端数時間は同日内のみ繰り越し、日付を跨いだら破棄する。加算回数は1日あたり最大6チャンク。日付判定は対局開始時刻を使用する。
 	 * 勝敗: 相手が勝ったときのみ reversi.wins +1、それ以外（自分勝ち・引き分け・投了）は reversi.losses +1。
 	 * 難易度別統計: useSimpleMode が渡されたとき、超単純/単純の該当項目（勝・負・引き分け・投了・時間切れ）を 1 加算する。
 	 *
@@ -784,7 +784,7 @@ export default class extends Module {
 				currentStreak?: number;
 				/** 最高連勝数 */
 				maxStreak?: number;
-				/** 40秒チャンクに満たない思考時間の繰越（ms）。日を跨いでも保持する */
+				/** 40秒チャンクに満たない思考時間の繰越（ms）。同日内のみ保持する */
 				loveThinkingCarryMs?: number;
 				/** 40秒チャンク加算の管理日付 */
 				loveChunkDate?: string;
@@ -811,7 +811,9 @@ export default class extends Module {
 			const playDate = typeof gameStartedAtMs === 'number' ? this.formatDateFromMs(gameStartedAtMs) : today;
 			const currentTotalThinkingMs = typeof totalOpponentThinkingMs === 'number' ? totalOpponentThinkingMs : 0;
 			const adjustedThinkingMs = this.calcReversiAdjustedThinkingMs(currentTotalThinkingMs, resultType, useSimpleMode === true);
-			const baseCarryMs = Math.max(0, r.loveThinkingCarryMs ?? 0);
+			const baseCarryMs = r.loveChunkDate === playDate
+				? Math.max(0, r.loveThinkingCarryMs ?? 0)
+				: 0;
 			const totalMs = baseCarryMs + adjustedThinkingMs;
 			const previousChunkDate = r.loveChunkDate;
 			const appliedToday = previousChunkDate === playDate ? (r.loveChunksAppliedToday ?? 0) : 0;
