@@ -377,8 +377,8 @@ export default class extends Module {
 			const sendReady = () => {
 				this.client!.sendReady(inviteToken, true);
 			};
-		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number) => {
-			this.onGameEnded(inviteToken, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff, totalOpponentThinkingMs, gameStartedAtMs);
+		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number }) => {
+			this.onGameEnded(inviteToken, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff, totalOpponentThinkingMs, gameStartedAtMs, boardSnapshot);
 			this.cancelGameReconnect(inviteToken);
 			this.client!.closeGame(inviteToken);
 			this.gameSessions.delete(inviteToken);
@@ -489,8 +489,8 @@ export default class extends Module {
 			(opponentReversi?.wins ?? 0) > (opponentReversi?.losses ?? 0);
 
 		// 終局時は結果種別・対戦相手・勝者 ID ・難易度・石差を渡し、index 側で本文と wins/losses・連勝・難易度別統計を更新する
-		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number) => {
-			this.onGameEnded(game.id, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff, totalOpponentThinkingMs, gameStartedAtMs);
+		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number }) => {
+			this.onGameEnded(game.id, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff, totalOpponentThinkingMs, gameStartedAtMs, boardSnapshot);
 			this.cancelGameReconnect(game.id);
 			this.client!.closeGame(game.id);
 			this.gameSessions.delete(game.id);
@@ -753,7 +753,8 @@ export default class extends Module {
 		useSimpleMode?: boolean,
 		stoneDiff?: number,
 		totalOpponentThinkingMs?: number,
-		gameStartedAtMs?: number
+		gameStartedAtMs?: number,
+		boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number }
 	) {
 		if (this.getFirstGameCompletedAt() == null) {
 			this.setFirstGameCompletedAt(Date.now());
@@ -773,6 +774,17 @@ export default class extends Module {
 		}
 
 		const friend = this.ai.lookupFriend(opponentUserId);
+		const rawOpponentThinkingMs = Math.max(0, typeof totalOpponentThinkingMs === 'number' ? totalOpponentThinkingMs : 0);
+		const thinkingBonusMultiplier = this.getThinkingBonusMultiplier(resultType, useSimpleMode === true);
+		const adjustedThinkingMsForLog = this.calcReversiAdjustedThinkingMs(rawOpponentThinkingMs, resultType, useSimpleMode === true);
+		const inviteUrl = config.reversiServiceApiUrl
+			? `${config.reversiServiceApiUrl}/game/${encodeURIComponent(gameId)}`
+			: '';
+		const startedDate = typeof gameStartedAtMs === 'number' ? this.formatDateFromMs(gameStartedAtMs) : getDate();
+		let beforeLoveChunksAppliedToday = 0;
+		let beforeLoveThinkingCarryMs = 0;
+		let afterLoveChunksAppliedToday = 0;
+		let afterLoveThinkingCarryMs = 0;
 		if (friend && resultType !== 'decline') {
 			const today = getDate();
 			const d = friend.getPerModulesData(this);
@@ -794,6 +806,8 @@ export default class extends Module {
 				/** 当日に加算済みの40秒チャンク数（最大6） */
 				loveChunksAppliedToday?: number;
 			};
+			beforeLoveChunksAppliedToday = r.loveChunkDate === startedDate ? (r.loveChunksAppliedToday ?? 0) : 0;
+			beforeLoveThinkingCarryMs = r.loveChunkDate === startedDate ? Math.max(0, r.loveThinkingCarryMs ?? 0) : 0;
 			if (r.lastReversiDate !== today) {
 				r.lastReversiDate = today;
 				r.gamesPlayedToday = 0;
@@ -832,8 +846,16 @@ export default class extends Module {
 				friend.incLove(0.1, `reversi-chunk-${playDate}-${r.loveChunksAppliedToday}`);
 			}
 			r.lastPlayedAt = playDate;
+			afterLoveChunksAppliedToday = r.loveChunksAppliedToday ?? 0;
+			afterLoveThinkingCarryMs = Math.max(0, r.loveThinkingCarryMs ?? 0);
 			friend.setPerModulesData(this, d);
 		}
+
+
+		const callerAcct = opponentUser
+			? `${opponentUser.username}${opponentUser.host ? `@${opponentUser.host}` : ''}`
+			: `(unknown:${opponentUserId})`;
+		log(`[reversi] game summary: result=${resultType} winnerId=${winnerId ?? 'none'} caller=${callerAcct} callerId=${opponentUserId} botStone=${boardSnapshot?.botStoneColor ?? 'unknown'} stones=${boardSnapshot?.blackStones ?? 0}-${boardSnapshot?.whiteStones ?? 0} level=${useSimpleMode ? 'simple' : 'super-simple'} opponentThinkingMsRaw=${rawOpponentThinkingMs} bonusMultiplier=${thinkingBonusMultiplier.toFixed(2)} opponentThinkingMsAdjusted=${Math.round(adjustedThinkingMsForLog)} loveBefore=${beforeLoveChunksAppliedToday}/${Math.round(beforeLoveThinkingCarryMs / 1000)}s loveAfter=${afterLoveChunksAppliedToday}/${Math.round(afterLoveThinkingCarryMs / 1000)}s inviteUrl=${inviteUrl || '(none)'}`);
 
 		// 返信する場合は返信先（招待依頼者）のユーザが取得できるときのみ。friend が無いなどで取れない場合は返信をスキップする
 		let resultText: string | null = null;
@@ -863,9 +885,6 @@ export default class extends Module {
 		if (resultText !== null) {
 			try {
 				// 対局結果ページのリンクを付与。gameId は reversi-service では inviteToken と同一
-				const inviteUrl = config.reversiServiceApiUrl
-					? `${config.reversiServiceApiUrl}/game/${encodeURIComponent(gameId)}`
-					: '';
 				const textWithUrl = inviteUrl
 					? `${resultText}\n\n?[対局結果ページ](${inviteUrl})`
 					: resultText;
