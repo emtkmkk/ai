@@ -990,23 +990,25 @@ export default class 藍 {
 		const maxRetries = 33;
 		// NOTE: リトライ間隔は段階的に延ばし、最大120秒で頭打ちになる
 		const retryIntervals = [1000, 5000, 15000, 39000, 60000, 120000];
+		const requestParam = param ? Object.assign({}, param) : {};
 
 		// HACK: リアクション作成時に reaction が空の場合は空文字列でフォールバック
-		if (endpoint === 'notes/reactions/create' && param && !param?.reaction) param.reaction = "";
+		if (endpoint === 'notes/reactions/create' && !requestParam.reaction) requestParam.reaction = "";
+		if (endpoint === 'notes/create' && !requestParam.idempotencyKey) requestParam.idempotencyKey = uuid();
 
 		return new Promise((resolve, reject) => {
 			const attemptRequest = (attempt: number) => {
-				if (attempt !== 0) this.log(`Retry ${attempt} / ${maxRetries} : ${endpoint} : ${JSON.stringify(param)}`);
+				if (attempt !== 0) this.log(`Retry ${attempt} / ${maxRetries} : ${endpoint} : ${JSON.stringify(requestParam)}`);
 				request.post(`${config.apiUrl}/${endpoint}`, {
 					json: Object.assign({
 						i: config.i
-					}, param)
+					}, requestParam)
 				})
 					.then(response => {
 						resolve(response);
 					})
 					.catch(error => {
-						this.log(`API Error ${attempt + 1} / ${maxRetries} : ${endpoint} : ${JSON.stringify(param)} : ${JSON.stringify(error.response)}`);
+						this.log(`API Error ${attempt + 1} / ${maxRetries} : ${endpoint} : ${JSON.stringify(requestParam)} : ${JSON.stringify(error.response)}`);
 						// NOTE: 4xxエラーはクライアント側の問題なので、3回以上リトライしても無駄な場合は resolve する
 						if (error.response?.statusCode >= 400 && error.response?.statusCode < 500 && attempt >= 3) resolve(error);
 						else if (attempt >= maxRetries - 1) {
