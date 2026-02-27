@@ -43,6 +43,7 @@ type KazutoriHistoryGame = {
 		};
 	}[];
 	winnerUserId?: string;
+	winnerUserId2?: string;
 };
 
 /**
@@ -97,7 +98,7 @@ export function ensureKazutoriMasterHistory(ai, msg, skillEffects: SkillEffect):
 
 	if (kazutoriData.lastWinAt === null || kazutoriData.lastWinAt === undefined) {
 		const lastWinAt = games
-			.filter((game) => game.winnerUserId === userId)
+			.filter((game) => game.winnerUserId === userId || game.winnerUserId2 === userId)
 			.reduce((max, game) => Math.max(max, game.finishedAt ?? 0), 0);
 		if (lastWinAt > 0) {
 			kazutoriData.lastWinAt = lastWinAt;

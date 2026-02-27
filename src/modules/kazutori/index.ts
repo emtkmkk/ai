@@ -90,6 +90,8 @@ type Game = {
         limitMinutes: number;
         /** 勝者のユーザーID */
         winnerUserId?: string;
+        /** 2人目の勝者ユーザーID（中央値2人勝利モード用） */
+        winnerUserId2?: string;
         /** 再集計実施時刻（ミリ秒タイムスタンプ） */
         reaggregatedAt?: number;
 };
@@ -1162,6 +1164,7 @@ export default class extends Module {
 	private computeWinnerAndResults(game: Game): {
 		results: string[];
 		winner: Game['votes'][0]['user'] | null;
+		winner2: Game['votes'][0]['user'] | null;
 		reverse: boolean;
 		perfect: boolean;
 		medianValue: typeof Decimal | -1 | undefined;
@@ -1170,6 +1173,8 @@ export default class extends Module {
 		let results: string[] = [];
 		/** 確定した勝者のユーザー情報 */
 		let winner: Game['votes'][0]['user'] | null = null;
+		/** 2人目の勝者ユーザー情報（中央値2人勝利モード） */
+		let winner2: Game['votes'][0]['user'] | null = null;
 		/** 反転モード適用時の結果行リスト */
 		let reverseResults: string[] = [];
 		/** 反転モード適用時の勝者 */
@@ -1206,7 +1211,59 @@ export default class extends Module {
 			medianValue = undefined;
 		}
 
-		for (let i = 0; i < useNumbers.length; i++) {
+		if (winRank === -1 && medianValue !== -1 && medianValue !== undefined) {
+			const voteInfos = game.votes.map((vote, index) => ({
+				index,
+				number: vote.number,
+				users: game.votes.filter((x) => x.number.equals(vote.number)).map((x) => x.user),
+			}));
+			const uniqueVoteInfos = voteInfos
+				.filter((info) => info.users.length === 1)
+				.filter((info, index, arr) => index === arr.findIndex((x) => x.number.equals(info.number)));
+			const sortedCandidates = uniqueVoteInfos
+				.map((info) => ({
+					info,
+					diff: this.decimalAbs(info.number.minus(medianValue as typeof Decimal)),
+				}))
+				.sort((a, b) => {
+					const diffCompare = this.compareDecimalAsc(a.diff, b.diff);
+					if (diffCompare !== 0) return diffCompare;
+					return a.info.index - b.info.index;
+				});
+
+			const primary = sortedCandidates[0];
+			winner = primary?.info.users[0] ?? null;
+			winner2 = null;
+
+			if (primary) {
+				const hasExactMatch = this.compareDecimalAsc(primary.diff, new Decimal(0)) === 0;
+				if (!hasExactMatch) {
+					const sameDistance = sortedCandidates.filter((x) => this.compareDecimalAsc(x.diff, primary.diff) === 0);
+					if (sameDistance.length === 2) {
+						winner2 = sameDistance[1].info.users[0] ?? null;
+					}
+				}
+			}
+
+			const winnerIds = new Set([winner?.id, winner2?.id].filter((x): x is string => x != null));
+			for (let i = 0; i < useNumbers.length; i++) {
+				const n = useNumbers[i];
+				const strn = this.formatNumberForResult(n);
+				const users = game.votes.filter((x) => x.number.equals(n)).map((x) => x.user);
+
+				if (users.length === 1) {
+					if (winnerIds.has(users[0].id)) {
+						const icon = n.equals(100) ? '💯' : n.equals(0) ? '0️⃣' : '🎉';
+						results.push(`${icon} **${strn}**: $[jelly ${acct(users[0])}]`);
+					} else {
+						results.push(`➖ ${strn}: ${acct(users[0])}`);
+					}
+				} else if (users.length > 1) {
+					results.push(`❌ ${strn}: ${users.map((u) => acct(u)).join(' ')}`);
+				}
+			}
+		} else {
+			for (let i = 0; i < useNumbers.length; i++) {
 			const n = useNumbers[i];
 			const strn = this.formatNumberForResult(n);
 			const users = game.votes.filter((x) => x.number.equals(n)).map((x) => x.user);
@@ -1234,6 +1291,7 @@ export default class extends Module {
 				}
 			} else if (users.length > 1) {
 				results.push(`❌ ${strn}: ${users.map((u) => acct(u)).join(' ')}`);
+			}
 			}
 		}
 
@@ -1289,12 +1347,13 @@ export default class extends Module {
 		if (reverse) {
 			results = reverseResults;
 			winner = reverseWinner;
+			winner2 = null;
 		}
 
 		// 4/1: 表示用の反転フラグを再度反転（ジョーク）
 		if (now.getMonth() === 3 && now.getDate() === 1) reverse = !reverse;
 
-		return { results, winner, reverse, perfect, medianValue };
+		return { results, winner, winner2, reverse, perfect, medianValue };
 	}
 
 	/**
@@ -1312,7 +1371,7 @@ export default class extends Module {
 	private applyNonParticipantPenalties(
 		friendDocs: FriendDoc[],
 		participants: Set<string>,
-		winnerUserId: string | null,
+		winnerUserIds: Set<string>,
 		cappedLimitMinutes: number,
 		penaltyPoint: number,
 		recordRateChange: (userId: string, delta: number, lossAdjustmentPercent?: number) => void
@@ -1322,7 +1381,7 @@ export default class extends Module {
 		let totalBonusFromNonParticipants = 0;
 
 		for (const doc of friendDocs) {
-			if (winnerUserId && doc.userId === winnerUserId) continue;
+			if (winnerUserIds.has(doc.userId)) continue;
 			if (participants.has(doc.userId)) continue;
 			const data = ensureKazutoriData(doc).data;
 			if (data.rate > 1000) {
@@ -1375,7 +1434,9 @@ export default class extends Module {
 	private applyWinnerAndLoserRates(
 		game: Game,
 		winner: Game['votes'][0]['user'] | null,
+		winner2: Game['votes'][0]['user'] | null,
 		winnerFriend: ReturnType<Module['ai']['lookupFriend']>,
+		winnerFriend2: ReturnType<Module['ai']['lookupFriend']>,
 		friendDocMap: Map<string, FriendDoc>,
 		loserRankMap: Map<string, number>,
 		totalParticipants: number,
@@ -1387,9 +1448,20 @@ export default class extends Module {
 		recordRateChange: (userId: string, delta: number, lossAdjustmentPercent?: number) => void,
 		item: string,
 		medal: boolean
-	): { beforeRate: number; afterRate: number; beforeRank?: number; afterRank?: number } | null {
+	): {
+		beforeRate: number;
+		afterRate: number;
+		beforeRank?: number;
+		afterRank?: number;
+		beforeRate2?: number;
+		afterRate2?: number;
+		beforeRank2?: number;
+		afterRank2?: number;
+	} | null {
 		const winnerDoc = winnerFriend ? friendDocMap.get(winnerFriend.userId) : null;
 		if (!winnerFriend || !winnerDoc) return null;
+		const winnerDoc2 = winnerFriend2 ? friendDocMap.get(winnerFriend2.userId) : null;
+		const hasSecondWinner = game.winRank === -1 && winner2 != null && winnerFriend2 != null && winnerDoc2 != null;
 
 		const winnerData = ensureKazutoriData(winnerDoc).data;
 		const beforeRate = winnerData.rate;
@@ -1407,6 +1479,7 @@ export default class extends Module {
 
 		for (const vote of game.votes) {
 			if (vote.user.id === winnerFriend.userId) continue;
+			if (hasSecondWinner && vote.user.id === winnerFriend2.userId) continue;
 			const doc = friendDocMap.get(vote.user.id);
 			if (!doc) continue;
 			const data = ensureKazutoriData(doc).data;
@@ -1448,13 +1521,60 @@ export default class extends Module {
 
 		totalBonus += totalBonusFromNonParticipants;
 
+		let winnerGain = totalBonus;
+		let winner2Gain = 0;
+		let beforeRate2: number | undefined;
+		let beforeRank2: number | undefined;
+		if (hasSecondWinner && winnerFriend2 && winnerDoc2) {
+			winnerGain = Math.floor(totalBonus / 2);
+			winner2Gain = Math.floor(totalBonus / 2);
+			const remainder = totalBonus - winnerGain - winner2Gain;
+			if (remainder > 0) {
+				const winnerRate = winnerData.rate;
+				const winner2Data = ensureKazutoriData(winnerDoc2).data;
+				const winner2Rate = winner2Data.rate;
+				if (winnerRate < winner2Rate) {
+					winnerGain += remainder;
+				} else if (winnerRate > winner2Rate) {
+					winner2Gain += remainder;
+				} else {
+					const winnerVoteIndex = game.votes.findIndex((x) => x.user.id === winnerFriend.userId);
+					const winner2VoteIndex = game.votes.findIndex((x) => x.user.id === winnerFriend2.userId);
+					if (winnerVoteIndex >= 0 && winner2VoteIndex >= 0 && winnerVoteIndex !== winner2VoteIndex) {
+						if (winnerVoteIndex < winner2VoteIndex) {
+							winnerGain += remainder;
+						} else {
+							winner2Gain += remainder;
+						}
+					} else if (Math.random() < 0.5) {
+						winnerGain += remainder;
+					} else {
+						winner2Gain += remainder;
+					}
+				}
+			}
+			beforeRate2 = ensureKazutoriData(winnerDoc2).data.rate;
+			beforeRank2 = findRateRank(sortedBefore, winnerFriend2.userId);
+		}
+
 		const winnerBeforeRate = winnerData.rate;
-		winnerData.rate += totalBonus;
+		winnerData.rate += winnerGain;
 		if (winnerData.rate !== winnerBeforeRate) {
 			winnerData.rateChanged = true;
 			recordRateChange(winnerFriend.userId, winnerData.rate - winnerBeforeRate);
 		}
 		this.ai.friends.update(winnerDoc);
+
+		if (hasSecondWinner && winnerFriend2 && winnerDoc2) {
+			const winner2Data = ensureKazutoriData(winnerDoc2).data;
+			const winnerBeforeRate2 = winner2Data.rate;
+			winner2Data.rate += winner2Gain;
+			if (winner2Data.rate !== winnerBeforeRate2) {
+				winner2Data.rateChanged = true;
+				recordRateChange(winnerFriend2.userId, winner2Data.rate - winnerBeforeRate2);
+			}
+			this.ai.friends.update(winnerDoc2);
+		}
 
 		const rankingAfter = friendDocs
 			.map((doc) => {
@@ -1466,6 +1586,7 @@ export default class extends Module {
 			.filter((record): record is { userId: string; rate: number } => record != null);
 		const sortedAfter = [...rankingAfter].sort((a, b) => this.compareByRateDesc(a, b));
 		const afterRank = findRateRank(sortedAfter, winnerFriend.userId);
+		const afterRank2 = hasSecondWinner && winnerFriend2 ? findRateRank(sortedAfter, winnerFriend2.userId) : undefined;
 
 		const winnerEnsuredData = ensureKazutoriData(winnerFriend.doc).data;
 		winnerEnsuredData.winCount = (winnerEnsuredData.winCount ?? 0) + 1;
@@ -1475,17 +1596,37 @@ export default class extends Module {
 		}
 		if (winnerEnsuredData.inventory) {
 			if (winnerEnsuredData.inventory.length >= 50) winnerEnsuredData.inventory.shift();
-			winnerEnsuredData.inventory.push(item);
+			winnerEnsuredData.inventory.push(`${item}の片割れ`);
 		} else {
-			winnerEnsuredData.inventory = [item];
+			winnerEnsuredData.inventory = [`${item}の片割れ`];
 		}
 		winnerFriend.save();
+
+		if (hasSecondWinner && winnerFriend2) {
+			const winnerEnsuredData2 = ensureKazutoriData(winnerFriend2.doc).data;
+			winnerEnsuredData2.winCount = (winnerEnsuredData2.winCount ?? 0) + 1;
+			winnerEnsuredData2.lastWinAt = Date.now();
+			if (medal && winnerEnsuredData2.winCount > 50) {
+				winnerEnsuredData2.medal = (winnerEnsuredData2.medal || 0) + 1;
+			}
+			if (winnerEnsuredData2.inventory) {
+				if (winnerEnsuredData2.inventory.length >= 50) winnerEnsuredData2.inventory.shift();
+				winnerEnsuredData2.inventory.push(`${item}の片割れ`);
+			} else {
+				winnerEnsuredData2.inventory = [`${item}の片割れ`];
+			}
+			winnerFriend2.save();
+		}
 
 		return {
 			beforeRate,
 			afterRate: winnerData.rate,
 			beforeRank,
 			afterRank,
+			beforeRate2,
+			afterRate2: hasSecondWinner && winnerFriend2 && winnerDoc2 ? ensureKazutoriData(winnerDoc2).data.rate : undefined,
+			beforeRank2,
+			afterRank2,
 		};
 	}
 
@@ -1590,7 +1731,7 @@ export default class extends Module {
 	private updateRateChangeMetadata(
 		touchedUserIds: Set<string>,
 		participants: Set<string>,
-		winnerUserId: string | null,
+		winnerUserIds: Set<string>,
 		rateChangeAggregates: Map<string, { delta: number; hasNegative: boolean; lossAdjustmentPercent?: number }>,
 		friendDocMap: Map<string, FriendDoc>,
 		rateUpdateGameId: string
@@ -1612,8 +1753,8 @@ export default class extends Module {
 				touched = true;
 			}
 			if (participants.has(doc.userId)) {
-				if (winnerUserId) {
-					data.lastGameResult = doc.userId === winnerUserId ? 'win' : 'lose';
+				if (winnerUserIds.size > 0) {
+					data.lastGameResult = winnerUserIds.has(doc.userId) ? 'win' : 'lose';
 				} else {
 					data.lastGameResult = 'no-winner';
 				}
@@ -1965,31 +2106,49 @@ export default class extends Module {
 		game: Game,
 		results: string[],
 		winner: Game['votes'][0]['user'] | null,
+		winner2: Game['votes'][0]['user'] | null,
 		name: string | null,
+		name2: string | null,
 		item: string,
 		reverse: boolean,
 		perfect: boolean,
-		ratingInfo: { beforeRate: number; afterRate: number; beforeRank?: number; afterRank?: number } | null,
+		ratingInfo: {
+			beforeRate: number;
+			afterRate: number;
+			beforeRank?: number;
+			afterRank?: number;
+			beforeRate2?: number;
+			afterRate2?: number;
+			beforeRank2?: number;
+			afterRank2?: number;
+		} | null,
 		medianValue: typeof Decimal | -1 | undefined,
 		medal: boolean
 	): void {
 		/** 中央値モード時の中央値の表示用文字列 */
 		const medianDisplayText = this.formatNumberOrSentinel(medianValue);
 		const winnerFriend = winner ? this.ai.lookupFriend(winner.id) : null;
+		const winnerFriend2 = winner2 ? this.ai.lookupFriend(winner2.id) : null;
 		/** 勝者の累計勝利数（表示用。今回の勝利は既に applyWinnerAndLoserRates で加算済み） */
 		const winnerWinCount = winnerFriend?.doc?.kazutoriData?.winCount ?? 0;
 		/** メダル戦かつ勝利数50超ならメダル獲得数（表示用） */
 		const winnerMedalCount = medal && winnerWinCount > 50 ? (winnerFriend?.doc?.kazutoriData?.medal ?? 0) : null;
+		const winnerWinCount2 = winnerFriend2?.doc?.kazutoriData?.winCount ?? 0;
+		const winnerMedalCount2 = medal && winnerWinCount2 > 50 ? (winnerFriend2?.doc?.kazutoriData?.medal ?? 0) : null;
 		/** 結果投稿の本文（勝利条件＋結果行＋勝者/お流れセリフ） */
 		const text = (game.winRank > 0 ? game.winRank === 1 ? '' : '勝利条件 : ' + game.winRank + '番目に大きい値\n\n' : '勝利条件 : 中央値 (' + medianDisplayText + ')\n\n') + results.join('\n') + '\n\n' + (winner
 			? serifs.kazutori.finishWithWinner(
 				acct(winner),
 				name,
+				winner2 ? acct(winner2) : null,
+				name2,
 				item,
 				reverse,
 				perfect,
 				winnerWinCount,
 				winnerMedalCount,
+				winnerWinCount2,
+				winnerMedalCount2,
 				ratingInfo ?? undefined
 			)
 			: serifs.kazutori.finishWithNoWinner(item));
@@ -2089,31 +2248,39 @@ export default class extends Module {
                 this.normalizeGameMaxnum(game);
 
                 // --- 3. 勝者・結果リスト・反転の計算 ---
-                const { results, winner, reverse, perfect, medianValue } = this.computeWinnerAndResults(game);
+				const { results, winner, winner2, reverse, perfect, medianValue } = this.computeWinnerAndResults(game);
 
-                game.winnerUserId = winner?.id;
-                this.games.update(game);
+				game.winnerUserId = winner?.id;
+				game.winnerUserId2 = winner2?.id;
+				this.games.update(game);
 
                 // --- 4〜6. レート計算の準備・敗者ランク構築・フレンドマップ構築 ---
                 const ctx = this.buildRatingContext(game, winner, medianValue);
 
-                // --- 7. 不参加者ペナルティの適用 ---
-                const { totalBonusFromNonParticipants, nonParticipantPenalties } = this.applyNonParticipantPenalties(
-                        ctx.friendDocs,
-                        ctx.participants,
-                        ctx.winnerFriend?.userId ?? null,
-                        ctx.cappedLimitMinutes,
-                        ctx.penaltyPoint,
-                        ctx.recordRateChange
-                );
+				const winnerFriend2 = winner2?.id ? this.ai.lookupFriend(winner2.id) : null;
+				const winnerUserIds = new Set<string>();
+				if (ctx.winnerFriend?.userId) winnerUserIds.add(ctx.winnerFriend.userId);
+				if (winnerFriend2?.userId) winnerUserIds.add(winnerFriend2.userId);
+
+				// --- 7. 不参加者ペナルティの適用 ---
+				const { totalBonusFromNonParticipants, nonParticipantPenalties } = this.applyNonParticipantPenalties(
+						ctx.friendDocs,
+						ctx.participants,
+						winnerUserIds,
+						ctx.cappedLimitMinutes,
+						ctx.penaltyPoint,
+						ctx.recordRateChange
+				);
 
                 const medal = this.isMedalMatch(game);
                 // --- 8. 勝者ボーナス・敗者減算・勝者ステータス更新 ---
-                const ratingInfo = this.applyWinnerAndLoserRates(
-                        game,
-                        winner,
-                        ctx.winnerFriend,
-                        ctx.friendDocMap,
+				const ratingInfo = this.applyWinnerAndLoserRates(
+						game,
+						winner,
+						winner2,
+						ctx.winnerFriend,
+						winnerFriend2,
+						ctx.friendDocMap,
                         ctx.loserRankMap,
                         ctx.totalParticipants,
                         ctx.shouldAdjustByRank,
@@ -2142,20 +2309,22 @@ export default class extends Module {
                 }
 
                 // --- 10. レート変動メタデータの反映と結果投稿 ---
-                const winnerUserId = ctx.winnerFriend?.userId ?? null;
-                for (const userId of ctx.participants) {
-                        ctx.touchedUserIds.add(userId);
-                }
+				const winnerUserIdsForMetadata = new Set<string>();
+				if (ctx.winnerFriend?.userId) winnerUserIdsForMetadata.add(ctx.winnerFriend.userId);
+				if (winnerFriend2?.userId) winnerUserIdsForMetadata.add(winnerFriend2.userId);
+				for (const userId of ctx.participants) {
+						ctx.touchedUserIds.add(userId);
+				}
 
-                this.updateRateChangeMetadata(
-                        ctx.touchedUserIds,
-                        ctx.participants,
-                        winnerUserId,
-                        ctx.rateChangeAggregates,
-                        ctx.friendDocMap,
-                        ctx.rateUpdateGameId
-                );
+				this.updateRateChangeMetadata(
+						ctx.touchedUserIds,
+						ctx.participants,
+						winnerUserIdsForMetadata,
+						ctx.rateChangeAggregates,
+						ctx.friendDocMap,
+						ctx.rateUpdateGameId
+				);
 
-                this.publishGameResult(game, results, winner, ctx.name ?? null, item, reverse, perfect, ratingInfo, medianValue, medal);
+				this.publishGameResult(game, results, winner, winner2, ctx.name ?? null, winnerFriend2?.name ?? null, item, reverse, perfect, ratingInfo, medianValue, medal);
         }
 }
