@@ -1220,18 +1220,30 @@ export default class extends Module {
 			const uniqueVoteInfos = voteInfos
 				.filter((info) => info.users.length === 1)
 				.filter((info, index, arr) => index === arr.findIndex((x) => x.number.equals(info.number)));
-			const medianWinners = uniqueVoteInfos
-				.slice()
+			const sortedCandidates = uniqueVoteInfos
+				.map((info) => ({
+					info,
+					diff: this.decimalAbs(info.number.minus(medianValue as typeof Decimal)),
+				}))
 				.sort((a, b) => {
-					const diffA = this.decimalAbs(a.number.minus(medianValue as typeof Decimal));
-					const diffB = this.decimalAbs(b.number.minus(medianValue as typeof Decimal));
-					const diffCompare = this.compareDecimalAsc(diffA, diffB);
+					const diffCompare = this.compareDecimalAsc(a.diff, b.diff);
 					if (diffCompare !== 0) return diffCompare;
-					return a.index - b.index;
-				})
-				.slice(0, 2);
-			winner = medianWinners[0]?.users[0] ?? null;
-			winner2 = medianWinners[1]?.users[0] ?? null;
+					return a.info.index - b.info.index;
+				});
+
+			const primary = sortedCandidates[0];
+			winner = primary?.info.users[0] ?? null;
+			winner2 = null;
+
+			if (primary) {
+				const hasExactMatch = this.compareDecimalAsc(primary.diff, new Decimal(0)) === 0;
+				if (!hasExactMatch) {
+					const sameDistance = sortedCandidates.filter((x) => this.compareDecimalAsc(x.diff, primary.diff) === 0);
+					if (sameDistance.length === 2) {
+						winner2 = sameDistance[1].info.users[0] ?? null;
+					}
+				}
+			}
 
 			const winnerIds = new Set([winner?.id, winner2?.id].filter((x): x is string => x != null));
 			for (let i = 0; i < useNumbers.length; i++) {
