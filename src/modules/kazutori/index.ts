@@ -397,12 +397,16 @@ export default class extends Module {
 	 * @internal
 	 */
 	private computeWinRank(recentGame: Game | null, maxnum: typeof Decimal, flg?: string): number {
+		const isMarch = new Date().getMonth() === 2;
 		let winRank =
 			(recentGame?.winRank ?? 1) <= 1 &&
 			this.ai.activeFactor >= 0.5 &&
 			Math.random() < (maxnum.equals(Decimal.MAX_VALUE) ? 0.3 : 0.15)
 				? 2
 				: 1;
+		if (isMarch) {
+			winRank = winRank === 1 ? 2 : 1;
+		}
 		if (flg?.includes('med')) {
 			winRank = -1;
 		} else if (flg?.includes('2nd')) {
