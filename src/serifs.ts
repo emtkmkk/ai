@@ -412,12 +412,45 @@ export default {
 
 		finish: 'ゲームの結果発表です！',
 
-                finishWithWinner: (user, name, item, reverse, perfect, winCount, medal, rateInfo?: { beforeRate: number; afterRate: number; beforeRank?: number; afterRank?: number; }) => {
-                        const rateText = rateInfo
-                                ? `\nレート : ${formatKazutoriRateForDisplay(rateInfo.beforeRate)} → ${formatKazutoriRateForDisplay(rateInfo.afterRate)}\n順位 : ${rateInfo.beforeRank != null ? `${rateInfo.beforeRank}位` : '--位'} → ${rateInfo.afterRank != null ? `${rateInfo.afterRank}位` : '--位'}`
-                                : '';
-                        return `${reverse ? "...ありゃ？逆順で集計しちゃいました！\n" : ""}今回は${user}さん${name ? `(${name})` : ""}の${perfect ? "パーフェクト" : ""}勝ちです！${winCount === 5 || winCount % 10 === 0 ? `\nこれが${winCount}回目の勝利みたいです！` : winCount === 1 ? "\nこれが初勝利みたいです！" : ""}おめでとう！${rateText}\n景品として${item}${medal ? `とトロフィー(${medal}個目)` : ""}をどうぞ！\nまたやりましょう！`;
-                },
+		finishWithWinner: (
+			user,
+			name,
+			user2,
+			name2,
+			item,
+			reverse,
+			perfect,
+			winCount,
+			medal,
+			winCount2,
+			medal2,
+			rateInfo?: {
+				beforeRate: number;
+				afterRate: number;
+				beforeRank?: number;
+				afterRank?: number;
+				beforeRate2?: number;
+				afterRate2?: number;
+				beforeRank2?: number;
+				afterRank2?: number;
+			}
+		) => {
+			if (user2) {
+				const rateText1 = rateInfo
+					? `\nレート : ${formatKazutoriRateForDisplay(rateInfo.beforeRate)} → ${formatKazutoriRateForDisplay(rateInfo.afterRate)}\n順位 : ${rateInfo.beforeRank != null ? `${rateInfo.beforeRank}位` : '--位'} → ${rateInfo.afterRank != null ? `${rateInfo.afterRank}位` : '--位'}`
+					: '';
+				const rateText2 = rateInfo
+					? `\nレート : ${formatKazutoriRateForDisplay(rateInfo.beforeRate2 ?? rateInfo.beforeRate)} → ${formatKazutoriRateForDisplay(rateInfo.afterRate2 ?? rateInfo.afterRate)}\n順位 : ${rateInfo.beforeRank2 != null ? `${rateInfo.beforeRank2}位` : '--位'} → ${rateInfo.afterRank2 != null ? `${rateInfo.afterRank2}位` : '--位'}`
+					: '';
+				const trophyText = medal || medal2 ? `とトロフィー(${Math.max(medal ?? 0, medal2 ?? 0)}個目)` : '';
+				return `${reverse ? "...ありゃ？逆順で集計しちゃいました！\n" : ""}今回は${user}さん${name ? `(${name})` : ""}と${user2}さん${name2 ? `(${name2})` : ""}の勝ちです！おめでとう！\n${user}さん :${rateText1}\n${user2}さん :${rateText2}\n景品として${item}${trophyText}をどうぞ！\nまたやりましょう！`;
+			}
+
+			const rateText = rateInfo
+				? `\nレート : ${formatKazutoriRateForDisplay(rateInfo.beforeRate)} → ${formatKazutoriRateForDisplay(rateInfo.afterRate)}\n順位 : ${rateInfo.beforeRank != null ? `${rateInfo.beforeRank}位` : '--位'} → ${rateInfo.afterRank != null ? `${rateInfo.afterRank}位` : '--位'}`
+				: '';
+			return `${reverse ? "...ありゃ？逆順で集計しちゃいました！\n" : ""}今回は${user}さん${name ? `(${name})` : ""}の${perfect ? "パーフェクト" : ""}勝ちです！${winCount === 5 || winCount % 10 === 0 ? `\nこれが${winCount}回目の勝利みたいです！` : winCount === 1 ? "\nこれが初勝利みたいです！" : ""}おめでとう！${rateText}\n景品として${item}${medal ? `とトロフィー(${medal}個目)` : ""}をどうぞ！\nまたやりましょう！`;
+		},
 
 		finishWithNoWinner: item => `今回は全員負けです...\n${item}は私がもらっておきますね...\nまたやりましょう！`,
 
