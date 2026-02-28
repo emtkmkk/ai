@@ -1479,7 +1479,7 @@ export default class extends Module {
 
 		for (const vote of game.votes) {
 			if (vote.user.id === winnerFriend.userId) continue;
-			if (hasSecondWinner && vote.user.id === winnerFriend2.userId) continue;
+			if (hasSecondWinner && vote.user.id === winnerFriend2?.userId) continue;
 			const doc = friendDocMap.get(vote.user.id);
 			if (!doc) continue;
 			const data = ensureKazutoriData(doc).data;
