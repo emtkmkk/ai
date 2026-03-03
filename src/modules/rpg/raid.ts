@@ -1012,6 +1012,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 	let itemBoost = 0;
 	let itemMinEffect = 0;
 	let atkDmgBonus = 1;
+	let itemAtkStock = 0;
+	let itemAtkStockNext = 0;
 
 	/** これって戦闘？ */
 	let isBattle = enemy.atkmsg(0).includes("ダメージ");
@@ -1302,6 +1304,24 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 		enemyAtkX = 1;
 		itemBoost = 0;
 		itemMinEffect = 0;
+
+		if (skillEffects.itemAtkStock && itemAtkStockNext > 0) {
+			const itemAtkStockGain = Math.floor(itemAtkStockNext);
+			if (itemAtkStockGain > 0) {
+				itemAtkStock += itemAtkStockGain;
+				buff += 1;
+				const itemAtkStockRate = Math.max(itemAtkStock / (lv * 3.5), 0);
+				if (verboseLog) {
+					message += `継スキル: 累積+${itemAtkStockGain} (${Math.floor(itemAtkStockRate * 100)}%)\n`;
+				} else {
+					message += serifs.rpg.skill.itemAtkStock(itemAtkStockRate) + "\n";
+				}
+			}
+			itemAtkStockNext = 0;
+		}
+		if (skillEffects.itemAtkStock && itemAtkStock > 0) {
+			atk += itemAtkStock;
+		}
 
 		if (verboseLog) {
 			buff += 1;
@@ -1646,17 +1666,34 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 						itemBonus.def = def * (item.mind * 0.0035);
 						atk = atk + itemBonus.atk;
 						def = def + itemBonus.def;
+						if (skillEffects.shieldBash && itemBonus.def > 0) {
+							const shieldBashX = 1 - Math.pow(0.5, (skillEffects.shieldBash ?? 0));
+							const shieldBashAtk = Math.floor(itemBonus.def * shieldBashX);
+							if (shieldBashAtk > 0) {
+								itemBonus.atk += shieldBashAtk;
+								atk += shieldBashAtk;
+							}
+						}
 					} else {
 						itemBonus.def = (lv * 4) * (item.effect * 0.007);
 						def = def + itemBonus.def;
+						if (skillEffects.shieldBash && itemBonus.def > 0) {
+							const shieldBashX = 1 - Math.pow(0.5, (skillEffects.shieldBash ?? 0));
+							const shieldBashAtk = Math.floor(itemBonus.def * shieldBashX);
+							if (shieldBashAtk > 0) {
+								itemBonus.atk += shieldBashAtk;
+								atk += shieldBashAtk;
+							}
+						}
+						const shieldBashActivated = !!(skillEffects.shieldBash && itemBonus.atk > 0);
 						if (item.effect >= 100) {
-							message += `${config.rpgHeroName}の防御が特大アップ！\n`;
+							message += `${config.rpgHeroName}の${shieldBashActivated ? "パワーと防御" : "防御"}が特大アップ！\n`;
 						} else if (item.effect >= 70) {
-							message += `${config.rpgHeroName}の防御が大アップ！\n`;
+							message += `${config.rpgHeroName}の${shieldBashActivated ? "パワーと防御" : "防御"}が大アップ！\n`;
 						} else if (item.effect > 30) {
-							message += `${config.rpgHeroName}の防御がアップ！\n`;
+							message += `${config.rpgHeroName}の${shieldBashActivated ? "パワーと防御" : "防御"}がアップ！\n`;
 						} else {
-							message += `${config.rpgHeroName}の防御が小アップ！\n`;
+							message += `${config.rpgHeroName}の${shieldBashActivated ? "パワーと防御" : "防御"}が小アップ！\n`;
 						}
 						if (verboseLog) {
 							buff += 1;
@@ -1745,6 +1782,17 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 				if (itemMessage) {
 					message += `(${itemMessage})\n`;
 				}
+			}
+		}
+		if (skillEffects.itemAtkStock) {
+			const itemAtkGain = Math.max(Math.floor(itemBonus.atk ?? 0), 0);
+			if (itemAtkGain > 0) {
+				itemAtkStockNext = Math.floor(itemAtkGain * (skillEffects.itemAtkStock ?? 0));
+				if (verboseLog) {
+					message += `継スキル: 次ターン累積予定+${itemAtkStockNext}\n`;
+				}
+			} else {
+				itemAtkStockNext = 0;
 			}
 		}
 		// 土属性剣攻撃
