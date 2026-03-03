@@ -1685,14 +1685,15 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 								atk += shieldBashAtk;
 							}
 						}
+						const shieldBashActivated = !!(skillEffects.shieldBash && itemBonus.atk > 0);
 						if (item.effect >= 100) {
-							message += `${config.rpgHeroName}の防御が特大アップ！\n`;
+							message += `${config.rpgHeroName}の${shieldBashActivated ? "パワーと防御" : "防御"}が特大アップ！\n`;
 						} else if (item.effect >= 70) {
-							message += `${config.rpgHeroName}の防御が大アップ！\n`;
+							message += `${config.rpgHeroName}の${shieldBashActivated ? "パワーと防御" : "防御"}が大アップ！\n`;
 						} else if (item.effect > 30) {
-							message += `${config.rpgHeroName}の防御がアップ！\n`;
+							message += `${config.rpgHeroName}の${shieldBashActivated ? "パワーと防御" : "防御"}がアップ！\n`;
 						} else {
-							message += `${config.rpgHeroName}の防御が小アップ！\n`;
+							message += `${config.rpgHeroName}の${shieldBashActivated ? "パワーと防御" : "防御"}が小アップ！\n`;
 						}
 						if (verboseLog) {
 							buff += 1;
