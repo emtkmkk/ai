@@ -237,13 +237,34 @@ export default class extends Module {
 	}
 
 	/**
-	 * 終局結果と難易度に応じた思考時間ボーナス倍率を返す。
+	 * 対戦相手の勝敗記録から、その対局で単純モードを使うかを決める。
+	 *
+	 * @remarks
+	 * 勝ち越し（wins > losses）のときは単純モード。
+	 * ただし 5 以上勝ち越している場合（wins - losses >= 5）は、20% の確率で超単純モードに落とす。
+	 */
+	private shouldUseSimpleMode(opponentUserId: string): boolean {
+		const opponentReversi = this.ai.lookupFriend(opponentUserId)?.getPerModulesData(this)
+			?.reversi as { wins?: number; losses?: number } | undefined;
+		const wins = opponentReversi?.wins ?? 0;
+		const losses = opponentReversi?.losses ?? 0;
+		const lead = wins - losses;
+
+		if (lead >= 5) {
+			return Math.random() >= 0.2;
+		}
+
+		return wins > losses;
+	}
+
+	/**
+	 * 終局結果と対戦相手の勝ち越し状況に応じた思考時間ボーナス倍率を返す。
 	 * iWon は Bot 勝利（プレイヤー負け）、iLose は Bot 敗北（プレイヤー勝ち）。
-	 * 単純モード時は常に基礎倍率 1.35、それ以外は 1.0 を掛ける。
+	 * 対戦相手が勝ち越している場合は基礎倍率 1.35、それ以外は 1.0 を掛ける。
 	 * さらにプレイヤー結果に応じて、勝利 2.0 / 引き分け 1.5 / 敗北・投了・時間切れ 1.0 を掛ける。
 	 */
-	private getThinkingBonusMultiplier(resultType: string, useSimpleMode: boolean): number {
-		const modeMultiplier = useSimpleMode ? 1.35 : 1.0;
+	private getThinkingBonusMultiplier(resultType: string, isOpponentWinning: boolean): number {
+		const modeMultiplier = isOpponentWinning ? 1.35 : 1.0;
 		const resultMultiplier =
 			resultType === 'iLose' ? 2.0 :
 			resultType === 'drawn' ? 1.5 :
@@ -265,8 +286,8 @@ export default class extends Module {
 	}
 
 	/** 相手思考時間（ms）へ終局結果・難易度ボーナスを適用した値を返す。 */
-	private calcReversiAdjustedThinkingMs(totalOpponentThinkingMs: number, resultType: string, useSimpleMode: boolean, boardSnapshot?: { blackStones: number; whiteStones: number; totalCells: number }): number {
-		const multiplier = this.getThinkingBonusMultiplier(resultType, useSimpleMode);
+	private calcReversiAdjustedThinkingMs(totalOpponentThinkingMs: number, resultType: string, isOpponentWinning: boolean, boardSnapshot?: { blackStones: number; whiteStones: number; totalCells: number }): number {
+		const multiplier = this.getThinkingBonusMultiplier(resultType, isOpponentWinning);
 		const stoneFillCorrection = this.getThinkingStoneFillCorrection(boardSnapshot);
 		return Math.max(0, totalOpponentThinkingMs) * multiplier * stoneFillCorrection;
 	}
@@ -400,9 +421,7 @@ export default class extends Module {
 			const gameUrl = config.reversiServiceApiUrl
 				? `${config.reversiServiceApiUrl}/game/${encodeURIComponent(inviteToken)}`
 				: '';
-			const opponentReversi = this.ai.lookupFriend(entry.opponentUserId)?.getPerModulesData(this)
-				?.reversi as { wins?: number; losses?: number } | undefined;
-			const useSimpleMode = (opponentReversi?.wins ?? 0) > (opponentReversi?.losses ?? 0);
+			const useSimpleMode = this.shouldUseSimpleMode(entry.opponentUserId);
 			const session = new ReversiGameSession(
 				inviteToken,
 				this.ai.account,
@@ -464,7 +483,7 @@ export default class extends Module {
 	 * 5 件以上のとき、該当する招待依頼者がいれば「忙しいから」とダイレクト返信してから false を返す。
 	 * 一覧に game が無い（招待していない game の matched）場合は何もせず false。
 	 * reversi-service の matched では body.game.id が inviteToken のため、inviteToken で一覧を検索する。
-	 * 対戦相手の勝敗（wins > losses）なら単純モードをセッションに渡し、それ以外は超単純モード。
+	 * 対戦相手が勝ち越し（wins > losses）なら単純モード。さらに 5 以上勝ち越し時は 20% で超単純モードに落としてセッションへ渡す。
 	 *
 	 * @internal
 	 */
@@ -496,11 +515,8 @@ export default class extends Module {
 		const sendReady = () => {
 			this.client!.sendReady(game.id, true);
 		};
-		// 対戦相手の勝敗記録から難易度を決める（勝ち越しなら単純モード）
-		const opponentReversi = this.ai.lookupFriend(entry.opponentUserId)?.getPerModulesData(this)
-			?.reversi as { wins?: number; losses?: number } | undefined;
-		const useSimpleMode =
-			(opponentReversi?.wins ?? 0) > (opponentReversi?.losses ?? 0);
+		// 対戦相手の勝敗記録から難易度を決める（5以上勝ち越し時は20%で超単純に落とす）
+		const useSimpleMode = this.shouldUseSimpleMode(entry.opponentUserId);
 
 		// 終局時は結果種別・対戦相手・勝者 ID ・難易度・石差を渡し、index 側で本文と wins/losses・連勝・難易度別統計を更新する
 		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number; totalCells: number }, winnerHostOrGuest?: 'host' | 'guest') => {
@@ -652,9 +668,7 @@ export default class extends Module {
 						this.client!.closeGame(inviteToken);
 						this.gameSessions.delete(inviteToken);
 					};
-					const opponentReversi = this.ai.lookupFriend(existingEntry.opponentUserId)?.getPerModulesData(this)
-						?.reversi as { wins?: number; losses?: number } | undefined;
-					const useSimpleMode = (opponentReversi?.wins ?? 0) > (opponentReversi?.losses ?? 0);
+					const useSimpleMode = this.shouldUseSimpleMode(existingEntry.opponentUserId);
 					const newSession = new ReversiGameSession(
 						inviteToken,
 						this.ai.account,
@@ -842,9 +856,13 @@ export default class extends Module {
 
 		const friend = this.ai.lookupFriend(opponentUserId);
 		const rawOpponentThinkingMs = Math.max(0, typeof totalOpponentThinkingMs === 'number' ? totalOpponentThinkingMs : 0);
-		const thinkingBonusMultiplier = this.getThinkingBonusMultiplier(resultType, useSimpleMode === true);
+		const isOpponentWinning = (() => {
+			const opponentReversi = friend?.getPerModulesData(this)?.reversi as { wins?: number; losses?: number } | undefined;
+			return (opponentReversi?.wins ?? 0) > (opponentReversi?.losses ?? 0);
+		})();
+		const thinkingBonusMultiplier = this.getThinkingBonusMultiplier(resultType, isOpponentWinning);
 		const thinkingStoneFillCorrection = this.getThinkingStoneFillCorrection(boardSnapshot);
-		const adjustedThinkingMsForLog = this.calcReversiAdjustedThinkingMs(rawOpponentThinkingMs, resultType, useSimpleMode === true, boardSnapshot);
+		const adjustedThinkingMsForLog = this.calcReversiAdjustedThinkingMs(rawOpponentThinkingMs, resultType, isOpponentWinning, boardSnapshot);
 		const inviteUrl = config.reversiServiceApiUrl
 			? `${config.reversiServiceApiUrl}/game/${encodeURIComponent(gameId)}`
 			: '';
@@ -913,7 +931,7 @@ export default class extends Module {
 			}
 			const playDate = typeof gameStartedAtMs === 'number' ? this.formatDateFromMs(gameStartedAtMs) : today;
 			const currentTotalThinkingMs = typeof totalOpponentThinkingMs === 'number' ? totalOpponentThinkingMs : 0;
-			const adjustedThinkingMs = this.calcReversiAdjustedThinkingMs(currentTotalThinkingMs, resultType, useSimpleMode === true, boardSnapshot);
+			const adjustedThinkingMs = this.calcReversiAdjustedThinkingMs(currentTotalThinkingMs, resultType, isOpponentWinning, boardSnapshot);
 			const baseCarryMs = r.loveChunkDate === playDate
 				? Math.max(0, r.loveThinkingCarryMs ?? 0)
 				: 0;
