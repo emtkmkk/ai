@@ -1095,6 +1095,10 @@ export default class extends Module {
 
 		/** 現在の敵と戦ってるターン数。 敵がいない場合は1 */
 		let count = data.count ?? 1;
+		if (!data.enemy || count === 1) {
+			data.itemAtkStock = 0;
+			data.itemAtkStockNext = 0;
+		}
 
 		// 旅モード（エンドレスモード）のフラグ
 		if (msg.includes(Array.isArray(serifs.rpg.command.journey) ? serifs.rpg.command.journey : [serifs.rpg.command.journey]) && !aggregateTokensEffects(data).autoJournal) {
@@ -1486,6 +1490,25 @@ export default class extends Module {
 			dmgUp *= (1 + (skillEffects.water ?? 0));
 		}
 
+		if (skillEffects.itemAtkStock && (data.itemAtkStockNext ?? 0) > 0) {
+			const itemAtkStockGain = Math.floor(data.itemAtkStockNext);
+			if (itemAtkStockGain > 0) {
+				data.itemAtkStock = (data.itemAtkStock ?? 0) + itemAtkStockGain;
+				buff += 1;
+				const itemAtkStockRate = Math.max((data.itemAtkStock ?? 0) / (lv * 3.5), 0);
+				if (verboseLog) {
+					message += `継スキル: 累積+${itemAtkStockGain} (${Math.floor(itemAtkStockRate * 100)}%)\n`;
+				} else {
+					message += serifs.rpg.skill.itemAtkStock(itemAtkStockRate) + "\n";
+				}
+			}
+			data.itemAtkStockNext = 0;
+		}
+
+		if (skillEffects.itemAtkStock && (data.itemAtkStock ?? 0) > 0) {
+			atk += data.itemAtkStock;
+		}
+
 		// ---- アイテム取得・使用 ----
 
 		/** アイテム取得確率のベース（HP 低いほど高くなる：40%〜100%） */
@@ -1715,6 +1738,18 @@ export default class extends Module {
 			if (typeof data.enemy.def === "number") enemyDef = lv * 3.5 * Math.max(data.enemy.def, 3);
 			if (typeof data.enemy.atkx === "number") data.enemy.atkx += 1;
 			if (typeof data.enemy.defx === "number") data.enemy.defx += 1;
+		}
+
+		if (skillEffects.itemAtkStock) {
+			const itemAtkGain = Math.max(Math.floor(itemBonus.atk ?? 0), 0);
+			if (itemAtkGain > 0) {
+				data.itemAtkStockNext = Math.floor(itemAtkGain * (skillEffects.itemAtkStock ?? 0));
+				if (verboseLog) {
+					message += `継スキル: 次ターン累積予定+${data.itemAtkStockNext}\n`;
+				}
+			} else {
+				data.itemAtkStockNext = 0;
+			}
 		}
 
 		if (skillEffects.enemyStatusBonus) {
@@ -2001,6 +2036,8 @@ export default class extends Module {
 				data.maxTp = 0;
 				data.fireAtk = 0;
 				data.totalResistDmg = 0;
+				data.itemAtkStock = 0;
+				data.itemAtkStockNext = 0;
 				break;
 			} else {
 				// ---- 攻撃後スキル・敵ターン ----

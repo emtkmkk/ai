@@ -1012,6 +1012,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 	let itemBoost = 0;
 	let itemMinEffect = 0;
 	let atkDmgBonus = 1;
+	let itemAtkStock = 0;
+	let itemAtkStockNext = 0;
 
 	/** これって戦闘？ */
 	let isBattle = enemy.atkmsg(0).includes("ダメージ");
@@ -1302,6 +1304,24 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 		enemyAtkX = 1;
 		itemBoost = 0;
 		itemMinEffect = 0;
+
+		if (skillEffects.itemAtkStock && itemAtkStockNext > 0) {
+			const itemAtkStockGain = Math.floor(itemAtkStockNext);
+			if (itemAtkStockGain > 0) {
+				itemAtkStock += itemAtkStockGain;
+				buff += 1;
+				const itemAtkStockRate = Math.max(itemAtkStock / (lv * 3.5), 0);
+				if (verboseLog) {
+					message += `継スキル: 累積+${itemAtkStockGain} (${Math.floor(itemAtkStockRate * 100)}%)\n`;
+				} else {
+					message += serifs.rpg.skill.itemAtkStock(itemAtkStockRate) + "\n";
+				}
+			}
+			itemAtkStockNext = 0;
+		}
+		if (skillEffects.itemAtkStock && itemAtkStock > 0) {
+			atk += itemAtkStock;
+		}
 
 		if (verboseLog) {
 			buff += 1;
@@ -1745,6 +1765,17 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 				if (itemMessage) {
 					message += `(${itemMessage})\n`;
 				}
+			}
+		}
+		if (skillEffects.itemAtkStock) {
+			const itemAtkGain = Math.max(Math.floor(itemBonus.atk ?? 0), 0);
+			if (itemAtkGain > 0) {
+				itemAtkStockNext = Math.floor(itemAtkGain * (skillEffects.itemAtkStock ?? 0));
+				if (verboseLog) {
+					message += `継スキル: 次ターン累積予定+${itemAtkStockNext}\n`;
+				}
+			} else {
+				itemAtkStockNext = 0;
 			}
 		}
 		// 土属性剣攻撃
