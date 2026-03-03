@@ -1631,9 +1631,25 @@ export default class extends Module {
 						itemBonus.def = def * (item.mind * 0.0025);
 						atk = atk + itemBonus.atk;
 						def = def + itemBonus.def;
+						if (skillEffects.shieldBash && itemBonus.def > 0) {
+							const shieldBashX = 1 - Math.pow(0.5, (skillEffects.shieldBash ?? 0));
+							const shieldBashAtk = Math.floor(itemBonus.def * shieldBashX);
+							if (shieldBashAtk > 0) {
+								itemBonus.atk += shieldBashAtk;
+								atk += shieldBashAtk;
+							}
+						}
 					} else {
 						itemBonus.def = (lv * 4) * (item.effect * 0.005);
 						def = def + itemBonus.def;
+						if (skillEffects.shieldBash && itemBonus.def > 0) {
+							const shieldBashX = 1 - Math.pow(0.5, (skillEffects.shieldBash ?? 0));
+							const shieldBashAtk = Math.floor(itemBonus.def * shieldBashX);
+							if (shieldBashAtk > 0) {
+								itemBonus.atk += shieldBashAtk;
+								atk += shieldBashAtk;
+							}
+						}
 						if (item.effect >= 100) {
 							message += `${config.rpgHeroName}の防御が特大アップ！\n`;
 						} else if (item.effect >= 70) {

@@ -167,6 +167,8 @@ export type SkillEffect = {
 	armorSelect?: number;
 	/** 防具のアイテム効果がn%上昇 */
 	armorBoost?: number;
+	/** 防具装備時、防御上昇量に応じて攻撃力も上昇 */
+	shieldBash?: number;
 	/** 食べ物が選択される確率がn%上昇 */
 	foodSelect?: number;
 	/** 食べ物のアイテム効果がn%上昇 */
@@ -331,6 +333,7 @@ export const skills: Skill[] = [
 	{ name: `道具大好き＋`, short: "**道**", desc: `道具の使用率が大きく上がります`, info: `アイテム装備率+90%`, effect: { itemEquip: 0.9 }, notLearn: true, skillOnly: true },
 	{ name: `道具の扱いが上手い`, short: "扱", desc: `道具の効果量が上がります`, info: `アイテム効果量+40% アイテム悪効果軽減+40%`, effect: { itemBoost: 0.4 } },
 	{ name: `継戦融合武装`, short: "継", desc: `武器を装備した時に前の武器を捨てずに次の武器に融合して使用します`, info: `ターン2以降の開始時、前のターンに装備したアイテムのパワー上昇の55%分をその戦闘中は永続的に獲得します`, effect: { itemAtkStock: 0.55 }, unique: "itemAtkStock", rare: 2 },
+	{ name: `シールドバッシュ`, short: "シ", desc: `防具を装備した際にパワーも上がるようになります`, info: `防具を装備した際に、その防具による防御増加量の50%分パワーも一緒に増加する`, effect: { armorBoost: 0.5, shieldBash: 1 } },
 	{ name: `武器が大好き`, short: "武", desc: `武器のみを装備するようになり、武器の効果量が上がります`, info: `防具・食べ物を使用しない 武器効果量+70% 種類大好き系と重複しない`, effect: { weaponSelect: 2, weaponBoost: 0.7 }, unique: "itemSelect" },
 	{ name: `防具が大好き`, short: "防", desc: `防具のみを装備するようになり、防具の効果量が上がります`, info: `武器・食べ物を使用しない 防具効果量+70% ${serifs.rpg.status.atk}+4% 種類大好き系と重複しない`, effect: { atkUpBonus: 1, armorSelect: 2, armorBoost: 0.7 }, unique: "itemSelect" },
 	{ name: `食いしんぼう`, short: "食", desc: `食べ物のみを装備するようになり、食べ物の効果量が上がります`, info: `武器・防具を使用しない 食べ物効果量+70% 毒食べ物ダメージ-60% ${serifs.rpg.status.atk}+4% 種類大好き系と重複しない`, effect: { atkUpBonus: 1, foodSelect: 2, foodBoost: 0.7, poisonResist: 0.6 }, unique: "itemSelect" },
@@ -416,6 +419,7 @@ const ultimateEffect: SkillEffect = {
 	"itemAtkStock": 0.072,
 	"weaponBoost": 0.054,
 	"armorBoost": 0.054,
+	"shieldBash": 0.2,
 	"foodBoost": 0.072,
 	"poisonResist": 0.072,
 	"mindMinusAvoid": 0.014,
@@ -1471,6 +1475,9 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 	if (skillEffects.armorSelect) {
 		result.push("防具のみを使用");
 		//result.push("防具選択率: +" + showNum(((((1 + (skillEffects.armorSelect ?? 0)) / (4 + (skillEffects.armorSelect ?? 0))) / (1/4)) - 1) * 100) + "%");
+	}
+	if (skillEffects.shieldBash) {
+		result.push("シールドバッシュ: 防具防御上昇量に応じてパワー上昇");
 	}
 	if (skillEffects.foodSelect) {
 		result.push("食べ物のみを使用");
