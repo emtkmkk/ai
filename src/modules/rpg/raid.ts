@@ -1149,14 +1149,13 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 	// ７フィーバー
 	let sevenFever = skillEffects.sevenFever ? calcSevenFever([data.lv, data.atk, data.def]) * skillEffects.sevenFever : 0;
 	if (sevenFever) {
-		const bonus = 7 * (skillEffects.sevenFever ?? 1);
+		const defBonus = 7 * (skillEffects.sevenFever ?? 1);
 		buff += 1;
 		message += serifs.rpg.skill.sevenFeverRaid + "\n";
-		atk = Math.ceil(atk * (1 + (bonus / 100)) / 7) * 7;
-		def = Math.ceil(def * (1 + (bonus / 100)) / 7) * 7;
+		def = Math.ceil(def * (1 + (defBonus / 100)) / 7) * 7;
 		if (verboseLog) {
 			buff += 1;
-			message += `７スキル効果: AD${displayDifference((1 + (bonus / 100)))} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
+			message += `７スキル効果: D${displayDifference((1 + (defBonus / 100)))} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
 		}
 	}
 
