@@ -178,7 +178,7 @@ export function showStatus(data, playerHp: number, enemyHp: number, enemyMaxHp: 
  * @param enemyMaxHp 敵の最大HP
  * @param me 自分の姿
  */
-export function showStatusDmg(data, playerHp: number, totalDmg: number, playerMaxHp: number, me = colors.find((x) => x.default)?.name ?? colors[0].name): string {
+export function showStatusDmg(data, playerHp: number, totalDmg: number, playerMaxHp: number, me = colors.find((x) => x.default)?.name ?? colors[0].name, additionalStatuses: { icon: string; value: number }[] = []): string {
 
     // プレイヤー
     const playerHpMarkCount = Math.min(Math.ceil(playerHp / (playerMaxHp) / (1 / 7)), 7);
@@ -192,9 +192,18 @@ export function showStatusDmg(data, playerHp: number, totalDmg: number, playerMa
         ? PlayerHpInfoStr
         : `${playerHp.toFixed(0)} / ${playerMaxHp}`;
 
-    const debuff = [data.enemy?.fire ? serifs.rpg.fire + data.count : ""].filter(Boolean).join(" ");
+    const statusIcons = additionalStatuses
+        .map((status) => ({
+            icon: status.icon,
+            value: status.value > 0 && status.value < 1 ? 1 : Math.floor(status.value)
+        }))
+        .filter((status) => status.value >= 1)
+        .map((status) => `${status.icon}${status.value}`)
+        .join(" ");
 
-    return `\n${"与えたダメージ"} : ${totalDmg}\n${me} : ${data.info >= 3 ? playerHpStr : data.info ? PlayerHpInfoStr : playerHpMarkStr}${debuff ? `\n${debuff}` : ""}`;
+    const hpView = data.info >= 3 ? playerHpStr : data.info ? PlayerHpInfoStr : playerHpMarkStr;
+
+    return `\n${"与えたダメージ"} : ${totalDmg}\n${me} :${statusIcons ? "\n" : " "}${hpView}${statusIcons ? `\n${statusIcons}` : ""}`;
 }
 
 /**
@@ -438,7 +447,8 @@ export function getAtkDmg(data, atk: number, tp: number, count: number, crit: nu
 export function getEnemyDmg(data, def: number, tp: number, count: number, crit: number | boolean, enemyAtk: number, rng = (0.2 + Math.random() * 1.6), atkx?) {
     let dmg = Math.round((Math.max(enemyAtk, 1) * (atkx ?? getVal(data.enemy.atkx, [tp]) ?? 3) * (Math.max((count ?? 1) - 1, 1) * 0.5 + 0.5) * rng * (crit ? typeof crit === "number" ? (2 * crit) : 2 : 1)) * (1 / (((Math.max(def, 1) * tp) + 100) / 100)));
     if (data.enemy?.fire) {
-        dmg += Math.round(((data.count ?? count) - 1) * Math.min(100 + data.lv * 3, 865) * data.enemy.fire);
+        const fireBase = data.fireStack ?? ((data.count ?? count) - 1);
+        dmg += Math.round(Math.max(fireBase, 0) * Math.min(100 + data.lv * 3, 865) * data.enemy.fire);
     }
     if (Number.isNaN(dmg)) {
         throw new Error();
