@@ -31,6 +31,31 @@ import { acct } from '@/utils/acct';
 import * as seedrandom from 'seedrandom';
 import config from '@/config';
 
+type RaidAdditionalStatus = {
+	icon: string;
+	value: number;
+};
+
+
+function reduceByBarrier(dmg: number, barrier: number) {
+	if (barrier <= 0 || dmg <= 0) {
+		return {
+			reducedDmg: dmg,
+			consumed: 0,
+			restBarrier: barrier,
+		};
+	}
+
+	const consumed = Math.min(dmg, barrier);
+	const reducedDmg = Math.max(dmg - consumed, 0);
+
+	return {
+		reducedDmg,
+		consumed,
+		restBarrier: barrier - consumed,
+	};
+}
+
 /** レイド情報の型 */
 export type Raid = {
 	/** 攻撃者の配列 */
@@ -969,13 +994,19 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 						if (verboseLog) {
 							message += `　　回復: ${val}\n`;
 						}
-						playerHp += Math.min(Math.round(playerMaxHp * val), playerMaxHp - playerHp);
+						{
+							const recovered = recoverHpOrBarrier(Math.min(Math.round(playerMaxHp * val), playerMaxHp - playerHp));
+							if (recovered.barrier > 0) message += `${Math.floor(recovered.barrier)}ポイントのバリアを獲得！\n`;
+						}
 						break;
 					case "barrier":
 						if (verboseLog) {
 							message += `　　バリア: ${val}\n`;
 						}
-						playerHp += Math.round(playerMaxHp * val);
+						{
+							const recovered = recoverHpOrBarrier(Math.round(playerMaxHp * val));
+							if (recovered.barrier > 0) message += `${Math.floor(recovered.barrier)}ポイントのバリアを獲得！\n`;
+						}
 						break;
 					default:
 						console.warn(`Unknown effect: ${effect}`);
@@ -1012,6 +1043,37 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 	let itemBoost = 0;
 	let itemMinEffect = 0;
 	let atkDmgBonus = 1;
+	let sevenFeverBarrier = 0;
+	let fireStack = 0;
+	const additionalStatuses: RaidAdditionalStatus[] = [];
+	const addBarrier = (value: number) => {
+		if (value <= 0) return 0;
+		sevenFeverBarrier += value;
+		const barrierStatus = additionalStatuses.find((status) => status.icon === "🛡️");
+		if (barrierStatus) {
+			barrierStatus.value = sevenFeverBarrier;
+		} else {
+			additionalStatuses.push({ icon: "🛡️", value: sevenFeverBarrier });
+		}
+		return value;
+	};
+	const recoverHpOrBarrier = (healValue: number) => {
+		if (healValue <= 0) return { healed: 0, barrier: 0 };
+		if (!skillEffects.transcendence) {
+			playerHp += healValue;
+			return { healed: healValue, barrier: 0 };
+		}
+		let remain = healValue;
+		let healed = 0;
+		if (playerHp < 1) {
+			const toOne = Math.min(remain, 1 - playerHp);
+			playerHp += toOne;
+			healed += toOne;
+			remain -= toOne;
+		}
+		const barrier = remain > 0 ? addBarrier(remain) : 0;
+		return { healed, barrier };
+	};
 	let itemAtkStock = 0;
 	let itemAtkStockNext = 0;
 
@@ -1150,15 +1212,25 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 
 	// ７フィーバー
 	let sevenFever = skillEffects.sevenFever ? calcSevenFever([data.lv, data.atk, data.def]) * skillEffects.sevenFever : 0;
+	if (enemy.fire) {
+		additionalStatuses.push({ icon: serifs.rpg.fire, value: fireStack });
+	}
 	if (sevenFever) {
 		const defBonus = 7 * (skillEffects.sevenFever ?? 1);
+		addBarrier(sevenFever);
 		buff += 1;
-		message += serifs.rpg.skill.sevenFeverRaid + "\n";
+		message += serifs.rpg.skill.sevenFeverRaid(Math.floor(sevenFeverBarrier)) + "\n";
 		def = Math.ceil(def * (1 + (defBonus / 100)) / 7) * 7;
 		if (verboseLog) {
 			buff += 1;
-			message += `７スキル効果: D${displayDifference((1 + (defBonus / 100)))} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
+			message += `７スキル効果: D${displayDifference((1 + (defBonus / 100)))} / バリア+${formatNumber(sevenFeverBarrier)} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
 		}
+	}
+	if (skillEffects.charge) {
+		additionalStatuses.push({ icon: "🍀", value: data.charge });
+	}
+	if (skillEffects.pride || skillEffects.gluttony || skillEffects.sloth) {
+		additionalStatuses.push({ icon: "🔺", value: 0 });
 	}
 
 	// 風魔法：戦闘時は速度を上げる、非戦闘時は速度ではなくパワーに還元
@@ -1272,6 +1344,14 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 
 	let totalResistDmg = 0;
 
+	if (skillEffects.transcendence && playerHp > 1) {
+		const convertedHp = playerHp - 1;
+		playerHp = 1;
+		addBarrier(convertedHp);
+		buff += 1;
+		message += `超越のお守りが発動した！\n体力${Math.floor(convertedHp)}ポイントがバリアに変換された！\n`;
+	}
+
 	for (let actionX = 0; actionX < plusActionX + 1; actionX++) {
 
 		/** バフを得た数。行数のコントロールに使用 */
@@ -1332,7 +1412,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 		let slothFlg = false;
 
 		if (skillEffects.sloth && Math.random() < 0.3) {
-			_atk *= 1.5;
+			atkDmgBonus *= 1.5;
 			atk = Math.ceil(atk * 0.001);
 			buff += 1;
 			message += "怠惰が発動した！このターンは力がでない！\n";
@@ -1721,16 +1801,21 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 							item.effect = 200;
 						}
 						const heal = Math.round(((playerMaxHp) - playerHp) * (item.effect * 0.005));
-						playerHp += heal;
+						const recovered = recoverHpOrBarrier(heal);
 						if (heal > 0) {
-							if (item.effect >= 100 && heal >= 50) {
-								message += `${config.rpgHeroName}の体力が特大回復！\n${heal}ポイント回復した！\n`;
-							} else if (item.effect >= 70 && heal >= 35) {
-								message += `${config.rpgHeroName}の体力が大回復！\n${heal}ポイント回復した！\n`;
-							} else if (item.effect > 30 && heal >= 15) {
-								message += `${config.rpgHeroName}の体力が回復！\n${heal}ポイント回復した！\n`;
-							} else {
-								message += `${config.rpgHeroName}の体力が小回復！\n${heal}ポイント回復した！\n`;
+							if (recovered.barrier > 0) {
+								message += `${Math.floor(recovered.barrier)}ポイントのバリアを獲得！\n`;
+							}
+							if (recovered.healed >= 1) {
+								if (item.effect >= 100 && recovered.healed >= 50) {
+									message += `${config.rpgHeroName}の体力が特大回復！\n${Math.floor(recovered.healed)}ポイント回復した！\n`;
+								} else if (item.effect >= 70 && recovered.healed >= 35) {
+									message += `${config.rpgHeroName}の体力が大回復！\n${Math.floor(recovered.healed)}ポイント回復した！\n`;
+								} else if (item.effect > 30 && recovered.healed >= 15) {
+									message += `${config.rpgHeroName}の体力が回復！\n${Math.floor(recovered.healed)}ポイント回復した！\n`;
+								} else {
+									message += `${config.rpgHeroName}の体力が小回復！\n${Math.floor(recovered.healed)}ポイント回復した！\n`;
+								}
 							}
 							if (verboseLog) {
 								buff += 1;
@@ -1860,7 +1945,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 
 		let endureCount = 1 + (skillEffects.endureUp ?? 0) * 2;
 
-		const _data = { ...data, enemy, count };
+		const _data = { ...data, enemy, count, fireStack };
 
 
 		if (_data.enemy.fire && skillEffects.water) {
@@ -1881,17 +1966,29 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 					message += `D: ${formatNumber(def)} (x${formatNumber(def / (lv * 3.5))})\n`;
 					message += `合計被ダメージ: ${displayDifference(defDmgX)}\n`;
 				}
+				if (_data.enemy.fire) {
+					fireStack += _data.enemy.fire / 0.15;
+					_data.fireStack = fireStack;
+					const fireStatus = additionalStatuses.find((status) => status.icon === serifs.rpg.fire);
+					if (fireStatus) fireStatus.value = fireStack;
+				}
 				/** ダメージ */
 				let dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [count]));
 				let noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, enemy.alwaysCrit ? 1 : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [count]));
 				let normalDmg = getEnemyDmg(_data, lv * 3.75, tp, 1, enemy.alwaysCrit ? 1 : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [count]));
 				let addMessage = "";
 				const rawDmg = dmg;
-				if (sevenFever) {
-					const minusDmg = Math.round((dmg - Math.max(dmg - sevenFever, 0)) * 10) / 10;
-					dmg = Math.max(dmg - sevenFever, 0);
-					if (minusDmg) addMessage += `(７フィーバー: -${minusDmg})\n`;
-					noItemDmg = Math.max(noItemDmg - sevenFever, 0);
+				if (sevenFeverBarrier > 0) {
+					const reduced = reduceByBarrier(dmg, sevenFeverBarrier);
+					dmg = reduced.reducedDmg;
+					if (reduced.consumed) addMessage += `(バリア: -${Math.round(reduced.consumed * 10) / 10})\n`;
+					if (noItemDmg > 0) {
+						const noItemReduced = reduceByBarrier(noItemDmg, sevenFeverBarrier);
+						noItemDmg = noItemReduced.reducedDmg;
+					}
+					sevenFeverBarrier = reduced.restBarrier;
+					const barrierStatus = additionalStatuses.find((status) => status.icon === "🛡️");
+					if (barrierStatus) barrierStatus.value = sevenFeverBarrier;
 				}
 				// ダメージが負けるほど多くなる場合は、先制攻撃しない
 				if (warriorFlg || playerHp > dmg || (count === 3 && enemy.fire && (data.thirdFire ?? 0) <= 2)) {
@@ -2129,6 +2226,12 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 						message += `D: ${formatNumber(def)} (x${formatNumber(def / (lv * 3.5))})\n`;
 						message += `合計被ダメージ: ${displayDifference(defDmgX)}\n`;
 					}
+					if (_data.enemy.fire) {
+						fireStack += _data.enemy.fire / 0.15;
+						_data.fireStack = fireStack;
+						const fireStatus = additionalStatuses.find((status) => status.icon === serifs.rpg.fire);
+						if (fireStatus) fireStatus.value = fireStack;
+					}
 					/** ダメージ */
 					let dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX, getVal(enemy.atkx, [count]));
 					let noItemDmg = getEnemyDmg(_data, def - itemBonus.def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX * enemyAtkX, getVal(enemy.atkx, [count]));
@@ -2137,11 +2240,17 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 					if (normalDmg > dmg) {
 						totalResistDmg += (normalDmg - dmg);
 					}
-					if (sevenFever) {
-						const minusDmg = Math.round((dmg - Math.max(dmg - sevenFever, 0)) * 10) / 10;
-						dmg = Math.max(dmg - sevenFever, 0);
-						if (minusDmg) addMessage += `(７フィーバー: -${minusDmg})\n`;
-						noItemDmg = Math.max(noItemDmg - sevenFever, 0);
+					if (sevenFeverBarrier > 0) {
+						const reduced = reduceByBarrier(dmg, sevenFeverBarrier);
+						dmg = reduced.reducedDmg;
+						if (reduced.consumed) addMessage += `(バリア: -${Math.round(reduced.consumed * 10) / 10})\n`;
+						if (noItemDmg > 0) {
+							const noItemReduced = reduceByBarrier(noItemDmg, sevenFeverBarrier);
+							noItemDmg = noItemReduced.reducedDmg;
+						}
+						sevenFeverBarrier = reduced.restBarrier;
+						const barrierStatus = additionalStatuses.find((status) => status.icon === "🛡️");
+						if (barrierStatus) barrierStatus.value = sevenFeverBarrier;
 					}
 					if (skillEffects.pride) {
 						if (dmg <= (playerMaxHp / 10)) {
@@ -2185,8 +2294,9 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 				if (skillEffects.escape && actionX + 1 < plusActionX && playerHp <= 0 && playerHp >= (playerMaxHp) * (skillEffects.escape / -16) && !enemy.notEndure) {
 					message += "やられそうになったので、\n一旦距離を取り、1ターン分回復に徹した！\n";
 					const heal = Math.ceil((playerMaxHp) * (skillEffects.escape / 10)) + 1;
-					playerHp += heal;
-					if (heal > 0) message += heal + "ポイントの体力を回復！\n";
+					const recovered = recoverHpOrBarrier(heal);
+					if (recovered.healed >= 1) message += `${Math.floor(recovered.healed)}ポイントの体力を回復！\n`;
+					if (recovered.barrier > 0) message += `${Math.floor(recovered.barrier)}ポイントのバリアを獲得した！\n`;
 					actionX += 1;
 					count += 1;
 					skillEffects.escape -= 1;
@@ -2200,10 +2310,14 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 				break;
 			} else {
 				// 決着がつかない場合
+				const chargeStatus = additionalStatuses.find((status) => status.icon === "🍀");
+				if (chargeStatus) chargeStatus.value = data.charge;
+				const sinStatus = additionalStatuses.find((status) => status.icon === "🔺");
+				if (sinStatus) sinStatus.value = (atkDmgBonus - 1) * 10;
 				if (actionX === plusActionX) {
-					message += showStatusDmg(_data, playerHp, totalDmg, playerMaxHp, me);
+					message += showStatusDmg(_data, playerHp, totalDmg, playerMaxHp, me, additionalStatuses);
 				} else {
-					message += showStatusDmg(_data, playerHp, totalDmg, playerMaxHp, me) + "\n\n";
+					message += showStatusDmg(_data, playerHp, totalDmg, playerMaxHp, me, additionalStatuses) + "\n\n";
 				}
 				count = count + 1;
 			}
@@ -2225,7 +2339,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 			totalResistDmg = Math.min(totalResistDmg, 1200)
 			const guardAtkUpX = [0, 1, 2.4, 4.8, 8, 8];
 			const heal = Math.round(((playerMaxHp) - playerHp) * (skillEffects.guardAtkUp * guardAtkUpX[Math.floor(totalResistDmg / 300)]));
-			playerHp += heal;
+			recoverHpOrBarrier(heal);
 			if (verboseLog) {
 				buff += 1;
 				message += `\n\n勢スキル状態: ${Math.floor(totalResistDmg)} / 1200\n`;
