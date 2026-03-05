@@ -195,7 +195,9 @@ export function showStatusDmg(data, playerHp: number, totalDmg: number, playerMa
     const statusIcons = additionalStatuses
         .map((status) => ({
             icon: status.icon,
-            value: status.value > 0 && status.value < 1 ? 1 : Math.floor(status.value)
+            value: status.icon === "🍀"
+                ? Math.round(status.value * 100)
+                : (status.value > 0 && status.value < 1 ? 1 : Math.floor(status.value))
         }))
         .filter((status) => status.value >= 1)
         .map((status) => `${status.icon}${status.value}`)
@@ -203,7 +205,7 @@ export function showStatusDmg(data, playerHp: number, totalDmg: number, playerMa
 
     const hpView = data.info >= 3 ? playerHpStr : data.info ? PlayerHpInfoStr : playerHpMarkStr;
 
-    return `\n${"与えたダメージ"} : ${totalDmg}\n${me} :${statusIcons ? "\n" : " "}${hpView}${statusIcons ? `\n${statusIcons}` : ""}`;
+    return `\n${"与えたダメージ"} : ${totalDmg}\n${me} : ${hpView}${statusIcons ? `\n${statusIcons}` : ""}`;
 }
 
 /**

@@ -1223,7 +1223,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 		def = Math.ceil(def * (1 + (defBonus / 100)) / 7) * 7;
 		if (verboseLog) {
 			buff += 1;
-			message += `７スキル効果: D${displayDifference((1 + (defBonus / 100)))} / バリア+${formatNumber(sevenFeverBarrier)} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
+			message += `７スキル効果: D${displayDifference((1 + (defBonus / 100)))} / バリア+${Math.floor(sevenFeverBarrier)} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
 		}
 	}
 	if (skillEffects.charge) {
