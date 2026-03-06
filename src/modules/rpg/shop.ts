@@ -312,6 +312,9 @@ const eventAmulet = (data?) => {
 	const m = new Date().getMonth() + 1;
 	const d = new Date().getDate()
 	const dy = new Date().getDay();
+	if (m === 3 && d >= 6 && d <= 8) {
+		return `超越のお守り`;
+	}
 	if (data.lv >= 255) {
 		if (dy === 0) {
 			return [
@@ -387,9 +390,6 @@ const eventAmulet = (data?) => {
 			`すぐ決死の覚悟をする`,
 			`不運チャージ`,
 		]
-	}
-	if (m === 3 && d >= 6 && d <= 8) {
-		return `超越のお守り`;
 	}
 	if (data?.skills?.length >= 1 && data?.skills?.length <= 3 && !data.items?.some((y) => y.type === "amulet")) {
 		return `わかばのお守り`
