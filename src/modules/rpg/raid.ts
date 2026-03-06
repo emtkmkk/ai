@@ -465,8 +465,21 @@ export async function raidContextHook(key: string, msg: Message, data: unknown) 
 	};
 
 	const _data = msg.friend.getPerModulesData(module_);
+	const showNormalRpgGuide = () => msg.reply(`レイドボスへの参加表明ありがとうございます！\nレイドボスに参加するには、通常のRPGモードを先に1回プレイする必要があります！（私にRPGと話しかけてください！）\nその後にもう一度先ほどの投稿に対して話しかけていただければ、レイドボスに参加できます！`);
 	if (!_data.lv) {
-		msg.reply(`レイドボスへの参加表明ありがとうございます！\nレイドボスに参加するには、通常のRPGモードを先に1回プレイする必要があります！（私にRPGと話しかけてください！）\nその後にもう一度先ほどの投稿に対して話しかけていただければ、レイドボスに参加できます！`);
+		showNormalRpgGuide();
+		return {
+			reaction: 'hmm'
+		};
+	}
+
+	const rpgData = ai.moduleData.findOne({ type: 'rpg' });
+	const nowTimeStr = getDate() + (new Date().getHours() < 12 ? '' : new Date().getHours() < 18 ? '/12' : '/18');
+	const nextTimeStr = new Date().getHours() < 12 ? getDate() + '/12' : new Date().getHours() < 18 ? getDate() + '/18' : getDate(1);
+	const hasNormalRpgPlayRight = _data.lastPlayedAt !== nowTimeStr && _data.lastPlayedAt !== nextTimeStr && _data.lv < (rpgData?.maxLv ?? 1);
+
+	if (_data.lv === 254 && hasNormalRpgPlayRight) {
+		showNormalRpgGuide();
 		return {
 			reaction: 'hmm'
 		};
