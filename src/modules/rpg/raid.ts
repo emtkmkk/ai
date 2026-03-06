@@ -56,6 +56,12 @@ function reduceByBarrier(dmg: number, barrier: number) {
 	};
 }
 
+function normalizeSevenFeverBarrierGain(value: number) {
+	if (value <= 0) return 0;
+	if (value <= 7) return 7;
+	return Math.round(value / 7) * 7;
+}
+
 /** レイド情報の型 */
 export type Raid = {
 	/** 攻撃者の配列 */
@@ -1217,7 +1223,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 	}
 	if (sevenFever) {
 		const defBonus = 7 * (skillEffects.sevenFever ?? 1);
-		addBarrier(sevenFever);
+		addBarrier(normalizeSevenFeverBarrierGain(sevenFever));
 		buff += 1;
 		message += serifs.rpg.skill.sevenFeverRaid(Math.floor(sevenFeverBarrier)) + "\n";
 		def = Math.ceil(def * (1 + (defBonus / 100)) / 7) * 7;
@@ -1226,7 +1232,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 			message += `７スキル効果: D${displayDifference((1 + (defBonus / 100)))} / バリア+${Math.floor(sevenFeverBarrier)} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
 		}
 	}
-	if (skillEffects.charge) {
+	if (skillEffects.charge && verboseLog) {
 		additionalStatuses.push({ icon: "🍀", value: data.charge });
 	}
 	if (skillEffects.pride || skillEffects.gluttony || skillEffects.sloth) {
