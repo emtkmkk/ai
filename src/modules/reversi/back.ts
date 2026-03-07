@@ -1361,8 +1361,9 @@ export class ReversiGameSession {
 				if (inGoodInner.length > 0) {
 					cand = inGoodInner;
 				} else {
-					const onEdge = cand.filter(p => this.simpleIsEdge(p));
-					if (onEdge.length > 0) cand = onEdge;
+					// 辺優先は無効化（要望により一時的にコメントアウト）
+					// const onEdge = cand.filter(p => this.simpleIsEdge(p));
+					// if (onEdge.length > 0) cand = onEdge;
 				}
 			}
 		}
