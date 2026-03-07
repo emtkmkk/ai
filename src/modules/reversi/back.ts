@@ -505,6 +505,8 @@ export class ReversiGameSession {
 	private static readonly OPPONENT_THINKING_MS_MIN_CONFIRMED_ACTION = 100;
 	/** started/sync で確定した対局開始時刻（ミリ秒）。日付跨ぎ時の集計基準に使う */
 	private gameStartedAtMs: number | null = null;
+	/** 終局処理を実行済みか。ended と sync（終局状態）で二重実行しないためのガード。 */
+	private endHandled = false;
 
 	/**
 	 * 対局セッションを生成する
@@ -775,7 +777,9 @@ export class ReversiGameSession {
 		const game = body.game || body;
 		this.game = game;
 		if (this.gameStartedAtMs == null) this.gameStartedAtMs = Date.now();
+		if (this.endHandled) return;
 		if (game.canPutEverywhere) {
+			this.endHandled = true;
 			this.onEndedCallback('decline', null, null, this.useSimpleMode);
 			return;
 		}
@@ -810,6 +814,10 @@ export class ReversiGameSession {
 			else if (engineTurn === false) this.botColor = false;
 		}
 		this.computeSumiIndexes();
+		if (this.isEndedStateInSync(body)) {
+			this.handleEndedMessage(body);
+			return;
+		}
 		const engineTurn = (this.o as any).turn;
 		const isMyTurn = this.botColor != null && engineTurn === this.botColor;
 		this.updateOpponentTurnTracking();
@@ -828,6 +836,13 @@ export class ReversiGameSession {
 	 * @internal
 	 */
 	onEnded(body: any) {
+		if (this.endHandled) return;
+		this.endHandled = true;
+		this.handleEndedMessage(body);
+	}
+
+	/** ended/sync(終局状態)で共通利用する終局メッセージ処理本体。 */
+	private handleEndedMessage(body: any) {
 		const msg = body.game ? body : { game: body };
 		const winnerId: string | null = msg.winnerId ?? msg.game?.winnerId ?? null;
 		const opponentUser = this.user as User;
@@ -860,6 +875,13 @@ export class ReversiGameSession {
 					resultType = 'drawn';
 					stoneDiff = undefined;
 				}
+			} else if (winnerId == null && resultType === 'drawn' && this.botColor != null) {
+				const botStones = this.botColor === true ? blackStones : whiteStones;
+				const opponentStones = this.botColor === true ? whiteStones : blackStones;
+				if (botStones !== opponentStones) {
+					resultType = botStones > opponentStones ? 'iWon' : 'iLose';
+					stoneDiff = Math.abs(botStones - opponentStones);
+				}
 			}
 		}
 		const totalOpponentThinkingMs = this.finalizeOpponentThinkingMs();
@@ -872,6 +894,22 @@ export class ReversiGameSession {
 			whiteStones,
 			totalCells
 		}, winnerHostOrGuest);
+	}
+
+	/** sync が終局状態を示しているかを判定する。ended が欠落した再接続時の復帰に使用。 */
+	private isEndedStateInSync(body: any): boolean {
+		const game = body?.game ?? body;
+		if (game == null) return false;
+		if (game.isEnded === true || game.ended === true || game.end === true) return true;
+		if (game.endedAt != null || game.finishedAt != null) return true;
+		if (game.winnerId != null || body?.winnerId != null) return true;
+		if (game.winner === 'host' || game.winner === 'guest' || body?.winner === 'host' || body?.winner === 'guest') return true;
+		if (game.surrendered === true || game.timeout === true || body?.timeout === true) return true;
+		if (!this.o || this.botColor == null) return false;
+		const o = this.o as any;
+		const blackMoves = o.canPutSomewhere(true);
+		const whiteMoves = o.canPutSomewhere(false);
+		return Array.isArray(blackMoves) && Array.isArray(whiteMoves) && blackMoves.length === 0 && whiteMoves.length === 0;
 	}
 
 	/** 隅（sumiIndexes）と隅に隣接するマス（sumiNearIndexes）を map から計算する。超単純思考で使用。 */
