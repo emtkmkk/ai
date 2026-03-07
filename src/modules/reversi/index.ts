@@ -244,8 +244,7 @@ export default class extends Module {
 	 * ただし 5 以上勝ち越している場合（wins - losses >= 5）は、20% の確率で超単純モードに落とす。
 	 */
 	private shouldUseSimpleMode(opponentUserId: string): boolean {
-		const opponentReversi = this.ai.lookupFriend(opponentUserId)?.getPerModulesData(this)
-			?.reversi as { wins?: number; losses?: number } | undefined;
+		const opponentReversi = this.getOpponentReversiRecord(opponentUserId);
 		const wins = opponentReversi?.wins ?? 0;
 		const losses = opponentReversi?.losses ?? 0;
 		const lead = wins - losses;
@@ -255,6 +254,21 @@ export default class extends Module {
 		}
 
 		return wins > losses;
+	}
+
+	/** 対戦相手のリバーシ勝敗記録を取得する。 */
+	private getOpponentReversiRecord(opponentUserId: string): { wins?: number; losses?: number } | undefined {
+		return this.ai.lookupFriend(opponentUserId)?.getPerModulesData(this)
+			?.reversi as { wins?: number; losses?: number } | undefined;
+	}
+
+	/** 対戦相手の負け越し数（losses - wins）に応じた、思考スキップ時のランダム着手確率を計算する。 */
+	private getRandomMoveChance(opponentUserId: string): number {
+		const opponentReversi = this.getOpponentReversiRecord(opponentUserId);
+		const wins = opponentReversi?.wins ?? 0;
+		const losses = opponentReversi?.losses ?? 0;
+		const trailing = Math.max(0, losses - wins);
+		return Math.min(1, trailing * 0.06);
 	}
 
 	/**
@@ -422,6 +436,7 @@ export default class extends Module {
 				? `${config.reversiServiceApiUrl}/game/${encodeURIComponent(inviteToken)}`
 				: '';
 			const useSimpleMode = this.shouldUseSimpleMode(entry.opponentUserId);
+			const randomMoveChance = this.getRandomMoveChance(entry.opponentUserId);
 			const session = new ReversiGameSession(
 				inviteToken,
 				this.ai.account,
@@ -429,7 +444,8 @@ export default class extends Module {
 				sendReady,
 				onEnded,
 				gameUrl,
-				useSimpleMode
+				useSimpleMode,
+				randomMoveChance
 			);
 			this.gameSessions.set(inviteToken, session);
 			this.client.setGameHandlers(inviteToken, {
@@ -526,6 +542,7 @@ export default class extends Module {
 			this.gameSessions.delete(game.id);
 		};
 		const gameUrl = config.reversiServiceApiUrl ? `${config.reversiServiceApiUrl}/game/${encodeURIComponent(game.id)}` : '';
+		const randomMoveChance = this.getRandomMoveChance(entry.opponentUserId);
 		const session = new ReversiGameSession(
 			game.id,
 			this.ai.account,
@@ -533,7 +550,8 @@ export default class extends Module {
 			sendReady,
 			onEnded,
 			gameUrl,
-			useSimpleMode
+			useSimpleMode,
+			randomMoveChance
 		);
 		this.gameSessions.set(game.id, session);
 		this.client!.setGameHandlers(game.id, {
@@ -669,6 +687,7 @@ export default class extends Module {
 						this.gameSessions.delete(inviteToken);
 					};
 					const useSimpleMode = this.shouldUseSimpleMode(existingEntry.opponentUserId);
+					const randomMoveChance = this.getRandomMoveChance(existingEntry.opponentUserId);
 					const newSession = new ReversiGameSession(
 						inviteToken,
 						this.ai.account,
@@ -676,7 +695,8 @@ export default class extends Module {
 						sendReady,
 						onEnded,
 						gameUrl,
-						useSimpleMode
+						useSimpleMode,
+						randomMoveChance
 					);
 					this.gameSessions.set(inviteToken, newSession);
 					this.client.setGameHandlers(inviteToken, {

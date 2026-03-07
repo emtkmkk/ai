@@ -489,6 +489,8 @@ export class ReversiGameSession {
 	private gameUrl: string;
 	/** 単純モード（変則盤対応・未来読みなし）で思考するか。false のときは超単純モード */
 	private useSimpleMode: boolean;
+	/** 思考を省略して合法手からランダム着手する確率（0〜1）。超単純モードでのみ適用。 */
+	private randomMoveChance: number;
 	/** 思考実行を既にスケジュールしたか。sync と started の両方で二重スケジュールしないようガードする */
 	private thinkScheduled = false;
 	/** 思考開始時刻（Date.now()）。着手決定後に思考時間が足りない場合の待ち時間計算に使用 */
@@ -514,6 +516,7 @@ export class ReversiGameSession {
 	 * @param onEndedCallback - 終局時に結果種別・対戦相手・勝者 ID ・単純モード・石差（任意）・winnerHostOrGuest（任意）を渡して呼ぶコールバック
 	 * @param gameUrl - 観戦用 URL（省略可）
 	 * @param useSimpleMode - 単純モードで思考するか。省略時は false（超単純）
+	 * @param randomMoveChance - 思考を省略して合法手からランダム着手する確率（0〜1）。省略時は 0
 	 *
 	 * @internal
 	 */
@@ -524,7 +527,8 @@ export class ReversiGameSession {
 		sendReady: () => void,
 		onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number; totalCells: number }, winnerHostOrGuest?: 'host' | 'guest') => void,
 		gameUrl?: string,
-		useSimpleMode?: boolean
+		useSimpleMode?: boolean,
+		randomMoveChance?: number
 	) {
 		this.gameId = gameId;
 		this.account = account;
@@ -533,6 +537,20 @@ export class ReversiGameSession {
 		this.onEndedCallback = onEndedCallback;
 		this.gameUrl = gameUrl || '';
 		this.useSimpleMode = useSimpleMode === true;
+		const chance = typeof randomMoveChance === 'number' && Number.isFinite(randomMoveChance)
+			? randomMoveChance
+			: 0;
+		this.randomMoveChance = Math.min(1, Math.max(0, chance));
+	}
+
+	/** 設定確率で思考を省略し、合法手からランダム着手する。候補の選別ルール（角優先・XC回避）は維持する。 */
+	private maybeCommitRandomMove(candidates: number[]): boolean {
+		if (this.randomMoveChance <= 0 || candidates.length <= 1) return false;
+		if (Math.random() >= this.randomMoveChance) return false;
+		const pos = candidates[Math.floor(Math.random() * candidates.length)];
+		log(`[reversi] thinkSuperSimple gameId=${this.gameId} randomMoveChance=${this.randomMoveChance.toFixed(2)} → putStone pos=${pos} (random)`);
+		this.commitMove(pos);
+		return true;
 	}
 
 	/** 対戦相手の User（user1 が自分なら user2、そうでなければ user1）。user1/user2 がオブジェクトの形式にも対応 */
@@ -1349,6 +1367,7 @@ export class ReversiGameSession {
 			}
 		}
 
+
 		// C. 優先が一度も当たらなかったときの追加回避
 		cand = avoid(cand, Nearset);
 		const edgeDist1Set = new Set(cand.filter(p => (edgeDist.get(p) ?? 0) === 1));
@@ -1448,6 +1467,9 @@ export class ReversiGameSession {
 		let finalCandidates = candidates;
 		if (inC.length > 0) finalCandidates = inC;
 		else if (inX.length > 0) finalCandidates = inX;
+
+		if (this.maybeCommitRandomMove(finalCandidates)) return;
+
 		// 4. 候補のうち反転数が最大の手を選ぶ
 		let bestPos = finalCandidates[0];
 		let bestFlip = this.getFlippedCount(bestPos);
