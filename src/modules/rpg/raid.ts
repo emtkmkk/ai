@@ -1362,11 +1362,14 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 	let plusActionX = 5;
 
 	let totalResistDmg = 0;
+	let transcendenceActivated = false;
+	const canAccessBackShop = ((!msg.user.host && msg.user.username === config.master) || data.items.filter((x) => x.name === "裏ショップ入場の札").length > 0);
 
 	if (skillEffects.transcendence && playerHp > 1) {
 		const convertedHp = playerHp - 1;
 		playerHp = 1;
 		addBarrier(convertedHp);
+		transcendenceActivated = true;
 		buff += 1;
 		message += `超越のお守りが発動した！\n体力${Math.floor(convertedHp)}ポイントがバリアに変換された！\n`;
 	}
@@ -1538,7 +1541,8 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 		let critUp = 0;
 
 		// HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
-		if (!aggregateTokensEffects(data).notLastPower && !slothFlg) {
+		const notLastPowerActive = aggregateTokensEffects(data).notLastPower || (transcendenceActivated && !canAccessBackShop);
+		if (!notLastPowerActive && !slothFlg) {
 			if (playerHpPercent <= (1 / 7) * (1 + (skillEffects.haisuiUp ?? 0)) && ((enemyHpPercent * (1 + (skillEffects.haisuiUp ?? 0))) - playerHpPercent) >= 0.5) {
 				buff += 1;
 				message += serifs.rpg.haisui + "\n";
