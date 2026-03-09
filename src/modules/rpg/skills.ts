@@ -557,10 +557,11 @@ export const skillReply = async (module: Module, ai: 藍, msg: Message) => {
 	}
 
 	if (msg.includes(["効果", "詳細" , "合計", "情報", "バフ"])) {
+		const isHatogurumaCheck = msg.includes(["鳩", "車"]);
 		if (msg.includes(["3"])) {
-			msg.reply(`\n※スキル3倍時効果\n\`\`\`\n` + getTotalEffectString(data, 3) + `\n\`\`\``);
+			msg.reply(`\n※スキル3倍時効果\n\`\`\`\n` + (isHatogurumaCheck ? getHatogurumaEffectString(data, 3) : getTotalEffectString(data, 3)) + `\n\`\`\``);
 		} else {
-			msg.reply(`\n\`\`\`\n` + getTotalEffectString(data) + `\n\`\`\``);
+			msg.reply(`\n\`\`\`\n` + (isHatogurumaCheck ? getHatogurumaEffectString(data) : getTotalEffectString(data)) + `\n\`\`\``);
 		}
 		return {
 			reaction: 'love'
@@ -1583,6 +1584,108 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 		if (totalAtk <= 1) result.push("")
 		result.push("合計防御効果（平均）: " + showNum((1 - totalDef) * 100) + "%");
 	}
+
+	data.raid = prevRaid || false;
+
+	return result.join("\n");
+}
+
+export function getHatogurumaEffectString(data: any, skillX = 1): string {
+	const prevRaid = data.raid;
+	data.raid = true;
+
+	const skillEffects = skillX > 1 ? aggregateSkillsEffectsSkillX(data, skillX) : aggregateSkillsEffects(data);
+
+	if (!skillEffects) {
+		data.raid = prevRaid || false;
+		return "";
+	}
+
+	const result: string[] = [];
+	let dex = 85 + (data.skills?.length ?? 0) * 3;
+	let fix = 0;
+
+	result.push(`基本器用さ: ${Math.round(dex)}`);
+
+	if ((data.hatogurumaExp ?? 0) > 1) {
+		const expBonus = Math.min(0.3, data.hatogurumaExp / 100);
+		result.push(`経験: 器用さ+${Math.round(expBonus * 100)}%`);
+		dex = dex * (1 + expBonus);
+	}
+
+	const color = getColor(data);
+	const atkDmgUp = (skillEffects.atkDmgUp ?? 0) - (skillEffects.defDmgUp ?? 0);
+	const atkUp = (skillEffects.atkUp ?? 0) - (skillEffects.defUp ?? 0);
+	const atkX =
+		(atkDmgUp && atkDmgUp > 0 ? (1 / (1 + (atkDmgUp ?? 0))) : 1) *
+		(atkUp && atkUp > 0 ? (1 / (1 + (atkUp ?? 0))) : 1) *
+		(color.reverseStatus ? (0.75 + (data.atk / ((data.atk + data.def) || 1)) * 0.5) : (0.75 + (data.def / ((data.atk + data.def) || 1)) * 0.5));
+
+	if (atkX < 1) {
+		result.push(`有り余るパワー: 器用さ-${Math.floor((1 - atkX) * 100)}%`);
+		dex = dex * atkX;
+	}
+
+	if ((skillEffects.notBattleBonusAtk ?? 0) > 0) {
+		result.push(`非戦闘時パワー: 器用さ+${Math.round((skillEffects.notBattleBonusAtk ?? 0) * 100)}%`);
+		dex = dex * (1 + (skillEffects.notBattleBonusAtk ?? 0));
+	} else if ((skillEffects.notBattleBonusAtk ?? 0) < 0) {
+		result.push(`非戦闘時パワー低下: 器用さ-${Math.min(25, Math.floor((skillEffects.notBattleBonusAtk ?? 0) * -100))}%`);
+		dex = dex * Math.max(0.75, 1 + (skillEffects.notBattleBonusAtk ?? 0));
+	}
+
+	if ((skillEffects.notBattleBonusDef ?? 0) > 0) {
+		result.push(`非戦闘時防御: 器用さ+${Math.ceil((skillEffects.notBattleBonusDef ?? 0) * 25)}%`);
+		dex = dex * (1 + ((skillEffects.notBattleBonusDef ?? 0) / 4));
+	}
+	if ((skillEffects.noAmuletAtkUp ?? 0) > 0) {
+		result.push(`かるわざ: 器用さ+${Math.ceil((skillEffects.noAmuletAtkUp ?? 0) * 200)}%`);
+		dex = dex * (1 + ((skillEffects.noAmuletAtkUp ?? 0) * 2));
+	}
+	if ((skillEffects.plusActionX ?? 0) > 0) {
+		result.push(`高速RPG: 器用さ+${Math.ceil((skillEffects.plusActionX ?? 0) * 8)}%`);
+		dex = dex * (1 + ((skillEffects.plusActionX ?? 0) * 0.08));
+	}
+	if ((skillEffects.atkRndMin ?? 0) > 0) {
+		result.push(`安定感: 器用さ+${Math.ceil((skillEffects.atkRndMin ?? 0) * 20)}%`);
+		dex = dex * (1 + ((skillEffects.atkRndMin ?? 0) / 5));
+	}
+	if ((skillEffects.firstTurnItem ?? 0) > 0) {
+		result.push("準備を怠らない: 器用さ+10%");
+		dex = dex * 1.1;
+	}
+	if ((skillEffects.itemBoost ?? 0) > 0) {
+		result.push(`道具効果量: 器用さ+${Math.ceil((skillEffects.itemBoost ?? 0) * 20)}%`);
+		dex = dex * (1 + ((skillEffects.itemBoost ?? 0) / 5));
+	}
+	if ((skillEffects.mindMinusAvoid ?? 0) > 0) {
+		result.push(`道具の選択が上手い: 器用さ+${Math.ceil((skillEffects.mindMinusAvoid ?? 0) * (100 / 3))}%`);
+		dex = dex * (1 + ((skillEffects.mindMinusAvoid ?? 0) / 3));
+	}
+	if ((skillEffects.amuletPower ?? 1) > 1) {
+		result.push(`お守りパワー: 器用さ+${Math.ceil(((skillEffects.amuletPower ?? 1) - 1) * 3)}%`);
+		dex = dex * (1 + (((skillEffects.amuletPower ?? 1) - 1) * 0.03));
+	}
+
+	if ((skillEffects.abortDown ?? 0) > 0) {
+		result.push(`連続攻撃完遂率上昇: 仕上げ+${Math.ceil((skillEffects.abortDown ?? 0) * 25)}%`);
+		fix += Math.floor((skillEffects.abortDown ?? 0) / 4);
+	}
+	if ((skillEffects.tenacious ?? 0) > 0) {
+		result.push(`粘り強さ: 仕上げ+${Math.ceil((skillEffects.tenacious ?? 0) * 25)}%`);
+		fix += Math.floor((skillEffects.tenacious ?? 0) / 4);
+	}
+	if ((skillEffects.endureUp ?? 0) > 0) {
+		result.push(`気合で頑張る: 仕上げ+${Math.ceil((skillEffects.endureUp ?? 0) * 15)}%`);
+		fix += Math.floor((skillEffects.endureUp ?? 0) * 0.15);
+	}
+
+	if (dex < 3) dex = 3;
+	if (fix > 0.75) fix = 0.75;
+
+	result.push("");
+	result.push(`器用さ: ${Math.round(dex)}`);
+	result.push(`仕上げ: ${Math.round(fix * 100)}%`);
 
 	data.raid = prevRaid || false;
 
