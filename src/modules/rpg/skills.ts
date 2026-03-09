@@ -157,6 +157,8 @@ export type SkillEffect = {
 	itemEquip?: number;
 	/** アイテム効果がn%上昇 デメリットがn%減少 */
 	itemBoost?: number;
+	/** お守りの装備数に応じて器用さが上昇 */
+	amuletPower?: number;
 	/** アイテムで増加した攻撃力のn%を次ターン以降に永続加算 */
 	itemAtkStock?: number;
 	/** 武器が選択される確率がn%上昇 */
