@@ -557,6 +557,8 @@ export default class extends Module {
                         return `<small>${parts.join(" ")}</small>`;
                 };
 
+		const canShowHatogurumaScore = (data.raidScore?.[":hatoguruma:"] ?? 0) >= 100;
+
 		if (msg.includes(["ランク"])){
 
 			message.push(createRankMessage(null, "Lv", "lv"));
@@ -573,6 +575,9 @@ export default class extends Module {
                                         }
                                 }
                         }
+			if (canShowHatogurumaScore) {
+				message.push(createRankMessage(null, ":hatoguruma: マスタースコア", "hatogurumaMaxScore", { suffix: "pts" }));
+			}
 			message.push(createRankMessage(null, "7ターン戦ったレイドボス (⭐️)", "clearRaidNum", { suffix: "種類" }));
 
 		} else {
@@ -613,6 +618,10 @@ export default class extends Module {
 					}
 				}
 				if (totalScore > 0 && Object.entries(data.raidScore).length >= 2) message.push(`合計レイドボス評価値\n★${totalScore.toFixed(2)}`);
+			}
+
+			if (canShowHatogurumaScore && (data.hatogurumaMaxScore ?? 0) > 0) {
+				message.push(createRankMessage(data.hatogurumaMaxScore, ":hatoguruma: マスタースコア", "hatogurumaMaxScore", { suffix: "pts" }));
 			}
 
 			if (data.clearRaidNum) {

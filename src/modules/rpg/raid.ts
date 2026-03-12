@@ -3119,6 +3119,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
   }
 
 	const score = (dex < 120 ? (40 + dex *(2/3)) / 4 : dex / 4) * plus * (0.97 + (Math.random() * 0.06));
+	const roundedScore = Math.round(score * 10) / 10;
 
 	totalDmg = Math.round((100 - 100 * Math.pow(1/2, score/50)) * 10) / 10;
 
@@ -3146,9 +3147,15 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	else if (totalDmg < 100) imageMsg = "究極の"
 	else imageMsg = "伝説に残るであろう"
 
-	message += `${imageMsg}鳩車を作って提出した！` + `\n\n`
+	const canShowMasterScore = Math.max(data.raidScore?.[enemy.name] ?? 0, totalDmg) >= 100;
+	message += `${imageMsg}鳩車を作って提出した！`;
+	if (canShowMasterScore || verboseLog) {
+		message += `\n（マスタースコア: ${roundedScore.toFixed(1)}）`;
+	}
+	message += `\n\n`;
 
 	data.hatogurumaExp = (data.hatogurumaExp ?? 0) + ((100 - totalDmg) / 100)
+	data.hatogurumaMaxScore = Math.max(data.hatogurumaMaxScore ?? 0, roundedScore);
 
         if (!data.raidScore) data.raidScore = {};
         if (!data.raidScore[enemy.name] || data.raidScore[enemy.name] < totalDmg) {
