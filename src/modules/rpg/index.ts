@@ -758,21 +758,33 @@ export default class extends Module {
 		}
 		if (msg.includes(["dataFix"])) {
 
-			// データ修正用の関数。データを修正する際はコードをここに記載。現在はなにもしません。
-
-			/*
-			const ai = this.ai;
-			const games = this.raids.find({});
+			// 鳩車ベスト（完成度）から理論上の最低マスタースコアを逆算し、
+			// 未記録または過小な値はその下限値で補正する。
+			const hatogurumaName = ":hatoguruma:";
 			const allData = this.ai.friends.find();
+			let updatedCount = 0;
 
-			games[games.length - 1].attackers.forEach(x => {
-				const doc = this.ai.lookupFriend(x.user.id)?.doc;
-				const enemyName = ":mk_hero:"
-				if (doc?.perModulesData?.rpg?.raidScore?.[enemyName] != 8443) return;
-				doc.perModulesData.rpg.raidScore[enemyName] = 4159;
-			});
-			*/
+			for (const friendData of allData) {
+				const rpgData = friendData?.perModulesData?.rpg;
+				const hatogurumaBest = rpgData?.raidScore?.[hatogurumaName];
+				if (typeof hatogurumaBest !== "number" || hatogurumaBest <= 0) continue;
 
+				const rawBorder = Math.max(Math.min(hatogurumaBest - 0.05, 99.95), 0);
+				const minimumMasterScore = rawBorder >= 100
+					? Number.POSITIVE_INFINITY
+					: Math.round((Math.log2(1 / (1 - rawBorder / 100)) * 50) * 10) / 10;
+
+				if (!Number.isFinite(minimumMasterScore)) continue;
+
+				const currentMasterScore = rpgData.hatogurumaMaxScore;
+				if (typeof currentMasterScore !== "number" || currentMasterScore < minimumMasterScore) {
+					rpgData.hatogurumaMaxScore = minimumMasterScore;
+					updatedCount += 1;
+				}
+			}
+
+			if (updatedCount > 0) this.ai.friends.save();
+			msg.reply(`dataFix: :hatoguruma: マスタースコアを${updatedCount}件補正しました。`);
 			return { reaction: "love" };
 		}
 		return { reaction: "hmm" };
