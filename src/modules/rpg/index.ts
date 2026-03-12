@@ -779,11 +779,11 @@ export default class extends Module {
 				const currentMasterScore = rpgData.hatogurumaMaxScore;
 				if (typeof currentMasterScore !== "number" || currentMasterScore < minimumMasterScore) {
 					rpgData.hatogurumaMaxScore = minimumMasterScore;
+					this.ai.friends.update(friendData);
 					updatedCount += 1;
 				}
 			}
 
-			if (updatedCount > 0) this.ai.friends.save();
 			msg.reply(`dataFix: :hatoguruma: マスタースコアを${updatedCount}件補正しました。`);
 			return { reaction: "love" };
 		}
