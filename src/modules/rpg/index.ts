@@ -422,6 +422,7 @@ export default class extends Module {
 	private handleRecordCommands(msg: Message) {
 		const data = initializeData(this, msg);
 		if (!data.lv) return { reaction: 'confused' };
+		const isAdmin = !msg.user.host && msg.user.username === config.master;
 
 		let message: string[] = [];
                 const allData = this.ai.friends.find() as FriendDocWithMeta[];
@@ -557,7 +558,7 @@ export default class extends Module {
                         return `<small>${parts.join(" ")}</small>`;
                 };
 
-		const canShowHatogurumaScore = (data.raidScore?.[":hatoguruma:"] ?? 0) >= 100;
+		const canShowHatogurumaScore = isAdmin || (data.raidScore?.[":hatoguruma:"] ?? 0) >= 100;
 
 		if (msg.includes(["ランク"])){
 
