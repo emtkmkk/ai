@@ -4,15 +4,29 @@ import { createCanvas } from 'canvas';
 import { CellType } from './maze';
 import { themes } from './themes';
 
-const imageSize = 4096; // px
-const margin = 96;
-const mazeAreaSize = imageSize - (margin * 2);
+const BASE_IMAGE_SIZE = 4096; // px
+const BASE_MARGIN = 96;
+const MAX_RENDER_MAZE_SIZE = 200;
+
+function calcRenderMetrics(mazeSize: number) {
+	if (mazeSize <= MAX_RENDER_MAZE_SIZE) {
+		return { imageSize: BASE_IMAGE_SIZE, margin: BASE_MARGIN };
+	}
+
+	const scale = MAX_RENDER_MAZE_SIZE / mazeSize;
+	const imageSize = Math.max(1024, Math.floor(BASE_IMAGE_SIZE * scale));
+	const margin = Math.max(24, Math.floor(BASE_MARGIN * scale));
+
+	return { imageSize, margin };
+}
 
 export function renderMaze(seed, maze: CellType[][]) {
 	const rand = gen.create(seed);
 	const mazeSize = maze.length;
 
 	const colors = themes[rand(themes.length)];
+	const { imageSize, margin } = calcRenderMetrics(mazeSize);
+	const mazeAreaSize = imageSize - (margin * 2);
 
 	const canvas = createCanvas(imageSize, imageSize);
 	const ctx = canvas.getContext('2d');
