@@ -22,7 +22,9 @@ function calcRenderMetrics(mazeSize: number) {
 	const targetCellSize = targetRoadWidth * 1.5;
 	const cellSize = Math.max(6, Math.round(targetCellSize / 6) * 6);
 	const mazeAreaSize = mazeSize * cellSize;
-	const margin = Math.max(1, Math.round(mazeAreaSize * (BASE_MARGIN / BASE_MAZE_AREA)));
+	const rawMargin = Math.round(mazeAreaSize * (BASE_MARGIN / BASE_MAZE_AREA));
+	// margin / 2 を使う描画があるため、余白は 2 以上かつ偶数にそろえる
+	const margin = Math.max(2, Math.ceil(rawMargin / 2) * 2);
 	const imageSize = Math.round(mazeAreaSize + (margin * 2));
 
 	return { imageSize, margin, cellSize };
