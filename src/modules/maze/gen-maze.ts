@@ -334,35 +334,6 @@ export function genMaze(seed, complexity?, retry = 0) {
 		while (hasEmptyCell) {
 			const nonEmptyCells: [number, number][] = [];
 
-		if (emptyCellCount > 0) {
-			let hasEmptyCell = true;
-			while (hasEmptyCell) {
-				const nonEmptyCells: [number, number][] = [];
-
-				for (let y = 0; y < mazeSize; y++) {
-					for (let x = 0; x < mazeSize; x++) {
-						const cell = maze[x][y];
-						if (cell !== 'empty' && cell !== 'void' && cell !== 'cross') nonEmptyCells.push([x, y]);
-					}
-				}
-
-				if (nonEmptyCells.length === 0) break;
-				const pos = nonEmptyCells[rand(nonEmptyCells.length)];
-				diggFrom(pos[0], pos[1]);
-
-				hasEmptyCell = false;
-				for (let y = 0; y < mazeSize; y++) {
-					for (let x = 0; x < mazeSize; x++) {
-						if (maze[x][y] === 'empty') hasEmptyCell = true;
-					}
-				}
-			}
-		}
-	} else {
-		let hasEmptyCell = true;
-		while (hasEmptyCell) {
-			const nonEmptyCells: [number, number][] = [];
-
 			for (let y = 0; y < mazeSize; y++) {
 				for (let x = 0; x < mazeSize; x++) {
 					const cell = maze[x][y];
@@ -370,6 +341,7 @@ export function genMaze(seed, complexity?, retry = 0) {
 				}
 			}
 
+			if (nonEmptyCells.length === 0) break;
 			const pos = nonEmptyCells[rand(nonEmptyCells.length)];
 			diggFrom(pos[0], pos[1]);
 

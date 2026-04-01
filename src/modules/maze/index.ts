@@ -15,7 +15,7 @@
  * @public
  */
 import autobind from 'autobind-decorator';
-import path from 'path';
+import * as path from 'path';
 import { Worker } from 'worker_threads';
 import Module from '@/module';
 import serifs from '@/serifs';
