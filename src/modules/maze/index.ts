@@ -15,8 +15,11 @@
  * @public
  */
 import autobind from 'autobind-decorator';
+import path from 'path';
+import { Worker } from 'worker_threads';
 import Module from '@/module';
 import serifs from '@/serifs';
+import config from '@/config';
 import { genMaze } from './gen-maze';
 import { renderMaze } from './render-maze';
 import Message from '@/message';
@@ -66,12 +69,12 @@ export default class extends Module {
 	 * @internal
 	 */
 	@autobind
-	private async post() {
+	private async post(force = false) {
 		const now = new Date();
-		if (now.getHours() < 20) return;
+		if (!force && now.getHours() < 20) return;
 		const date = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
 		const data = this.getData();
-		if (data.lastPosted == date) return;
+		if (!force && data.lastPosted == date) return;
 		if (this.isPosting) return;
 		this.isPosting = true;
 
@@ -87,6 +90,7 @@ export default class extends Module {
 			if (now.getMonth() === 3 && now.getDate() === 1) mazeSize = 500;
 
 			this.log('Time to maze');
+			const startedAt = Date.now();
 			const file = await this.genMazeFile(date + "/mkck", mazeSize);
 
 			this.log('Posting...');
@@ -94,6 +98,7 @@ export default class extends Module {
 				text: serifs.maze.post + " 難易度 : " + mazeSize + "%",
 				fileIds: [file.id]
 			});
+			this.log(`Daily maze done in ${Date.now() - startedAt}ms`);
 
 			data.lastPosted = date;
 			this.setData(data);
@@ -117,19 +122,51 @@ export default class extends Module {
 	 */
 	@autobind
 	private async genMazeFile(seed, size?): Promise<any> {
-		this.log('Maze generating...');
-		const maze = genMaze(seed, size);
-
-		this.log('Maze rendering...');
-		const data = renderMaze(seed, maze);
+		const startedAt = Date.now();
+		let data: Buffer;
+		if (typeof size === 'number' && size >= 201) {
+			this.log('Maze worker queued...');
+			data = await this.genMazeDataWithWorker(seed, size);
+		} else {
+			this.log('Maze generating...');
+			const maze = genMaze(seed, size);
+			this.log('Maze rendering...');
+			data = renderMaze(seed, maze);
+		}
 
 		this.log('Image uploading...');
 		const file = await this.ai.upload(data, {
 			filename: 'maze.png',
 			contentType: 'image/png'
 		});
+		this.log(`Maze file generated in ${Date.now() - startedAt}ms`);
 
 		return file;
+	}
+
+	@autobind
+	private async genMazeDataWithWorker(seed, size: number): Promise<Buffer> {
+		const workerPath = path.join(__dirname, 'maze-worker.js');
+		return await new Promise((resolve, reject) => {
+			const worker = new Worker(workerPath, {
+				workerData: { seed, size }
+			});
+
+			worker.once('message', (msg: { ok: true; data: Uint8Array; genMs: number; renderMs: number; totalMs: number; } | { ok: false; error: string; }) => {
+				if (!msg.ok) {
+					reject(new Error(msg.error));
+					return;
+				}
+				this.log(`Maze worker finished (gen=${msg.genMs}ms, render=${msg.renderMs}ms, total=${msg.totalMs}ms)`);
+				resolve(Buffer.from(msg.data));
+			});
+			worker.once('error', reject);
+			worker.once('exit', (code) => {
+				if (code !== 0) {
+					reject(new Error(`Maze worker exited with code ${code}`));
+				}
+			});
+		});
 	}
 
 	/**
@@ -145,6 +182,20 @@ export default class extends Module {
 	 */
 	@autobind
 	private async mentionHook(msg: Message) {
+		if (!msg.user.host && msg.user.username === config.master && msg.includes(['迷路']) && msg.includes(['再生成'])) {
+			const now = new Date();
+			const date = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+			const data = this.getData();
+			delete data.lastPosted;
+			this.setData(data);
+			this.log(`Maze regenerate command accepted by admin for ${date}`);
+			await msg.reply('日次迷路の再生成を開始します。', { visibility: 'specified' });
+			await this.post(true);
+			return {
+				reaction: 'like'
+			};
+		}
+
 		if (msg.includes(['迷路'])) {
 			let size: string | null = null;
 			// 難易度キーワードで判定

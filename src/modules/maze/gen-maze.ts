@@ -76,8 +76,64 @@ const cellVariants = {
 } };
 
 type Dir = 'left' | 'right' | 'top' | 'bottom';
+const oppositeDir: { [K in Dir]: Dir } = {
+	left: 'right',
+	right: 'left',
+	top: 'bottom',
+	bottom: 'top',
+};
 
-export function genMaze(seed, complexity?) {
+const openDirs: { [K in CellType]: Dir[] } = {
+	void: [],
+	empty: [],
+	left: ['left'],
+	right: ['right'],
+	top: ['top'],
+	bottom: ['bottom'],
+	leftTop: ['left', 'top'],
+	leftBottom: ['left', 'bottom'],
+	rightTop: ['right', 'top'],
+	rightBottom: ['right', 'bottom'],
+	leftRightTop: ['left', 'right', 'top'],
+	leftRightBottom: ['left', 'right', 'bottom'],
+	leftTopBottom: ['left', 'top', 'bottom'],
+	rightTopBottom: ['right', 'top', 'bottom'],
+	leftRight: ['left', 'right'],
+	topBottom: ['top', 'bottom'],
+	cross: ['left', 'right', 'top', 'bottom'],
+};
+
+function hasRouteToGoal(maze: CellType[][]): boolean {
+	const size = maze.length;
+	const visited: boolean[][] = Array.from({ length: size }, () => Array(size).fill(false));
+	const queue: [number, number][] = [[0, 0]];
+	visited[0][0] = true;
+
+	while (queue.length > 0) {
+		const [x, y] = queue.shift()!;
+		if (x === size - 1 && y === size - 1) return true;
+
+		const dirs = openDirs[maze[x][y]];
+		for (const dir of dirs) {
+			const next =
+				dir === 'top' ? [x, y - 1] :
+				dir === 'bottom' ? [x, y + 1] :
+				dir === 'left' ? [x - 1, y] :
+				[x + 1, y];
+			const nx = next[0];
+			const ny = next[1];
+			if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+			if (visited[nx][ny]) continue;
+			if (!openDirs[maze[nx][ny]].includes(oppositeDir[dir])) continue;
+			visited[nx][ny] = true;
+			queue.push([nx, ny]);
+		}
+	}
+
+	return false;
+}
+
+export function genMaze(seed, complexity?, retry = 0) {
 	const rand = gen.create(seed);
 
 	let mazeSize;
@@ -259,9 +315,48 @@ export function genMaze(seed, complexity?) {
 				diggableCells[idx] = last;
 				diggableCells.pop();
 			}
-			if (pos == null) break;
+			if (pos == null) {
+				const nonEmptyCells: [number, number][] = [];
+				for (let y = 0; y < mazeSize; y++) {
+					for (let x = 0; x < mazeSize; x++) {
+						const cell = maze[x][y];
+						if (cell !== 'empty' && cell !== 'void' && cell !== 'cross') nonEmptyCells.push([x, y]);
+					}
+				}
+				if (nonEmptyCells.length === 0) break;
+				pos = nonEmptyCells[rand(nonEmptyCells.length)];
+			}
 
 			diggFrom(pos[0], pos[1]);
+		}
+	} else {
+		let hasEmptyCell = true;
+		while (hasEmptyCell) {
+			const nonEmptyCells: [number, number][] = [];
+
+		if (emptyCellCount > 0) {
+			let hasEmptyCell = true;
+			while (hasEmptyCell) {
+				const nonEmptyCells: [number, number][] = [];
+
+				for (let y = 0; y < mazeSize; y++) {
+					for (let x = 0; x < mazeSize; x++) {
+						const cell = maze[x][y];
+						if (cell !== 'empty' && cell !== 'void' && cell !== 'cross') nonEmptyCells.push([x, y]);
+					}
+				}
+
+				if (nonEmptyCells.length === 0) break;
+				const pos = nonEmptyCells[rand(nonEmptyCells.length)];
+				diggFrom(pos[0], pos[1]);
+
+				hasEmptyCell = false;
+				for (let y = 0; y < mazeSize; y++) {
+					for (let x = 0; x < mazeSize; x++) {
+						if (maze[x][y] === 'empty') hasEmptyCell = true;
+					}
+				}
+			}
 		}
 	} else {
 		let hasEmptyCell = true;
@@ -285,6 +380,11 @@ export function genMaze(seed, complexity?) {
 				}
 			}
 		}
+	}
+
+	if (!hasRouteToGoal(maze)) {
+		if (retry >= 2) return maze;
+		return genMaze(`${seed}-retry-${retry + 1}`, complexity, retry + 1);
 	}
 
 	return maze;
