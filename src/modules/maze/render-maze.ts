@@ -6,18 +6,26 @@ import { themes } from './themes';
 
 const BASE_IMAGE_SIZE = 4096; // px
 const BASE_MARGIN = 96;
-const MAX_RENDER_MAZE_SIZE = 200;
+const BASE_MAZE_AREA = BASE_IMAGE_SIZE - (BASE_MARGIN * 2);
+const USE_FIXED_ROAD_WIDTH_MODE = true;
+const FIXED_ROAD_WIDTH = 6;
+
+function calcTargetRoadWidth(mazeSize: number) {
+	if (USE_FIXED_ROAD_WIDTH_MODE) return FIXED_ROAD_WIDTH;
+	return Math.ceil(20 / Math.max(mazeSize / 100, 1));
+}
 
 function calcRenderMetrics(mazeSize: number) {
-	if (mazeSize <= MAX_RENDER_MAZE_SIZE) {
-		return { imageSize: BASE_IMAGE_SIZE, margin: BASE_MARGIN };
-	}
+	const targetRoadWidth = calcTargetRoadWidth(mazeSize);
+	// 通路幅 = cellSize * (2 / 3) のため、目標通路幅から cellSize を逆算
+	// 描画ブレを抑えるため、cellSize は 6 の倍数に丸める
+	const targetCellSize = targetRoadWidth * 1.5;
+	const cellSize = Math.max(6, Math.round(targetCellSize / 6) * 6);
+	const mazeAreaSize = mazeSize * cellSize;
+	const margin = Math.max(1, Math.round(mazeAreaSize * (BASE_MARGIN / BASE_MAZE_AREA)));
+	const imageSize = Math.round(mazeAreaSize + (margin * 2));
 
-	const scale = MAX_RENDER_MAZE_SIZE / mazeSize;
-	const imageSize = Math.max(1024, Math.floor(BASE_IMAGE_SIZE * scale));
-	const margin = Math.max(24, Math.floor(BASE_MARGIN * scale));
-
-	return { imageSize, margin };
+	return { imageSize, margin, cellSize };
 }
 
 export function renderMaze(seed, maze: CellType[][]) {
@@ -25,8 +33,7 @@ export function renderMaze(seed, maze: CellType[][]) {
 	const mazeSize = maze.length;
 
 	const colors = themes[rand(themes.length)];
-	const { imageSize, margin } = calcRenderMetrics(mazeSize);
-	const mazeAreaSize = imageSize - (margin * 2);
+	const { imageSize, margin, cellSize } = calcRenderMetrics(mazeSize);
 
 	const canvas = createCanvas(imageSize, imageSize);
 	const ctx = canvas.getContext('2d');
@@ -223,8 +230,6 @@ export function renderMaze(seed, maze: CellType[][]) {
 			return;
 		}
 	}
-
-	const cellSize = mazeAreaSize / mazeSize;
 
 	for (let x = 0; x < mazeSize; x++) {
 		for (let y = 0; y < mazeSize; y++) {
