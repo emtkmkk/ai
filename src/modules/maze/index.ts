@@ -15,14 +15,14 @@
  * @public
  */
 import autobind from 'autobind-decorator';
-import * as path from 'path';
-import { fork } from 'child_process';
 import Module from '@/module';
 import serifs from '@/serifs';
 import config from '@/config';
 import { genMaze } from './gen-maze';
 import { renderMaze } from './render-maze';
 import Message from '@/message';
+
+const MAX_MAZE_PROCESSING_MS = 5 * 60 * 1000;
 
 /**
  * 迷路モジュールクラス
@@ -123,15 +123,16 @@ export default class extends Module {
 	@autobind
 	private async genMazeFile(seed, size?): Promise<any> {
 		const startedAt = Date.now();
-		let data: Buffer;
-		if (typeof size === 'number' && size >= 201) {
-			this.log('Maze worker queued...');
-			data = await this.genMazeDataWithWorker(seed, size);
-		} else {
-			this.log('Maze generating...');
-			const maze = genMaze(seed, size);
-			this.log('Maze rendering...');
-			data = renderMaze(seed, maze);
+		this.log('Maze generating...');
+		const maze = genMaze(seed, size);
+		if (Date.now() - startedAt > MAX_MAZE_PROCESSING_MS) {
+			throw new Error(`Maze generation timed out after ${MAX_MAZE_PROCESSING_MS}ms`);
+		}
+
+		this.log('Maze rendering...');
+		const data = renderMaze(seed, maze);
+		if (Date.now() - startedAt > MAX_MAZE_PROCESSING_MS) {
+			throw new Error(`Maze render timed out after ${MAX_MAZE_PROCESSING_MS}ms`);
 		}
 
 		this.log('Image uploading...');
@@ -142,34 +143,6 @@ export default class extends Module {
 		this.log(`Maze file generated in ${Date.now() - startedAt}ms`);
 
 		return file;
-	}
-
-	@autobind
-	private async genMazeDataWithWorker(seed, size: number): Promise<Buffer> {
-		const workerPath = path.join(__dirname, 'maze-worker.js');
-		return await new Promise((resolve, reject) => {
-			const worker = fork(workerPath, [], {
-				stdio: ['pipe', 'pipe', 'pipe', 'ipc']
-			});
-			worker.send({ seed, size });
-
-			worker.once('message', (msg: { ok: true; data: number[]; genMs: number; renderMs: number; totalMs: number; } | { ok: false; error: string; }) => {
-				if (!msg.ok) {
-					reject(new Error(msg.error));
-					return;
-				}
-				this.log(`Maze worker finished (gen=${msg.genMs}ms, render=${msg.renderMs}ms, total=${msg.totalMs}ms)`);
-				resolve(Buffer.from(msg.data));
-			});
-			worker.once('error', (err) => {
-				reject(err);
-			});
-			worker.once('exit', (code) => {
-				if (code !== 0) {
-					reject(new Error(`Maze worker exited with code ${code}`));
-				}
-			});
-		});
 	}
 
 	/**
