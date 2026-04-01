@@ -17,7 +17,7 @@ function calcRenderMetrics(mazeSize: number) {
 	// 通路幅 = cellSize * (2 / 3) のため、目標通路幅から cellSize を逆算
 	const targetCellSize = targetRoadWidth * 1.5;
 	const marginCellRatio = (BASE_MARGIN * mazeSize) / BASE_MAZE_AREA;
-	const margin = Math.max(24, Math.round(targetCellSize * marginCellRatio));
+	const margin = Math.max(1, Math.round(targetCellSize * marginCellRatio));
 	const imageSize = Math.round((mazeSize * targetCellSize) + (margin * 2));
 
 	return { imageSize, margin };
