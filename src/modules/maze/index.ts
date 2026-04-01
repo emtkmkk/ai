@@ -32,6 +32,7 @@ import Message from '@/message';
  */
 export default class extends Module {
 	public readonly name = 'maze';
+	private isPosting = false;
 
 	/**
 	 * モジュールの初期化
@@ -67,31 +68,40 @@ export default class extends Module {
 	@autobind
 	private async post() {
 		const now = new Date();
-		if (now.getHours() !== 20) return;
+		if (now.getHours() < 20) return;
 		const date = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
 		const data = this.getData();
 		if (data.lastPosted == date) return;
-		data.lastPosted = date;
-		this.setData(data);
+		if (this.isPosting) return;
+		this.isPosting = true;
 
-		let mazeSize;
-		mazeSize = 2 + Math.floor(Math.random() * 48);
-		// 25%の確率でサイズ倍増（最大2回まで）
-		if (Math.random() < 0.25) mazeSize *= 2;
-		if (Math.random() < 0.25) mazeSize *= 2;
+		try {
+			let mazeSize;
+			mazeSize = 2 + Math.floor(Math.random() * 48);
+			// 25%の確率でサイズ倍増（最大2回まで）
+			if (Math.random() < 0.25) mazeSize *= 2;
+			if (Math.random() < 0.25) mazeSize *= 2;
 
-		// 特別な日のサイズ固定
-		if (now.getMonth() === 11 && now.getDate() === 31) mazeSize = now.getFullYear() - 2000;
-		if (now.getMonth() === 3 && now.getDate() === 1) mazeSize = 500;
+			// 特別な日のサイズ固定
+			if (now.getMonth() === 11 && now.getDate() === 31) mazeSize = now.getFullYear() - 2000;
+			if (now.getMonth() === 3 && now.getDate() === 1) mazeSize = 500;
 
-		this.log('Time to maze');
-		const file = await this.genMazeFile(date + "/mkck", mazeSize);
+			this.log('Time to maze');
+			const file = await this.genMazeFile(date + "/mkck", mazeSize);
 
-		this.log('Posting...');
-		this.ai.post({
-			text: serifs.maze.post + " 難易度 : " + mazeSize + "%",
-			fileIds: [file.id]
-		});
+			this.log('Posting...');
+			await this.ai.post({
+				text: serifs.maze.post + " 難易度 : " + mazeSize + "%",
+				fileIds: [file.id]
+			});
+
+			data.lastPosted = date;
+			this.setData(data);
+		} catch (err) {
+			this.log(`Maze post failed: ${err}`);
+		} finally {
+			this.isPosting = false;
+		}
 	}
 
 	/**
