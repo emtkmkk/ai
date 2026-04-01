@@ -16,7 +16,7 @@
  */
 import autobind from 'autobind-decorator';
 import * as path from 'path';
-import { Worker } from 'worker_threads';
+import { fork } from 'child_process';
 import Module from '@/module';
 import serifs from '@/serifs';
 import config from '@/config';
@@ -148,11 +148,12 @@ export default class extends Module {
 	private async genMazeDataWithWorker(seed, size: number): Promise<Buffer> {
 		const workerPath = path.join(__dirname, 'maze-worker.js');
 		return await new Promise((resolve, reject) => {
-			const worker = new Worker(workerPath, {
-				workerData: { seed, size }
+			const worker = fork(workerPath, [], {
+				stdio: ['pipe', 'pipe', 'pipe', 'ipc']
 			});
+			worker.send({ seed, size });
 
-			worker.once('message', (msg: { ok: true; data: Uint8Array; genMs: number; renderMs: number; totalMs: number; } | { ok: false; error: string; }) => {
+			worker.once('message', (msg: { ok: true; data: number[]; genMs: number; renderMs: number; totalMs: number; } | { ok: false; error: string; }) => {
 				if (!msg.ok) {
 					reject(new Error(msg.error));
 					return;
@@ -160,7 +161,9 @@ export default class extends Module {
 				this.log(`Maze worker finished (gen=${msg.genMs}ms, render=${msg.renderMs}ms, total=${msg.totalMs}ms)`);
 				resolve(Buffer.from(msg.data));
 			});
-			worker.once('error', reject);
+			worker.once('error', (err) => {
+				reject(err);
+			});
 			worker.once('exit', (code) => {
 				if (code !== 0) {
 					reject(new Error(`Maze worker exited with code ${code}`));
