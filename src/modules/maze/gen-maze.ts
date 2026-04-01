@@ -329,6 +329,10 @@ export function genMaze(seed, complexity?, retry = 0) {
 
 			diggFrom(pos[0], pos[1]);
 		}
+	} else {
+		let hasEmptyCell = true;
+		while (hasEmptyCell) {
+			const nonEmptyCells: [number, number][] = [];
 
 		if (emptyCellCount > 0) {
 			let hasEmptyCell = true;
