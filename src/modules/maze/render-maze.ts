@@ -6,16 +6,19 @@ import { themes } from './themes';
 
 const BASE_IMAGE_SIZE = 4096; // px
 const BASE_MARGIN = 96;
-const MAX_RENDER_MAZE_SIZE = 200;
+const BASE_MAZE_AREA = BASE_IMAGE_SIZE - (BASE_MARGIN * 2);
+
+function calcTargetRoadWidth(mazeSize: number) {
+	return Math.ceil(20 / Math.max(mazeSize / 100, 1));
+}
 
 function calcRenderMetrics(mazeSize: number) {
-	if (mazeSize <= MAX_RENDER_MAZE_SIZE) {
-		return { imageSize: BASE_IMAGE_SIZE, margin: BASE_MARGIN };
-	}
-
-	const scale = MAX_RENDER_MAZE_SIZE / mazeSize;
-	const imageSize = Math.max(1024, Math.floor(BASE_IMAGE_SIZE * scale));
-	const margin = Math.max(24, Math.floor(BASE_MARGIN * scale));
+	const targetRoadWidth = calcTargetRoadWidth(mazeSize);
+	// 通路幅 = cellSize * (2 / 3) のため、目標通路幅から cellSize を逆算
+	const targetCellSize = targetRoadWidth * 1.5;
+	const marginCellRatio = (BASE_MARGIN * mazeSize) / BASE_MAZE_AREA;
+	const margin = Math.max(24, Math.round(targetCellSize * marginCellRatio));
+	const imageSize = Math.round((mazeSize * targetCellSize) + (margin * 2));
 
 	return { imageSize, margin };
 }
