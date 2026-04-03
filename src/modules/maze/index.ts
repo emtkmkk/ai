@@ -17,9 +17,12 @@
 import autobind from 'autobind-decorator';
 import Module from '@/module';
 import serifs from '@/serifs';
+import config from '@/config';
 import { genMaze } from './gen-maze';
 import { renderMaze } from './render-maze';
 import Message from '@/message';
+
+const MAX_MAZE_PROCESSING_MS = 5 * 60 * 1000;
 
 /**
  * 迷路モジュールクラス
@@ -32,6 +35,7 @@ import Message from '@/message';
  */
 export default class extends Module {
 	public readonly name = 'maze';
+	private isPosting = false;
 
 	/**
 	 * モジュールの初期化
@@ -65,33 +69,44 @@ export default class extends Module {
 	 * @internal
 	 */
 	@autobind
-	private async post() {
+	private async post(force = false) {
 		const now = new Date();
-		if (now.getHours() !== 20) return;
+		if (!force && now.getHours() < 20) return;
 		const date = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
 		const data = this.getData();
-		if (data.lastPosted == date) return;
-		data.lastPosted = date;
-		this.setData(data);
+		if (!force && data.lastPosted == date) return;
+		if (this.isPosting) return;
+		this.isPosting = true;
 
-		let mazeSize;
-		mazeSize = 2 + Math.floor(Math.random() * 48);
-		// 25%の確率でサイズ倍増（最大2回まで）
-		if (Math.random() < 0.25) mazeSize *= 2;
-		if (Math.random() < 0.25) mazeSize *= 2;
+		try {
+			let mazeSize;
+			mazeSize = 2 + Math.floor(Math.random() * 48);
+			// 25%の確率でサイズ倍増（最大2回まで）
+			if (Math.random() < 0.25) mazeSize *= 2;
+			if (Math.random() < 0.25) mazeSize *= 2;
 
-		// 特別な日のサイズ固定
-		if (now.getMonth() === 11 && now.getDate() === 31) mazeSize = now.getFullYear() - 2000;
-		if (now.getMonth() === 3 && now.getDate() === 1) mazeSize = 500;
+			// 特別な日のサイズ固定
+			if (now.getMonth() === 11 && now.getDate() === 31) mazeSize = now.getFullYear() - 2000;
+			if (now.getMonth() === 3 && now.getDate() === 1) mazeSize = 500;
 
-		this.log('Time to maze');
-		const file = await this.genMazeFile(date + "/mkck", mazeSize);
+			this.log('Time to maze');
+			const startedAt = Date.now();
+			const file = await this.genMazeFile(date + "/mkck", mazeSize);
 
-		this.log('Posting...');
-		this.ai.post({
-			text: serifs.maze.post + " 難易度 : " + mazeSize + "%",
-			fileIds: [file.id]
-		});
+			this.log('Posting...');
+			await this.ai.post({
+				text: serifs.maze.post + " 難易度 : " + mazeSize + "%",
+				fileIds: [file.id]
+			});
+			this.log(`Daily maze done in ${Date.now() - startedAt}ms`);
+
+			data.lastPosted = date;
+			this.setData(data);
+		} catch (err) {
+			this.log(`Maze post failed: ${err}`);
+		} finally {
+			this.isPosting = false;
+		}
 	}
 
 	/**
@@ -107,17 +122,25 @@ export default class extends Module {
 	 */
 	@autobind
 	private async genMazeFile(seed, size?): Promise<any> {
+		const startedAt = Date.now();
 		this.log('Maze generating...');
 		const maze = genMaze(seed, size);
+		if (Date.now() - startedAt > MAX_MAZE_PROCESSING_MS) {
+			throw new Error(`Maze generation timed out after ${MAX_MAZE_PROCESSING_MS}ms`);
+		}
 
 		this.log('Maze rendering...');
 		const data = renderMaze(seed, maze);
+		if (Date.now() - startedAt > MAX_MAZE_PROCESSING_MS) {
+			throw new Error(`Maze render timed out after ${MAX_MAZE_PROCESSING_MS}ms`);
+		}
 
 		this.log('Image uploading...');
 		const file = await this.ai.upload(data, {
 			filename: 'maze.png',
 			contentType: 'image/png'
 		});
+		this.log(`Maze file generated in ${Date.now() - startedAt}ms`);
 
 		return file;
 	}
@@ -135,6 +158,20 @@ export default class extends Module {
 	 */
 	@autobind
 	private async mentionHook(msg: Message) {
+		if (!msg.user.host && msg.user.username === config.master && msg.includes(['迷路']) && msg.includes(['再生成'])) {
+			const now = new Date();
+			const date = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+			const data = this.getData();
+			delete data.lastPosted;
+			this.setData(data);
+			this.log(`Maze regenerate command accepted by admin for ${date}`);
+			await msg.reply('日次迷路の再生成を開始します。', { visibility: 'specified' });
+			await this.post(true);
+			return {
+				reaction: 'like'
+			};
+		}
+
 		if (msg.includes(['迷路'])) {
 			let size: string | null = null;
 			// 難易度キーワードで判定

@@ -1130,9 +1130,10 @@ export default class extends Module {
 	 */
 	private async handleOnagareIfNeeded(game: Game, item: string): Promise<boolean> {
 		const medal = this.isMedalMatch(game);
+		const hasInsufficientParticipants = game.votes.length < 4;
 
-		/** お流れ条件: 勝利数50未満が1人以下 かつ メダル戦でない */
-		if (game.votes?.filter((x) => x.user.winCount < 50).length <= 1 && !medal) {
+		/** お流れ条件: 参加者4人未満 または (勝利数50未満が1人以下 かつ メダル戦でない) */
+		if (hasInsufficientParticipants || (game.votes?.filter((x) => x.user.winCount < 50).length <= 1 && !medal)) {
 			game.votes.forEach((x) => {
 				const friend = this.ai.lookupFriend(x.user.id);
 				if (friend) {

@@ -4,15 +4,38 @@ import { createCanvas } from 'canvas';
 import { CellType } from './maze';
 import { themes } from './themes';
 
-const imageSize = 4096; // px
-const margin = 96;
-const mazeAreaSize = imageSize - (margin * 2);
+const BASE_IMAGE_SIZE = 4096; // px
+const BASE_MARGIN = 96;
+const BASE_MAZE_AREA = BASE_IMAGE_SIZE - (BASE_MARGIN * 2);
+const USE_FIXED_ROAD_WIDTH_MODE = true;
+const FIXED_ROAD_WIDTH = 6;
+
+function calcTargetRoadWidth(mazeSize: number) {
+	if (USE_FIXED_ROAD_WIDTH_MODE) return FIXED_ROAD_WIDTH;
+	return Math.ceil(20 / Math.max(mazeSize / 100, 1));
+}
+
+function calcRenderMetrics(mazeSize: number) {
+	const targetRoadWidth = calcTargetRoadWidth(mazeSize);
+	// 通路幅 = cellSize * (2 / 3) のため、目標通路幅から cellSize を逆算
+	// 描画ブレを抑えるため、cellSize は 6 の倍数に丸める
+	const targetCellSize = targetRoadWidth * 1.5;
+	const cellSize = Math.max(6, Math.round(targetCellSize / 6) * 6);
+	const mazeAreaSize = mazeSize * cellSize;
+	const rawMargin = Math.round(mazeAreaSize * (BASE_MARGIN / BASE_MAZE_AREA));
+	// margin / 2 を使う描画があるため、余白は 2 以上かつ偶数にそろえる
+	const margin = Math.max(2, Math.ceil(rawMargin / 2) * 2);
+	const imageSize = Math.round(mazeAreaSize + (margin * 2));
+
+	return { imageSize, margin, cellSize };
+}
 
 export function renderMaze(seed, maze: CellType[][]) {
 	const rand = gen.create(seed);
 	const mazeSize = maze.length;
 
 	const colors = themes[rand(themes.length)];
+	const { imageSize, margin, cellSize } = calcRenderMetrics(mazeSize);
 
 	const canvas = createCanvas(imageSize, imageSize);
 	const ctx = canvas.getContext('2d');
@@ -209,8 +232,6 @@ export function renderMaze(seed, maze: CellType[][]) {
 			return;
 		}
 	}
-
-	const cellSize = mazeAreaSize / mazeSize;
 
 	for (let x = 0; x < mazeSize; x++) {
 		for (let y = 0; y < mazeSize; y++) {
