@@ -24,7 +24,7 @@ import { rpgItems } from './items';
 import { aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, getSkillsShortName, aggregateSkillsEffectsSkillX, countDuplicateSkillNames } from './skills';
 import { aggregateTokensEffects } from './shop';
 import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatusDmg, getPostCount, getPostX, getVal, random, getRaidPostX, preLevelUpProcess } from './utils';
-import { applyKazutoriMasterHiddenBonus, calculateArpen, calculateStats, ensureKazutoriMasterHistory, fortune, getKazutoriMasterBonus, getKazutoriMasterMessage, stockRandom } from './battle';
+import { applyKazutoriMasterHiddenBonus, applyKazutoriMasterPostCountFloor, calculateArpen, calculateStats, ensureKazutoriMasterHistory, fortune, getKazutoriMasterBonus, getKazutoriMasterMessage, stockRandom } from './battle';
 import serifs from '@/serifs';
 import getDate from '@/utils/get-date';
 import { acct } from '@/utils/acct';
@@ -712,7 +712,9 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 		rawTp = tp;
 		tp = getPostX(postCount) * (1 + ((skillEffects.postXUp ?? 0) * Math.min((postCount - superBonusPost) / 20, 10)));
         } else {
-                postCount = await getPostCount(ai, module_, data, msg, superBonusPost, raidPostId ? { type: 'raid', key: raidPostId } : undefined);
+                postCount = await getPostCount(ai, module_, data, msg, 0, raidPostId ? { type: 'raid', key: raidPostId } : undefined);
+                postCount = applyKazutoriMasterPostCountFloor(postCount, msg, skillEffects);
+                postCount += superBonusPost;
 
 		// 連続ボーナス：postCount/2 を 10〜25 にクランプ
 		continuousBonusNum = (Math.min(Math.max(10, postCount / 2), 25));

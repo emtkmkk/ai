@@ -25,7 +25,7 @@ import { skills, Skill, SkillEffect, getSkill, skillReply, skillCalculate, aggre
 import { start, raidInstall, raidContextHook, raidTimeoutCallback } from './raid';
 import type { Raid } from './raid';
 import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatus, getPostCount, getPostX, getVal, random, preLevelUpProcess, deepClone } from './utils';
-import { applyKazutoriMasterHiddenBonus, calculateArpen, calculateStats, applySoftCapPow2, ensureKazutoriMasterHistory, getKazutoriMasterMessage } from './battle';
+import { applyKazutoriMasterHiddenBonus, applyKazutoriMasterPostCountFloor, calculateArpen, calculateStats, applySoftCapPow2, ensureKazutoriMasterHistory, getKazutoriMasterMessage } from './battle';
 import Friend from '@/friend';
 import type { FriendDoc } from '@/friend';
 import config from '@/config';
@@ -831,8 +831,10 @@ export default class extends Module {
 
 		let superBonusPost = (isSuper && !aggregateTokensEffects(data).hyperMode ? 200 : 0)
 
-		// 投稿数（今日と明日の多い方）
-		let postCount = await getPostCount(this.ai, this, data, msg, superBonusPost);
+		// 投稿数（今日と明日の多い方）。覚醒加算より前に数取りの達人の隠し下限を適用する
+		let postCount = await getPostCount(this.ai, this, data, msg, 0);
+		postCount = applyKazutoriMasterPostCountFloor(postCount, msg, skillEffects);
+		postCount += superBonusPost;
 
 		if (isSuper && aggregateTokensEffects(data).hyperMode) {
 			skillEffects.postXUp = (skillEffects.postXUp ?? 0) + 0.005
@@ -1172,8 +1174,10 @@ export default class extends Module {
 		/** 覚醒時のみ投稿数に加算（hyperMode 札所持時は代わりに postXUp で上昇） */
 		let superBonusPost = (isSuper && !aggregateTokensEffects(data).hyperMode ? 200 : 0)
 
-                /** 投稿数（今日と明日の多い方）*/
-                let postCount = await getPostCount(this.ai, this, data, msg, superBonusPost, { type: 'normal', key: nowTimeStr });
+                /** 投稿数（今日と明日の多い方）。覚醒加算より前に数取りの達人の隠し下限を適用する */
+                let postCount = await getPostCount(this.ai, this, data, msg, 0, { type: 'normal', key: nowTimeStr });
+                postCount = applyKazutoriMasterPostCountFloor(postCount, msg, skillEffects);
+                postCount += superBonusPost;
                 const basePostCount = Math.max(postCount - superBonusPost, 0);
 
                 // おかわり時は通常プレイ時の投稿数を再利用（同じ枠なので二重取得を防ぐ）

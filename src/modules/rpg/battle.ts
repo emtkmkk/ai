@@ -7,7 +7,7 @@
  * 天国か地獄か（fortune）、ストックランダム（stockRandom）等を提供する。
  *
  * @remarks
- * - 数取りの達人スキルは数取りモジュールの履歴に依存し、戦闘・レイドのステータス倍率に影響する
+ * - 数取りの達人スキルは数取りモジュールの履歴に依存し、戦闘・レイドのステータス倍率に影響する（直近24時間以内勝利時は投稿数に隠し下限も適用）
  * - calculateArpen は敵防御力に対する貫通率を算出する
  *
  * @public
@@ -224,6 +224,34 @@ export function applyKazutoriMasterHiddenBonus(msg, skillEffects: SkillEffect): 
 	}
 
 	skillEffects.critUpFixed = (skillEffects.critUpFixed ?? 0) + (critBonus * 0.01);
+}
+
+/**
+ * 数取りの達人の隠し効果として、チャート由来の投稿数に下限を適用する
+ *
+ * {@link getKazutoriMasterBonus} の直近24時間以内勝利フラグ（raidBonusFixed）が真のときのみ発動する。
+ * 1スタックあたり下限は 100、2スタック目以降はスタック1つにつき +25（例: 2なら 125、3なら 150）。
+ *
+ * @param rawPostCount 覚醒ボーナスを含まないチャート由来の投稿数
+ * @param msg メッセージ（kazutoriData 参照）
+ * @param skillEffects スキル効果（kazutoriMaster の合計がスタック数）
+ * @returns 下限適用後の投稿数
+ * @internal
+ */
+export function applyKazutoriMasterPostCountFloor(rawPostCount: number, msg, skillEffects: SkillEffect): number {
+	const stacks = skillEffects.kazutoriMaster;
+	if (stacks === undefined || stacks === null || stacks <= 0) {
+		return rawPostCount;
+	}
+
+	const bonus = getKazutoriMasterBonus(msg, skillEffects);
+	if (!bonus.raidBonusFixed) {
+		return rawPostCount;
+	}
+
+	const n = Math.max(1, Math.floor(stacks));
+	const floorValue = 100 + 25 * (n - 1);
+	return Math.max(rawPostCount, floorValue);
 }
 
 /**
