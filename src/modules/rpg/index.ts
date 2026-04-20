@@ -41,6 +41,209 @@ type List = {
 type LokiDoc<T> = T & { $loki: number; meta?: unknown };
 type FriendDocWithMeta = LokiDoc<FriendDoc>;
 
+/**
+ * `fix` コマンド用の一時的な復旧パッチ定義
+ *
+ * @remarks
+ * TEMP: 本定義は適用後に削除される一時的なもの。キーは対象ユーザーの userId。
+ * NOTE: raid 由来の `lv` / `raidScore` / `clearRaid` は raid 側を優先し、patch は未観測分の補完のみ。
+ *       それ以外のフィールドは raid に情報源がないため patch 値がそのまま反映される。
+ *
+ * @internal
+ */
+type FixRecoveryPatch = {
+	lv?: number;
+	atk?: number;
+	def?: number;
+	bestScore?: number;
+	maxEndress?: number;
+	endress?: number;
+	maxSpd?: number;
+	superMuscle?: number;
+	maxStatusUp?: number;
+	jar?: number;
+	hatogurumaMaxScore?: number;
+	hatogurumaExp?: number;
+	duplicationOrb?: number;
+	coin?: number;
+	shopExp?: number;
+	rerollOrb?: number;
+	parallelDimension?: number;
+	atkMedal?: number;
+	defMedal?: number;
+	itemMedal?: number;
+	nextSkill?: string;
+	freeDistributed?: boolean;
+	color?: number;
+	winCount?: number;
+	hardWinCount?: number;
+	superCount?: number;
+	superUnlockCount?: number;
+	thirdFire?: number;
+	allClear?: number;
+	aHeroLv?: number;
+	info?: number;
+	raidScore?: { [enemyName: string]: number };
+	clearRaid?: string[];
+	clearHistory?: string[];
+	items?: Array<{ name: string; durability?: number; [key: string]: unknown }>;
+	bankItems?: string[];
+	tempAmulet?: string[];
+};
+
+const PATCH_SCALAR_FIELDS = [
+	"atk", "def",
+	"bestScore", "maxEndress", "endress", "maxSpd", "superMuscle", "maxStatusUp", "jar",
+	"hatogurumaMaxScore", "hatogurumaExp", "duplicationOrb",
+	"coin", "shopExp", "rerollOrb", "parallelDimension",
+	"atkMedal", "defMedal", "itemMedal",
+	"nextSkill", "freeDistributed", "color",
+	"winCount", "hardWinCount", "superCount", "superUnlockCount", "thirdFire", "allClear",
+	"aHeroLv", "info",
+] as const satisfies readonly (keyof FixRecoveryPatch)[];
+
+const FIX_RECOVERY_PATCHES: { [userId: string]: FixRecoveryPatch } = {
+	"9d5ts6in38": {
+		lv: 1960,
+		atk: 8781,
+		def: 7777,
+		bestScore: 3636558,
+		maxEndress: 203,
+		endress: 204,
+		superMuscle: 28678072,
+		maxStatusUp: 13,
+		jar: 3,
+		hatogurumaMaxScore: 328.7,
+		hatogurumaExp: 30,
+		maxSpd: 5,
+		coin: 7096,
+		rerollOrb: 250,
+		parallelDimension: 2,
+		shopExp: 25000,
+		atkMedal: 10,
+		defMedal: 6,
+		itemMedal: 10,
+		nextSkill: "気性が荒い",
+		freeDistributed: true,
+		duplicationOrb: 0,
+		color: 8,
+		winCount: 404,
+		hardWinCount: 20,
+		superCount: 20,
+		superUnlockCount: 100,
+		thirdFire: 6,
+		allClear: 55,
+		aHeroLv: 36,
+		info: 3,
+		raidScore: {
+			":mk_chickenda:": 11275,
+			":mkck_scandinavia:": 44760,
+			":muscle_mkchicken:": 256299,
+			":mk_tatsu:": 38825,
+			":nisemokochiki_mzh:": 49942,
+			":mk_ultrawidechicken:": 16662,
+			":oha_chicken:": 19908,
+			":teriyaki_mk_yukkuriface:": 13756,
+			":sinkansen:": 175112,
+			":mk_crystal:": 4829,
+			":mk_lovechicken:": 31307,
+			":mk_senryu_kun:": 8610,
+			":blobbacteria_campylobacter:": 6265908,
+			":mk_hero:": 12172,
+			":mk_giga:": 39833,
+			":mokochoki:": 12000,
+			":hatoguruma:": 99,
+		},
+		clearRaid: [
+			":mk_chickenda:",
+			":mkck_scandinavia:",
+			":muscle_mkchicken:",
+			":mk_tatsu:",
+			":nisemokochiki_mzh:",
+			":mk_ultrawidechicken:",
+			":oha_chicken:",
+			":teriyaki_mk_yukkuriface:",
+			":sinkansen:",
+			":mk_crystal:",
+			":mk_lovechicken:",
+			":mk_senryu_kun:",
+			":blobbacteria_campylobacter:",
+			":mk_hero:",
+			":mk_giga:",
+			":mokochoki:",
+		],
+		clearHistory: [
+			":mk_hero_8p:",
+		],
+		items: [
+			{ name: "究極のお守り", durability: 6 },
+			{ name: "†の札" },
+			{ name: "スキル詳細表示の札" },
+			{ name: "投稿数ボーナス表示の札" },
+			{ name: "装備詳細表示の札" },
+			{ name: "裏ショップ入場の札" },
+			{ name: "自動旅モードの札" },
+			{ name: "全身全霊のお札" },
+			{ name: "乱数透視の札" },
+			{ name: "おおみそかチャレンジの札" },
+			{ name: "長き旅の思い出" },
+			{ name: "運命不変のお札" },
+			{ name: "超覚醒の札" },
+			{ name: "カスタムショップ入場の札" },
+			{ name: "質問カードの札" },
+			{ name: "修繕の札" },
+			{ name: "温存のお札" },
+			{ name: "平常心のお札" },
+		],
+		bankItems: [
+			"しあわせのお札",
+			"お守り確認の札",
+			"覚醒変更の札（朱）",
+			"覚醒変更の札（橙）",
+			"覚醒変更の札（蒼）",
+			"覚醒変更の札（翠）",
+		],
+		tempAmulet: [],
+	},
+};
+
+/**
+ * `rpg admin fix` コマンドで `key=value` オーバーライド可能なキーのホワイトリスト
+ *
+ * @remarks
+ * ここに定義されたキーだけが、自動復元結果に対する上書き対象となる。
+ * 誤って他の内部フィールド（`userId` / `skills` 等）を平文で書き換えないよう、最小限に絞っている。
+ *
+ * - `type`: `int`（整数）/ `float`（小数可）
+ * - `min` / `max`: 範囲チェック（任意）
+ *
+ * NOTE: 値のカンマ（例: "3,636,558"）は parser 側でサイレントに除去される（殿堂表示の直貼り対応）。
+ *
+ * @internal
+ */
+const FIX_OVERRIDE_KEYS: {
+	[key: string]: { type: "int" | "float"; min?: number; max?: number };
+} = {
+	lv: { type: "int", min: 1, max: 99999 },
+	atk: { type: "int", min: 0 },
+	def: { type: "int", min: 0 },
+	exp: { type: "int", min: 0 },
+	coin: { type: "int", min: 0 },
+	shopExp: { type: "int", min: 0 },
+	bestScore: { type: "int", min: 0 },
+	maxEndress: { type: "int", min: 0 },
+	superMuscle: { type: "int", min: 0 },
+	maxStatusUp: { type: "int", min: 0, max: 99 },
+	jar: { type: "int", min: 0 },
+	hatogurumaMaxScore: { type: "float", min: 0 },
+	winCount: { type: "int", min: 0 },
+	duplicationOrb: { type: "int", min: 0 },
+	parallelDimension: { type: "int", min: 0, max: 10 },
+	itemMedal: { type: "int", min: 0 },
+	rerollOrb: { type: "int", min: 0 },
+	lastPlayedLv: { type: "int", min: 0 },
+};
+
 export default class extends Module {
 	public readonly name = 'rpg';
 
@@ -760,6 +963,9 @@ export default class extends Module {
 			msg.reply(lines.join('\n'));
 			return { reaction: 'love' };
 		}
+		if (msg.includes(["fix"]) && !msg.includes(["dataFix"])) {
+			return this.handleFixCommand(msg);
+		}
 		if (msg.includes(["dataFix"])) {
 
 			// 鳩車ベスト（完成度）から理論上の最低マスタースコアを逆算し、
@@ -793,6 +999,387 @@ export default class extends Module {
 		}
 		return { reaction: "hmm" };
 	}
+
+	// #region ユーザーデータ復旧（fix コマンド）
+
+	/**
+	 * 対象ユーザーの `perModulesData.rpg` を、レイド参加履歴（`rpgRaid` コレクションの `attackers[]`）から
+	 * 可能な限り復元する管理者コマンド。
+	 *
+	 * @remarks
+	 * 用途: `平行次元のお札` バグ（#autobind 共有 closure 汚染）により、お札所持プレイヤーの `friend.doc.perModulesData.rpg`
+	 * が **別プレイヤーのレイド状態で上書きされた** ケースの救済用。
+	 *
+	 * 構文:
+	 * - `@ai rpg admin fix <userId>`（ドライラン: プレビューのみ）
+	 * - `@ai rpg admin fix <userId> apply`（確定適用）
+	 * - `@ai rpg admin fix <userId> apply lv=1960 bestScore=3,636,558 hatogurumaMaxScore=328.7`
+	 *   （`key=value` で手動オーバーライド。値のカンマはサイレントに除去される＝殿堂からの直貼り可）
+	 *
+	 * 復元ソースは `rpgRaid` コレクションの attackers 履歴。以下のフィールドを自動復元する：
+	 * - `lv`: 観測最大値
+	 * - `raidScore[enemyName]`: 敵ごとのダメージ最大値
+	 * - `clearRaid[]`: `count >= 7` を達成した敵名の集合
+	 * - `me`: 最終参加時の色
+	 * - `skills`: 最終参加時 `skillsStr.skills`（short 連結文字列）を skills カタログに貪欲マッチして推定
+	 *   （※ 同じ short を持つスキルが複数ある場合があるため、誤認し得る。要手動確認）
+	 * - `atk` / `def`: `(lv-1) * 7` pts を 1:1 で按分した概算
+	 *
+	 * WARNING: 以下は raids から復元できないためデフォルトではリセットされる：
+	 * coin / shopExp / items / tempAmulet / shop*Items / jar / bestScore / maxEndress / superMuscle /
+	 * maxStatusUp / hatogurumaMaxScore / clearEnemy / clearHistory / winCount / duplicationOrb /
+	 * parallelDimension など。殿堂で分かる値は `key=value` で指定すれば自動復元値を上書きできる（ホワイトリストは
+	 * {@link FIX_OVERRIDE_KEYS} 参照）。
+	 *
+	 * NOTE: 既存の（汚染された）`perModulesData.rpg` は完全に破棄される。誤爆防止のため、キーワード `apply`
+	 *       が含まれない限り一切書き込まない（ドライラン）。
+	 *
+	 * @param msg admin fix コマンドのメッセージ
+	 * @returns リアクションオブジェクト
+	 * @internal
+	 */
+	@autobind
+	private handleFixCommand(msg: Message) {
+		const id = /\w{10,}/.exec(msg.extractedText)?.[0];
+		if (!id) {
+			msg.reply(`fix: userId を指定してください\n例: @ai rpg admin fix <userId> [apply]`, { visibility: "specified" });
+			return { reaction: ":mk_hotchicken:" };
+		}
+
+		const friend = this.ai.lookupFriend(id);
+		if (friend === null || friend === undefined) {
+			msg.reply(`fix: userId ${id} に対応する friend ドキュメントが見つかりません`, { visibility: "specified" });
+			return { reaction: ":mk_hotchicken:" };
+		}
+
+		const apply = msg.includes(["apply"]);
+
+		// key=value 形式の手動オーバーライドをパース（ホワイトリストのみ反映）
+		const overrides = this.parseFixOverrides(msg.extractedText);
+
+		// 対象ユーザーの参加履歴を全レイドから収集
+		type Attacker = Raid["attackers"][number];
+		type Record = { raid: Raid; attacker: Attacker; ts: number };
+		const records: Record[] = [];
+		for (const raid of this.raids.find() ?? []) {
+			for (const attacker of raid.attackers ?? []) {
+				if (attacker.user?.id === id) {
+					records.push({
+						raid,
+						attacker,
+						ts: raid.finishedAt ?? raid.startedAt ?? 0,
+					});
+				}
+			}
+		}
+
+		if (records.length === 0) {
+			msg.reply(`fix: userId ${id} のレイド参加履歴が見つかりません（復元ソースなし）`, { visibility: "specified" });
+			return { reaction: ":mk_hotchicken:" };
+		}
+
+		records.sort((a, b) => b.ts - a.ts);
+		const latest = records[0];
+
+		// lv は観測最大、raidScore と clearRaid は全履歴集計
+		let maxLv = 0;
+		const raidScore: { [enemyName: string]: number } = {};
+		const clearRaidSet = new Set<string>();
+		for (const { raid, attacker } of records) {
+			if (typeof attacker.lv === "number" && attacker.lv > maxLv) maxLv = attacker.lv;
+			const enemyName = raid.enemy?.name;
+			if (!enemyName) continue;
+			if (typeof attacker.dmg === "number") {
+				if (!(enemyName in raidScore) || raidScore[enemyName] < attacker.dmg) {
+					raidScore[enemyName] = attacker.dmg;
+				}
+			}
+			if ((attacker.count ?? 0) >= 7) clearRaidSet.add(enemyName);
+		}
+		if (maxLv < 1) maxLv = 1;
+
+		// atk / def 概算: 総ステータス (lv-1)*7 を 1:1 で按分
+		const totalUp = Math.max(0, maxLv - 1) * 7;
+		const atkDelta = Math.floor(totalUp / 2);
+		const defDelta = totalUp - atkDelta;
+		const atk = 1 + atkDelta;
+		const def = 1 + defDelta;
+
+		// skillsStr.skills ("[短縮名の連結]") を skills カタログから貪欲マッチで推定
+		const skillsShort = (latest.attacker.skillsStr?.skills ?? "").replace(/^\[|\]$/g, "");
+		const estimatedSkills = this.parseSkillsShortGreedy(skillsShort);
+
+		const user = friend.doc.user;
+		const currentRpg = friend.doc.perModulesData?.rpg ?? {};
+		const contaminated = currentRpg.userId && currentRpg.userId !== id;
+
+		// 再構築（非復元フィールドはリセット）
+		const recon: { [key: string]: unknown } = {
+			userId: id,
+			username: user?.username,
+			host: user?.host ?? null,
+			lv: maxLv,
+			atk,
+			def,
+			exp: 0,
+			coin: 0,
+			shopExp: 0,
+			items: [],
+			tempAmulet: [],
+			shopItems: [],
+			shop2Items: [],
+			showShopItems: [],
+			skills: estimatedSkills,
+			me: latest.attacker.me,
+			raidScore,
+			clearRaid: Array.from(clearRaidSet),
+			clearRaidNum: clearRaidSet.size,
+			clearEnemy: [],
+			clearHistory: [],
+			lastPlayedAt: "",
+			lastPlayedLv: 0,
+		};
+
+		// 埋め込みパッチ適用（raid 由来データを優先、raid に無い/0 の箇所だけ patch で補完）
+		const patchLog: string[] = [];
+		const patch = FIX_RECOVERY_PATCHES[id];
+		if (patch) {
+			patchLog.push(`patch userId="${id}" を適用`);
+
+			// lv: raid が 1 以上観測していれば raid を優先（current lv is raid max）
+			if ((recon.lv as number) <= 1 && typeof patch.lv === "number") {
+				patchLog.push(`  lv: raid 未観測 → patch ${patch.lv}`);
+				recon.lv = patch.lv;
+			} else if (typeof patch.lv === "number") {
+				patchLog.push(`  lv: raid ${recon.lv}（patch ${patch.lv} は不採用・raid 優先）`);
+			}
+
+			// 非レイド源のスカラー/プリミティブフィールドは patch が常に勝つ
+			for (const key of PATCH_SCALAR_FIELDS) {
+				const v = patch[key];
+				if (v !== undefined) {
+					patchLog.push(`  ${key}: ${JSON.stringify(recon[key])} → patch ${JSON.stringify(v)}`);
+					recon[key] = v;
+				}
+			}
+
+			// raidScore: raid にエントリがある敵は raid 優先、無い敵だけ patch で補完
+			if (patch.raidScore) {
+				const current = (recon.raidScore ?? {}) as { [name: string]: number };
+				const filled: string[] = [];
+				for (const [enemyName, val] of Object.entries(patch.raidScore)) {
+					if (!(enemyName in current)) {
+						current[enemyName] = val;
+						filled.push(`${enemyName}=${val}`);
+					}
+				}
+				recon.raidScore = current;
+				if (filled.length > 0) {
+					patchLog.push(`  raidScore: raid 未観測の ${filled.length} 種を補完 (${filled.join(", ")})`);
+				} else {
+					patchLog.push(`  raidScore: raid が全敵観測済み（patch 不採用）`);
+				}
+			}
+
+			// clearRaid: 和集合（raid 由来と patch のどちらかが 7 ターン達成なら clear 扱い）
+			if (patch.clearRaid) {
+				const currentClear = new Set<string>((recon.clearRaid as string[]) ?? []);
+				const before = currentClear.size;
+				for (const name of patch.clearRaid) currentClear.add(name);
+				recon.clearRaid = Array.from(currentClear);
+				recon.clearRaidNum = currentClear.size;
+				patchLog.push(`  clearRaid: raid ${before} 種 ∪ patch ${patch.clearRaid.length} 種 = ${currentClear.size} 種`);
+			}
+
+			// clearHistory: 和集合
+			if (patch.clearHistory) {
+				const currentHist = new Set<string>((recon.clearHistory as string[]) ?? []);
+				const before = currentHist.size;
+				for (const entry of patch.clearHistory) currentHist.add(entry);
+				recon.clearHistory = Array.from(currentHist);
+				patchLog.push(`  clearHistory: raid ${before} 件 ∪ patch ${patch.clearHistory.length} 件 = ${currentHist.size} 件`);
+			}
+
+			// items: patch が常に勝つ（raid 観測なし）。各要素は {name,...} の素朴な形のまま入れ、
+			//        initializeData 側で `type` がカタログ照会により再設定される
+			if (patch.items) {
+				recon.items = patch.items.map((it) => ({ ...it }));
+				patchLog.push(`  items: patch 由来 ${patch.items.length} 個で上書き（type は initializeData 側で再設定）`);
+			}
+
+			// bankItems: 裏ショップで「預けている」札名の配列。patch が常に勝つ
+			if (patch.bankItems) {
+				recon.bankItems = [...patch.bankItems];
+				patchLog.push(`  bankItems: patch 由来 ${patch.bankItems.length} 個で上書き`);
+			}
+
+			// tempAmulet: 一時預かりお守り。patch が常に勝つ
+			if (patch.tempAmulet) {
+				recon.tempAmulet = [...patch.tempAmulet];
+				patchLog.push(`  tempAmulet: patch 由来 ${patch.tempAmulet.length} 個で上書き`);
+			}
+		}
+
+		// 手動オーバーライド適用（自動復元値 & パッチより後に上書き）
+		const appliedOverrides: { key: string; value: number; auto: unknown }[] = [];
+		const rejectedOverrides: { key: string; reason: string }[] = [];
+		for (const [key, value] of Object.entries(overrides.values)) {
+			appliedOverrides.push({ key, value, auto: recon[key] });
+			recon[key] = value;
+		}
+		for (const err of overrides.errors) rejectedOverrides.push(err);
+
+		// clearRaidNum は clearRaid.length から再計算（initializeData でも行われるが、レポート用に先に整合）
+		if (Array.isArray(recon.clearRaid)) {
+			recon.clearRaidNum = (recon.clearRaid as unknown[]).length;
+		}
+
+		// レポート
+		const lines: string[] = [];
+		lines.push(`fix: userId=${id} の復旧${apply ? "を適用しました" : "プレビュー（`apply` を含めると適用）"}`);
+		lines.push(`  汚染状態: ${contaminated ? `汚染あり（現 .userId=${currentRpg.userId}）` : (currentRpg.userId ? "汚染なし（.userId 一致）" : "userId 欠落")}`);
+		lines.push(`  参加履歴: ${records.length} 件`);
+		if (latest.ts) lines.push(`  最終参加: ${new Date(latest.ts).toISOString()} / enemy=${latest.raid.enemy?.name ?? "?"}`);
+		lines.push(`  復元 lv: ${maxLv}（観測最大）`);
+		lines.push(`  復元 atk/def: ${atk}/${def}（総ステ ${totalUp} pts を 1:1 按分した概算）`);
+		const raidScoreTotal = Object.values(raidScore).reduce((a, b) => a + b, 0);
+		lines.push(`  復元 raidScore: ${Object.keys(raidScore).length} 種 / 合計 ${raidScoreTotal.toLocaleString()}`);
+		lines.push(`  復元 clearRaid: ${clearRaidSet.size} 種`);
+		lines.push(`  推定スキル: ${estimatedSkills.length} 個 → ${estimatedSkills.map((s) => s.name).join(", ") || "(推定不可)"}`);
+		lines.push(`  最終色: ${latest.attacker.me ?? "(なし)"}`);
+		lines.push(`  元 skillsStr: skills="${latest.attacker.skillsStr?.skills ?? ""}" amulet="${latest.attacker.skillsStr?.amulet ?? ""}"`);
+
+		if (patchLog.length > 0) {
+			lines.push(``);
+			lines.push(`--- 埋め込みパッチ ---`);
+			for (const l of patchLog) lines.push(l);
+		}
+
+		if (appliedOverrides.length > 0) {
+			lines.push(``);
+			lines.push(`--- 手動オーバーライド（${appliedOverrides.length} 件） ---`);
+			for (const ov of appliedOverrides) {
+				lines.push(`  ${ov.key}: ${JSON.stringify(ov.auto)} → ${ov.value}`);
+			}
+		}
+		if (rejectedOverrides.length > 0) {
+			lines.push(``);
+			lines.push(`--- 無視された指定（${rejectedOverrides.length} 件） ---`);
+			for (const rj of rejectedOverrides) {
+				lines.push(`  ${rj.key}: ${rj.reason}`);
+			}
+		}
+
+		lines.push(``);
+		lines.push(`※ coin / shopExp / items / jar / bestScore / maxEndress / maxStatusUp / superMuscle / hatogurumaMaxScore / parallelDimension 等は raids から復元できないためリセットされます（key=value で指定可）`);
+		lines.push(`※ スキル推定は short 一致の貪欲マッチであり、同 short を持つスキルが複数ある場合は誤認することがあります。要手動確認`);
+		lines.push(`※ 使用可能なオーバーライドキー: ${Object.keys(FIX_OVERRIDE_KEYS).join(", ")}`);
+
+		if (apply) {
+			if (!friend.doc.perModulesData) friend.doc.perModulesData = {};
+			friend.doc.perModulesData.rpg = recon;
+			friend.save();
+			lines.push(``);
+			lines.push(`✓ 適用完了`);
+		}
+
+		msg.reply(lines.join("\n"), { visibility: "specified" });
+		return { reaction: "love" };
+	}
+
+	/**
+	 * `fix` コマンドの `key=value` 形式引数をパースし、ホワイトリストに該当するキーのみ型変換して返す
+	 *
+	 * @remarks
+	 * 使用例: `@ai rpg admin fix <userId> apply lv=1960 atk=8781 bestScore=3636558 hatogurumaMaxScore=328.7`
+	 *
+	 * NOTE: 値の `,` はサイレントに除去する（ユーザーが殿堂から "3,636,558" のようにカンマ付きでコピペしても受け付けるため）。
+	 * WARNING: ホワイトリスト外のキーは拒否リストに積む（誤爆でバグを仕込まないため）。
+	 *          型（int / float）に合わない値も拒否する。
+	 *
+	 * @param text メッセージ本文（`extractedText`）
+	 * @returns パース結果
+	 *   - `values`: 反映すべきキーと数値
+	 *   - `errors`: 拒否された指定（キーと理由）
+	 * @internal
+	 */
+	@autobind
+	private parseFixOverrides(text: string): { values: { [key: string]: number }; errors: { key: string; reason: string }[] } {
+		const values: { [key: string]: number } = {};
+		const errors: { key: string; reason: string }[] = [];
+		if (!text) return { values, errors };
+
+		// ホワイトリスト外の key=value を見つけて errors に積むため、広めの正規表現で拾う
+		const re = /([A-Za-z_][A-Za-z0-9_]*)=([-+]?[\d.,]+)/g;
+		let m: RegExpExecArray | null;
+		while ((m = re.exec(text)) !== null) {
+			const key = m[1];
+			const raw = m[2].replace(/,/g, "");
+			const spec = FIX_OVERRIDE_KEYS[key];
+			if (!spec) {
+				errors.push({ key, reason: `ホワイトリスト外のキー` });
+				continue;
+			}
+			const num = spec.type === "int" ? parseInt(raw, 10) : parseFloat(raw);
+			if (!Number.isFinite(num)) {
+				errors.push({ key, reason: `数値として解釈できない値: "${m[2]}"` });
+				continue;
+			}
+			if (spec.min !== undefined && num < spec.min) {
+				errors.push({ key, reason: `下限 ${spec.min} 未満: ${num}` });
+				continue;
+			}
+			if (spec.max !== undefined && num > spec.max) {
+				errors.push({ key, reason: `上限 ${spec.max} 超過: ${num}` });
+				continue;
+			}
+			values[key] = num;
+		}
+		return { values, errors };
+	}
+
+	/**
+	 * `skillsStr.skills`（先頭/末尾の `[` `]` を除去した short 連結文字列）を
+	 * skills カタログの `short` で貪欲マッチし、Skill オブジェクトの配列を得る
+	 *
+	 * @remarks
+	 * NOTE: 長い short から優先的にマッチさせる（例: `**炎**` を `炎` より先に試す）。
+	 * WARNING: 同じ short を持つスキルが複数存在し得るため、マッチは最初に見つかったものを採用する近似。
+	 *          復元後の `rpg アイテム` で内容確認し、必要なら `skilledit` で手動修正すること。
+	 *
+	 * @param shortStr `"[...]"` を剥がした short 連結文字列
+	 * @returns 推定されたスキル配列（マッチ不能部分はスキップ）
+	 * @internal
+	 */
+	@autobind
+	private parseSkillsShortGreedy(shortStr: string): Skill[] {
+		if (!shortStr) return [];
+		const candidates = skills
+			.filter((s) => s.short && !s.notLearn && !s.skillOnly && !s.moveTo)
+			.sort((a, b) => (b.short?.length ?? 0) - (a.short?.length ?? 0));
+		const result: Skill[] = [];
+		let remaining = shortStr;
+		while (remaining.length > 0) {
+			let matched = false;
+			for (const cand of candidates) {
+				const s = cand.short;
+				if (s && remaining.startsWith(s)) {
+					result.push(cand);
+					remaining = remaining.slice(s.length);
+					matched = true;
+					break;
+				}
+			}
+			if (!matched) {
+				// マッチできない先頭 1 文字分をスキップして継続
+				remaining = remaining.slice(1);
+			}
+			if (result.length >= 16) break; // 安全弁
+		}
+		return result;
+	}
+
+	// #endregion
 
 	// -------- 木人モード --------
 
