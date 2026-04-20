@@ -209,4 +209,95 @@ describe("runParallelDimensionRaid", () => {
 		expect(msg.reply).toBe(origReply);
 		expect(msg.friend.setPerModulesData).toBe(origSet);
 	});
+
+	/**
+	 * 回帰テスト: autobind-decorator のクロージャ汚染により、他ユーザーの msg.reply が
+	 * こちらのモックに差し替わってしまうバグ（「お札を持っていると他の人のレイド結果が来てしまう」）。
+	 *
+	 * autobind v2 のプロトタイプ descriptor が持つ setter は、クラス全体で共有される closure 変数 `fn` を
+	 * 書き換えてしまう。通常代入（`msg.reply = mock`）をすると、これ以降に **別インスタンス** が初めて
+	 * `reply` にアクセスしたときに `fn.bind(this)` = `mock.bind(this)` がキャッシュされ、他ユーザーの
+	 * reply 呼び出しがこちらの replies バッファに吸い込まれてしまう。
+	 *
+	 * 修正後は `Object.defineProperty` でインスタンスに直接データプロパティを貼るため、プロトタイプ側の
+	 * closure は汚染されない。
+	 */
+	test("autobind 共有 closure を汚染しない（他インスタンスの reply がこちらのバッファへ漏洩しない）", async () => {
+		// autobind-decorator v2.x の簡易再現: プロトタイプ側の descriptor にクラス共有の closure `fn` を持つ
+		const buildAutobindClass = () => {
+			class Base {
+				public reply(_text: string): string {
+					return "";
+				}
+			}
+			// 本物の reply を closure で保持し、プロトタイプ側に autobind 風 descriptor を張り直す
+			let fn: any = Base.prototype.reply;
+			Object.defineProperty(Base.prototype, "reply", {
+				configurable: true,
+				get(this: any) {
+					if (this === Base.prototype || Object.prototype.hasOwnProperty.call(this, "reply")) {
+						return fn;
+					}
+					const bound = fn.bind(this);
+					Object.defineProperty(this, "reply", {
+						configurable: true,
+						get: () => bound,
+						set: (value: unknown) => {
+							fn = value;
+							delete (this as any).reply;
+						},
+					});
+					return bound;
+				},
+				set(value: unknown) {
+					fn = value;
+				},
+			});
+			return Base;
+		};
+
+		const AutobindMsg = buildAutobindClass();
+		const originalImpl = jest.fn((text: string) => `ORIG:${text}`);
+		AutobindMsg.prototype.reply = originalImpl as any;
+
+		const msgA = new AutobindMsg();
+		const msgB = new AutobindMsg();
+
+		// msgA にのみ friend / perModulesData を持たせ、ハーネスに渡せる形にする
+		(msgA as any).userId = "user-a";
+		(msgA as any).friend = {
+			doc: { perModulesData: { rpg: { lv: 1 } } },
+			setPerModulesData: jest.fn((_module: any, data: any) => {
+				(msgA as any).friend.doc.perModulesData.rpg = data;
+			}),
+		};
+		const module = { name: "rpg" } as const;
+
+		// ハーネス内で msgA.reply を差し替えている間に、他ユーザー msgB が初めて reply にアクセスしても
+		// それはあくまで「本来の reply」を呼ぶべき（こちらのバッファへ吸い込まれてはいけない）
+		let leakedToOurBuffer = false;
+		const runRaidDamage = jest.fn(async () => {
+			// 他ユーザー msgB が初回アクセス（本来の reply が発火するはず）
+			const bReply = (msgB as any).reply("hello-from-B");
+			// もし漏れていたら、こちらのモックが返すのは Promise<fake> なので文字列にならない
+			if (typeof bReply !== "string" || !bReply.startsWith("ORIG:")) {
+				leakedToOurBuffer = true;
+			}
+			await (msgA as any).reply("A's text");
+			return { totalDmg: 10 };
+		});
+
+		await runParallelDimensionRaid(
+			msgA as any,
+			{ name: "e", pattern: 1 } as any,
+			module,
+			runRaidDamage,
+			1,
+			jest.fn(),
+		);
+
+		expect(leakedToOurBuffer).toBe(false);
+		// 他ユーザーの reply は本来の実装（originalImpl）を呼ぶ
+		expect(originalImpl).toHaveBeenCalledWith("hello-from-B");
+	});
 });

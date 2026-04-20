@@ -459,6 +459,32 @@ type ParallelDimensionRun = {
 };
 
 /**
+ * autobind-decorator で定義されたメソッドを、共有クロージャを汚染せずに差し替える
+ *
+ * @remarks
+ * WARNING: `obj.method = fn` のような通常の代入は、autobind-decorator v2.x のプロトタイプ descriptor
+ *          が持つ setter を経由し、**クラス全体で共有されているクロージャ変数 `fn`** を書き換えてしまう。
+ *          その結果、他のインスタンスが初めてメソッドを参照したタイミングで差し替え後の関数を bind して
+ *          キャッシュしてしまい、別ユーザーの処理が意図せずこちら側の差し替え関数を実行してしまう（≒副作用が漏れる）。
+ *
+ *          これを避けるため、`Object.defineProperty` で **データプロパティ** としてインスタンスに直接定義し、
+ *          autobind の setter を経由しないようにする。復元時も同様にデータプロパティで上書きする。
+ *
+ * @param target 対象オブジェクト
+ * @param key プロパティ名
+ * @param value 差し替え先の関数
+ * @internal
+ */
+function defineDataProperty(target: object, key: string, value: unknown): void {
+	Object.defineProperty(target, key, {
+		configurable: true,
+		writable: true,
+		enumerable: true,
+		value,
+	});
+}
+
+/**
  * 平行次元のお札によるレイド並列シミュレーションハーネス
  *
  * 所持枚数 + 1 回のシミュレーションを行い、最良ダメージの「次元」を正史として採用する。
@@ -469,6 +495,11 @@ type ParallelDimensionRun = {
  *       全試行完了後、正史の data だけを永続化し、正史がバッファした reply 引数で実際の投稿を行う。
  * NOTE: msg.friend.doc.kazutoriData の更新など perModulesData 外の副作用は、
  *       kazutori 履歴に基づく冪等な補正であり許容する（お札を持たない場合にも同条件で起きる更新のため）。
+ *
+ * WARNING: 差し替えは必ず {@link defineDataProperty} を使うこと。通常の代入（`msg.reply = ...`）だと
+ *          autobind-decorator の setter を経由してクラス共有のクロージャが書き換わり、
+ *          **他ユーザーの msg.reply / friend.setPerModulesData がこちら側の差し替え関数を実行してしまう**
+ *          （＝「お札を持っていると他の人のレイド結果がこちらに来る」バグの原因）。
  *
  * @param msg 参加返信メッセージ
  * @param enemy レイド敵（元オブジェクト。各試行には deepClone を渡す）
@@ -490,6 +521,9 @@ export async function runParallelDimensionRaid(
 	// perModulesData への参照を準備（無ければ初期化）
 	const perModulesData = msg.friend.doc.perModulesData ?? (msg.friend.doc.perModulesData = {});
 	const snapshot = deepClone(perModulesData[module.name] ?? {});
+	// NOTE: autobind-decorator はプロトタイプに getter/setter descriptor を定義し、
+	//       instance 側は最初のアクセスで boundFn をキャッシュする。ここで `msg.reply` を参照しておくと
+	//       instance にデータ descriptor（getter 経由のキャッシュ）が張られ、originalな bound 関数が手に入る。
 	const origReply = msg.reply;
 	const origSet = msg.friend.setPerModulesData;
 
@@ -501,12 +535,13 @@ export async function runParallelDimensionRaid(
 			perModulesData[module.name] = deepClone(snapshot);
 
 			const replies: ParallelDimensionRun['replies'] = [];
-			(msg as any).reply = async (...args: unknown[]) => {
+			// NOTE: 通常代入だと autobind のクロージャを汚染してしまうので必ず defineDataProperty で差し替える。
+			defineDataProperty(msg, 'reply', async (...args: unknown[]) => {
 				const fake: { id: string | undefined } = { id: undefined };
 				replies.push({ args, fake });
 				return fake;
-			};
-			(msg.friend as any).setPerModulesData = () => { /* no-op during simulation */ };
+			});
+			defineDataProperty(msg.friend, 'setPerModulesData', () => { /* no-op during simulation */ });
 
 			let r: any;
 			try {
@@ -519,9 +554,9 @@ export async function runParallelDimensionRaid(
 			runs.push({ result: r, mutated, replies });
 		}
 	} finally {
-		// フックを必ず元に戻す
-		(msg as any).reply = origReply;
-		(msg.friend as any).setPerModulesData = origSet;
+		// フックを必ず元に戻す（こちらも autobind クロージャを汚さないよう defineDataProperty で復元する）
+		defineDataProperty(msg, 'reply', origReply);
+		defineDataProperty(msg.friend, 'setPerModulesData', origSet);
 	}
 
 	// 最良次元を選択（result が reaction 応答や不正値の場合は -Infinity 扱い）
