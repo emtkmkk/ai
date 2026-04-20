@@ -91,7 +91,7 @@ type FixRecoveryPatch = {
 	tempAmulet?: string[];
 };
 
-const PATCH_SCALAR_FIELDS = [
+const PATCH_SCALAR_FIELDS: readonly (keyof FixRecoveryPatch)[] = [
 	"atk", "def",
 	"bestScore", "maxEndress", "endress", "maxSpd", "superMuscle", "maxStatusUp", "jar",
 	"hatogurumaMaxScore", "hatogurumaExp", "duplicationOrb",
@@ -100,7 +100,7 @@ const PATCH_SCALAR_FIELDS = [
 	"nextSkill", "freeDistributed", "color",
 	"winCount", "hardWinCount", "superCount", "superUnlockCount", "thirdFire", "allClear",
 	"aHeroLv", "info",
-] as const satisfies readonly (keyof FixRecoveryPatch)[];
+];
 
 const FIX_RECOVERY_PATCHES: { [userId: string]: FixRecoveryPatch } = {
 	"9d5ts6in38": {
