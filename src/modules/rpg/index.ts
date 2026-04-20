@@ -173,7 +173,37 @@ const FIX_RECOVERY_PATCHES: { [userId: string]: FixRecoveryPatch } = {
 			":mokochoki:",
 		],
 		clearHistory: [
+			":mk_catchicken:",
+			":mk_catchicken:2",
+			":nisemokochiki_mzh:",
+			":mokochoki:",
+			":mokochoki:2",
+			":kirin_mkchicken:",
+			":mk_senryu_kun:",
+			":mk_senryu_kun:2",
+			"もこチキは猛勉強",
+			"もこチキはTLの巡回",
+			":mk_fly_sliver:",
+			":mk_tatsu:",
+			":mk_tatsu:2",
+			":mk_ojousamachicken:",
+			":muscle_mkchicken:",
+			":mk_hero:",
 			":mk_hero_8p:",
+			":mk_chickenda:",
+			":mk_chickenda_gtgt:",
+			":mkck_scandinavia:",
+			":oha_chicken:",
+			":mk_ultrawidechicken:",
+			":mk_crystal:",
+			":mk_lovechicken:",
+			":teriyaki_mk_yukkuriface:",
+			":sinkansen:",
+			":blobbacteria_campylobacter:",
+			":mk_giga:",
+			":hatoguruma:",
+			"ending",
+			"旅モード",
 		],
 		items: [
 			{ name: "究極のお守り", durability: 6 },
@@ -1021,7 +1051,9 @@ export default class extends Module {
 	 * - `raidScore[enemyName]`: 敵ごとのダメージ最大値
 	 * - `clearRaid[]`: `count >= 7` を達成した敵名の集合
 	 * - `me`: 最終参加時の色
-	 * - `skills`: 最終参加時 `skillsStr.skills`（short 連結文字列）を skills カタログに貪欲マッチして推定
+	 * - `skills`: 「最後から1つ前」のレイド参加時 `skillsStr.skills`（short 連結文字列）を skills カタログに
+	 *   貪欲マッチして推定する。最新ではなく 1 つ前を採用するのは、データ汚染後に最新レイド参加が
+	 *   行われている場合に汚染後の構成が復元されるのを避けるため。履歴が 1 件しかない場合は最新にフォールバック。
 	 *   （※ 同じ short を持つスキルが複数ある場合があるため、誤認し得る。要手動確認）
 	 * - `atk` / `def`: `(lv-1) * 7` pts を 1:1 で按分した概算
 	 *
@@ -1080,6 +1112,12 @@ export default class extends Module {
 
 		records.sort((a, b) => b.ts - a.ts);
 		const latest = records[0];
+		// スキルだけは「最後から1つ前」のレイドから復元する。
+		// 理由: データ汚染発生後に最新レイド参加が行われていた場合、
+		// 最新の skillsStr は汚染後の状態を反映している恐れがあるため、
+		// 1 つ前のレコードを使うことで汚染直前のスキル構成を復元する狙い。
+		// レコードが 1 件しかない場合は最新にフォールバックする。
+		const skillSource = records[1] ?? records[0];
 
 		// lv は観測最大、raidScore と clearRaid は全履歴集計
 		let maxLv = 0;
@@ -1106,7 +1144,8 @@ export default class extends Module {
 		const def = 1 + defDelta;
 
 		// skillsStr.skills ("[短縮名の連結]") を skills カタログから貪欲マッチで推定
-		const skillsShort = (latest.attacker.skillsStr?.skills ?? "").replace(/^\[|\]$/g, "");
+		// スキル復元は skillSource（最後から 1 つ前を優先）を用いる
+		const skillsShort = (skillSource.attacker.skillsStr?.skills ?? "").replace(/^\[|\]$/g, "");
 		const estimatedSkills = this.parseSkillsShortGreedy(skillsShort);
 
 		const user = friend.doc.user;
@@ -1247,7 +1286,14 @@ export default class extends Module {
 		lines.push(`  復元 clearRaid: ${clearRaidSet.size} 種`);
 		lines.push(`  推定スキル: ${estimatedSkills.length} 個 → ${estimatedSkills.map((s) => s.name).join(", ") || "(推定不可)"}`);
 		lines.push(`  最終色: ${latest.attacker.me ?? "(なし)"}`);
-		lines.push(`  元 skillsStr: skills="${latest.attacker.skillsStr?.skills ?? ""}" amulet="${latest.attacker.skillsStr?.amulet ?? ""}"`);
+		const skillSourceIsPrev = skillSource !== latest;
+		const skillSourceLabel = skillSourceIsPrev ? "最後から1つ前" : "最新（履歴1件のためフォールバック）";
+		if (skillSourceIsPrev && skillSource.ts) {
+			lines.push(`  スキル復元元: ${skillSourceLabel} / ${new Date(skillSource.ts).toISOString()} / enemy=${skillSource.raid.enemy?.name ?? "?"}`);
+		} else {
+			lines.push(`  スキル復元元: ${skillSourceLabel}`);
+		}
+		lines.push(`  元 skillsStr: skills="${skillSource.attacker.skillsStr?.skills ?? ""}" amulet="${skillSource.attacker.skillsStr?.amulet ?? ""}"`);
 
 		if (patchLog.length > 0) {
 			lines.push(``);
