@@ -562,14 +562,30 @@ export async function runParallelDimensionRaid(
 	// 最良次元を選択（result が reaction 応答や不正値の場合は -Infinity 扱い）
 	const scoreOf = (r: any) =>
 		r && typeof r.totalDmg === 'number' && !Number.isNaN(r.totalDmg) ? r.totalDmg : -Infinity;
-	runs.sort((a, b) => scoreOf(b.result) - scoreOf(a.result));
-	const winner = runs[0];
+	let winnerIdx = -1;
+	let winnerScore = -Infinity;
+	for (let i = 0; i < runs.length; i++) {
+		const s = scoreOf(runs[i].result);
+		if (s > winnerScore) {
+			winnerScore = s;
+			winnerIdx = i;
+		}
+	}
+	const winner = winnerIdx >= 0 ? runs[winnerIdx] : undefined;
 
-	if (!winner || scoreOf(winner.result) === -Infinity) {
+	if (!winner || winnerScore === -Infinity) {
 		// 全次元失敗時はスナップショットへ巻き戻す
 		perModulesData[module.name] = snapshot;
 		return undefined;
 	}
+
+	// 他次元のスコア（正史＝winner を除く）を内部順（実行順）のまま列挙
+	// NOTE: サーバログへの可視化用に winner.result へ添付する。失敗次元（-Infinity）は除外。
+	const otherScores = runs
+		.map((r, i) => ({ i, score: scoreOf(r.result) }))
+		.filter((x) => x.i !== winnerIdx && x.score !== -Infinity)
+		.map((x) => x.score);
+	(winner.result as { parallelOtherScores?: number[] }).parallelOtherScores = otherScores;
 
 	// 正史を確定: winner の data を永続化、バッファした msg.reply 引数で実際の返信を投稿する
 	msg.friend.setPerModulesData(module as any, winner.mutated);
@@ -732,7 +748,12 @@ export async function raidContextHook(key: string, msg: Message, data: unknown) 
 	if (!result) return {
 		reaction: 'confused'
 	};
-	module_.log(`damage ${result.totalDmg} by ${msg.user.id}`);
+	// NOTE: 平行次元のお札により並列シミュレーションが行われていた場合、
+	// ハーネス側で winner.result.parallelOtherScores に他次元のスコアが添付される（降順、失敗次元は除外）。
+	// サーバログ末尾に (100, 200, 300) の形で表示する。
+	const otherScores = (result as { parallelOtherScores?: number[] }).parallelOtherScores;
+	const parallelSuffix = otherScores && otherScores.length > 0 ? ` (${otherScores.join(", ")})` : "";
+	module_.log(`damage ${result.totalDmg} by ${msg.user.id}${parallelSuffix}`);
 
 	raid.attackers.push({
 		user: {

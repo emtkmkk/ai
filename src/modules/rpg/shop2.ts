@@ -107,6 +107,19 @@ export const shop2Items: ShopItem[] = [
 	...(canBankItems.map((x) => ({...x, price: 1, limit: (data) => !data.items.filter((y) => y.name === x.name).length && data.bankItems?.filter((y) => y === x.name).length && (!x.limit || x.limit(data, () => 0))})) as TokenItem[]),
 	...(canBankItems.map((x) => ({...x, name:x.name + "を預ける", price: 0, type: "item", desc: bankItemsDesc2[x.name], effect: (data) => { data.bankItems = Array.from(new Set([...(data.bankItems ?? []), x.name])); data.items = data.items.filter((y) => y.name !== x.name) }, limit: (data) => data.items.filter((y) => y.name === x.name).length && (!x.limit || x.limit(data, () => 0))})) as Item[]),
 	{ name: `浄化の水晶`, limit: (data) => data.skills.filter((x) => x.cantReroll).length, price: 5, desc: `${config.rpgHeroName}が持っている変更不可のスキルを変更可能なスキルに置き換えます ただしステータスが変動する可能性があります`, type: "item", effect: resetCantRerollSkill, always: true },
+	{
+		name: `平行次元のお札`,
+		limit: (data) =>
+			(data.parallelDimension ?? 0) < 10
+			&& (data.shopExp ?? 0) >= 5000 * Math.pow(5, data.parallelDimension ?? 0)
+			&& (data.lv ?? 0) >= 256 * Math.pow(2, data.parallelDimension ?? 0),
+		price: (data) => Math.pow(2, data.parallelDimension ?? 0),
+		desc: `レイドの際に平行次元の自分自身も同じボスと戦う 最も結果が良かった次元が正史となる`,
+		type: "item",
+		effect: (data) => { data.parallelDimension = (data.parallelDimension ?? 0) + 1; },
+		infinite: true,
+		always: true,
+	},
   { name: "力の種", limit: (data) => ((10 - (data.atk % 10) + 7) % 10) === 0 || ((data.def % 10 - 7 + 10) % 10) === 0, desc: "購入時、パワー+1 防御-1", price: 1, type: "item", effect: (data) => { data.atk = (data.atk ?? 0) + 1; data.def = (data.def ?? 0) - 1; }, infinite: true, always: true },
 	{ name: "幸運の力の種", limit: (data) => ((10 - (data.atk % 10) + 7) % 10) !== 0, desc: "購入時、パワーの下1桁が7になるように防御から移動", price: (data) => ((10 - (data.atk % 10) + 7) % 10), type: "item", effect: (data) => { data.def = (data.def ?? 0) - ((10 - (data.atk % 10) + 7) % 10); data.atk = (data.atk ?? 0) + ((10 - (data.atk % 10) + 7) % 10); }, infinite: true, always: true },
 	{ name: "幸運の力の種A", limit: (data) => ((data.def % 10 - 7 + 10) % 10) !== 0, desc: "購入時、防御の下1桁が7になるように防御から移動", price: (data) => ((data.def % 10 - 7 + 10) % 10), type: "item", effect: (data) => { data.atk = (data.atk ?? 0) + ((data.def % 10 - 7 + 10) % 10); data.def = (data.def ?? 0) - ((data.def % 10 - 7 + 10) % 10); }, infinite: true, always: true },
@@ -130,20 +143,6 @@ export const shop2Items: ShopItem[] = [
 	{ name: `うねうねした壺`, limit: (data) => (data.jar ?? 0) === 4 && data.shopExp > 2800, price: 1000, desc: `なんかうねうねした感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1, always: true },
 	{ name: `ナノサイズ壺`, limit: (data) => (data.jar ?? 0) === 5 && data.shopExp > 4000, price: 1200, desc: `小さくて見えない感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1, always: true },
 	{ name: `謎の壺`, limit: (data) => (data.jar ?? 0) >= 6 && data.shopExp > 5400, price: (data) => (data.jar ?? 0) * 200, desc: `なんか謎な感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1, always: true },
-	// 平行次元のお札: レイド時、所持枚数分の並列シミュレーションを行い最良の結果を正史として採用する（最大10枚）
-	{
-		name: `平行次元のお札`,
-		limit: (data) =>
-			(data.parallelDimension ?? 0) < 10
-			&& (data.shopExp ?? 0) >= 5000 * Math.pow(5, data.parallelDimension ?? 0)
-			&& (data.lv ?? 0) >= 256 * Math.pow(2, data.parallelDimension ?? 0),
-		price: (data) => Math.pow(2, data.parallelDimension ?? 0),
-		desc: `レイドの際に平行次元の自分自身も同じボスと戦う 最も結果が良かった次元が正史となる`,
-		type: "item",
-		effect: (data) => { data.parallelDimension = (data.parallelDimension ?? 0) + 1; },
-		infinite: true,
-		always: true,
-	},
 	...skills.filter((x) => !x.notLearn && !x.moveTo && !x.cantReroll).map((x): Item => ({ name: `${x.name}の教本`, limit: (data) => !data.nextSkill && (!x.unique || !data.skills.filter((y) => y.unique).map((y) => y.unique).includes(x.unique)) && !(x.name === "数取りの達人" && isKazutoriMasterDisabled(data)), price: (data, rnd, ai) => Math.ceil(skillPrice(ai, x.name, rnd) / 2), desc: `購入すると次のスキル変更時に必ず「${x.name}」${x.desc ? `（${x.desc}）` : ""}を習得できる（複製時は対象外）`, type: "item", effect: (data) => { data.nextSkill = x.name } })),
 ];
 
