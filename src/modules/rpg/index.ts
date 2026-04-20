@@ -404,6 +404,9 @@ export default class extends Module {
 		if (data.duplicationOrb) {
 			message.push(`スキル複製珠${data.duplicationOrb >= 2 ? " ×" + data.duplicationOrb : "" }`)
 		}
+		if (data.parallelDimension) {
+			message.push(`平行次元のお札${data.parallelDimension >= 2 ? " ×" + data.parallelDimension : "" }`)
+		}
 		if (message.length !== 1 && data.coin) {
 			message.push(`${config.rpgCoinName}${data.coin >= 2 ? " ×" + data.coin : "" }`)
 		}

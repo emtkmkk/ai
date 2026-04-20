@@ -23,7 +23,7 @@ import { endressEnemy, Enemy, RaidEnemy, raidEnemys } from './enemys';
 import { rpgItems } from './items';
 import { aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, getSkillsShortName, aggregateSkillsEffectsSkillX, countDuplicateSkillNames } from './skills';
 import { aggregateTokensEffects } from './shop';
-import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatusDmg, getPostCount, getPostX, getVal, random, getRaidPostX, preLevelUpProcess } from './utils';
+import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatusDmg, getPostCount, getPostX, getVal, random, getRaidPostX, preLevelUpProcess, deepClone } from './utils';
 import { applyKazutoriMasterHiddenBonus, applyKazutoriMasterPostCountFloor, calculateArpen, calculateStats, ensureKazutoriMasterHistory, fortune, getKazutoriMasterBonus, getKazutoriMasterMessage, stockRandom } from './battle';
 import serifs from '@/serifs';
 import getDate from '@/utils/get-date';
@@ -446,6 +446,110 @@ function finish(raid: Raid) {
 	}
 }
 
+// -------- 平行次元ハーネス --------
+
+/** 平行次元のお札用：シミュレーション1回分の結果記録 */
+type ParallelDimensionRun = {
+	/** ダメージ計算結果（getTotalDmg* の戻り値、または undefined=失敗） */
+	result: any;
+	/** シミュレーション後の perModulesData[rpg] のスナップショット */
+	mutated: any;
+	/** 試行中にバッファした msg.reply 呼び出し引数と、戻り値として返したダミーオブジェクト */
+	replies: { args: unknown[]; fake: { id: string | undefined } }[];
+};
+
+/**
+ * 平行次元のお札によるレイド並列シミュレーションハーネス
+ *
+ * 所持枚数 + 1 回のシミュレーションを行い、最良ダメージの「次元」を正史として採用する。
+ *
+ * @remarks
+ * NOTE: getTotalDmg* は data / enemy を破壊的に書き換えるため、試行ごとに deepClone したスナップショットから復元する。
+ * NOTE: msg.reply / msg.friend.setPerModulesData を一時的に no-op / バッファ版に差し替え、副作用を抑止する。
+ *       全試行完了後、正史の data だけを永続化し、正史がバッファした reply 引数で実際の投稿を行う。
+ * NOTE: msg.friend.doc.kazutoriData の更新など perModulesData 外の副作用は、
+ *       kazutori 履歴に基づく冪等な補正であり許容する（お札を持たない場合にも同条件で起きる更新のため）。
+ *
+ * @param msg 参加返信メッセージ
+ * @param enemy レイド敵（元オブジェクト。各試行には deepClone を渡す）
+ * @param module 対象モジュール（perModulesData のキー取得に使用）
+ * @param runRaidDamage 実際のダメージ計算を行う関数（pattern によって 3 種のいずれかを内部で振り分ける）
+ * @param parallelCount 追加で走らせる平行次元数（お札所持枚数を安全上限でクランプ済みの値。正史の1回はこれに+1される）
+ * @param logError エラー時のロガー（module.log 等）
+ * @returns 正史として採用されたダメージ計算結果。全試行失敗時は undefined
+ * @internal
+ */
+export async function runParallelDimensionRaid(
+	msg: Message,
+	enemy: RaidEnemy,
+	module: { name: string },
+	runRaidDamage: (enemyForRun: RaidEnemy) => Promise<any>,
+	parallelCount: number,
+	logError: (text: string) => void,
+): Promise<any> {
+	// perModulesData への参照を準備（無ければ初期化）
+	const perModulesData = msg.friend.doc.perModulesData ?? (msg.friend.doc.perModulesData = {});
+	const snapshot = deepClone(perModulesData[module.name] ?? {});
+	const origReply = msg.reply;
+	const origSet = msg.friend.setPerModulesData;
+
+	const runs: ParallelDimensionRun[] = [];
+
+	try {
+		for (let i = 0; i <= parallelCount; i++) {
+			// 各次元の開始前に data をスナップショットから deepClone してリセット
+			perModulesData[module.name] = deepClone(snapshot);
+
+			const replies: ParallelDimensionRun['replies'] = [];
+			(msg as any).reply = async (...args: unknown[]) => {
+				const fake: { id: string | undefined } = { id: undefined };
+				replies.push({ args, fake });
+				return fake;
+			};
+			(msg.friend as any).setPerModulesData = () => { /* no-op during simulation */ };
+
+			let r: any;
+			try {
+				r = await runRaidDamage(deepClone(enemy) as RaidEnemy);
+			} catch (err) {
+				logError(`平行次元 ${i + 1}/${parallelCount + 1} の処理中にエラーが発生しました: ${err instanceof Error ? err.stack ?? err.message : err}`);
+				r = undefined;
+			}
+			const mutated = deepClone(perModulesData[module.name]);
+			runs.push({ result: r, mutated, replies });
+		}
+	} finally {
+		// フックを必ず元に戻す
+		(msg as any).reply = origReply;
+		(msg.friend as any).setPerModulesData = origSet;
+	}
+
+	// 最良次元を選択（result が reaction 応答や不正値の場合は -Infinity 扱い）
+	const scoreOf = (r: any) =>
+		r && typeof r.totalDmg === 'number' && !Number.isNaN(r.totalDmg) ? r.totalDmg : -Infinity;
+	runs.sort((a, b) => scoreOf(b.result) - scoreOf(a.result));
+	const winner = runs[0];
+
+	if (!winner || scoreOf(winner.result) === -Infinity) {
+		// 全次元失敗時はスナップショットへ巻き戻す
+		perModulesData[module.name] = snapshot;
+		return undefined;
+	}
+
+	// 正史を確定: winner の data を永続化、バッファした msg.reply 引数で実際の返信を投稿する
+	msg.friend.setPerModulesData(module as any, winner.mutated);
+	for (const buffered of winner.replies) {
+		try {
+			const real = await (msg.reply as any)(...(buffered.args as unknown[]));
+			buffered.fake.id = real?.id;
+			if (!winner.result.reply && real) winner.result.reply = real;
+		} catch (err) {
+			logError(`平行次元のリプライ投稿でエラーが発生しました: ${err instanceof Error ? err.stack ?? err.message : err}`);
+		}
+	}
+	return winner.result;
+}
+
 // -------- 参加処理 --------
 
 /**
@@ -528,27 +632,53 @@ export async function raidContextHook(key: string, msg: Message, data: unknown) 
 	if (!enemy) return { reaction: 'confused' };
 
         // 敵の pattern でダメージ計算を分岐：1=通常戦闘、2=じゃんけん型、3=コンテスト型
-        let result;
-        try {
-                if (enemy.pattern && enemy.pattern > 1) {
-                        switch (enemy.pattern) {
+        // NOTE: 平行次元のお札を所持している場合、副作用を隔離した状態でシミュレーションを複数回実行し、
+        //       最良ダメージの結果だけを正史として採用する。購入上限10枚 + 正史 = 最大11次元。
+        //       壊れたデータ対策として最終防衛の安全上限 10 を raid 側でも保持する。
+        const PARALLEL_DIMENSION_CAP = 10;
+        const parallelCount = Math.min(PARALLEL_DIMENSION_CAP, Math.max(0, _data.parallelDimension ?? 0));
+
+        // 敵の pattern に応じたダメージ計算ディスパッチ
+        const runRaidDamage = async (enemyForRun: RaidEnemy) => {
+                if (enemyForRun.pattern && enemyForRun.pattern > 1) {
+                        switch (enemyForRun.pattern) {
+                                case 3:
+                                        return await getTotalDmg3(msg, enemyForRun);
                                 case 2:
                                 default:
-                                        result = await getTotalDmg2(msg, enemy);
-                                        break;
-                                case 3:
-                                        result = await getTotalDmg3(msg, enemy);
-                                        break;
+                                        return await getTotalDmg2(msg, enemyForRun);
                         }
-                } else {
-                        result = await getTotalDmg(msg, enemy, raid.postId);
                 }
+                return await getTotalDmg(msg, enemyForRun, raid.postId);
+        };
+
+        let result;
+        if (parallelCount <= 0) {
+                // 通常レイド: 既存挙動
+                try {
+                        result = await runRaidDamage(enemy);
                 } catch (err) {
                         module_.log(`レイド参加処理中にエラーが発生しました: ${err instanceof Error ? err.stack ?? err.message : err}`);
                         return {
                                 reaction: 'confused'
                         };
                 }
+        } else {
+                // 平行次元のお札: 並列ハーネスへ委譲
+                result = await runParallelDimensionRaid(
+                        msg,
+                        enemy,
+                        module_,
+                        runRaidDamage,
+                        parallelCount,
+                        (text) => module_.log(text),
+                );
+                if (!result) {
+                        return {
+                                reaction: 'confused'
+                        };
+                }
+        }
 
 	// ダメージ計算中の競合：他処理で既に参加済みなら二重参加を防ぐ
 	if (raid.attackers.some(x => x.dmg > 0 && x.user.id === msg.userId)) {

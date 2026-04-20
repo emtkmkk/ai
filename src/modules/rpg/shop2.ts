@@ -130,6 +130,20 @@ export const shop2Items: ShopItem[] = [
 	{ name: `うねうねした壺`, limit: (data) => (data.jar ?? 0) === 4 && data.shopExp > 2800, price: 1000, desc: `なんかうねうねした感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1, always: true },
 	{ name: `ナノサイズ壺`, limit: (data) => (data.jar ?? 0) === 5 && data.shopExp > 4000, price: 1200, desc: `小さくて見えない感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1, always: true },
 	{ name: `謎の壺`, limit: (data) => (data.jar ?? 0) >= 6 && data.shopExp > 5400, price: (data) => (data.jar ?? 0) * 200, desc: `なんか謎な感じ`, type: "item", effect: (data) => data.jar = (data.jar ?? 0) + 1, always: true },
+	// 平行次元のお札: レイド時、所持枚数分の並列シミュレーションを行い最良の結果を正史として採用する（最大10枚）
+	{
+		name: `平行次元のお札`,
+		limit: (data) =>
+			(data.parallelDimension ?? 0) < 10
+			&& (data.shopExp ?? 0) >= 5000 * Math.pow(5, data.parallelDimension ?? 0)
+			&& (data.lv ?? 0) >= 256 * Math.pow(2, data.parallelDimension ?? 0),
+		price: (data) => Math.pow(2, data.parallelDimension ?? 0),
+		desc: `レイドの際に平行次元の自分自身も同じボスと戦う 最も結果が良かった次元が正史となる`,
+		type: "item",
+		effect: (data) => { data.parallelDimension = (data.parallelDimension ?? 0) + 1; },
+		infinite: true,
+		always: true,
+	},
 	...skills.filter((x) => !x.notLearn && !x.moveTo && !x.cantReroll).map((x): Item => ({ name: `${x.name}の教本`, limit: (data) => !data.nextSkill && (!x.unique || !data.skills.filter((y) => y.unique).map((y) => y.unique).includes(x.unique)) && !(x.name === "数取りの達人" && isKazutoriMasterDisabled(data)), price: (data, rnd, ai) => Math.ceil(skillPrice(ai, x.name, rnd) / 2), desc: `購入すると次のスキル変更時に必ず「${x.name}」${x.desc ? `（${x.desc}）` : ""}を習得できる（複製時は対象外）`, type: "item", effect: (data) => { data.nextSkill = x.name } })),
 ];
 
