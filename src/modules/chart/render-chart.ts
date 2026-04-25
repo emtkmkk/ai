@@ -60,24 +60,29 @@ export function renderChart(chart: Chart) {
 
 	const xAxisCount = chart.datasets[0].data.length;
 	const serieses = chart.datasets.length;
+	const totals = Array.from({ length: xAxisCount }, (_, xAxis) => {
+		let total = 0;
+		for (let series = 0; series < serieses; series++) {
+			total += chart.datasets[series].data[xAxis];
+		}
+		return total;
+	});
 
 	let lowerBound = Infinity;
 	let upperBound = -Infinity;
 
-	for (let xAxis = 0; xAxis < xAxisCount; xAxis++) {
-		let v = 0;
-		for (let series = 0; series < serieses; series++) {
-			v += chart.datasets[series].data[xAxis];
-		}
-		if (v > upperBound) upperBound = v;
-		if (v < lowerBound) lowerBound = v;
+	for (const total of totals) {
+		if (total > upperBound) upperBound = total;
+		if (total < lowerBound) lowerBound = total;
 	}
+	lowerBound = Math.min(0, lowerBound);
 
 	// Calculate Y axis scale
 	const yAxisSteps = niceScale(lowerBound, upperBound, yAxisTicks);
 	const yAxisStepsMin = yAxisSteps[0];
 	const yAxisStepsMax = yAxisSteps[yAxisSteps.length - 1];
 	const yAxisRange = yAxisStepsMax - yAxisStepsMin;
+	const yAxisStepSize = yAxisSteps.length > 1 ? yAxisSteps[1] - yAxisSteps[0] : 0;
 
 	// Draw Y axis
 	ctx.lineWidth = yAxisThickness;
@@ -93,47 +98,18 @@ export function renderChart(chart: Chart) {
 
 		ctx.font = '20px CustomFont';
 		ctx.fillStyle = colors.text;
-		ctx.fillText(step.toString(), chartAreaX, chartAreaY + y - 8);
-	}
-
-	const newDatasets: any[] = [];
-
-	for (let series = 0; series < serieses; series++) {
-		newDatasets.push({
-			data: []
-		});
-	}
-
-	for (let xAxis = 0; xAxis < xAxisCount; xAxis++) {
-		for (let series = 0; series < serieses; series++) {
-			newDatasets[series].data.push(chart.datasets[series].data[xAxis] / yAxisRange);
-		}
+		ctx.fillText(formatAxisLabel(step, yAxisStepSize), chartAreaX, chartAreaY + y - 8);
 	}
 
 	const perXAxisWidth = chartAreaWidth / xAxisCount;
-
-	let newUpperBound = -Infinity;
-
-	for (let xAxis = 0; xAxis < xAxisCount; xAxis++) {
-		let v = 0;
-		for (let series = 0; series < serieses; series++) {
-			v += newDatasets[series].data[xAxis];
-		}
-		if (v > newUpperBound) newUpperBound = v;
-	}
+	const yScale = yAxisRange === 0 ? 0 : chartAreaHeight / yAxisRange;
 
 	// Draw X axis
 	ctx.lineWidth = lineWidth;
 	ctx.lineCap = 'round';
 
 	for (let xAxis = 0; xAxis < xAxisCount; xAxis++) {
-		const xAxisPerTypeHeights: number[] = [];
-
-		for (let series = 0; series < serieses; series++) {
-			const v = newDatasets[series].data[xAxis];
-			const vHeight = (v / newUpperBound) * (chartAreaHeight - ((yAxisStepsMax - upperBound) / yAxisStepsMax * chartAreaHeight));
-			xAxisPerTypeHeights.push(vHeight);
-		}
+		const xAxisPerTypeHeights: number[] = chart.datasets.map(({ data }) => data[xAxis] * yScale);
 
 		for (let series = serieses - 1; series >= 0; series--) {
 			ctx.strokeStyle = colors.dataset[series % colors.dataset.length];
@@ -166,6 +142,11 @@ export function renderChart(chart: Chart) {
 // This routine creates the Y axis values for a graph.
 function niceScale(lowerBound: number, upperBound: number, ticks: number): number[] {
 	if (lowerBound === 0 && upperBound === 0) return [0];
+	if (lowerBound === upperBound) {
+		const padding = Math.abs(lowerBound || 1) * 0.1;
+		lowerBound -= padding;
+		upperBound += padding;
+	}
 
 	// Calculate Min amd Max graphical labels and graph
 	// increments.  The number of ticks defaults to
@@ -192,10 +173,7 @@ function niceScale(lowerBound: number, upperBound: number, ticks: number): numbe
 	const tempStep = range / tiks;
 
 	// Calculate pretty step value
-	const mag = Math.floor(Math.log10(tempStep));
-	const magPow = Math.pow(10, mag);
-	const magMsd = (parseInt as any)(tempStep / magPow);
-	const stepSize = magMsd * magPow;
+	const stepSize = niceNum(tempStep);
 
 	// build Y label array.
 	// Lower and upper bounds calculations
@@ -203,8 +181,9 @@ function niceScale(lowerBound: number, upperBound: number, ticks: number): numbe
 	const ub = stepSize * Math.ceil(upperBound / stepSize);
 	// Build array
 	let val = lb;
+	const decimals = decimalPlaces(stepSize);
 	while (1) {
-		steps.push(val);
+		steps.push(roundTo(val, decimals));
 		val += stepSize;
 		if (val > ub) {
 			break;
@@ -212,4 +191,42 @@ function niceScale(lowerBound: number, upperBound: number, ticks: number): numbe
 	}
 
 	return steps;
+}
+
+function niceNum(value: number): number {
+	const exponent = Math.floor(Math.log10(value));
+	const fraction = value / Math.pow(10, exponent);
+
+	let niceFraction;
+	if (fraction <= 1) {
+		niceFraction = 1;
+	} else if (fraction <= 2) {
+		niceFraction = 2;
+	} else if (fraction <= 5) {
+		niceFraction = 5;
+	} else {
+		niceFraction = 10;
+	}
+
+	return niceFraction * Math.pow(10, exponent);
+}
+
+function decimalPlaces(value: number): number {
+	if (!Number.isFinite(value) || value === 0) return 0;
+	const exponent = Math.floor(Math.log10(Math.abs(value)));
+	return Math.max(0, -exponent + 2);
+}
+
+function roundTo(value: number, decimals: number): number {
+	const factor = Math.pow(10, decimals);
+	return Math.round(value * factor) / factor;
+}
+
+function formatAxisLabel(value: number, stepSize: number): string {
+	const decimals = decimalPlaces(stepSize);
+	const rounded = roundTo(value, decimals);
+	if (Number.isInteger(rounded)) {
+		return rounded.toString();
+	}
+	return rounded.toFixed(Math.min(decimals, 6)).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
 }
