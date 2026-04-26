@@ -78,11 +78,13 @@ export function renderChart(chart: Chart) {
 	lowerBound = Math.min(0, lowerBound);
 
 	// Calculate Y axis scale
-	const yAxisSteps = niceScale(lowerBound, upperBound, yAxisTicks);
+	const yAxisSteps = createYAxisSteps(lowerBound, upperBound, yAxisTicks);
 	const yAxisStepsMin = yAxisSteps[0];
 	const yAxisStepsMax = yAxisSteps[yAxisSteps.length - 1];
 	const yAxisRange = yAxisStepsMax - yAxisStepsMin;
 	const yAxisStepSize = yAxisSteps.length > 1 ? yAxisSteps[1] - yAxisSteps[0] : 0;
+	const roundedYAxisLabelCount = new Set(yAxisSteps.map((step) => Math.round(step))).size;
+	const shouldRoundYAxisLabelToInteger = roundedYAxisLabelCount === yAxisSteps.length;
 
 	// Draw Y axis
 	ctx.lineWidth = yAxisThickness;
@@ -98,7 +100,11 @@ export function renderChart(chart: Chart) {
 
 		ctx.font = '20px CustomFont';
 		ctx.fillStyle = colors.text;
-		ctx.fillText(formatAxisLabel(step, yAxisStepSize), chartAreaX, chartAreaY + y - 8);
+		ctx.fillText(
+			formatAxisLabel(step, yAxisStepSize, shouldRoundYAxisLabelToInteger),
+			chartAreaX,
+			chartAreaY + y - 8
+		);
 	}
 
 	const perXAxisWidth = chartAreaWidth / xAxisCount;
@@ -193,6 +199,22 @@ function niceScale(lowerBound: number, upperBound: number, ticks: number): numbe
 	return steps;
 }
 
+function createYAxisSteps(lowerBound: number, upperBound: number, ticks: number): number[] {
+	if (upperBound <= 0) {
+		return niceScale(lowerBound, upperBound, ticks);
+	}
+
+	// For note/follower charts, values are non-negative.
+	// Build exactly "ticks" grid lines above zero (plus the zero baseline).
+	if (lowerBound >= 0) {
+		const stepSize = niceNum(upperBound / ticks);
+		const decimals = decimalPlaces(stepSize);
+		return Array.from({ length: ticks + 1 }, (_, i) => roundTo(stepSize * i, decimals));
+	}
+
+	return niceScale(lowerBound, upperBound, ticks);
+}
+
 function niceNum(value: number): number {
 	const exponent = Math.floor(Math.log10(value));
 	const fraction = value / Math.pow(10, exponent);
@@ -222,9 +244,12 @@ function roundTo(value: number, decimals: number): number {
 	return Math.round(value * factor) / factor;
 }
 
-function formatAxisLabel(value: number, stepSize: number): string {
+function formatAxisLabel(value: number, stepSize: number, roundToInteger: boolean): string {
 	const decimals = decimalPlaces(stepSize);
 	const rounded = roundTo(value, decimals);
+	if (roundToInteger) {
+		return Math.round(rounded).toString();
+	}
 	if (Number.isInteger(rounded)) {
 		return rounded.toString();
 	}
