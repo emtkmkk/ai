@@ -31,10 +31,11 @@ import config from '@/config';
 import Module from '@/module';
 import Message from '@/message';
 import Friend, { FriendDoc } from '@/friend';
-import { User } from '@/misskey/user';
+import type { User } from '@/misskey/user';
 import Stream from '@/stream';
 import log from '@/utils/log';
 import { katakanaToHiragana, hankakuToZenkaku } from '@/utils/japanese';
+import { hasMentionToMe, isAccountLinkMentionCommand, mentionsOnlyMe } from '@/utils/mention';
 const pkg = require('../package.json');
 
 /**
@@ -399,17 +400,27 @@ export default class 藍 {
 		// メンションされたとき
 		mainStream.on('mention', async data => {
 			if (data.userId == this.account.id) return; // 自分は弾く
-			if (data.text && data.text.toLowerCase().includes(data.user.host ? `@${this.account.username}@${host}` : '@' + this.account.username)) {
-				// Misskeyのバグで投稿が非公開扱いになる
-				if (data.text == null) data = await this.api('notes/show', { noteId: data.id });
-				this.onReceiveMessage(new Message(this, data));
+
+			// Misskeyのバグで投稿が非公開扱いになる
+			if (data.text == null) data = await this.api('notes/show', { noteId: data.id });
+
+			if (!hasMentionToMe(data, this.account, host)) return;
+
+			if (!mentionsOnlyMe(data, this.account, host) && !isAccountLinkMentionCommand(data, this.account, host)) {
+				await this.api('notes/reactions/create', {
+					noteId: data.id,
+					reaction: ':mk_ultrawidechicken:'
+				});
+				return;
 			}
+
+			this.onReceiveMessage(new Message(this, data));
 		});
 
 		// 返信されたとき
 		mainStream.on('reply', async data => {
 			if (data.userId == this.account.id) return; // 自分は弾く
-			if (data.text && data.text.toLowerCase().includes(data.user.host ? `@${this.account.username}@${host}` : '@' + this.account.username)) return;
+			if (hasMentionToMe(data, this.account, host)) return;
 			// Misskeyのバグで投稿が非公開扱いになる
 			if (data.text == null) data = await this.api('notes/show', { noteId: data.id });
 			this.onReceiveMessage(new Message(this, data));
@@ -815,6 +826,17 @@ export default class 藍 {
                                 let resolvedNote = note;
                                 if (resolvedNote.text == null) {
                                         resolvedNote = await this.api('notes/show', { noteId: note.id });
+                                }
+
+                                const host = new URL(config.host).host;
+                                if (!hasMentionToMe(resolvedNote, this.account, host)) continue;
+
+                                if (!mentionsOnlyMe(resolvedNote, this.account, host) && !isAccountLinkMentionCommand(resolvedNote, this.account, host)) {
+                                        await this.api('notes/reactions/create', {
+                                                noteId: resolvedNote.id,
+                                                reaction: ':mk_ultrawidechicken:'
+                                        });
+                                        continue;
                                 }
 
                                 await this.onReceiveMessage(new Message(this, resolvedNote));
