@@ -34,6 +34,8 @@ export type Note = {
 	visibility: string;
 	/** 投稿者のユーザー情報 */
 	user: any | null;
+	/** Bot向けメンションとして扱われた投稿かどうか */
+	isBotMention?: boolean;
 	/**
 	 * アンケート情報
 	 *

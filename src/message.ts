@@ -120,6 +120,15 @@ export default class Message {
 	}
 
 	/**
+	 * Bot向けメンションとして扱われた投稿かどうかを取得する
+	 * @returns `isBotMention` 属性が明示的に `true` の場合のみ `true`
+	 * @internal
+	 */
+	public get isBotMention(): boolean {
+		return this.note.isBotMention === true;
+	}
+
+	/**
 	 * メンション部分を除いたテキスト本文を取得する
 	 *
 	 * @remarks

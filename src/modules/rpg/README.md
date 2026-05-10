@@ -11,7 +11,7 @@ RPGゲーム — メンションによって起動し、ターン制の戦闘・
 flowchart TD
     A["メンション受信"] --> B{"RPG含む?"}
     B -- No --> Z["false（他モジュールへ）"]
-    B -- Yes --> C{"返信必須チェック"}
+    B -- Yes --> C{"返信必須チェック\n(isBotMention=trueは免除)"}
     C -- NG --> Z2["hmm リアクション"]
     C -- OK --> D{"コマンド判定"}
 
@@ -329,7 +329,7 @@ flowchart TD
 | `rpgHeroName` | string | `もこチキ` | 主人公の名前 |
 | `rpgCoinName` | string | `もこコイン` | 通貨の名前 |
 | `rpgCoinShortName` | string | `コイン` | 通貨の短縮名 |
-| `rpgReplyRequired` | boolean | `true` | RPGコマンドを返信必須にする |
+| `rpgReplyRequired` | boolean | `true` | RPGコマンドを返信必須にする（投稿属性 `isBotMention` が `true` の場合は免除） |
 | `rpgReplyVisibility` | string | — | RPGの返信の公開範囲 |
 | `rpgRaidReplyVisibility` | string | — | レイドの返信の公開範囲 |
 
