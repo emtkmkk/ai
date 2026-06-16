@@ -13,6 +13,7 @@
  * - NOTE: メンションでは個人の投稿数・フォロワー数のほか、ランダムなデタラメチャートも生成可能。
  * - NOTE: デタラメチャートのタイトルに vocabulary の items を使用。
  * - NOTE: 大晦日（12/31）には年末特別メッセージ付き。
+ * - NOTE: 自動投稿の本文には当日投稿数・過去14日平均との増減率・1人あたり投稿数を付与する。
  *
  * @public
  */
@@ -24,6 +25,118 @@ import { renderChart } from './render-chart';
 import { items } from '@/vocabulary';
 import { checkNgWord } from '@/utils/check-ng-word';
 import config from '@/config';
+
+/** インスタンス投稿チャートの diffs 型 */
+type InstanceNotesDiffs = {
+	normal?: number[];
+	reply?: number[];
+	renote?: number[];
+	withFile?: number[];
+};
+
+/** 日次統計テキスト用の算出結果 */
+type DailyStats = {
+	todayCount: number;
+	trend?: string;
+	postsPerUser?: string;
+};
+
+/** 過去14日平均の算出に必要な diffs 配列の最小長（当日 + 14日分） */
+const PAST_AVERAGE_DAYS = 14;
+const MIN_DIFFS_LENGTH_FOR_TREND = PAST_AVERAGE_DAYS + 1;
+
+/**
+ * インスタンス投稿 diffs の指定日インデックスの4系列合計を返す
+ *
+ * @param diffs - `charts/notes` の `local.diffs`
+ * @param index - 日インデックス（0 = 当日）
+ * @returns 投稿数合計
+ * @internal
+ */
+function sumInstanceNotesDay(diffs: InstanceNotesDiffs, index: number): number {
+	return (diffs.normal?.[index] ?? 0)
+		+ (diffs.reply?.[index] ?? 0)
+		+ (diffs.renote?.[index] ?? 0)
+		+ (diffs.withFile?.[index] ?? 0);
+}
+
+/**
+ * diffs 配列群のうち最も長い系列の長さを返す
+ *
+ * @param diffs - `charts/notes` の `local.diffs`
+ * @returns 配列長
+ * @internal
+ */
+function getInstanceNotesDiffsLength(diffs: InstanceNotesDiffs): number {
+	return Math.max(
+		diffs.normal?.length ?? 0,
+		diffs.reply?.length ?? 0,
+		diffs.renote?.length ?? 0,
+		diffs.withFile?.length ?? 0,
+	);
+}
+
+/**
+ * 当日投稿数と過去14日平均との増減率表示を生成する
+ *
+ * @param today - 当日投稿数
+ * @param average - 過去14日間の日次平均
+ * @returns `↑10%` / `↓10%` / `→0%`。平均が 0 以下なら `undefined`
+ * @internal
+ */
+function formatNotesTrend(today: number, average: number): string | undefined {
+	if (average <= 0) return undefined;
+	const percent = Math.round((today - average) / average * 100);
+	if (percent > 0) return `↑${percent}%`;
+	if (percent < 0) return `↓${Math.abs(percent)}%`;
+	return '→0%';
+}
+
+/**
+ * 1人あたり投稿数の表示文字列を生成する
+ *
+ * @param postCount - 当日投稿数
+ * @param activeWriters - 当日に1投稿以上したユーザー数（`charts/active-users` の `write[0]`）
+ * @returns `10 投稿／人` 形式。分母が 0 なら `undefined`
+ * @internal
+ */
+function formatPostsPerUser(postCount: number, activeWriters: number): string | undefined {
+	if (activeWriters <= 0) return undefined;
+	const value = Math.round((postCount / activeWriters) * 10) / 10;
+	const numStr = Number.isInteger(value)
+		? value.toLocaleString()
+		: value.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+	return `${numStr} 投稿／人`;
+}
+
+/**
+ * 日次統計投稿本文用の数値を算出する
+ *
+ * @param notesData - `charts/notes` のレスポンス
+ * @param activeUsersData - `charts/active-users` のレスポンス
+ * @returns 当日投稿数・増減率・1人あたり投稿数
+ * @internal
+ */
+function computeDailyStats(notesData: { local?: { diffs?: InstanceNotesDiffs } }, activeUsersData: { write?: number[] }): DailyStats {
+	const diffs = notesData?.local?.diffs;
+	if (!diffs) return { todayCount: 0 };
+
+	const todayCount = sumInstanceNotesDay(diffs, 0);
+
+	let trend: string | undefined;
+	if (getInstanceNotesDiffsLength(diffs) >= MIN_DIFFS_LENGTH_FOR_TREND) {
+		let pastTotal = 0;
+		for (let i = 1; i <= PAST_AVERAGE_DAYS; i++) {
+			pastTotal += sumInstanceNotesDay(diffs, i);
+		}
+		trend = formatNotesTrend(todayCount, pastTotal / PAST_AVERAGE_DAYS);
+	}
+
+	const activeWriters = activeUsersData?.write?.[0] ?? 0;
+	const postsPerUser = formatPostsPerUser(todayCount, activeWriters);
+
+	return { todayCount, trend, postsPerUser };
+}
 
 /**
  * チャートモジュールクラス
@@ -81,13 +194,18 @@ export default class extends Module {
 		this.setData(data);
 
 		this.log('Time to chart');
-		const fileNotes = await this.genChart('notes');
-		const fileUsers = await this.genChart('users');
+		const notesData = await this.ai.api('charts/notes', { span: 'day', limit: 30 });
+		const activeUsersData = await this.ai.api('charts/active-users', { span: 'day', limit: 30 });
+		const stats = computeDailyStats(notesData, activeUsersData);
+		const fileNotes = await this.genChart('notes', { preloadedNotes: notesData });
+		const fileUsers = await this.genChart('users', { preloadedActiveUsers: activeUsersData });
 
 		this.log('Posting...');
 		const nenmatu = new Date().getMonth() === 11 && new Date().getDate() === 31;
 		this.ai.post({
-			text: nenmatu ? serifs.chart.nenmatuPost : serifs.chart.post,
+			text: nenmatu
+				? serifs.chart.nenmatuPost(stats.todayCount, stats.trend, stats.postsPerUser)
+				: serifs.chart.post(stats.todayCount, stats.trend, stats.postsPerUser),
 			visibility: "public",
 			fileIds: [fileNotes.id, fileUsers.id]
 		});
@@ -156,7 +274,7 @@ export default class extends Module {
 			};
 		} else if (type === 'notes') {
 			// インスタンス全体の投稿数チャート（30日分）
-			const data = await this.ai.api('charts/notes', {
+			const data = params?.preloadedNotes ?? await this.ai.api('charts/notes', {
 				span: 'day',
 				limit: 30,
 			});
@@ -175,7 +293,7 @@ export default class extends Module {
 			};
 		} else if (type === 'users') {
 			// インスタンスのユーザー数チャート（30日分）
-			const dataA = await this.ai.api('charts/active-users', {
+			const dataA = params?.preloadedActiveUsers ?? await this.ai.api('charts/active-users', {
 				span: 'day',
 				limit: 30,
 			});

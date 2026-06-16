@@ -530,8 +530,10 @@ export default {
 	},
 
 	chart: {
-		post: `今日の${config.instanceName}の統計のグラフです！\n今日も一日、お疲れ様でした！`,
-		nenmatuPost: `今日の${config.instanceName}の統計のグラフです！\nみなさん、今年もお疲れ様でした！来年もよろしくお願いします！`,
+		post: (todayCount: number, trend?: string, postsPerUser?: string) =>
+			`今日の${config.instanceName}の統計のグラフです！\n投稿数: ${todayCount.toLocaleString()}${trend ? ` (${trend})` : ''}${postsPerUser ? `\n${postsPerUser}` : ''}\n今日も一日、お疲れ様でした！`,
+		nenmatuPost: (todayCount: number, trend?: string, postsPerUser?: string) =>
+			`今日の${config.instanceName}の統計のグラフです！\n投稿数: ${todayCount.toLocaleString()}${trend ? ` (${trend})` : ''}${postsPerUser ? `\n${postsPerUser}` : ''}\nみなさん、今年もお疲れ様でした！来年もよろしくお願いします！`,
 		foryou: '描きました！'
 	},
 
