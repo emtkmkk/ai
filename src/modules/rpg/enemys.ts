@@ -243,6 +243,7 @@ export const ending = (module: rpg, msg: Message, _data: any): any => {
 		`${serifs.rpg.status.atk} : ${data.atk ?? 0}`,
 		`${serifs.rpg.status.def} : ${data.def ?? 0}`,
 		`${serifs.rpg.status.spd} : ${Math.floor((msg.friend.love ?? 0) / 100) + 1}`,
+		(data.vitality ?? 0) >= 1 ? `${serifs.rpg.status.vitality} : ${data.vitality}` : "",
 		`平均能力上昇量 : ${((data.atk + data.def) / (data.lv - 1)).toFixed(2)}`,
 		`これまでの勝利数 : ${data.winCount}`,
 		`最高旅ステージ数 : ${(data.maxEndress ?? 0) + 1}`,

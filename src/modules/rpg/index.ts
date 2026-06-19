@@ -24,7 +24,7 @@ import { shop2Reply } from './shop2';
 import { skills, Skill, SkillEffect, getSkill, skillReply, skillCalculate, aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, countDuplicateSkillNames, skillBorders, canLearnSkillNow } from './skills';
 import { start, raidInstall, raidContextHook, raidTimeoutCallback } from './raid';
 import type { Raid } from './raid';
-import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatus, getPostCount, getPostX, getVal, random, preLevelUpProcess, deepClone } from './utils';
+import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatus, getPostCount, getPostX, getVal, random, preLevelUpProcess, deepClone, accumulateVitality } from './utils';
 import { applyKazutoriMasterHiddenBonus, applyKazutoriMasterPostCountFloor, calculateArpen, calculateStats, applySoftCapPow2, ensureKazutoriMasterHistory, getKazutoriMasterMessage } from './battle';
 import Friend from '@/friend';
 import type { FriendDoc } from '@/friend';
@@ -1500,6 +1500,7 @@ export default class extends Module {
                         ? serifs.rpg.command.onemore
                         : [serifs.rpg.command.onemore];
                 let isOkawariPlay = false;
+                let vitalityUsed = 0;
 
 		// ---- プレイ可否判定・おかわり ----
 
@@ -1655,6 +1656,8 @@ export default class extends Module {
 
 		// ---- 投稿数・倍率・基本変数初期化 ----
 
+		accumulateVitality(data, rpgData);
+
 		// 最終プレイの状態を記録
 		data.lastPlayedAt = nowTimeStr;
 
@@ -1678,6 +1681,9 @@ export default class extends Module {
 		/** 覚醒時のみ投稿数に加算（hyperMode 札所持時は代わりに postXUp で上昇） */
 		let superBonusPost = (isSuper && !aggregateTokensEffects(data).hyperMode ? 200 : 0)
 
+		vitalityUsed = Math.min(data.vitality ?? 0, 20);
+		if (vitalityUsed > 0) data.vitality -= vitalityUsed;
+
                 /** 投稿数（今日と明日の多い方）。覚醒加算より前に数取りの達人の隠し下限を適用する */
                 let postCount = await getPostCount(this.ai, this, data, msg, 0, { type: 'normal', key: nowTimeStr });
                 postCount = applyKazutoriMasterPostCountFloor(postCount, msg, skillEffects);
@@ -1693,6 +1699,8 @@ export default class extends Module {
                         data.lastNormalPostCount = basePostCount;
                         data.lastNormalPostCountKey = nowTimeStr;
                 }
+
+		postCount += vitalityUsed * 15;
 
 		/** 連続プレイボーナスで加算する投稿数（10〜25の範囲で continuousBonus 倍） */
 		let continuousBonusNum = 0;
@@ -2775,11 +2783,21 @@ export default class extends Module {
 		/** 追加表示メッセージ */
 		let addMessage = preLevelUpProcess(data);
 
-		if (!msg.includes(Array.isArray(serifs.rpg.command.onemore) ? serifs.rpg.command.onemore : [serifs.rpg.command.onemore])) data.coinGetCount += 1 + (Math.random() < 0.5 ? 1 : 0);
+		let coinMessageAmount = 0;
+		if (vitalityUsed > 0) {
+			coinMessageAmount += vitalityUsed;
+			data.coin += vitalityUsed;
+		}
+		if (!isOkawariPlay) {
+			data.coinGetCount += 1 + (Math.random() < 0.5 ? 1 : 0);
+		}
 		if (data.coinGetCount >= 5) {
 			data.coin += 5;
 			data.coinGetCount -= 5;
-			addMessage += `\n${serifs.rpg.getCoin(5)}`;
+			coinMessageAmount += 5;
+		}
+		if (coinMessageAmount > 0) {
+			addMessage += `\n${serifs.rpg.getCoin(coinMessageAmount)}`;
 		}
 
 		const nowPlay = /\d{4}\/\d{1,2}\/\d{1,2}(\/\d{2})?/.exec(nowTimeStr);

@@ -17,6 +17,7 @@ import {
         formatKazutoriRateForDisplay,
 } from '@/modules/kazutori/rate';
 import type { EnsuredKazutoriData } from '@/modules/kazutori/rate';
+import { accumulateVitality } from '@/modules/rpg/utils';
 
 const titles = ['さん', 'くん', '君', 'ちゃん', '様', '先生'];
 
@@ -788,6 +789,10 @@ export default class extends Module {
                 const kazutori = `数取り : ${kazutoriData.winCount ?? 0} / ${kazutoriData.playCount ?? 0}${rateText}${kazutoriData.medal ? "\nトロフィー : " + kazutoriData.medal : ""}`;
 
 		const bonus = msg.friend.doc.perModulesData?.rpg ? (((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) + ((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0))) / 2 : 0;
+		if (msg.friend.doc.perModulesData?.rpg) {
+			accumulateVitality(msg.friend.doc.perModulesData.rpg);
+			msg.friend.save();
+		}
 		const rpg = msg.friend.doc.perModulesData?.rpg
 			? [
 				serifs.rpg.rpgMode + ((msg.friend.doc.perModulesData.rpg.clearHistory ?? []).includes("ending") ? "⭐" : "") + ((msg.friend.doc.perModulesData.rpg.maxEndress ?? 0) >= 99 ? "⭐" : ""),
@@ -796,6 +801,7 @@ export default class extends Module {
 				`  ${serifs.rpg.status.atk} : ${msg.friend.doc.perModulesData.rpg.atk ?? 0}${bonus >= 1 ? ` (+${Math.floor(bonus * ((100 + (msg.friend.doc.perModulesData.rpg.atk ?? 0)) / 100))})` : ""}`,
 				`  ${serifs.rpg.status.def} : ${msg.friend.doc.perModulesData.rpg.def ?? 0}${bonus >= 1 ? ` (+${Math.floor(bonus * ((100 + (msg.friend.doc.perModulesData.rpg.def ?? 0)) / 100))})` : ""}`,
 				lovep >= 100 ? `  ${serifs.rpg.status.spd} : ${Math.floor(lovep / 100) + 1}` : "",
+				(msg.friend.doc.perModulesData.rpg.vitality ?? 0) >= 1 ? `  ${serifs.rpg.status.vitality} : ${msg.friend.doc.perModulesData.rpg.vitality}` : "",
 				msg.friend.doc.perModulesData.rpg.skills ? `  ${serifs.rpg.status.skill} : ` : undefined,
 				...(msg.friend.doc.perModulesData.rpg.skills ? msg.friend.doc.perModulesData.rpg.skills.map((x) => "    " + x.name) : []),
 				msg.friend.doc.perModulesData.rpg.coin ? `  ${serifs.rpg.status.coin} : ${msg.friend.doc.perModulesData.rpg.coin}` : "",
@@ -1070,16 +1076,16 @@ export default class extends Module {
 送った事がある絵文字の種類 : **${data.sentReactionsCount}** 種類
 受け取った事がある絵文字の種類 : **${data.receivedReactionsCount}** 種類
 
-よく送る絵文字（累計） : 
+よく送る絵文字（累計） :
 ${data.sentReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/, "").replace(":", "")})` : ''}`).join('\n')}
 
-よく貰う絵文字（累計） : 
+よく貰う絵文字（累計） :
 ${data.receivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/, "").replace(":", "")})` : ''}`).join('\n')}
 
-最近よく送る絵文字 : 
+最近よく送る絵文字 :
 ${data.recentlySentReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/, "").replace(":", "")})` : ''}`).join('\n')}
 
-最近よく貰う絵文字 : 
+最近よく貰う絵文字 :
 ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/, "").replace(":", "")})` : ''}`).join('\n')}
 `, { cw: `${acct(msg.user)} ${msg.friend.name || 'さん'}の絵文字情報（リアクション）` });
 		} else {
@@ -1090,16 +1096,16 @@ ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) $
 
 受け取った事がある絵文字の種類 : **${data.receivedReactionsCount}** 種類
 
-よく送る絵文字（累計） : 
+よく送る絵文字（累計） :
 ${data.sentReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/, "").replace(":", "")})` : ''}`).join('\n')}
 
-よく貰う絵文字（累計） : 
+よく貰う絵文字（累計） :
 ${data.receivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/, "").replace(":", "")})` : ''}`).join('\n')}
 
-最近よく送る絵文字 : 
+最近よく送る絵文字 :
 ${data.recentlySentReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/, "").replace(":", "")})` : ''}`).join('\n')}
 
-最近よく貰う絵文字 : 
+最近よく貰う絵文字 :
 ${data.recentlyReceivedReactions.map((x, i) => `第${i + 1}位 (${x.count}回) ${x.name}${x.name.includes("@") ? ` (${x.name.replace(/^[^@]+@/, "").replace(":", "")})` : ''}`).join('\n')}
 `, { cw: `${acct(msg.user)} ${msg.friend.name || 'さん'}の絵文字情報（リアクション）` });
 		}

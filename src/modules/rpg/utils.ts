@@ -20,6 +20,7 @@ import { colorReply, colors } from './colors';
 import { aggregateTokensEffects, shopItems } from './shop';
 import { countDuplicateSkillNames, getSkill, Skill, skillBorders, skills, ultimateAmulet } from './skills';
 import config from '@/config';
+import getDate from '@/utils/get-date';
 
 /**
  * 投稿数取得の利用コンテキスト
@@ -68,6 +69,8 @@ export function initializeData(module: rpg, msg) {
         data.showShopItems = data.showShopItems.map(item => ({ ...item, name: item.name === '選択カードの札' ? '質問カードの札' : item.name }));
     }
     if (!data.coin) data.coin = 0;
+    if (data.vitality == null) data.vitality = 0;
+    if (data.lastVitalitySlot == null) data.lastVitalitySlot = '';
 		if (data.shopExp < 200 && data.jar === 1) data.shopExp = 200;
 		if (data.shopExp < 600 && data.jar === 2) data.shopExp = 600;
 		if (data.shopExp < 1200 && data.jar === 3) data.shopExp = 1200;
@@ -101,6 +104,135 @@ export function initializeData(module: rpg, msg) {
     }
     return data;
 }
+
+// #region 活力（プレイ枠スキップ時の蓄積・消費）
+
+/**
+ * プレイ枠キーを数値順序に変換する
+ *
+ * @param slotKey プレイ枠キー（`YYYY/M/D` / `YYYY/M/D/12` / `YYYY/M/D/18`）
+ * @returns 比較用の序数
+ * @internal
+ */
+function slotKeyToOrdinal(slotKey: string): number {
+    const match = /^(\d+)\/(\d+)\/(\d+)(\/(\d+))?$/.exec(slotKey);
+    if (!match) return 0;
+    const part = match[5] ? parseInt(match[5], 10) : 0;
+    return parseInt(match[1], 10) * 100000000 + parseInt(match[2], 10) * 1000000 + parseInt(match[3], 10) * 1000 + part;
+}
+
+/**
+ * 2つのプレイ枠キーを時系列で比較する
+ *
+ * @param a 枠キーA
+ * @param b 枠キーB
+ * @returns a が b より前なら負、後なら正、同じなら 0
+ * @internal
+ */
+function compareSlotKeys(a: string, b: string): number {
+    return slotKeyToOrdinal(a) - slotKeyToOrdinal(b);
+}
+
+/**
+ * 次のプレイ枠キーを返す
+ *
+ * @param slotKey 現在の枠キー
+ * @returns 次の枠キー。解析不能な場合は空文字
+ * @internal
+ */
+function nextSlotKey(slotKey: string): string {
+    const match = /^(\d+)\/(\d+)\/(\d+)(\/(\d+))?$/.exec(slotKey);
+    if (!match) return '';
+    const day = match[1] + '/' + match[2] + '/' + match[3];
+    if (!match[4]) return day + '/12';
+    if (match[4] === '/12') return day + '/18';
+    const parts = match.slice(1, 4).map((x) => parseInt(x, 10));
+    const d = new Date(parts[0], parts[1] - 1, parts[2] + 1);
+    return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+/**
+ * 前のプレイ枠キーを返す
+ *
+ * @param slotKey 現在の枠キー
+ * @returns 前の枠キー。解析不能な場合は null
+ * @internal
+ */
+function prevSlotKey(slotKey: string): string | null {
+    const match = /^(\d+)\/(\d+)\/(\d+)(\/(\d+))?$/.exec(slotKey);
+    if (!match) return null;
+    const day = match[1] + '/' + match[2] + '/' + match[3];
+    if (!match[4]) {
+        const parts = match.slice(1, 4).map((x) => parseInt(x, 10));
+        const d = new Date(parts[0], parts[1] - 1, parts[2] - 1);
+        return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}/18`;
+    }
+    if (match[4] === '/12') return day;
+    if (match[4] === '/18') return day + '/12';
+    return null;
+}
+
+/**
+ * 指定日時のプレイ枠キーを生成する
+ *
+ * @remarks
+ * {@link rpg.index} の `nowTimeStr` と同形式（0-11時 / 12-17時 / 18-23時の3分割）。
+ *
+ * @param date 対象日時。省略時は現在
+ * @returns プレイ枠キー
+ * @public
+ */
+export function getPlaySlotKey(date: Date = new Date()): string {
+    const now = new Date();
+    const target = new Date(date);
+    const dayDiff = Math.floor(
+        (Date.UTC(target.getFullYear(), target.getMonth(), target.getDate())
+            - Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())) / 86400000
+    );
+    const dayStr = getDate(dayDiff);
+    const h = target.getHours();
+    if (h < 12) return dayStr;
+    if (h < 18) return dayStr + '/12';
+    return dayStr + '/18';
+}
+
+/**
+ * 終了したプレイ枠を走査し、未プレイ分の活力を蓄積する
+ *
+ * @remarks
+ * - 枠終了時点で `lastPlayedAt !== slotKey` なら +1（maxLv との大小は問わない）
+ * - `lastVitalitySlot` から現在枠の手前まで遡って差分を加算する（遅延計算）
+ * - 初回は過去分を遡及せず `lastVitalitySlot` のみ初期化する
+ * - RPGプレイ時・ステータス表示時など、必要なタイミングでのみ呼ぶ
+ *
+ * @param data RPGプレイヤーデータ
+ * @param _rpgData サーバーRPGデータ（将来拡張用。現状未使用）
+ * @param upToDate 走査の終端（この枠は未終了として除外）。省略時は現在
+ * @public
+ */
+export function accumulateVitality(data, _rpgData?, upToDate: Date = new Date()): void {
+    if (data.vitality == null) data.vitality = 0;
+    if (data.lastVitalitySlot == null) data.lastVitalitySlot = '';
+
+    const currentSlot = getPlaySlotKey(upToDate);
+
+    if (!data.lastVitalitySlot) {
+        const prev = prevSlotKey(currentSlot);
+        if (prev) data.lastVitalitySlot = prev;
+        return;
+    }
+
+    let slot = nextSlotKey(data.lastVitalitySlot);
+    while (slot && compareSlotKeys(slot, currentSlot) < 0) {
+        if (data.lastPlayedAt !== slot) {
+            data.vitality += 1;
+        }
+        data.lastVitalitySlot = slot;
+        slot = nextSlotKey(slot);
+    }
+}
+
+// #endregion
 
 /**
  * 現在の色オブジェクトを取得する
