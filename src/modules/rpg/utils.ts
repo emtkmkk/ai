@@ -202,7 +202,9 @@ export function getPlaySlotKey(date: Date = new Date()): string {
  * @remarks
  * - 枠終了時点で `lastPlayedAt !== slotKey` なら +1（maxLv との大小は問わない）
  * - `lastVitalitySlot` から現在枠の手前まで遡って差分を加算する（遅延計算）
- * - 初回は過去分を遡及せず `lastVitalitySlot` のみ初期化する
+ * - 初回（`lastVitalitySlot` 未設定）かつ Lv1 未プレイ以外は `lastPlayedAt` を起点に遡及する
+ * - 初回かつ Lv1 未プレイのみ、過去分は加算せずチェックポイントのみ初期化する
+ * - `vitalityBackfilled` 未設定の既存ユーザーは一度だけ活力をリセットし `lastPlayedAt` から再計算する（TEMP）
  * - RPGプレイ時・ステータス表示時など、必要なタイミングでのみ呼ぶ
  *
  * @param data RPGプレイヤーデータ
@@ -214,12 +216,29 @@ export function accumulateVitality(data, _rpgData?, upToDate: Date = new Date())
     if (data.vitality == null) data.vitality = 0;
     if (data.lastVitalitySlot == null) data.lastVitalitySlot = '';
 
+    // TEMP: 旧初回ロジックで lastVitalitySlot のみ埋まったユーザーを lastPlayedAt 起点で再計算する
+    if (!data.vitalityBackfilled) {
+        data.vitality = 0;
+        data.lastVitalitySlot = '';
+        data.vitalityBackfilled = true;
+    }
+
     const currentSlot = getPlaySlotKey(upToDate);
 
     if (!data.lastVitalitySlot) {
-        const prev = prevSlotKey(currentSlot);
-        if (prev) data.lastVitalitySlot = prev;
-        return;
+        const isUnplayedLv1 = (data.lv ?? 1) <= 1 && !data.lastPlayedAt;
+        if (isUnplayedLv1) {
+            const prev = prevSlotKey(currentSlot);
+            if (prev) data.lastVitalitySlot = prev;
+            return;
+        }
+        if (data.lastPlayedAt) {
+            data.lastVitalitySlot = data.lastPlayedAt;
+        } else {
+            const prev = prevSlotKey(currentSlot);
+            if (prev) data.lastVitalitySlot = prev;
+            return;
+        }
     }
 
     let slot = nextSlotKey(data.lastVitalitySlot);
