@@ -129,6 +129,159 @@ export function raidInstall(_ai: 藍, _module: rpg, _raids: Collection<Raid>) {
 	setInterval(scheduleRaidStart, 1000 * 60 * 1);
 }
 
+// #region レイド活力（未参加レイドの蓄積・参加時消費）
+
+/**
+ * レイド活力機能の導入時刻（JST 2026-06-20 0:00）
+ *
+ * @remarks
+ * マイグレーション時の watermark として使用。導入前にスキップしたレイドは蓄積しない。
+ *
+ * @internal
+ */
+const RAID_VITALITY_DEPLOY_AT = new Date('2026-06-20T00:00:00+09:00').getTime();
+
+/**
+ * レイド活力の消費状態（調子・HP の段階的消費を追跡）
+ *
+ * @internal
+ */
+type RaidVitalityState = {
+	remaining: number;
+	moodUsed: number;
+	hpUsed: number;
+};
+
+/**
+ * レイド活力の消費状態を初期化する
+ *
+ * @param data RPGプレイヤーデータ
+ * @returns 消費追跡用オブジェクト
+ * @internal
+ */
+function createRaidVitalityState(data): RaidVitalityState {
+	return { remaining: data.raidVitality ?? 0, moodUsed: 0, hpUsed: 0 };
+}
+
+/**
+ * 調子補正（bonusX）にレイド活力を適用する
+ *
+ * @param state 消費追跡状態
+ * @param baseBonusX ジャックポット前の平日/固定調子（0〜1.0）
+ * @returns レイド活力適用後の bonusX
+ * @internal
+ */
+function applyRaidVitalityMood(state: RaidVitalityState, baseBonusX: number): number {
+	const moodCap = 1.0;
+	const stepsNeeded = baseBonusX < moodCap
+		? Math.ceil((moodCap - baseBonusX) / 0.25)
+		: 0;
+	const moodUsed = Math.min(state.remaining, stepsNeeded);
+	state.moodUsed += moodUsed;
+	state.remaining -= moodUsed;
+	return baseBonusX + moodUsed * 0.25;
+}
+
+/**
+ * 最大HPにレイド活力を適用する
+ *
+ * @param state 消費追跡状態
+ * @param playerMaxHp ロール後の最大HP
+ * @param rawMaxHp 基礎体力
+ * @param bonusMaxHp 本来の最大HP（random=1.0 相当）
+ * @returns 補正後の最大HP
+ * @internal
+ */
+function applyRaidVitalityHp(state: RaidVitalityState, playerMaxHp: number, rawMaxHp: number, bonusMaxHp: number): number {
+	const naturalMaxHp = bonusMaxHp;
+	if (bonusMaxHp <= rawMaxHp || state.remaining <= 0) {
+		return playerMaxHp;
+	}
+	let hp = playerMaxHp;
+	while (state.remaining > 0 && hp < naturalMaxHp) {
+		hp = Math.min(
+			hp + Math.round((naturalMaxHp - hp) * 0.25),
+			naturalMaxHp,
+		);
+		state.hpUsed += 1;
+		state.remaining -= 1;
+	}
+	return hp;
+}
+
+/**
+ * レイド活力のHP消費をデータに反映する
+ *
+ * @param data RPGプレイヤーデータ
+ * @param state 消費追跡状態
+ * @internal
+ */
+function finalizeRaidVitalityHpConsumption(data, state: RaidVitalityState): void {
+	if (state.hpUsed > 0) {
+		data.raidVitality = Math.max(0, (data.raidVitality ?? 0) - state.hpUsed);
+	}
+}
+
+/**
+ * 既存参加者向けにレイド活力フィールドをマイグレーションする
+ *
+ * @param data RPGプレイヤーデータ
+ * @param userId ユーザーID
+ * @internal
+ */
+function migrateRaidVitalityFields(data, userId: string): void {
+	let latestPostId: string | undefined;
+	let latestTs = 0;
+	for (const raid of raids.find({}) ?? []) {
+		const joined = raid.attackers?.some((a) => a.user?.id === userId && (a.dmg ?? 0) > 0);
+		if (!joined) continue;
+		const ts = raid.finishedAt ?? raid.startedAt ?? 0;
+		if (ts >= latestTs) {
+			latestTs = ts;
+			latestPostId = raid.postId;
+		}
+	}
+	if (!latestPostId) return;
+	data.lastRaidParticipatedPostId = latestPostId;
+	data.lastRaidVitalityProcessedAt = RAID_VITALITY_DEPLOY_AT;
+}
+
+/**
+ * 終了した未参加レイドを走査し、レイド活力を蓄積する
+ *
+ * @remarks
+ * - 過去1回以上レイド参加があるユーザーのみ対象
+ * - 初回は raids 履歴から postId を埋め、watermark を導入時点にセット（導入前のスキップは数えない）
+ * - 遅延計算。全フレンドの定時走査は行わない
+ *
+ * @param data RPGプレイヤーデータ
+ * @param userId ユーザーID
+ * @public
+ */
+export function accumulateRaidVitality(data, userId: string): void {
+	if (data.raidVitality == null) data.raidVitality = 0;
+	if (!data.lastRaidParticipatedPostId) {
+		migrateRaidVitalityFields(data, userId);
+		if (!data.lastRaidParticipatedPostId) return;
+	}
+
+	const anchor = raids.findOne({ postId: data.lastRaidParticipatedPostId });
+	if (!anchor) return;
+
+	const watermark = data.lastRaidVitalityProcessedAt ?? anchor.startedAt;
+	const endedRaids = (raids.find({ isEnded: true }) ?? []).slice().sort((a, b) => a.startedAt - b.startedAt);
+
+	for (const raid of endedRaids) {
+		if (raid.startedAt <= anchor.startedAt) continue;
+		if ((raid.finishedAt ?? 0) <= watermark) continue;
+		const joined = raid.attackers?.some((a) => a.user?.id === userId && (a.dmg ?? 0) > 0);
+		if (!joined) data.raidVitality += 1;
+		data.lastRaidVitalityProcessedAt = raid.finishedAt ?? raid.startedAt;
+	}
+}
+
+// #endregion
+
 /**
  * 終了すべきレイドがないかチェックする
  *
@@ -682,6 +835,8 @@ export async function raidContextHook(key: string, msg: Message, data: unknown) 
 
 	if (!enemy) return { reaction: 'confused' };
 
+	accumulateRaidVitality(_data, msg.userId);
+
         // 敵の pattern でダメージ計算を分岐：1=通常戦闘、2=じゃんけん型、3=コンテスト型
         // NOTE: 平行次元のお札を所持している場合、副作用を隔離した状態でシミュレーションを複数回実行し、
         //       最良ダメージの結果だけを正史として採用する。購入上限10枚 + 正史 = 最大11次元。
@@ -771,6 +926,10 @@ export async function raidContextHook(key: string, msg: Message, data: unknown) 
 	});
 
 	raids.update(raid);
+
+	const playerData = msg.friend.getPerModulesData(module_);
+	playerData.lastRaidParticipatedPostId = raid.postId;
+	msg.friend.setPerModulesData(module_, playerData);
 
 	return {
 		reaction: result.me
@@ -1059,7 +1218,13 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 	// 調子補正（天国か地獄か）：土日/在庫ランダム/数取り得意曜日固定なら 1.0、それ以外は曜日+週でシードした乱数（0〜1.0）+ 1%で+0.3×2
 	const day = new Date().getDay();
 	const kazutoriMasterBonus = getKazutoriMasterBonus(msg, skillEffects);
-	let bonusX = (day === 6 || day === 0 || stockRandomResult.activate || kazutoriMasterBonus.raidBonusFixed ? 1 : (Math.floor(seedrandom("" + msg.user.id + Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) + ai.account.id)() * 5 + day) % 5) * 0.25) + (Math.random() < 0.01 ? 0.3 : 0) + (Math.random() < 0.01 ? 0.3 : 0);
+	const baseBonusX = (day === 6 || day === 0 || stockRandomResult.activate || kazutoriMasterBonus.raidBonusFixed ? 1 : (Math.floor(seedrandom("" + msg.user.id + Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) + ai.account.id)() * 5 + day) % 5) * 0.25);
+	const raidVitalityState = createRaidVitalityState(data);
+	let bonusX = applyRaidVitalityMood(raidVitalityState, baseBonusX);
+	if (raidVitalityState.moodUsed > 0) {
+		data.raidVitality = Math.max(0, (data.raidVitality ?? 0) - raidVitalityState.moodUsed);
+	}
+	bonusX += (Math.random() < 0.01 ? 0.3 : 0) + (Math.random() < 0.01 ? 0.3 : 0);
 	// 1%でさらに +0.3 を加算（複数回当たる可能性あり）
 	while (Math.random() < 0.01) {
 		bonusX += 0.3;
@@ -1068,7 +1233,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 	def = Math.round(def * (0.75 + bonusX));
 	if (verboseLog) {
 		buff += 1;
-		message += `調子補正: AD${displayDifference((0.75 + bonusX))} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
+		const vitalityNote = (raidVitalityState.moodUsed > 0) ? ` (レイド活力-${raidVitalityState.moodUsed})` : '';
+		message += `調子補正: AD${displayDifference((0.75 + bonusX))} (${formatNumber(atk)} / ${formatNumber(def)})${vitalityNote}\n`;
 	}
 
 	if (false && data.raidAdjust > 0 && bonusX < 1 && skillEffects.pride) {
@@ -1234,6 +1400,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 	let bonusMaxHp = 100 + Math.min(maxLv * 3, 765);
 	/** プレイヤーの最大HP */
 	let playerMaxHp = Math.max(Math.round(bonusMaxHp * Math.random()), rawMaxHp);
+	playerMaxHp = applyRaidVitalityHp(raidVitalityState, playerMaxHp, rawMaxHp, bonusMaxHp);
+	finalizeRaidVitalityHpConsumption(data, raidVitalityState);
 	/** プレイヤーのHP */
 	let playerHp = (playerMaxHp);
 	/** プレイヤーのHP割合 */
@@ -2803,6 +2971,9 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 	let bonusMaxHp = 100 + Math.min(maxLv * 3, 765);
 	/** プレイヤーの最大HP */
 	let playerMaxHp = Math.max(Math.round(bonusMaxHp * Math.random()), rawMaxHp);
+	const raidVitalityState = createRaidVitalityState(data);
+	playerMaxHp = applyRaidVitalityHp(raidVitalityState, playerMaxHp, rawMaxHp, bonusMaxHp);
+	finalizeRaidVitalityHpConsumption(data, raidVitalityState);
 	/** プレイヤーのHP */
 	let playerHp = (playerMaxHp);
 

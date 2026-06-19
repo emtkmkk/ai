@@ -569,6 +569,7 @@ export default {
 			def: "防御",
 			spd: "行動回数",
 			vitality: "活力",
+			raidVitality: "レイド活力",
 			coin: config.rpgCoinName,
 			skill: "スキル",
 			post: "投稿数",

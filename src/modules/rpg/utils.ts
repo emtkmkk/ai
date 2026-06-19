@@ -71,6 +71,9 @@ export function initializeData(module: rpg, msg) {
     if (!data.coin) data.coin = 0;
     if (data.vitality == null) data.vitality = 0;
     if (data.lastVitalitySlot == null) data.lastVitalitySlot = '';
+    if (data.raidVitality == null) data.raidVitality = 0;
+    if (data.lastRaidParticipatedPostId == null) data.lastRaidParticipatedPostId = '';
+    if (data.lastRaidVitalityProcessedAt == null) data.lastRaidVitalityProcessedAt = 0;
 		if (data.shopExp < 200 && data.jar === 1) data.shopExp = 200;
 		if (data.shopExp < 600 && data.jar === 2) data.shopExp = 600;
 		if (data.shopExp < 1200 && data.jar === 3) data.shopExp = 1200;

@@ -18,6 +18,7 @@ import {
 } from '@/modules/kazutori/rate';
 import type { EnsuredKazutoriData } from '@/modules/kazutori/rate';
 import { accumulateVitality } from '@/modules/rpg/utils';
+import { accumulateRaidVitality } from '@/modules/rpg/raid';
 
 const titles = ['さん', 'くん', '君', 'ちゃん', '様', '先生'];
 
@@ -791,6 +792,7 @@ export default class extends Module {
 		const bonus = msg.friend.doc.perModulesData?.rpg ? (((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) + ((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0))) / 2 : 0;
 		if (msg.friend.doc.perModulesData?.rpg) {
 			accumulateVitality(msg.friend.doc.perModulesData.rpg);
+			accumulateRaidVitality(msg.friend.doc.perModulesData.rpg, msg.userId);
 			msg.friend.save();
 		}
 		const rpg = msg.friend.doc.perModulesData?.rpg
@@ -802,6 +804,7 @@ export default class extends Module {
 				`  ${serifs.rpg.status.def} : ${msg.friend.doc.perModulesData.rpg.def ?? 0}${bonus >= 1 ? ` (+${Math.floor(bonus * ((100 + (msg.friend.doc.perModulesData.rpg.def ?? 0)) / 100))})` : ""}`,
 				lovep >= 100 ? `  ${serifs.rpg.status.spd} : ${Math.floor(lovep / 100) + 1}` : "",
 				(msg.friend.doc.perModulesData.rpg.vitality ?? 0) >= 1 ? `  ${serifs.rpg.status.vitality} : ${msg.friend.doc.perModulesData.rpg.vitality}` : "",
+				(msg.friend.doc.perModulesData.rpg.raidVitality ?? 0) >= 1 ? `  ${serifs.rpg.status.raidVitality} : ${msg.friend.doc.perModulesData.rpg.raidVitality}` : "",
 				msg.friend.doc.perModulesData.rpg.skills ? `  ${serifs.rpg.status.skill} : ` : undefined,
 				...(msg.friend.doc.perModulesData.rpg.skills ? msg.friend.doc.perModulesData.rpg.skills.map((x) => "    " + x.name) : []),
 				msg.friend.doc.perModulesData.rpg.coin ? `  ${serifs.rpg.status.coin} : ${msg.friend.doc.perModulesData.rpg.coin}` : "",
