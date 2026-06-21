@@ -12,6 +12,8 @@
  * - NOTE: 最大値は前回・前々回の参加者数の平均値をベースに計算される。
  * - NOTE: 勝利条件は3種類: 最大値(通常)、2番目に大きい値、中央値。
  * - NOTE: 3%の確率で最大値50〜500倍、2%で最大値1、3%で無限モードになる。
+ *       これらおよび2番目/中央値勝利・午前中長時間・公開/フォロワー限定は連続外れ補正（pity）対象。
+ *       前提条件を満たして外れた回数に応じて次回以降の当選率が上がる（`pity.ts` 参照）。
  * - NOTE: 15%で反転モード（昇順で判定）になり、結果発表時に勝者が入れ替わる可能性がある。
  * - NOTE: BAN機能により特定ユーザーを除外可能。
  * - NOTE: 公開投稿限定モードでは、リプライ/引用にリアクションがないユーザーは除外される。
@@ -37,6 +39,8 @@ import type Friend from '@/friend';
 import type { FriendDoc } from '@/friend';
 import { ensureKazutoriData, findRateRank, hasKazutoriRateHistory } from './rate';
 import type { EnsuredKazutoriData } from './rate';
+import { rollWithPity } from './pity';
+import type { KazutoriPityKey, KazutoriPityState } from './pity';
 var Decimal = require('break_infinity.js');
 
 /**
@@ -158,6 +162,8 @@ export default class extends Module {
         private games: loki.Collection<Game>;
         /** 定時リノート重複防止用 */
         private lastHourlyRenote: { key: string; postId: string } | null = null;
+        /** ゲーム開始時オプション pity の連続外れ回数 */
+        private pityState: KazutoriPityState = {};
 
 
         /**
@@ -183,6 +189,38 @@ export default class extends Module {
                         .map((value) => value.toLowerCase());
 
                 return banUsers.some((banUser) => typeof banUser === 'string' && identifiers.includes(banUser.toLowerCase()));
+        }
+
+        /**
+         * メタ情報から pity 状態を読み込む
+         *
+         * @internal
+         */
+        private loadPityState(): void {
+                this.pityState = { ...(this.ai.getMeta().kazutoriPity ?? {}) };
+        }
+
+        /**
+         * pity 状態をメタ情報に保存する
+         *
+         * @internal
+         */
+        private persistPityState(): void {
+                this.ai.setMeta({ kazutoriPity: { ...this.pityState } });
+        }
+
+        /**
+         * ゲーム開始時オプションの pity 付きランダム判定
+         *
+         * @param key - 判定キー
+         * @param probability - 基準当選確率（0〜1）
+         * @returns 当選した場合 true
+         * @internal
+         */
+        private rollPity(key: KazutoriPityKey, probability: number): boolean {
+                const { hit, nextState } = rollWithPity(this.pityState, key, probability);
+                this.pityState = nextState;
+                return hit;
         }
 
         /**
@@ -276,6 +314,7 @@ export default class extends Module {
         @autobind
         public install() {
                 this.games = this.ai.getCollection('kazutori');
+                this.loadPityState();
 
                 this.crawleGameEnd();
                 setInterval(this.crawleGameEnd, 1000);
@@ -378,12 +417,14 @@ export default class extends Module {
 		let maxnum = new Decimal(
 			(Math.floor(((recentGame?.votes?.length || 0) + (penultimateGame?.votes?.length || 0)) / 2) + (Math.random() < 0.5 ? 1 : 0)) || 1
 		);
-		if (Math.random() < 0.03 && recentGame?.maxnum && recentGame.maxnum.lessThanOrEqualTo(50)) {
+		if (recentGame?.maxnum && recentGame.maxnum.lessThanOrEqualTo(50) && this.rollPity('huge', 0.03)) {
 			maxnum = maxnum.times(new Decimal(50 + (Math.random() * 450)));
 			maxnum = maxnum.floor();
-		} else if (Math.random() < 0.02 && recentGame?.maxnum && !recentGame.maxnum.equals(1)) {
+		} else if (recentGame?.maxnum && !recentGame.maxnum.equals(1) && this.rollPity('max1', 0.02)) {
 			maxnum = new Decimal(1);
-		} else if ((Math.random() < 0.03 && recentGame?.maxnum && !recentGame.maxnum.equals(Decimal.MAX_VALUE)) || flg?.includes('inf')) {
+		} else if (flg?.includes('inf')) {
+			maxnum = Decimal.MAX_VALUE;
+		} else if (recentGame?.maxnum && !recentGame.maxnum.equals(Decimal.MAX_VALUE) && this.rollPity('infinite', 0.03)) {
 			maxnum = Decimal.MAX_VALUE;
 		}
 		return maxnum;
@@ -400,10 +441,11 @@ export default class extends Module {
 	 */
 	private computeWinRank(recentGame: Game | null, maxnum: typeof Decimal, flg?: string): number {
 		const isMarch = new Date().getMonth() === 2;
+		const winRankProbability = maxnum.equals(Decimal.MAX_VALUE) ? 0.3 : 0.15;
 		let winRank =
 			(recentGame?.winRank ?? 1) <= 1 &&
 			this.ai.activeFactor >= 0.5 &&
-			Math.random() < (maxnum.equals(Decimal.MAX_VALUE) ? 0.3 : 0.15)
+			this.rollPity('winRank2nd', winRankProbability)
 				? 2
 				: 1;
 		if (isMarch) {
@@ -418,7 +460,7 @@ export default class extends Module {
 			((recentGame?.winRank ?? 1) > 0 &&
 				!flg?.includes('2nd') &&
 				this.ai.activeFactor >= 0.5 &&
-				Math.random() < (maxnum.equals(Decimal.MAX_VALUE) ? 0.3 : 0.15)) ||
+				this.rollPity('winRankMedian', winRankProbability)) ||
 			flg?.includes('med')
 		) {
 			winRank = -1;
@@ -453,7 +495,7 @@ export default class extends Module {
 		const hasForcedLongLimit = flg?.includes('lng');
 		/** 前回が昨日の1回目かつ今朝で50%で長時間 */
 		const hasMorningYesterdayLongLimit =
-			this.ai.activeFactor > 0.75 && isRecentGameYesterday && isYesterdayFirstGameBoostTime && Math.random() < 0.5;
+			this.ai.activeFactor > 0.75 && isRecentGameYesterday && isYesterdayFirstGameBoostTime && this.rollPity('morningLong', 0.5);
 		const hasLongLimit = hasHighMoodRareLongLimit || hasForcedLongLimit || hasMorningYesterdayLongLimit;
 		if (hasLongLimit) {
 			limitMinutes *= 48;
@@ -478,9 +520,9 @@ export default class extends Module {
 		/** フォロワー限定で投稿するか（自然発生かつ3%で true） */
 		let visibility: string | undefined;
 		if (this.ai.activeFactor >= 0.85) {
-			visibility = Math.random() < 0.03 && !triggerUserId ? 'followers' : undefined;
+			visibility = !triggerUserId && this.rollPity('followers', 0.03) ? 'followers' : undefined;
 			if (!visibility) {
-				publicOnly = this.ai.activeFactor >= 0.5 && !recentGame?.publicOnly && (recentGame?.publicOnly == null || Math.random() < 0.005);
+				publicOnly = this.ai.activeFactor >= 0.5 && !recentGame?.publicOnly && (recentGame?.publicOnly == null || this.rollPity('publicOnly', 0.005));
 			}
 		}
 		return { visibility, publicOnly };
@@ -564,6 +606,7 @@ export default class extends Module {
 
 		this.subscribeReply(null, post.id);
 		this.log('New kazutori game started');
+		this.persistPityState();
 	}
 
         /**

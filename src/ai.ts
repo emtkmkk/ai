@@ -141,6 +141,13 @@ export type Meta = {
 	 * 最小 0.1、最大 2.0。
 	 */
 	activeFactor: number | null;
+	/**
+	 * 数取り開始時オプション pity の連続外れ回数
+	 *
+	 * @remarks
+	 * キーは {@link KazutoriPityKey}（`src/modules/kazutori/pity.ts`）に対応する。
+	 */
+	kazutoriPity?: Record<string, number>;
 };
 
 /**
