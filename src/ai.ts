@@ -807,11 +807,12 @@ export default class 藍 {
 	}
 
 	/**
-	 * 起動時に取りこぼしたメンションを復元処理する
+	 * 起動時に取りこぼしたメンション・返信を復元処理する
 	 *
 	 * @remarks
 	 * 当日の直前6時間境界（0 / 6 / 12 / 18 時）以降の通知を取得し、
-	 * リアクションも返信も付いていないメンションに対して {@link onReceiveMessage} を実行する。
+	 * リアクションも返信も付いていない投稿に対して {@link onReceiveMessage} を実行する。
+	 * Bot 投稿への返信（`reply` 通知、DM の `specified` 含む）は `mention` 通知に載らないことがあるため両方取得する。
 	 * OPTIMIZE: 未リアクション1件ごとに notes/replies を呼ぶ。大量メンション時はバッチ化を検討
 	 *
 	 * @returns なし
@@ -829,7 +830,7 @@ export default class 藍 {
 			while (true) {
 				const batch = await this.api('i/notifications', {
 					limit: 100,
-					includeTypes: ['mention'],
+					includeTypes: ['mention', 'reply'],
 					sinceDate,
 					...(untilId ? { untilId } : {}),
 				});
@@ -842,11 +843,15 @@ export default class 藍 {
 				untilId = batch[batch.length - 1].id;
 			}
 
-			const missedMentions = notifications
+			const seenNoteIds = new Set<string>();
+			const missedNotes = notifications
 				.filter(notification => {
-					if (notification?.type !== 'mention' || notification.note == null) return false;
-					if (notification.createdAt == null) return true;
-					return new Date(notification.createdAt).getTime() >= sinceDate;
+					if (notification?.type !== 'mention' && notification?.type !== 'reply') return false;
+					if (notification.note == null) return false;
+					if (notification.createdAt != null && new Date(notification.createdAt).getTime() < sinceDate) return false;
+					if (seenNoteIds.has(notification.note.id)) return false;
+					seenNoteIds.add(notification.note.id);
+					return true;
 				})
 				.sort((a, b) => {
 					const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
@@ -854,35 +859,52 @@ export default class 藍 {
 					return aTime - bTime;
 				});
 
-			for (const notification of missedMentions) {
-				const note = notification.note;
-				if (!note || note.userId === this.account.id) continue;
-
-				if (note.myReaction != null) continue;
-
-				if (await this.hasBotReplyToNote(note.id)) continue;
-
-				let resolvedNote = note;
-				if (resolvedNote.text == null) {
-					resolvedNote = await this.api('notes/show', { noteId: note.id });
-				}
-
-				const host = new URL(config.host).host;
-				if (!hasMentionToMe(resolvedNote, this.account, host)) continue;
-
-				if (!mentionsOnlyMe(resolvedNote, this.account, host) && !isAccountLinkMentionCommand(resolvedNote, this.account, host)) {
-					await this.api('notes/reactions/create', {
-						noteId: resolvedNote.id,
-						reaction: ':mk_ultrawidechicken:'
-					});
-					continue;
-				}
-
-				await this.onReceiveMessage(new Message(this, resolvedNote));
+			for (const notification of missedNotes) {
+				await this.processRecoveredNotificationNote(notification.note);
 			}
 		} catch (error) {
 			this.log(`Failed to recover missed mentions on startup: ${error}`);
 		}
+	}
+
+	/**
+	 * 通知から復元した1件のノートを処理する
+	 *
+	 * @remarks
+	 * - メンション付き: ライブの `mention` ストリームと同様にメンションフィルタを適用
+	 * - メンションなしの返信: ライブの `reply` ストリームと同様にそのまま {@link onReceiveMessage} へ渡す
+	 *
+	 * @param note - 通知に含まれるノート
+	 * @returns なし
+	 * @internal
+	 */
+	@autobind
+	private async processRecoveredNotificationNote(note: any) {
+		if (!note || note.userId === this.account.id) return;
+
+		if (note.myReaction != null) return;
+
+		if (await this.hasBotReplyToNote(note.id)) return;
+
+		let resolvedNote = note;
+		if (resolvedNote.text == null || (resolvedNote.replyId != null && resolvedNote.reply == null)) {
+			resolvedNote = await this.api('notes/show', { noteId: note.id });
+		}
+
+		const host = new URL(config.host).host;
+		const mentioned = hasMentionToMe(resolvedNote, this.account, host);
+
+		if (mentioned) {
+			if (!mentionsOnlyMe(resolvedNote, this.account, host) && !isAccountLinkMentionCommand(resolvedNote, this.account, host)) {
+				await this.api('notes/reactions/create', {
+					noteId: resolvedNote.id,
+					reaction: ':mk_ultrawidechicken:'
+				});
+				return;
+			}
+		}
+
+		await this.onReceiveMessage(new Message(this, resolvedNote));
 	}
 
 	/**
