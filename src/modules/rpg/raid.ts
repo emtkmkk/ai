@@ -283,6 +283,43 @@ export function accumulateRaidVitality(data, userId: string): void {
 // #endregion
 
 /**
+ * 個人評価 scoreRaw が指定した星の値ちょうどになる totalDmg を算出する
+ *
+ * @remarks
+ * レイド戦闘中の個人評価式 `log2((totalDmg * 20) / base) + 1` の逆算。
+ * `base = 1024 / (power / 30)`。`* 20` を含めるため、嫉妬・わかば加護などの
+ * 「評価が低い間だけ効果」を星の閾値に正しく揃えるために使用する。
+ * `enemy.power` が無い敵では評価自体が存在しないため、呼び出し側でスキップすること。
+ *
+ * @param enemy レイド敵
+ * @param star 基準の星（3 や 5）
+ * @returns scoreRaw が star になる totalDmg
+ * @internal
+ */
+function getIndividualRaidStarDamageThreshold(enemy: RaidEnemy, star: number): number {
+	const base = 1024 / ((enemy?.power ?? 30) / 30);
+	return base * (2 ** (star - 1)) / 20;
+}
+
+/**
+ * レイド戦闘中の個人評価 scoreRaw を算出する
+ *
+ * @remarks
+ * {@link getIndividualRaidStarDamageThreshold} の逆方向。投影判定や verbose 表示に使用する。
+ * `enemy.power` が無い敵では評価が存在しないため undefined を返す。
+ *
+ * @param enemy レイド敵
+ * @param totalDmg 総与ダメージ
+ * @returns scoreRaw（power 無しは undefined）
+ * @internal
+ */
+function getIndividualRaidScore(enemy: RaidEnemy, totalDmg: number): number | undefined {
+	if (!enemy?.power) return undefined;
+	const base = 1024 / ((enemy.power ?? 30) / 30);
+	return Math.max(Math.log2((totalDmg * 20) / base) + 1, 1);
+}
+
+/**
  * 終了すべきレイドがないかチェックする
  *
  * 1秒ごとに呼ばれ、制限時間経過のレイドを finish で終了する。
@@ -2430,6 +2467,32 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 			}
 		}
 
+		// レイド活力ダメージ上乗せ：当ターンの通常攻撃全ヒットに加算する固定値
+		let raidVitalityDmgBonus = 0;
+		if (enemy.power && (data.raidVitality ?? 0) >= 1) {
+			const meanRng = atkMinRnd + atkMaxRnd * 0.5;
+			let sumTurnDmgX = 0;
+			for (let ti = 0; ti < spd; ti++) {
+				sumTurnDmgX += (ti < 2 ? 1 : ti < 3 ? 0.5 : ti < 4 ? 0.25 : 0.125);
+			}
+			const sampleHit = getAtkDmg(data, atk, tp, 1, false, enemyDef, enemyMaxHp, meanRng, getVal(enemy.defx, [count]));
+			const estimatedTurnDmg = sampleHit * sumTurnDmgX;
+			const remainingTurns = (plusActionX + 1) - actionX;
+			const projectedTotal = totalDmg + estimatedTurnDmg * remainingTurns;
+			const projectedScore = getIndividualRaidScore(enemy, projectedTotal);
+			if (projectedScore !== undefined && projectedScore < 5) {
+				const bonus = Math.floor(getIndividualRaidStarDamageThreshold(enemy, 3) / spd);
+				if (bonus > 1) {
+					data.raidVitality -= 1;
+					raidVitalityDmgBonus = bonus;
+					if (verboseLog) {
+						buff += 1;
+						message += `レイド活力: 全攻撃+${bonus} (残${data.raidVitality})\n`;
+					}
+				}
+			}
+		}
+
 		if (warriorFlg) {
 			//** クリティカルかどうか */
 			let crit = Math.random() < 0.5;
@@ -2489,6 +2552,10 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 				crit = false;
 			} else if (maxdmg && maxdmg > 0) {
 				maxdmg -= dmg;
+			}
+			if (raidVitalityDmgBonus > 0) {
+				dmg += raidVitalityDmgBonus;
+				noItemDmg += raidVitalityDmgBonus;
 			}
 			// メッセージの出力
 			message += (crit ? `**${enemy.atkmsg(dmg)}**` : enemy.atkmsg(dmg)) + "\n";
@@ -2555,7 +2622,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 			}
 
 			if (enemy && skillEffects.envy) {
-				const targetScore = (1024 / ((enemy?.power ?? 30) / 30)) * (2 ** 4);
+				const targetScore = getIndividualRaidStarDamageThreshold(enemy, 5);
 				const rate = (1 - (0.7 * Math.max(1 - (totalDmg / targetScore), 0)))
 				if (rate < 1) {
 					enemyAtkX = enemyAtkX * rate;
@@ -2576,7 +2643,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 			}
 
 			if (enemy && skillEffects.beginner && count <= 4 && data.skills?.length && data.skills?.length <= 3) {
-				const targetScore = (1024 / ((enemy?.power ?? 30) / 30)) * (2 ** 3);
+				const targetScore = getIndividualRaidStarDamageThreshold(enemy, 3);
 				const rate = (1 - ((data.skills?.length >= 4 ? 0 : data.skills?.length >= 3 ? 0.3 : data.skills?.length >= 2 ? 0.6 : 0.9) * Math.max(1 - (totalDmg / targetScore), 0)));
 				if (rate < 1) {
 					enemyAtkX = enemyAtkX * rate;
