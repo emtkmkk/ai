@@ -807,12 +807,65 @@ export default class 藍 {
 	}
 
 	/**
-	 * 起動時に取りこぼしたメンション・返信を復元処理する
+	 * ノートの作成時刻（ミリ秒）を取得する
+	 *
+	 * @param note - ノート
+	 * @returns 作成時刻。取得できない場合は 0
+	 * @internal
+	 */
+	private getNoteCreatedAtMs(note: any): number {
+		if (note?.createdAt == null) return 0;
+		return new Date(note.createdAt).getTime();
+	}
+
+	/**
+	 * 新しい順 API を `untilId` で遡り、`sinceDate` 以降のノートを収集する
+	 *
+	 * @param fetchPage - 1ページ分を取得する関数
+	 * @param sinceDate - 収集下限（ミリ秒）
+	 * @returns 収集したノート配列
+	 * @internal
+	 */
+	@autobind
+	private async paginateNotesSince(
+		fetchPage: (untilId?: string) => Promise<any[]>,
+		sinceDate: number,
+	): Promise<any[]> {
+		const notes: any[] = [];
+		const seen = new Set<string>();
+		let untilId: string | undefined;
+		let reachedOld = false;
+
+		while (!reachedOld) {
+			const batch = await fetchPage(untilId);
+			if (!Array.isArray(batch) || batch.length === 0) break;
+
+			for (const note of batch) {
+				if (!note?.id || seen.has(note.id)) continue;
+				seen.add(note.id);
+
+				const createdAt = this.getNoteCreatedAtMs(note);
+				if (createdAt < sinceDate) {
+					reachedOld = true;
+					continue;
+				}
+
+				notes.push(note);
+			}
+
+			if (batch.length < 100) break;
+			untilId = batch[batch.length - 1].id;
+		}
+
+		return notes;
+	}
+
+	/**
+	 * 起動時に取りこぼしたメンションを復元処理する
 	 *
 	 * @remarks
-	 * 当日の直前6時間境界（0 / 6 / 12 / 18 時）以降の通知を取得し、
-	 * リアクションも返信も付いていない投稿に対して {@link onReceiveMessage} を実行する。
-	 * Bot 投稿への返信（`reply` 通知、DM の `specified` 含む）は `mention` 通知に載らないことがあるため両方取得する。
+	 * 当日の直前6時間境界（0 / 6 / 12 / 18 時）以降の `notes/mentions` を収集し、
+	 * リアクションも返信も付いていないものに対して {@link onReceiveMessage} を実行する。
 	 * OPTIMIZE: 未リアクション1件ごとに notes/replies を呼ぶ。大量メンション時はバッチ化を検討
 	 *
 	 * @returns なし
@@ -824,43 +877,18 @@ export default class 藍 {
 		this.log(`Recovering missed mentions on startup since ${new Date(sinceDate).toISOString()}`);
 
 		try {
-			const notifications: any[] = [];
-			let untilId: string | undefined;
-
-			while (true) {
-				const batch = await this.api('i/notifications', {
+			const candidates = (await this.paginateNotesSince(
+				untilId => this.api('notes/mentions', {
 					limit: 100,
-					includeTypes: ['mention', 'reply'],
-					sinceDate,
 					...(untilId ? { untilId } : {}),
-				});
+				}),
+				sinceDate,
+			)).sort((a, b) => this.getNoteCreatedAtMs(a) - this.getNoteCreatedAtMs(b));
 
-				if (!Array.isArray(batch) || batch.length === 0) break;
+			this.log(`Startup recovery candidates: ${candidates.length}`);
 
-				notifications.push(...batch);
-
-				if (batch.length < 100) break;
-				untilId = batch[batch.length - 1].id;
-			}
-
-			const seenNoteIds = new Set<string>();
-			const missedNotes = notifications
-				.filter(notification => {
-					if (notification?.type !== 'mention' && notification?.type !== 'reply') return false;
-					if (notification.note == null) return false;
-					if (notification.createdAt != null && new Date(notification.createdAt).getTime() < sinceDate) return false;
-					if (seenNoteIds.has(notification.note.id)) return false;
-					seenNoteIds.add(notification.note.id);
-					return true;
-				})
-				.sort((a, b) => {
-					const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-					const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-					return aTime - bTime;
-				});
-
-			for (const notification of missedNotes) {
-				await this.processRecoveredNotificationNote(notification.note);
+			for (const note of candidates) {
+				await this.processRecoveredNotificationNote(note);
 			}
 		} catch (error) {
 			this.log(`Failed to recover missed mentions on startup: ${error}`);
@@ -868,13 +896,13 @@ export default class 藍 {
 	}
 
 	/**
-	 * 通知から復元した1件のノートを処理する
+	 * 復元対象の1件のノートを処理する
 	 *
 	 * @remarks
 	 * - メンション付き: ライブの `mention` ストリームと同様にメンションフィルタを適用
-	 * - メンションなしの返信: ライブの `reply` ストリームと同様にそのまま {@link onReceiveMessage} へ渡す
+	 * - メンションなし: そのまま {@link onReceiveMessage} へ渡す
 	 *
-	 * @param note - 通知に含まれるノート
+	 * @param note - 対象ノート
 	 * @returns なし
 	 * @internal
 	 */
