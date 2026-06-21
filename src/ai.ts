@@ -36,6 +36,7 @@ import Stream from '@/stream';
 import log from '@/utils/log';
 import { katakanaToHiragana, hankakuToZenkaku } from '@/utils/japanese';
 import { hasMentionToMe, isAccountLinkMentionCommand, mentionsOnlyMe } from '@/utils/mention';
+import { getPreviousSixHourBoundaryMs } from '@/utils/six-hour-boundary';
 const pkg = require('../package.json');
 
 /**
@@ -470,6 +471,8 @@ export default class 藍 {
 
                 this.startHangDetection();
 
+                void this.recoverMissedMentionsOnStartup();
+
                 this.log(chalk.green.bold('Ai am now running!'));
         }
 
@@ -788,6 +791,99 @@ export default class 藍 {
                                 break;
                 }
         }
+
+	/**
+	 * 指定ノートに Bot 自身の返信が存在するかを判定する
+	 *
+	 * @param noteId - 対象ノート ID
+	 * @returns Bot の返信が1件以上あれば `true`
+	 * @internal
+	 */
+	@autobind
+	private async hasBotReplyToNote(noteId: string): Promise<boolean> {
+		const replies = await this.api('notes/replies', { noteId, limit: 100 });
+		if (!Array.isArray(replies)) return false;
+		return replies.some(r => r.userId === this.account.id || r.user?.id === this.account.id);
+	}
+
+	/**
+	 * 起動時に取りこぼしたメンションを復元処理する
+	 *
+	 * @remarks
+	 * 当日の直前6時間境界（0 / 6 / 12 / 18 時）以降の通知を取得し、
+	 * リアクションも返信も付いていないメンションに対して {@link onReceiveMessage} を実行する。
+	 * OPTIMIZE: 未リアクション1件ごとに notes/replies を呼ぶ。大量メンション時はバッチ化を検討
+	 *
+	 * @returns なし
+	 * @internal
+	 */
+	@autobind
+	private async recoverMissedMentionsOnStartup() {
+		const sinceDate = getPreviousSixHourBoundaryMs();
+		this.log(`Recovering missed mentions on startup since ${new Date(sinceDate).toISOString()}`);
+
+		try {
+			const notifications: any[] = [];
+			let untilId: string | undefined;
+
+			while (true) {
+				const batch = await this.api('i/notifications', {
+					limit: 100,
+					includeTypes: ['mention'],
+					sinceDate,
+					...(untilId ? { untilId } : {}),
+				});
+
+				if (!Array.isArray(batch) || batch.length === 0) break;
+
+				notifications.push(...batch);
+
+				if (batch.length < 100) break;
+				untilId = batch[batch.length - 1].id;
+			}
+
+			const missedMentions = notifications
+				.filter(notification => {
+					if (notification?.type !== 'mention' || notification.note == null) return false;
+					if (notification.createdAt == null) return true;
+					return new Date(notification.createdAt).getTime() >= sinceDate;
+				})
+				.sort((a, b) => {
+					const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+					const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+					return aTime - bTime;
+				});
+
+			for (const notification of missedMentions) {
+				const note = notification.note;
+				if (!note || note.userId === this.account.id) continue;
+
+				if (note.myReaction != null) continue;
+
+				if (await this.hasBotReplyToNote(note.id)) continue;
+
+				let resolvedNote = note;
+				if (resolvedNote.text == null) {
+					resolvedNote = await this.api('notes/show', { noteId: note.id });
+				}
+
+				const host = new URL(config.host).host;
+				if (!hasMentionToMe(resolvedNote, this.account, host)) continue;
+
+				if (!mentionsOnlyMe(resolvedNote, this.account, host) && !isAccountLinkMentionCommand(resolvedNote, this.account, host)) {
+					await this.api('notes/reactions/create', {
+						noteId: resolvedNote.id,
+						reaction: ':mk_ultrawidechicken:'
+					});
+					continue;
+				}
+
+				await this.onReceiveMessage(new Message(this, resolvedNote));
+			}
+		} catch (error) {
+			this.log(`Failed to recover missed mentions on startup: ${error}`);
+		}
+	}
 
 	/**
 	 * WebSocket 切断中に取りこぼしたメンションを復元処理する
