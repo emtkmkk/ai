@@ -221,6 +221,16 @@ export default class 藍 {
         private hangDetectionTriggered = false;
 
 	/**
+	 * メンション取りこぼし復元が実行中かどうか
+	 *
+	 * @remarks
+	 * 起動時と定時実行の重複実行を防ぐ。
+	 *
+	 * @internal
+	 */
+	private missedMentionRecoveryRunning = false;
+
+	/**
 	 * メタ情報コレクション
 	 * @internal
 	 */
@@ -471,7 +481,8 @@ export default class 藍 {
 
                 this.startHangDetection();
 
-                void this.recoverMissedMentionsOnStartup();
+                void this.recoverMissedMentionsFromMentionsTimeline('startup');
+                setInterval(() => void this.recoverMissedMentionsFromMentionsTimeline('scheduled'), 1000 * 60 * 60);
 
                 this.log(chalk.green.bold('Ai am now running!'));
         }
@@ -861,20 +872,28 @@ export default class 藍 {
 	}
 
 	/**
-	 * 起動時に取りこぼしたメンションを復元処理する
+	 * 取りこぼしたメンションを `notes/mentions` から復元処理する
 	 *
 	 * @remarks
 	 * 当日の直前6時間境界（0 / 6 / 12 / 18 時）以降の `notes/mentions` を収集し、
 	 * リアクションも返信も付いていないものに対して {@link onReceiveMessage} を実行する。
+	 * 起動時および1時間毎の定時実行から呼ばれる。処理済みは myReaction / Bot返信でスキップされる。
 	 * OPTIMIZE: 未リアクション1件ごとに notes/replies を呼ぶ。大量メンション時はバッチ化を検討
 	 *
+	 * @param trigger - 呼び出し契機（ログ用）
 	 * @returns なし
 	 * @internal
 	 */
 	@autobind
-	private async recoverMissedMentionsOnStartup() {
+	private async recoverMissedMentionsFromMentionsTimeline(trigger: 'startup' | 'scheduled') {
+		if (this.missedMentionRecoveryRunning) {
+			this.log(`Skipping missed mention recovery (${trigger}): already running`);
+			return;
+		}
+
+		this.missedMentionRecoveryRunning = true;
 		const sinceDate = getPreviousSixHourBoundaryMs();
-		this.log(`Recovering missed mentions on startup since ${new Date(sinceDate).toISOString()}`);
+		this.log(`Recovering missed mentions (${trigger}) since ${new Date(sinceDate).toISOString()}`);
 
 		try {
 			const candidates = (await this.paginateNotesSince(
@@ -885,13 +904,15 @@ export default class 藍 {
 				sinceDate,
 			)).sort((a, b) => this.getNoteCreatedAtMs(a) - this.getNoteCreatedAtMs(b));
 
-			this.log(`Startup recovery candidates: ${candidates.length}`);
+			this.log(`Missed mention recovery candidates (${trigger}): ${candidates.length}`);
 
 			for (const note of candidates) {
 				await this.processRecoveredNotificationNote(note);
 			}
 		} catch (error) {
-			this.log(`Failed to recover missed mentions on startup: ${error}`);
+			this.log(`Failed to recover missed mentions (${trigger}): ${error}`);
+		} finally {
+			this.missedMentionRecoveryRunning = false;
 		}
 	}
 
