@@ -988,7 +988,8 @@ export class ReversiGameSession {
 		if (this.botColor === true && this.currentTurn === 0) return 500;
 		const legalMoves = (this.o as any).canPutSomewhere(this.botColor) as number[];
 		// 角が打てる場合は常に最短（超単純 2 秒・単純 0.5 秒）
-		const canTakeCorner = legalMoves.some((pos: number) => this.sumiIndexes.includes(pos));
+		const cornerSet = new Set(this.simpleCorners().map(c => c.pos));
+		const canTakeCorner = legalMoves.some((pos: number) => cornerSet.has(pos));
 		if (canTakeCorner) return this.useSimpleMode ? 500 : 2000;
 		const numLegalMoves = legalMoves.length;
 		return this.useSimpleMode
@@ -1039,6 +1040,201 @@ export class ReversiGameSession {
 		return after - before - 1;
 	}
 
+	/** 序盤/終盤の反転数方針切替閾値（使用可能マスに対する空きマス比率） */
+	private static readonly EMPTY_SWITCH_RATIO = 0.31;
+	/** 相手モビリティ評価を適用する空きマス比率の上限（中盤以降のみ） */
+	private static readonly MOBILITY_GATE_RATIO = 0.6;
+	/** パリティ評価を適用する空きマス数の上限 */
+	private static readonly PARITY_EMPTY_MAX = 10;
+
+	/**
+	 * 相手が空き角に打てる数を数える
+	 *
+	 * @param emptyCornerPoses - 現局面で空きの角
+	 * @returns 相手が打てる空き角の数
+	 * @internal
+	 */
+	private countOpponentPlayableCorners(emptyCornerPoses: number[]): number {
+		if (!this.o || this.botColor == null) return 0;
+		const o = this.o as any;
+		const opColor = !this.botColor;
+		return emptyCornerPoses.filter(c => o.canPut(opColor, c)).length;
+	}
+
+	/**
+	 * 着手 pos で相手に新たな隅アクセスを与えるか
+	 *
+	 * @param pos - 着手位置
+	 * @param emptyCornerPoses - 現局面で空きの角
+	 * @returns 相手が打てる隅が増えるなら true
+	 * @internal
+	 */
+	private givesCornerToOpponent(pos: number, emptyCornerPoses: number[]): boolean {
+		if (!this.o || this.botColor == null) return false;
+		const o = this.o as any;
+		const before = this.countOpponentPlayableCorners(emptyCornerPoses);
+		o.put(o.turn, pos);
+		const after = this.countOpponentPlayableCorners(emptyCornerPoses);
+		o.undo();
+		return after > before;
+	}
+
+	/**
+	 * 着手 pos で相手の隅アクセスを減らすか
+	 *
+	 * @param pos - 着手位置
+	 * @param emptyCornerPoses - 現局面で空きの角
+	 * @returns 相手が打てる隅が減るなら true
+	 * @internal
+	 */
+	private removesCornerFromOpponent(pos: number, emptyCornerPoses: number[]): boolean {
+		if (!this.o || this.botColor == null) return false;
+		const o = this.o as any;
+		const before = this.countOpponentPlayableCorners(emptyCornerPoses);
+		o.put(o.turn, pos);
+		const after = this.countOpponentPlayableCorners(emptyCornerPoses);
+		o.undo();
+		return after < before;
+	}
+
+	/**
+	 * 着手 pos 後の相手合法手数（モビリティ）
+	 *
+	 * @param pos - 着手位置
+	 * @returns 相手の合法手数
+	 * @internal
+	 */
+	private getOpponentMobilityAfter(pos: number): number {
+		if (!this.o || this.botColor == null) return 0;
+		const o = this.o as any;
+		const opColor = !this.botColor;
+		o.put(o.turn, pos);
+		const mobility = (o.canPutSomewhere(opColor) as number[]).length;
+		o.undo();
+		return mobility;
+	}
+
+	/**
+	 * 着手 pos 後の自石フロンティア数（空きに隣接する自石の総数）
+	 *
+	 * @param pos - 着手位置
+	 * @returns フロンティア数。少ない方が良い
+	 * @internal
+	 */
+	private countMyFrontierAfter(pos: number): number {
+		if (!this.o || this.botColor == null) return 0;
+		const o = this.o as any;
+		o.put(o.turn, pos);
+		let frontier = 0;
+		for (let i = 0; i < o.board.length; i++) {
+			if (o.board[i] === this.botColor && this.simpleEmptyNeighbors8(i) > 0) {
+				frontier++;
+			}
+		}
+		o.undo();
+		return frontier;
+	}
+
+	/**
+	 * Bot が取得済みの角に隣接する辺マス（C 方向）の集合
+	 *
+	 * @param cornersWithDirs - 全角の位置と内向き 2 方向
+	 * @returns 取得済み角の隣辺マス
+	 * @internal
+	 */
+	private simpleBuildOwnedCornerEdgeSet(
+		cornersWithDirs: { pos: number; inwardDirs: [number, number][] }[]
+	): Set<number> {
+		const set = new Set<number>();
+		if (!this.o || this.botColor == null) return set;
+		const o = this.o as any;
+		for (const corner of cornersWithDirs) {
+			if (o.board[corner.pos] !== this.botColor) continue;
+			for (const dir of corner.inwardDirs) {
+				const adj = this.simpleStep(corner.pos, dir, 1);
+				if (adj != null && this.simpleIsEdge(adj) && this.simpleIsEmpty(adj)) set.add(adj);
+			}
+		}
+		return set;
+	}
+
+	/**
+	 * 空きマスが 1 つの連結成分か（4 近傍 BFS）
+	 *
+	 * @returns 空きが 1 領域なら true
+	 * @internal
+	 */
+	private isEmptySingleRegion(): boolean {
+		if (!this.o) return false;
+		let start: number | null = null;
+		for (let i = 0; i < (this.o as any).map.length; i++) {
+			if (this.simpleIsEmpty(i)) {
+				start = i;
+				break;
+			}
+		}
+		if (start == null) return true;
+		const visited = new Set<number>();
+		const queue = [start];
+		visited.add(start);
+		while (queue.length > 0) {
+			const p = queue.shift()!;
+			for (const q of this.simpleNeighbors4(p)) {
+				if (!visited.has(q) && this.simpleIsEmpty(q)) {
+					visited.add(q);
+					queue.push(q);
+				}
+			}
+		}
+		return visited.size === this.simpleCountEmpty();
+	}
+
+	/**
+	 * 候補からスコア最小の手だけ残すタイブレーク
+	 *
+	 * @param cand - 候補手
+	 * @param score - 各手のスコア（小さい方が良い）
+	 * @returns 絞り込んだ候補
+	 * @internal
+	 */
+	private tiebreakMin(cand: number[], score: (p: number) => number): number[] {
+		if (cand.length <= 1) return cand;
+		const min = Math.min(...cand.map(score));
+		const next = cand.filter(p => score(p) === min);
+		return next.length > 0 ? next : cand;
+	}
+
+	/**
+	 * 候補からスコア最大の手だけ残すタイブレーク
+	 *
+	 * @param cand - 候補手
+	 * @param score - 各手のスコア（大きい方が良い）
+	 * @returns 絞り込んだ候補
+	 * @internal
+	 */
+	private tiebreakMax(cand: number[], score: (p: number) => number): number[] {
+		if (cand.length <= 1) return cand;
+		const max = Math.max(...cand.map(score));
+		const next = cand.filter(p => score(p) === max);
+		return next.length > 0 ? next : cand;
+	}
+
+	/**
+	 * 着手 pos 後の空きマス数
+	 *
+	 * @param pos - 着手位置
+	 * @returns 空きマス数
+	 * @internal
+	 */
+	private countEmptyAfterMove(pos: number): number {
+		if (!this.o) return 0;
+		const o = this.o as any;
+		o.put(o.turn, pos);
+		const n = this.simpleCountEmpty();
+		o.undo();
+		return n;
+	}
+
 	// --- 単純モード用（変則盤対応・未来読みなし）---
 
 	/** 4 方向（上下左右）の [dx, dy]。単純モードの隣接・step で使用 */
@@ -1076,6 +1272,20 @@ export class ReversiGameSession {
 	}
 
 	/**
+	 * 矩形盤面の範囲内か（map の null 欠けとは別に座標で判定）
+	 *
+	 * @param x - 列
+	 * @param y - 行
+	 * @returns 盤面矩形内なら true
+	 * @internal
+	 */
+	private simpleIsInBounds(x: number, y: number): boolean {
+		if (!this.o) return false;
+		const o = this.o as any;
+		return x >= 0 && y >= 0 && x < o.mapWidth && y < o.mapHeight;
+	}
+
+	/**
 	 * 上下左右の隣接セル（有効なもののみ）
 	 *
 	 * @param p - マス位置
@@ -1088,7 +1298,10 @@ export class ReversiGameSession {
 		const [x, y] = o.transformPosToXy(p);
 		const out: number[] = [];
 		for (const [dx, dy] of ReversiGameSession.D4) {
-			const q = o.transformXyToPos(x + dx, y + dy);
+			const nx = x + dx;
+			const ny = y + dy;
+			if (!this.simpleIsInBounds(nx, ny)) continue;
+			const q = o.transformXyToPos(nx, ny);
 			if (this.simpleIsValid(q)) out.push(q);
 		}
 		return out;
@@ -1107,7 +1320,10 @@ export class ReversiGameSession {
 		const [x, y] = o.transformPosToXy(p);
 		const out: number[] = [];
 		for (const [dx, dy] of ReversiGameSession.D8) {
-			const q = o.transformXyToPos(x + dx, y + dy);
+			const nx = x + dx;
+			const ny = y + dy;
+			if (!this.simpleIsInBounds(nx, ny)) continue;
+			const q = o.transformXyToPos(nx, ny);
 			if (this.simpleIsValid(q)) out.push(q);
 		}
 		return out;
@@ -1130,6 +1346,7 @@ export class ReversiGameSession {
 		for (let i = 0; i < n; i++) {
 			x += dx;
 			y += dy;
+			if (!this.simpleIsInBounds(x, y)) return undefined;
 			const next = o.transformXyToPos(x, y);
 			if (!this.simpleIsValid(next)) return undefined;
 		}
@@ -1332,11 +1549,10 @@ export class ReversiGameSession {
 	}
 
 	/**
-	 * 単純モードの思考。変則盤対応・未来読みなし・必ず1手。角/C/X/GoodEdge2/GoodInner/辺の優先・回避とタイブレーク。
+	 * 単純モードの思考。変則盤対応・未来読みなし・必ず1手。
 	 *
 	 * @remarks
-	 * 仕様「リバーシBot仕様（変則ボード対応・未来読みなし・必ず1手）」に従う。スコア表は使わない。
-	 * タイブレークは T1（空き数に応じ反転数が最小または最小+1／最大）→ T2（返せる石の周りの空白が少ない手）→ T3（8近傍の空きが少ない手）→ T4（反転数最小の手）→ T5（辺から遠い手）→ T6（ランダム）の順。
+	 * 回避 → 隅攻防 → 優先 → タイブレーク（T1 反転 min/max → T1.5 モビリティ → T2 フロンティア → T3/T4 露出 → T5 パリティ → T6 反転 min（序盤）→ T7 辺距離 → T8 ランダム）。
 	 *
 	 * @internal
 	 */
@@ -1348,7 +1564,7 @@ export class ReversiGameSession {
 			return;
 		}
 		const o = this.o as any;
-		const cans = o.canPutSomewhere(this.botColor);
+		const cans = o.canPutSomewhere(this.botColor) as number[];
 		if (cans.length === 0) {
 			log(`[reversi] thinkSimple skip: no legal moves`);
 			return;
@@ -1368,13 +1584,13 @@ export class ReversiGameSession {
 			cornersWithDirs,
 			edgeDist
 		);
-
+		const ownedCornerEdgeSet = this.simpleBuildOwnedCornerEdgeSet(cornersWithDirs);
 		const cornerSet = new Set(cornersWithDirs.map(c => c.pos));
 		const totalValid = this.simpleTotalValid();
 		const empty = this.simpleCountEmpty();
-		const EMPTY_SWITCH = Math.round(totalValid * 0.31);
+		const EMPTY_SWITCH = Math.round(totalValid * ReversiGameSession.EMPTY_SWITCH_RATIO);
+		const mobilityGate = Math.round(totalValid * ReversiGameSession.MOBILITY_GATE_RATIO);
 
-		// 回避: 該当を除外し、除外で空になるなら除外しない
 		const avoid = (cand: number[], bad: Set<number>): number[] => {
 			const next = cand.filter(p => !bad.has(p));
 			return next.length > 0 ? next : cand;
@@ -1382,38 +1598,41 @@ export class ReversiGameSession {
 
 		let cand: number[] = [...cans];
 
-		// A. 回避（X 優先の C/X 回避）
+		// A. 回避（X → C）
 		cand = avoid(cand, Xset);
 		cand = avoid(cand, Cset);
 
-		// B. 優先（角 → GoodEdge2 → GoodInner → 辺の順で最初にヒットしたら候補を絞り、タイブレークへ）
+		// A2. 隅渡し回避 + 隅潰し優先
+		cand = avoid(cand, new Set(cand.filter(p => this.givesCornerToOpponent(p, emptyCornerPoses))));
+		const crushing = cand.filter(p => this.removesCornerFromOpponent(p, emptyCornerPoses));
+		if (crushing.length > 0) cand = crushing;
+
+		// B. 優先（角 → 取得済み角隣辺 → GoodEdge2 → GoodInner）
 		const inCorner = cand.filter(p => cornerSet.has(p));
 		if (inCorner.length > 0) {
 			cand = inCorner;
 		} else {
-			const inGoodEdge2 = cand.filter(p => GoodEdge2set.has(p));
-			if (inGoodEdge2.length > 0) {
-				cand = inGoodEdge2;
+			const inOwnedEdge = cand.filter(p => ownedCornerEdgeSet.has(p));
+			if (inOwnedEdge.length > 0) {
+				cand = inOwnedEdge;
 			} else {
-				const inGoodInner = cand.filter(p => GoodInnerset.has(p));
-				if (inGoodInner.length > 0) {
-					cand = inGoodInner;
+				const inGoodEdge2 = cand.filter(p => GoodEdge2set.has(p));
+				if (inGoodEdge2.length > 0) {
+					cand = inGoodEdge2;
 				} else {
-					// 辺優先は無効化（要望により一時的にコメントアウト）
-					// const onEdge = cand.filter(p => this.simpleIsEdge(p));
-					// if (onEdge.length > 0) cand = onEdge;
+					const inGoodInner = cand.filter(p => GoodInnerset.has(p));
+					if (inGoodInner.length > 0) cand = inGoodInner;
 				}
 			}
 		}
 
-
-		// C. 優先が一度も当たらなかったときの追加回避
+		// C. 追加回避
 		cand = avoid(cand, Nearset);
-		const edgeDist1Set = new Set(cand.filter(p => (edgeDist.get(p) ?? 0) === 1));
-		cand = avoid(cand, edgeDist1Set);
+		cand = avoid(cand, new Set(cand.filter(p => (edgeDist.get(p) ?? 0) === 1)));
 
-		// タイブレーク T1: 空き数で 反転数が最小または最小+1／最大
 		const flipVal = (p: number) => this.getFlippedCount(p);
+
+		// T1: 反転数 min/min+1 または max
 		if (empty >= EMPTY_SWITCH) {
 			const minF = Math.min(...cand.map(flipVal));
 			cand = cand.filter(p => {
@@ -1421,36 +1640,38 @@ export class ReversiGameSession {
 				return f === minF || f === minF + 1;
 			});
 		} else {
-			const maxF = Math.max(...cand.map(flipVal));
-			cand = cand.filter(p => flipVal(p) === maxF);
+			cand = this.tiebreakMax(cand, flipVal);
 		}
 
-		// T2: 返せる石の周りの空白が少ない手
-		if (cand.length > 1) {
-			const emptyAroundFlipped = (p: number) => this.simpleEmptyAroundFlipped(p);
-			const minE = Math.min(...cand.map(emptyAroundFlipped));
-			cand = cand.filter(p => emptyAroundFlipped(p) === minE);
+		// T1.5: 相手モビリティ最小（中盤以降のみ）
+		if (empty <= mobilityGate) {
+			cand = this.tiebreakMin(cand, p => this.getOpponentMobilityAfter(p));
 		}
 
-		// T3: 8近傍の空きが少ない手
-		if (cand.length > 1) {
-			const minN8 = Math.min(...cand.map(p => this.simpleEmptyNeighbors8(p)));
-			cand = cand.filter(p => this.simpleEmptyNeighbors8(p) === minN8);
+		// T2: 全体フロンティア最小
+		cand = this.tiebreakMin(cand, p => this.countMyFrontierAfter(p));
+
+		// T3: 返せる石の周りの空白が少ない手
+		cand = this.tiebreakMin(cand, p => this.simpleEmptyAroundFlipped(p));
+
+		// T4: 8 近傍の空きが少ない手
+		cand = this.tiebreakMin(cand, p => this.simpleEmptyNeighbors8(p));
+
+		// T5: パリティ（空き ≤ 10 かつ 1 領域。着手後偶数空きを優先）
+		if (empty <= ReversiGameSession.PARITY_EMPTY_MAX && this.isEmptySingleRegion()) {
+			const preferEven = cand.filter(p => this.countEmptyAfterMove(p) % 2 === 0);
+			if (preferEven.length > 0) cand = preferEven;
 		}
 
-		// T4: 反転数が最小の手
-		if (cand.length > 1) {
-			const minF = Math.min(...cand.map(flipVal));
-			cand = cand.filter(p => flipVal(p) === minF);
+		// T6: 反転数最小（序盤のみ。終盤は T1 max と矛盾するためスキップ）
+		if (empty >= EMPTY_SWITCH) {
+			cand = this.tiebreakMin(cand, flipVal);
 		}
 
-		// T5: 辺から遠い手
-		if (cand.length > 1) {
-			const maxEd = Math.max(...cand.map(p => edgeDist.get(p) ?? 0));
-			cand = cand.filter(p => (edgeDist.get(p) ?? 0) === maxEd);
-		}
+		// T7: 辺から遠い手
+		cand = this.tiebreakMax(cand, p => edgeDist.get(p) ?? 0);
 
-		// T6: ランダム
+		// T8: ランダム
 		const pos = cand[Math.floor(Math.random() * cand.length)];
 		log(`[reversi] thinkSimple gameId=${this.gameId} → putStone pos=${pos}`);
 		this.commitMove(pos);
@@ -1460,10 +1681,8 @@ export class ReversiGameSession {
 	 * 超単純モードの思考。隅優先 → 角周辺回避（角が空のときのみ）→ C 優先 then X → 反転数最大
 	 *
 	 * @remarks
-	 * 1. 合法手のうち隅に打てるならそのいずれかを選ぶ。
-	 * 2. 隅が無いとき、まだ空いている角に隣接するマスは避ける。すべて角周辺しか無い場合は候補を全合法手にする。
-	 * 3. 角周辺しか打てないとき、C（隅の横／縦隣）を優先、なければ X（隅の斜め隣）を候補にする。
-	 * 4. 候補のうち反転数が最大の手を選ぶ。
+	 * 形状ベースの simpleCorners / simpleBuildSets を使用（変則盤対応）。
+	 * 複数隅候補は反転数最大でタイブレークする。
 	 *
 	 * @internal
 	 */
@@ -1474,7 +1693,7 @@ export class ReversiGameSession {
 			log(`[reversi] thinkSuperSimple skip: no engine or botColor`);
 			return;
 		}
-		const cans = this.o.canPutSomewhere(this.botColor as any);
+		const cans = this.o.canPutSomewhere(this.botColor as any) as number[];
 		if (cans.length === 0) {
 			log(`[reversi] thinkSuperSimple skip: no legal moves`);
 			return;
@@ -1485,31 +1704,45 @@ export class ReversiGameSession {
 			this.commitMove(pos);
 			return;
 		}
-		// 1. 隅に打てる手があればそのいずれかを選ぶ
-		const sumiAvailable = cans.filter((p: number) => this.sumiIndexes.includes(p));
+
+		const cornersWithDirs = this.simpleCorners();
+		const cornerSet = new Set(cornersWithDirs.map(c => c.pos));
+		const emptyCornerPoses = cornersWithDirs.map(c => c.pos).filter(k => this.simpleIsEmpty(k));
+		const edgeDist = this.simpleEdgeDist();
+		const { Xset, Cset, Nearset } = this.simpleBuildSets(emptyCornerPoses, cornersWithDirs, edgeDist);
+
+		// 1. 隅に打てる手があれば反転数最大で選ぶ
+		const sumiAvailable = cans.filter((p: number) => cornerSet.has(p));
 		if (sumiAvailable.length > 0) {
-			const pos = sumiAvailable[0];
-			log(`[reversi] thinkSuperSimple gameId=${this.gameId} → putStone pos=${pos} (corner)`);
-			this.commitMove(pos);
+			let bestPos = sumiAvailable[0];
+			let bestFlip = this.getFlippedCount(bestPos);
+			for (const p of sumiAvailable) {
+				const n = this.getFlippedCount(p);
+				if (n > bestFlip) {
+					bestFlip = n;
+					bestPos = p;
+				}
+			}
+			log(`[reversi] thinkSuperSimple gameId=${this.gameId} → putStone pos=${bestPos} (corner)`);
+			this.commitMove(bestPos);
 			return;
 		}
-		// 2. 角がまだ空いているときだけ角周辺を避ける
-		const emptySumi = this.sumiIndexes.filter((i: number) => this.o!.board[i] == null);
-		const avoidNear = emptySumi.length > 0 ? this.sumiNearIndexes : [];
-		let candidates = cans.filter((p: number) => !avoidNear.includes(p));
+
+		// 2. 空き角があるとき X/C/Line2 近傍を避ける
+		const avoidNear = emptyCornerPoses.length > 0 ? Nearset : new Set<number>();
+		let candidates = cans.filter((p: number) => !avoidNear.has(p));
 		if (candidates.length === 0) candidates = cans;
-		// 3. C（隅の横／縦隣）を優先、なければ X（隅の斜め隣）
-		const cPos = [1, 8, 6, 15, 48, 57, 55, 62];
-		const xPos = [9, 14, 49, 54];
-		const inC = candidates.filter((p: number) => cPos.includes(p));
-		const inX = candidates.filter((p: number) => xPos.includes(p));
+
+		// 3. C を優先、なければ X
+		const inC = candidates.filter((p: number) => Cset.has(p));
+		const inX = candidates.filter((p: number) => Xset.has(p));
 		let finalCandidates = candidates;
 		if (inC.length > 0) finalCandidates = inC;
 		else if (inX.length > 0) finalCandidates = inX;
 
 		if (this.maybeCommitRandomMove(finalCandidates)) return;
 
-		// 4. 候補のうち反転数が最大の手を選ぶ
+		// 4. 反転数最大
 		let bestPos = finalCandidates[0];
 		let bestFlip = this.getFlippedCount(bestPos);
 		for (const p of finalCandidates) {
