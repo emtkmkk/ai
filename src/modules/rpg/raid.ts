@@ -24,7 +24,7 @@ import { rpgItems } from './items';
 import { aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, getSkillsShortName, aggregateSkillsEffectsSkillX, countDuplicateSkillNames } from './skills';
 import { aggregateTokensEffects } from './shop';
 import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatusDmg, getPostCount, getPostX, getVal, random, getRaidPostX, preLevelUpProcess, deepClone } from './utils';
-import { applyKazutoriMasterHiddenBonus, applyKazutoriMasterPostCountFloor, calculateArpen, calculateStats, ensureKazutoriMasterHistory, fortune, getKazutoriMasterBonus, getKazutoriMasterMessage, stockRandom } from './battle';
+import { applyKazutoriMasterHiddenBonus, applyKazutoriMasterPostCountFloor, applyWeakAtkReduction, calculateArpen, calculateStats, ensureKazutoriMasterHistory, fortune, getKazutoriMasterBonus, getKazutoriMasterMessage, stockRandom } from './battle';
 import serifs from '@/serifs';
 import getDate from '@/utils/get-date';
 import { acct } from '@/utils/acct';
@@ -1884,10 +1884,10 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 			}
 			const weakXList = [0, 0.25, 0.5, 1, 1.5, 3.5, 4, 4.5, 5];
 			const weakX = 1 - (1 / (1 + ((skillEffects.weak * weakXList[count - 1]))))
-			enemyAtk -= Math.max(enemyAtk * weakX, atk * weakX);
+			const weakAtkReduction = Math.max(enemyAtk * weakX, atk * weakX);
+			enemyAtk = applyWeakAtkReduction(enemyAtk, weakAtkReduction);
 			const arpenX = calculateArpen(data, skillEffects.weak * weakXList[count - 1], enemyDef)
 			atk = atk * arpenX;
-			if (enemyAtk < 0) enemyAtk = 0;
 			if (verboseLog) {
 				buff += 1;
 				message += `毒スキル効果: ${displayDifference(1 - weakX)} (x${formatNumber(enemyAtk / (lv * 3.5))} / x${formatNumber(enemyDef / (lv * 3.5))})\n`;

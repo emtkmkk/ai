@@ -4,11 +4,12 @@
  * RPGモジュールの戦闘補助計算
  *
  * 数取りの達人スキルの履歴補完・ボーナス計算、ステータス計算（calculateStats）、貫通計算（calculateArpen）、
- * 天国か地獄か（fortune）、ストックランダム（stockRandom）等を提供する。
+ * 天国か地獄か（fortune）、ストックランダム（stockRandom）、毒弱体化の攻撃力減衰（applyWeakAtkReduction）等を提供する。
  *
  * @remarks
  * - 数取りの達人スキルは数取りモジュールの履歴に依存し、戦闘・レイドのステータス倍率に影響する（直近24時間以内勝利時は投稿数に隠し下限も適用）
  * - calculateArpen は敵防御力に対する貫通率を算出する
+ * - applyWeakAtkReduction は毒属性剣攻撃の敵攻撃力削減に段階的ソフトキャップを適用する（50%→75%→87.5%…と残りの50%ずつ削り、段階ごとに効率が1/2ずつ低下）
  *
  * @public
  */
@@ -639,4 +640,42 @@ export function applySoftCapPow2(raw: number, cap1 = 10, cap2 = 25, gamma = 0.5)
   const a1 = raw <= cap1 ? raw : cap1 + Math.pow(raw - cap1, gamma);
   const a2 = a1 <= cap2 ? a1 : cap2 + Math.pow(a1 - cap2, gamma);
   return a2;
+}
+
+/** 毒弱体化ソフトキャップ：第1段階で削れる敵攻撃力の割合（残り 50%） */
+const WEAK_ATK_REDUCTION_FIRST_TIER = 0.5;
+/** 毒弱体化ソフトキャップ：段階ごとの効率低下率（1/2 ずつ低下 → 50%→75%→87.5%…） */
+const WEAK_ATK_REDUCTION_TIER_RATIO = 0.5;
+
+/**
+ * 毒属性剣攻撃による敵攻撃力削減に、段階的ソフトキャップを適用する
+ *
+ * @param enemyAtk0 削減前の敵攻撃力
+ * @param rawReduction 毒スキルが算出した削減量（max(敵攻撃×weakX, パワー×weakX)）
+ * @returns ソフトキャップ適用後の敵攻撃力（0 未満にはならない）
+ * @remarks
+ * 各段階で「残り攻撃力の 50%」相当を削れるが、段階が進むほど削減効率が 1/2 ずつ低下する。
+ * 累積の目安は 50% → 75% → 87.5% → 93.75% …（理論上限 100%）で、100% 削減には非常に大きな raw が必要。
+ * 第 k 段階（k=0 始まり）の最大寄与は enemyAtk0 × 0.5 × 0.5^k、効率は 0.5^k。
+ * NOTE: 旅モードの疲れダメージなど敵攻撃力を参照する被ダメージにも影響する。
+ * @internal
+ */
+export function applyWeakAtkReduction(enemyAtk0: number, rawReduction: number): number {
+  if (enemyAtk0 <= 0 || rawReduction <= 0) {
+    return Math.max(enemyAtk0, 0);
+  }
+  let remaining = rawReduction;
+  let totalReduced = 0;
+  for (let k = 0; remaining > 0 && totalReduced < enemyAtk0; k++) {
+    const rate = Math.pow(WEAK_ATK_REDUCTION_TIER_RATIO, k);
+    const segmentSize = WEAK_ATK_REDUCTION_FIRST_TIER * rate * enemyAtk0;
+    const effectiveCapacity = segmentSize / rate;
+    const use = Math.min(remaining, effectiveCapacity);
+    totalReduced += use * rate;
+    remaining -= use;
+    if (use <= 0 || k >= 100) {
+      break;
+    }
+  }
+  return Math.max(enemyAtk0 - totalReduced, 0);
 }

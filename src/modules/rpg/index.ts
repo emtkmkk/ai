@@ -25,7 +25,7 @@ import { skills, Skill, SkillEffect, getSkill, skillReply, skillCalculate, aggre
 import { start, raidInstall, raidContextHook, raidTimeoutCallback } from './raid';
 import type { Raid } from './raid';
 import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatus, getPostCount, getPostX, getVal, random, preLevelUpProcess, deepClone, accumulateVitality } from './utils';
-import { applyKazutoriMasterHiddenBonus, applyKazutoriMasterPostCountFloor, calculateArpen, calculateStats, applySoftCapPow2, ensureKazutoriMasterHistory, getKazutoriMasterMessage } from './battle';
+import { applyKazutoriMasterHiddenBonus, applyKazutoriMasterPostCountFloor, applyWeakAtkReduction, calculateArpen, calculateStats, applySoftCapPow2, ensureKazutoriMasterHistory, getKazutoriMasterMessage } from './battle';
 import Friend from '@/friend';
 import type { FriendDoc } from '@/friend';
 import config from '@/config';
@@ -2390,8 +2390,8 @@ export default class extends Module {
 					message += serifs.rpg.skill.weak(data.enemy.dname ?? data.enemy.name) + "\n";
 				}
 				const weakX = 1 - (1 / (1 + ((skillEffects.weak * (count - 1)))))
-				enemyAtk -= Math.max(enemyAtk * weakX, atk * weakX);
-				if (enemyAtk < 0) enemyAtk = 0;
+				const weakAtkReduction = Math.max(enemyAtk * weakX, atk * weakX);
+				enemyAtk = applyWeakAtkReduction(enemyAtk, weakAtkReduction);
 				const arpenX = calculateArpen(data, skillEffects.weak * (count - 1), enemyDef)
 				atk = atk * arpenX;
 			}

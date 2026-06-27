@@ -1,4 +1,4 @@
-import { applyKazutoriMasterPostCountFloor, ensureKazutoriMasterHistory } from "@/modules/rpg/battle";
+import { applyKazutoriMasterPostCountFloor, applyWeakAtkReduction, ensureKazutoriMasterHistory } from "@/modules/rpg/battle";
 
 describe("ensureKazutoriMasterHistory", () => {
 	test("winnerUserId2 でも lastWinAt を補完する", () => {
@@ -113,5 +113,38 @@ describe("applyKazutoriMasterPostCountFloor", () => {
 
 	test("24時間以内勝利かつ3スタックの場合、下限は150", () => {
 		expect(applyKazutoriMasterPostCountFloor(30, baseMsg, { kazutoriMaster: 3 })).toBe(150);
+	});
+});
+
+describe("applyWeakAtkReduction", () => {
+	const ea0 = 1_000_000;
+
+	test("削減量0の場合、敵攻撃力は変わらない", () => {
+		expect(applyWeakAtkReduction(ea0, 0)).toBe(ea0);
+	});
+
+	test("第1段階(50%)までは100%の効率で削減される", () => {
+		expect(applyWeakAtkReduction(ea0, 250_000)).toBe(750_000);
+		expect(applyWeakAtkReduction(ea0, 500_000)).toBe(500_000);
+	});
+
+	test("50%超の削減は1/2効率になる", () => {
+		// raw 0.5*ea0 で 50% 削減後、残り raw 0.5*ea0 → 追加 25% 削減 → 合計 75%
+		expect(applyWeakAtkReduction(ea0, 1_000_000)).toBe(250_000);
+	});
+
+	test("段階的に 50%→75%→87.5% まで削減できる", () => {
+		expect(applyWeakAtkReduction(ea0, 500_000)).toBe(500_000);
+		expect(applyWeakAtkReduction(ea0, 1_000_000)).toBe(250_000);
+		expect(applyWeakAtkReduction(ea0, 1_500_000)).toBe(125_000);
+	});
+
+	test("理論上限(100%)まで削減できるが、非常に大きな raw が必要", () => {
+		expect(applyWeakAtkReduction(ea0, 2_000_000)).toBe(62_500);
+		expect(applyWeakAtkReduction(ea0, 10_000_000)).toBeLessThan(1);
+	});
+
+	test("敵攻撃力0以下の入力は0を返す", () => {
+		expect(applyWeakAtkReduction(0, 100)).toBe(0);
 	});
 });
