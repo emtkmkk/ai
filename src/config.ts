@@ -65,9 +65,9 @@ type Config = {
 	postNotPublic?: boolean;
 	/** 主に使用する公開範囲 */
 	defaultVisibility?: string;
-	/** ランダムポストでローカルのみを使用するかどうか */
+	/** ランダムポストのうちサーバー機能の解説でローカルのみを使用するかどうか */
 	randomPostLocalOnly?: boolean;
-	/** ランダムポストで投稿するチャンネル */
+	/** ランダムポストのうちサーバー機能の解説を投稿するチャンネル */
 	randomPostChannel?: string;
 	/** 誕生日祝いでローカルのみを使用するかどうか */
 	birthdayPostLocalOnly?: boolean;

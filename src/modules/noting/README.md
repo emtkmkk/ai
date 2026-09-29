@@ -46,7 +46,7 @@ pie title 投稿カテゴリの割合
 
 | カテゴリ | 内容 | activeFactor 減少量 |
 | --- | --- | --- |
-| 定型セリフ | `serifs.noting.notes` からランダム | 0.005 |
+| 定型セリフ | `serifs.noting.notes`（サーバー機能の解説）と `serifs.noting.botNotes`（bot のコマンド案内）を合わせた中からランダム | 0.005 |
 | アイテム系 | 「〇〇がほしい」「〇〇を見た」など | 0.01 |
 | 話題キーワード | keyword モジュールの学習ワードから話題を生成 | 0.02 |
 
@@ -55,5 +55,7 @@ pie title 投稿カテゴリの割合
 | 設定キー | 説明 |
 | --- | --- |
 | `config.notingEnabled` | `false` でモジュール無効化 |
-| `config.randomPostLocalOnly` | 定型セリフをローカル限定投稿にする |
-| `config.randomPostChannel` | 定型セリフの投稿先チャンネルID |
+| `config.randomPostLocalOnly` | サーバー機能の解説（`serifs.noting.notes`）をローカル限定投稿にする |
+| `config.randomPostChannel` | サーバー機能の解説（`serifs.noting.notes`）の投稿先チャンネルID |
+
+bot のコマンド案内（`serifs.noting.botNotes`）は、アイテム系・話題キーワードと同じくチャンネルなし・ローカル限定なしで投稿する。

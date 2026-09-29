@@ -78,8 +78,10 @@ export default class extends Module {
 	@autobind
 	private post() {
 		let localOnly = false;
+		/** 定型セリフ（サーバー機能の解説はチャンネル、bot 自身の案内は通常の定期投稿として扱う） */
 		const notes = [
-			...serifs.noting.notes,
+			...serifs.noting.notes.map(text => ({ text, server: true })),
+			...serifs.noting.botNotes.map(text => ({ text, server: false })),
 		];
 		const itemNotes = [
 			() => {
@@ -108,10 +110,13 @@ export default class extends Module {
 
 		if (Math.random() < 0.333) {
 			// 定型セリフ
-			if (config.randomPostLocalOnly) localOnly = true;
-			if (config.randomPostChannel) channel = config.randomPostChannel;
+			const selected = notes[Math.floor(Math.random() * notes.length)];
+			if (selected.server) {
+				if (config.randomPostLocalOnly) localOnly = true;
+				if (config.randomPostChannel) channel = config.randomPostChannel;
+			}
 			this.ai.decActiveFactor(0.005);
-			note = notes[Math.floor(Math.random() * notes.length)];
+			note = selected.text;
 		} else {
 			if (Math.random() < 0.5) {
 				// アイテム系セリフ
