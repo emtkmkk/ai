@@ -39,6 +39,7 @@ import { hasMentionToMe, isAccountLinkMentionCommand, mentionsOnlyMe } from '@/u
 import { getPreviousSixHourBoundaryMs } from '@/utils/six-hour-boundary';
 import { EventLoopProbe, EventLoopSample } from '@/utils/event-loop-probe';
 import { getRecentSlowOperations, measureSync, traceSync } from '@/utils/slow-operation';
+import { PostThrottle } from '@/utils/post-throttle';
 const pkg = require('../package.json');
 
 /**
@@ -186,6 +187,11 @@ export default class 藍 {
 	 * @internal
 	 */
 	public connection: Stream;
+	/**
+	 * タイムライン投稿の連投抑制キュー
+	 * @internal
+	 */
+	private postThrottle = new PostThrottle();
 	/**
 	 * インストールされたモジュールの一覧（先頭ほど高優先度）
 	 * @internal
@@ -473,6 +479,14 @@ export default class 藍 {
 			this.onNotification(data);
 		});
 		//#endregion
+
+		// HTL/LTL に他ユーザーの投稿が流れてきたら、保留中の投稿を解放する
+		const onTimelineNote = (note: any) => {
+			if (note?.userId == null || note.userId === this.account.id) return;
+			this.postThrottle.notifyOtherNote();
+		};
+		this.connection.useSharedConnection('homeTimeline').on('note', onTimelineNote);
+		this.connection.useSharedConnection('localTimeline').on('note', onTimelineNote);
 
 		// モジュールを優先度順にインストールする（配列の先頭ほど高優先度）
 		this.modules.forEach(m => {
@@ -1149,6 +1163,8 @@ export default class 藍 {
 	 *
 	 * @remarks
 	 * `config.postNotPublic` が `true` の場合、公開範囲が `public` だと自動的に `home` に変更される。
+	 * リプライ・DM 以外の投稿は {@link PostThrottle} を通り、前回の投稿から1分経過するか、
+	 * HTL/LTL に他ユーザーの投稿が流れてから3秒経過するまで保留される。
 	 *
 	 * @param param - 投稿パラメータ（`notes/create` API のパラメータ）
 	 * @returns 作成されたノート
@@ -1158,8 +1174,11 @@ export default class 藍 {
 	public async post(param: any) {
 		if (config.postNotPublic && (!param.visibility || param.visibility == "public")) param.visibility = "home";
 		if (!param.visibility && config.defaultVisibility) param.visibility = config.defaultVisibility
-		const res = await this.api('notes/create', param);
-		return res.createdNote;
+		// NOTE: リプライ・DM は即時投稿し、タイムラインに流れる単独投稿のみ連投抑制キューを通す
+		const create = async () => (await this.api('notes/create', param)).createdNote;
+		if (param.replyId || param.visibility === 'specified') return create();
+		if (this.postThrottle.pendingCount > 0) this.log(`Post queued (pending: ${this.postThrottle.pendingCount})`);
+		return this.postThrottle.enqueue(create);
 	}
 
 	/**
