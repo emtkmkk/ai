@@ -21,6 +21,15 @@ import serifs from '@/serifs';
 import { genItem } from '@/vocabulary';
 import * as loki from 'lokijs';
 import config from '@/config';
+import { pickFromBag } from '@/utils/shuffle-bag';
+
+/** 定期投稿の永続データ */
+type NotingData = {
+	/** 一巡中にすでに出た定型セリフ */
+	notesUsed?: string[];
+	/** 次の投稿を必ず定型セリフにする（導入時の1回のみ） */
+	forceNextFixed?: boolean;
+};
 
 export default class extends Module {
 	public readonly name = 'noting';
@@ -52,6 +61,13 @@ export default class extends Module {
 			indices: ['userId']
 		});
 
+		// NOTE: 導入時はリバーシの案内以外を出た扱いにし、次の投稿で必ずリバーシの案内を出す
+		const data: NotingData = this.getData() ?? {};
+		if (data.notesUsed == null) {
+			const notesUsed = this.fixedNotes().map(note => note.text).filter(text => !text.includes('リバーシ'));
+			this.setData({ ...data, notesUsed, forceNextFixed: true });
+		}
+
 		setInterval(() => {
 			const hours = new Date().getHours();
 			// 昼・夜は投稿確率が高い
@@ -75,14 +91,22 @@ export default class extends Module {
 	 *
 	 * @internal
 	 */
-	@autobind
-	private post() {
-		let localOnly = false;
-		/** 定型セリフ（サーバー機能の解説はチャンネル、bot 自身の案内は通常の定期投稿として扱う） */
-		const notes = [
+	/**
+	 * 定型セリフ（サーバー機能の解説はチャンネル、bot 自身の案内は通常の定期投稿として扱う）
+	 *
+	 * @internal
+	 */
+	private fixedNotes() {
+		return [
 			...serifs.noting.notes.map(text => ({ text, server: true })),
 			...serifs.noting.botNotes.map(text => ({ text, server: false })),
 		];
+	}
+
+	@autobind
+	private post() {
+		let localOnly = false;
+		const data: NotingData = this.getData() ?? {};
 		const itemNotes = [
 			() => {
 				const item = genItem();
@@ -108,9 +132,10 @@ export default class extends Module {
 		let note;
 		let channel;
 
-		if (Math.random() < 0.333) {
-			// 定型セリフ
-			const selected = notes[Math.floor(Math.random() * notes.length)];
+		if (data.forceNextFixed || Math.random() < 0.333) {
+			// 定型セリフ（一度出たものは、他のすべてが出るまで出さない）
+			const { item: selected, used } = pickFromBag(this.fixedNotes(), note => note.text, data.notesUsed ?? []);
+			this.setData({ ...data, notesUsed: used, forceNextFixed: false });
 			if (selected.server) {
 				if (config.randomPostLocalOnly) localOnly = true;
 				if (config.randomPostChannel) channel = config.randomPostChannel;

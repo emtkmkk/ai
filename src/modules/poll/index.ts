@@ -28,6 +28,7 @@ import * as loki from 'lokijs';
 import { genItem } from '@/vocabulary';
 import config from '@/config';
 import { Note } from '@/misskey/note';
+import { pickFromBag } from '@/utils/shuffle-bag';
 import { activityProbability, countQualifiedUsers, isGateOpen, isNaturalStartHour, TimelineActivityTracker } from '@/utils/timeline-activity';
 
 /** 確率の係数（機嫌を掛ける前、1人あたり） */
@@ -285,7 +286,23 @@ export default class extends Module {
 
 		const selectedPolls = key ? polls.filter((x) => x[0].includes(key)) : [];
 
-		const poll = nenmatu ? [`${new Date().getFullYear()}年っぽい響きのもの`, `みなさん、${new Date().getFullYear()}年ももうすぐ終わりですね～ みなさんはこの中でいちばん${new Date().getFullYear()}年っぽい響きのものはどれだと思いますか？`] : selectedPolls.length ? selectedPolls[Math.floor(Math.random() * selectedPolls.length)] : polls[Math.floor(Math.random() * polls.length)];
+		let poll: string[];
+		if (nenmatu) {
+			poll = [`${new Date().getFullYear()}年っぽい響きのもの`, `みなさん、${new Date().getFullYear()}年ももうすぐ終わりですね～ みなさんはこの中でいちばん${new Date().getFullYear()}年っぽい響きのものはどれだと思いますか？`];
+		} else {
+			// 一度出たテーマは、他のすべてが出るまで出さない
+			const data = this.getData() ?? {};
+			const pollsUsed: string[] = data.pollsUsed ?? [];
+			if (selectedPolls.length) {
+				// キー指定時（管理者の手動投稿）は該当テーマから選び、出た扱いに加えるだけにする
+				poll = pickFromBag(selectedPolls, x => x[0], pollsUsed).item;
+				this.setData({ ...data, pollsUsed: pollsUsed.includes(poll[0]) ? pollsUsed : [...pollsUsed, poll[0]] });
+			} else {
+				const { item, used } = pickFromBag(polls, x => x[0], pollsUsed);
+				poll = item;
+				this.setData({ ...data, pollsUsed: used });
+			}
+		}
 
 		const exist = this.pollresult.findOne({
 			key: poll[0]

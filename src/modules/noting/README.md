@@ -58,4 +58,6 @@ pie title 投稿カテゴリの割合
 | `config.randomPostLocalOnly` | サーバー機能の解説（`serifs.noting.notes`）をローカル限定投稿にする |
 | `config.randomPostChannel` | サーバー機能の解説（`serifs.noting.notes`）の投稿先チャンネルID |
 
+定型セリフは、一度出たものは他のすべてが出るまで出さない（`src/utils/shuffle-bag.ts`、出た一覧はモジュールデータ `notesUsed` に保存）。
+
 bot のコマンド案内（`serifs.noting.botNotes`）は、アイテム系・話題キーワードと同じくチャンネルなし・ローカル限定なしで投稿する。
