@@ -37,6 +37,8 @@ import log from '@/utils/log';
 import { katakanaToHiragana, hankakuToZenkaku } from '@/utils/japanese';
 import { hasMentionToMe, isAccountLinkMentionCommand, mentionsOnlyMe } from '@/utils/mention';
 import { getPreviousSixHourBoundaryMs } from '@/utils/six-hour-boundary';
+import { EventLoopProbe, EventLoopSample } from '@/utils/event-loop-probe';
+import { getRecentSlowOperations, measureSync, traceSync } from '@/utils/slow-operation';
 const pkg = require('../package.json');
 
 /**
@@ -67,6 +69,8 @@ type ContextHook = (key: any, msg: Message, data?: any) => Promise<void | boolea
 type TimeoutCallback = (data?: any) => void;
 
 type HangReport = {
+	eventLoopSample?: EventLoopSample;
+	slowOperations: ReturnType<typeof getRecentSlowOperations>;
 	delayMs: number;
 	uptimeSec: number;
 	pid: number;
@@ -349,6 +353,9 @@ export default class 藍 {
 				}
 			}
 		});
+		// Loki's default adapter writes asynchronously, but serializes the whole DB synchronously.
+		const serialize = this.db.serialize.bind(this.db);
+		this.db.serialize = (...args) => measureSync('db.serialize', () => serialize(...args));
 	}
 
 	/**
@@ -508,15 +515,13 @@ export default class 藍 {
         private startHangDetection() {
                 const interval = 10000;
                 const hangThreshold = 60000;
-                let lastTick = Date.now();
+                const probe = new EventLoopProbe();
 
                 const tick = async () => {
-                        const now = Date.now();
-                        const drift = now - lastTick;
-                        lastTick = now;
+                        const sample = probe.sample(interval);
 
-                        if (drift - interval >= hangThreshold) {
-                                await this.onHangDetected(drift - interval);
+                        if (sample.delayMs >= hangThreshold) {
+                                await this.onHangDetected(sample.delayMs, sample);
                                 return;
                         }
 
@@ -538,12 +543,13 @@ export default class 藍 {
 	 * @internal
 	 */
         @autobind
-        private async onHangDetected(delay: number) {
+        private async onHangDetected(delay: number, sample?: EventLoopSample) {
                 if (this.hangDetectionTriggered) return;
                 this.hangDetectionTriggered = true;
 
                 this.log(`Hang detected: event loop delayed by ${Math.round(delay)}ms. Restarting...`);
-		const report = this.buildHangReport(delay);
+		const report = this.buildHangReport(delay, sample);
+		this.log(`Hang diagnostics: ${JSON.stringify(report)}`);
 
                 try {
                         await this.post({
@@ -560,11 +566,13 @@ export default class 藍 {
         }
 
 	@autobind
-	private buildHangReport(delay: number): HangReport {
+	private buildHangReport(delay: number, sample?: EventLoopSample): HangReport {
 		const memoryUsage = process.memoryUsage();
 		const meta = this.meta?.findOne({}) ?? null;
 
 		return {
+			eventLoopSample: sample,
+			slowOperations: getRecentSlowOperations(),
 			delayMs: Math.round(delay),
 			uptimeSec: Math.floor(process.uptime()),
 			pid: process.pid,
@@ -616,6 +624,10 @@ export default class 藍 {
 			`- lastSleepedAt: ${lastSleepedText}`,
 			`- lastWakingAt: ${lastWakingText}`,
 			`- memory: rss=${rssMb}MB heapUsed=${heapUsedMb}MB heapTotal=${heapTotalMb}MB external=${externalMb}MB arrayBuffers=${arrayBuffersMb}MB`,
+			...(report.eventLoopSample ? [
+				`- sample: elapsed=${report.eventLoopSample.elapsedMs}ms cpuUser=${report.eventLoopSample.cpuUserMs}ms cpuSystem=${report.eventLoopSample.cpuSystemMs}ms clockDelta=${report.eventLoopSample.wallClockDeltaMs}ms`,
+			] : []),
+			`- slowSync (直近10分・計測対象のみ): ${report.slowOperations.length ? report.slowOperations.map(operation => `${operation.name}=${operation.durationMs}ms @ ${operation.endedAt}`).join('; ') : '記録なし'}`,
 		].join('\n');
 	}
 
@@ -1411,6 +1423,7 @@ export default class 藍 {
 	 * @internal
 	 */
 	@autobind
+	@traceSync('keyword.makeBananasu')
 	public makeBananasu(inputWord, argWords?, argExWords?, argWords2?, argJpWords?, argHirakanaWords?, word1error = false, word2error = false): string {
 
 		// 候補となるキーワードを準備する（引数で渡されなければDBから取得）

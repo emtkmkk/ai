@@ -25,6 +25,7 @@ import { renderChart } from './render-chart';
 import { items } from '@/vocabulary';
 import { checkNgWord } from '@/utils/check-ng-word';
 import config from '@/config';
+import { measureSync } from '@/utils/slow-operation';
 
 /** インスタンス投稿チャートの diffs 型 */
 type InstanceNotesDiffs = {
@@ -346,7 +347,7 @@ export default class extends Module {
 		}
 
 		this.log('Chart rendering...');
-		const img = renderChart(chart);
+		const img = measureSync('chart.render', () => renderChart(chart));
 
 		this.log('Image uploading...');
 		const file = await this.ai.upload(img, {

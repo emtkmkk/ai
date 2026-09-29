@@ -19,6 +19,7 @@ import serifs from '@/serifs';
 import log from '@/utils/log';
 import { acct } from '@/utils/acct';
 import { User } from '@/misskey/user';
+import { traceSync } from '@/utils/slow-operation';
 
 function getUserName(user) {
 	return user.name || user.username;
@@ -1556,6 +1557,7 @@ export class ReversiGameSession {
 	 *
 	 * @internal
 	 */
+	@traceSync('reversi.thinkSimple')
 	private thinkSimple() {
 		this.thinkScheduled = false;
 		log(`[reversi] thinkSimple gameId=${this.gameId}`);
@@ -1686,6 +1688,7 @@ export class ReversiGameSession {
 	 *
 	 * @internal
 	 */
+	@traceSync('reversi.thinkSuperSimple')
 	private thinkSuperSimple() {
 		this.thinkScheduled = false;
 		log(`[reversi] thinkSuperSimple gameId=${this.gameId}`);
