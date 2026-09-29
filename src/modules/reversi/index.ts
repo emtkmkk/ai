@@ -218,13 +218,23 @@ export default class extends Module {
 		return Math.max(0, 200 - daysAfterFixedWindow * (100 / 7));
 	}
 
+	/**
+	 * 好感度が必要好感度を満たしているか
+	 *
+	 * @remarks
+	 * 必要好感度より大きいこと（等号は不可）。ただし必要好感度が0まで下がった後は、ちょうど0でも可。
+	 */
+	private hasEnoughLove(currentLove: number, requiredLove: number): boolean {
+		return currentLove > requiredLove || (requiredLove <= 0 && currentLove >= 0);
+	}
+
 	/** 現在の好感度で対局可能になるまでの日数を計算する。 */
 	private calcDaysUntilPlayable(firstGameCompletedAt: number, currentLove: number): number {
 		const dayMs = 24 * 60 * 60 * 1000;
 		const now = Date.now();
 		for (let days = 1; days <= 365; days++) {
 			const requiredLove = this.calcRequiredLove(firstGameCompletedAt, now + days * dayMs);
-			if (currentLove > requiredLove) return days;
+			if (this.hasEnoughLove(currentLove, requiredLove)) return days;
 		}
 		return 365;
 	}
@@ -647,7 +657,7 @@ export default class extends Module {
 		} else if (applyLoveRestriction) {
 			const requiredLove = this.calcRequiredLove(firstGameCompletedAt);
 			const currentLove = msg.friend.love;
-			if (currentLove <= requiredLove) {
+			if (!this.hasEnoughLove(currentLove, requiredLove)) {
 				const days = this.calcDaysUntilPlayable(firstGameCompletedAt, currentLove);
 				msg.reply(serifs.reversi.notAvailableInDays(days), { visibility: 'specified' });
 				return { reaction: ':mk_hotchicken:' };
