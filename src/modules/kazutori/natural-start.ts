@@ -8,7 +8,7 @@
  *   「100投稿」または「終了から60分（前回がお流れなら110分）」の早いほう。
  *   今日8時以降にまだ開催がなければ条件を満たしている扱い（前日分は持ち越さない）。
  * - 確率: 18.5分ごとに min(1, 0.029 × 機嫌 × (直近30分に投稿した人数(bot除く) - 6))。
- * - 保証判定: 毎日 8:00〜9:59 のランダムな時刻に、今日まだ開催がなければ確率抽選なしで開催を試みる。
+ * - 保証判定: 毎日 8:00〜9:59 のランダムな時刻に、今日まだ開催がなければ「その日の上限/8」（最大1）の確率で開催を試みる。
  * - 0〜7時は自然発生しない。
  *
  * @public
@@ -106,6 +106,16 @@ export function addToSinceLastGame(since: SinceLastGame, userId: string): SinceL
  */
 export function naturalStartProbabilityByUsers(activeUsers: number, activeFactor: number): number {
 	return Math.min(1, Math.max(0, PROBABILITY_PER_USER * activeFactor * (activeUsers - PROBABILITY_BASE_USERS)));
+}
+
+/**
+ * 保証判定が発生する確率（その日の上限 / 8、最大1）
+ *
+ * @param dailyCap - その日の自動開催の上限回数
+ * @public
+ */
+export function guaranteeProbability(dailyCap: number): number {
+	return Math.min(1, Math.max(0, dailyCap / 8));
 }
 
 /**

@@ -1,6 +1,7 @@
 import {
 	ActiveUserWindow,
 	addToSinceLastGame,
+	guaranteeProbability,
 	isGateOpen,
 	isNaturalStartHour,
 	naturalStartProbabilityByUsers,
@@ -62,6 +63,13 @@ it('0〜7時は自然発生しない', () => {
 	expect(isNaturalStartHour(7)).toBe(false);
 	expect(isNaturalStartHour(8)).toBe(true);
 	expect(isNaturalStartHour(23)).toBe(true);
+});
+
+it('保証判定の確率はその日の上限/8（最大1）', () => {
+	expect(guaranteeProbability(0)).toBe(0);
+	expect(guaranteeProbability(4)).toBe(0.5);
+	expect(guaranteeProbability(8)).toBe(1);
+	expect(guaranteeProbability(12)).toBe(1);
 });
 
 it('保証判定の時刻は 8:00〜9:59', () => {

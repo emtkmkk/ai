@@ -10,7 +10,7 @@
  * - NOTE: 数取りの自動開催は18.5分間隔のポーリングで確率判定される（`natural-start.ts` 参照）。
  *       確率は直近30分に HTL/LTL へ投稿した人数（bot除く）と機嫌で決まる。0-7時は自動開催しない。
  *       前回の開催以降に5人以上が投稿し、かつ100投稿または終了から60分（お流れなら110分）が必要。
- *       毎日8:00〜9:59のランダムな時刻に、今日まだ開催がなければ確率抽選なしで開催を試みる（保証判定）。
+ *       毎日8:00〜9:59のランダムな時刻に、今日まだ開催がなければ「その日の上限/8」の確率で開催を試みる（保証判定）。
  *       1日の自動開催回数は、日付が変わった最初の抽選時の機嫌で決めた上限を超えない（`daily-cap.ts` 参照）。
  * - NOTE: 最大値は前回・前々回の参加者数の平均値をベースに計算される。
  * - NOTE: 勝利条件は3種類: 最大値(通常)、2番目に大きい値、中央値。
@@ -45,7 +45,7 @@ import type { EnsuredKazutoriData } from './rate';
 import { rollWithPity } from './pity';
 import { adjustLimitMinutesForMood, dateKey, isMorningLongEligible, isStartableHour, NATURAL_START_INTERVAL_MS, rollBaseLimitMinutes, rollHighMoodRareLongLimit, rollMorningLongLimitMinutes, simulateNaturalGameCount } from './daily-cap';
 import type { KazutoriDailyCap } from './daily-cap';
-import { ActiveUserWindow, addToSinceLastGame, isGateOpen, isNaturalStartHour, naturalStartProbabilityByUsers, pickGuaranteeTime } from './natural-start';
+import { ActiveUserWindow, addToSinceLastGame, guaranteeProbability, isGateOpen, isNaturalStartHour, naturalStartProbabilityByUsers, pickGuaranteeTime } from './natural-start';
 import type { SinceLastGame } from './natural-start';
 import type { KazutoriPityKey, KazutoriPityState } from './pity';
 var Decimal = require('break_infinity.js');
@@ -268,7 +268,8 @@ export default class extends Module {
          * 保証判定: 毎日 8:00〜9:59 のランダムな時刻に、今日まだ開催がなければ開催を試みる
          *
          * @remarks
-         * 午前中長時間の対象になる（今日まだ開催がない）ときだけ行う。1日の上限には数える。
+         * 午前中長時間の対象になる（今日まだ開催がない）ときだけ、その日の上限/8（最大1）の確率で開催する。
+         * 1日の上限には数える。
          *
          * @internal
          */
@@ -285,7 +286,13 @@ export default class extends Module {
                 if (guarantee.done || now.getTime() < guarantee.at) return;
                 this.ai.setMeta({ kazutoriGuarantee: { ...guarantee, done: true } });
                 if (!isMorningLongEligible(now, this.findRecentGame()?.startedAt ?? null)) return;
-                if (this.countTodayNaturalGames(now) >= this.ensureDailyCap(now).cap) {
+                const dailyCap = this.ensureDailyCap(now);
+                const probability = guaranteeProbability(dailyCap.cap);
+                if (Math.random() >= probability) {
+                        this.log(`Kazutori guarantee skipped: roll failed (p=${probability.toFixed(3)})`);
+                        return;
+                }
+                if (this.countTodayNaturalGames(now) >= dailyCap.cap) {
                         this.log('Kazutori guarantee skipped: daily cap reached');
                         return;
                 }
