@@ -40,6 +40,7 @@ import { getPreviousSixHourBoundaryMs } from '@/utils/six-hour-boundary';
 import { EventLoopProbe, EventLoopSample } from '@/utils/event-loop-probe';
 import { getRecentSlowOperations, measureSync, traceSync } from '@/utils/slow-operation';
 import { PostThrottle } from '@/utils/post-throttle';
+import { SqliteStore } from '@/utils/sqlite-store';
 const pkg = require('../package.json');
 
 /**
@@ -233,6 +234,11 @@ export default class 藍 {
 	 */
         public db: loki;
 	/**
+	 * データの永続化先（SQLite）
+	 * @internal
+	 */
+	private store: SqliteStore;
+	/**
 	 * 最後にスリープした時刻（ミリ秒タイムスタンプ）
 	 * @internal
 	 */
@@ -341,8 +347,10 @@ export default class 藍 {
 	 * 藍インスタンスを生成する
 	 *
 	 * @remarks
-	 * LokiJS データベースを初期化し、ロード完了後に {@link run} を呼び出す。
-	 * DB ファイルパスは `config.memoryDir` で変更可能。
+	 * データを読み込み、完了後に {@link run} を呼び出す。
+	 * 検索はメモリ上の LokiJS で行い、保存は SQLite（`memory.sqlite`）に変更分だけ書き込む。
+	 * SQLite が空なら `memory.json` を読み込んで一度だけ取り込む（`memory.json` は残す）。
+	 * DB ファイルの場所は `config.memoryDir` で変更可能。
 	 *
 	 * @param account - 藍として使うアカウント
 	 * @param modules - モジュールの配列（先頭ほど高優先度）
@@ -357,26 +365,59 @@ export default class 藍 {
 			memoryDir = config.memoryDir;
 		}
 		// NOTE: テスト環境では本番DBを汚さないよう別ファイルを使用する
-		const file = process.env.NODE_ENV === 'test' ? `${memoryDir}/test.memory.json` : `${memoryDir}/memory.json`;
+		const prefix = process.env.NODE_ENV === 'test' ? `${memoryDir}/test.memory` : `${memoryDir}/memory`;
+		const jsonFile = `${prefix}.json`;
+		const sqliteFile = `${prefix}.sqlite`;
 
-		this.log(`Lodaing the memory from ${file}...`);
+		this.store = new SqliteStore(sqliteFile, this.log);
 
-		this.db = new loki(file, {
-			autoload: true,
-			autosave: true,
-			autosaveInterval: 1000,
+		const onLoaded = () => {
+			for (const collection of this.db.collections) this.store.attach(collection);
+			// NOTE: update() を通らない直接の書き換えを拾うため、定期的に差分を保存する
+			setInterval(() => {
+				void this.store.reconcile(this.db).catch(err => this.log(chalk.red(`SQLite reconcile failed: ${err}`)));
+			}, 1000 * 60);
+			const close = () => {
+				try {
+					this.store.close();
+				} catch (err) {
+					console.error(err);
+				}
+			};
+			process.once('exit', close);
+			for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+				process.once(signal, () => process.exit(0));
+			}
+			this.log(chalk.green('The memory loaded successfully'));
+			this.run();
+		};
+
+		if (!this.store.isEmpty()) {
+			this.log(`Loading the memory from ${sqliteFile}...`);
+			this.db = new loki(jsonFile, { autosave: false });
+			measureSync('sqlite.loadAll', () => this.store.loadAll(this.db));
+			onLoaded();
+			return;
+		}
+
+		this.log(`Loading the memory from ${jsonFile} (migrating to ${sqliteFile})...`);
+		this.db = new loki(jsonFile, {
+			autoload: fs.existsSync(jsonFile),
+			autosave: false,
 			autoloadCallback: err => {
 				if (err) {
 					this.log(chalk.red(`Failed to load the memory: ${err}`));
-				} else {
-					this.log(chalk.green('The memory loaded successfully'));
-					this.run();
+					return;
 				}
+				measureSync('sqlite.importAll', () => this.store.importAll(this.db));
+				this.log(chalk.green(`Migrated ${this.db.collections.length} collections to ${sqliteFile}`));
+				onLoaded();
 			}
 		});
-		// Loki's default adapter writes asynchronously, but serializes the whole DB synchronously.
-		const serialize = this.db.serialize.bind(this.db);
-		this.db.serialize = (...args) => measureSync('db.serialize', () => serialize(...args));
+		if (!fs.existsSync(jsonFile)) {
+			this.log(`${jsonFile} not found. Starting with an empty memory.`);
+			onLoaded();
+		}
 	}
 
 	/**
@@ -1124,6 +1165,7 @@ export default class 藍 {
 
 		if (collection == null) {
 			collection = this.db.addCollection(name, opts);
+			this.store.attach(collection);
 		}
 
 		return collection;
