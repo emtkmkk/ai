@@ -153,6 +153,13 @@ export type Meta = {
 	 * キーは {@link KazutoriPityKey}（`src/modules/kazutori/pity.ts`）に対応する。
 	 */
 	kazutoriPity?: Record<string, number>;
+	/**
+	 * 数取りの自動開催の1日あたり上限回数
+	 *
+	 * @remarks
+	 * `src/modules/kazutori/daily-cap.ts` の `KazutoriDailyCap` に対応する。
+	 */
+	kazutoriDailyCap?: { date: string; cap: number; activeFactor: number };
 };
 
 /**

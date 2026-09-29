@@ -8,7 +8,8 @@
  *
  * @remarks
  * - NOTE: 数取りの自動開催は18.5分間隔のポーリングで確率判定される。
- *       12時/17-23時は50%、それ以外は10%。1-7時は開催しない。
+ *       12時/18-23時は50%、それ以外は10%（いずれも機嫌を乗算）。1-7時は開催しない。
+ *       1日の自動開催回数は、日付が変わった最初の抽選時の機嫌で決めた上限を超えない（`daily-cap.ts` 参照）。
  * - NOTE: 最大値は前回・前々回の参加者数の平均値をベースに計算される。
  * - NOTE: 勝利条件は3種類: 最大値(通常)、2番目に大きい値、中央値。
  * - NOTE: 3%の確率で最大値50〜500倍、2%で最大値1、3%で無限モードになる。
@@ -40,6 +41,8 @@ import type { FriendDoc } from '@/friend';
 import { ensureKazutoriData, findRateRank, hasKazutoriRateHistory } from './rate';
 import type { EnsuredKazutoriData } from './rate';
 import { rollWithPity } from './pity';
+import { adjustLimitMinutesForMood, dateKey, isStartableHour, NATURAL_START_INTERVAL_MS, naturalStartProbability, rollBaseLimitMinutes, rollHighMoodRareLongLimit, simulateNaturalGameCount } from './daily-cap';
+import type { KazutoriDailyCap } from './daily-cap';
 import type { KazutoriPityKey, KazutoriPityState } from './pity';
 var Decimal = require('break_infinity.js');
 
@@ -192,6 +195,36 @@ export default class extends Module {
         }
 
         /**
+         * 今日の自動開催の上限回数を取得する（未決定なら今の機嫌で決める）
+         *
+         * @remarks
+         * 日付が変わって最初の抽選時に、その時点の機嫌で1日をシミュレーションして上限を決める。
+         * 再起動しても変わらないようメタ情報に保存する。
+         *
+         * @internal
+         */
+        private ensureDailyCap(now: Date): KazutoriDailyCap {
+                const date = dateKey(now);
+                const saved = this.ai.getMeta().kazutoriDailyCap;
+                if (saved?.date === date) return saved;
+                const activeFactor = this.ai.activeFactor;
+                const dailyCap: KazutoriDailyCap = { date, cap: simulateNaturalGameCount(activeFactor), activeFactor };
+                this.ai.setMeta({ kazutoriDailyCap: dailyCap });
+                this.log(`Natural kazutori daily cap for ${date}: ${dailyCap.cap} (activeFactor=${activeFactor})`);
+                return dailyCap;
+        }
+
+        /**
+         * 今日の自動開催（トリガーユーザーなし）の回数
+         *
+         * @internal
+         */
+        private countTodayNaturalGames(now: Date): number {
+                const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+                return this.games.find({ startedAt: { $gte: startOfDay } }).filter(game => !game.triggerUserId).length;
+        }
+
+        /**
          * メタ情報から pity 状態を読み込む
          *
          * @internal
@@ -320,12 +353,17 @@ export default class extends Module {
                 setInterval(this.crawleGameEnd, 1000);
                 setInterval(this.renoteOnSpecificHours, 1000);
                 setInterval(() => {
-                        const hours = new Date().getHours();
-                        const rnd = (hours === 12 || (hours > 17 && hours < 24) ? 0.5 : 0.1) * this.ai.activeFactor;
+                        const now = new Date();
+                        const dailyCap = this.ensureDailyCap(now);
+                        const rnd = naturalStartProbability(now.getHours(), this.ai.activeFactor);
                         if (Math.random() < rnd) {
+                                if (this.countTodayNaturalGames(now) >= dailyCap.cap) {
+                                        this.log(`Natural kazutori skipped: daily cap reached (${dailyCap.cap})`);
+                                        return;
+                                }
                                 this.start();
                         }
-                }, 1000 * 30 * 37);
+                }, NATURAL_START_INTERVAL_MS);
 
                 return {
                         mentionHook: this.mentionHook,
@@ -396,7 +434,7 @@ export default class extends Module {
 		if (recentGame == null) return true;
 		const h = new Date().getHours();
 		if (!recentGame.isEnded) return false;
-		if (h > 0 && h < 8) return false;
+		if (!isStartableHour(h)) return false;
 		const cooldownMinutes = (recentGame?.votes?.length ?? 2) <= 1 && !triggerUserId ? 110 : 50;
 		if (!triggerUserId && Date.now() - (recentGame.finishedAt ?? recentGame.startedAt) < 1000 * 60 * cooldownMinutes) {
 			return false;
@@ -480,7 +518,7 @@ export default class extends Module {
 	private computeLimitMinutes(recentGame: Game | null, flg?: string, triggerUserId?: string): number {
 		const now = new Date();
 		/** 基本の制限時間: 10%で短時間(1 or 2分)、90%で5 or 10分 */
-		let limitMinutes = Math.random() < 0.1 && this.ai.activeFactor >= 0.75 ? (Math.random() < 0.5 && !triggerUserId ? 1 : 2) : Math.random() < 0.5 ? 5 : 10;
+		let limitMinutes = rollBaseLimitMinutes(this.ai.activeFactor, !!triggerUserId);
 		const isSameDate = (left: Date, right: Date) =>
 			left.getFullYear() === right.getFullYear() && left.getMonth() === right.getMonth() && left.getDate() === right.getDate();
 		const recentGameDate = recentGame ? new Date(recentGame.startedAt) : null;
@@ -491,7 +529,7 @@ export default class extends Module {
 		/** 8〜10時か（昨日1回目かつ今朝なら長時間モードの抽選対象） */
 		const isYesterdayFirstGameBoostTime = now.getHours() >= 8 && now.getHours() < 10;
 		/** 高機嫌かつ0.1%で長時間（14時未満のみ） */
-		const hasHighMoodRareLongLimit = this.ai.activeFactor >= 1 && Math.random() < 0.001 && now.getHours() < 14;
+		const hasHighMoodRareLongLimit = rollHighMoodRareLongLimit(this.ai.activeFactor, now.getHours());
 		const hasForcedLongLimit = flg?.includes('lng');
 		/** 前回が昨日の1回目かつ今朝で50%で長時間 */
 		const hasMorningYesterdayLongLimit =
@@ -500,8 +538,8 @@ export default class extends Module {
 		if (hasLongLimit) {
 			limitMinutes *= 48;
 		}
-		if (this.ai.activeFactor < 0.75 && !hasLongLimit) {
-			limitMinutes = Math.floor(1 / (1 - Math.min((1 - this.ai.activeFactor) * 1.2 * (0.7 + Math.random() * 0.3), 0.8)) * limitMinutes / 5) * 5;
+		if (!hasLongLimit) {
+			limitMinutes = adjustLimitMinutesForMood(limitMinutes, this.ai.activeFactor);
 		}
 		return limitMinutes;
 	}
