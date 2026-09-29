@@ -8,7 +8,8 @@
  *
  * @remarks
  * - NOTE: 数取りの自動開催は18.5分間隔のポーリングで確率判定される。
- *       12時/18-23時は50%、それ以外は10%（いずれも機嫌を乗算）。1-7時は開催しない。
+ *       12時/18-23時は50%、8-11時は20%、それ以外は10%（いずれも機嫌を乗算）。1-7時は開催しない。
+ *       前回の開催以降に HTL/LTL に他ユーザーの投稿が100件流れていないと自動開催しない。
  *       1日の自動開催回数は、日付が変わった最初の抽選時の機嫌で決めた上限を超えない（`daily-cap.ts` 参照）。
  * - NOTE: 最大値は前回・前々回の参加者数の平均値をベースに計算される。
  * - NOTE: 勝利条件は3種類: 最大値(通常)、2番目に大きい値、中央値。
@@ -43,6 +44,9 @@ import type { EnsuredKazutoriData } from './rate';
 import { rollWithPity } from './pity';
 import { adjustLimitMinutesForMood, dateKey, isStartableHour, NATURAL_START_INTERVAL_MS, naturalStartProbability, rollBaseLimitMinutes, rollHighMoodRareLongLimit, simulateNaturalGameCount } from './daily-cap';
 import type { KazutoriDailyCap } from './daily-cap';
+
+/** 自然発生に必要な、前回の開催以降に HTL/LTL に流れた他ユーザーの投稿数 */
+const REQUIRED_TIMELINE_NOTES = 100;
 import type { KazutoriPityKey, KazutoriPityState } from './pity';
 var Decimal = require('break_infinity.js');
 
@@ -167,6 +171,10 @@ export default class extends Module {
         private lastHourlyRenote: { key: string; postId: string } | null = null;
         /** ゲーム開始時オプション pity の連続外れ回数 */
         private pityState: KazutoriPityState = {};
+        /** 前回の開催以降に HTL/LTL に流れた他ユーザーの投稿数 */
+        private timelineNotesSinceLastGame = 0;
+        /** HTL/LTL の重複カウント防止用（直近のノートID） */
+        private recentTimelineNoteIds = new Set<string>();
 
 
         /**
@@ -192,6 +200,29 @@ export default class extends Module {
                         .map((value) => value.toLowerCase());
 
                 return banUsers.some((banUser) => typeof banUser === 'string' && identifiers.includes(banUser.toLowerCase()));
+        }
+
+        /**
+         * HTL/LTL に流れた他ユーザーの投稿を数える
+         *
+         * @remarks
+         * HTL と LTL の両方に流れた同じ投稿は1件として数える。
+         * 自然発生の条件を満たした後は保存を省く。
+         *
+         * @internal
+         */
+        @autobind
+        private onTimelineNote(note: { id?: string; userId?: string }) {
+                if (!note?.id || note.userId === this.ai.account.id) return;
+                if (this.recentTimelineNoteIds.has(note.id)) return;
+                this.recentTimelineNoteIds.add(note.id);
+                if (this.recentTimelineNoteIds.size > 500) {
+                        const oldest = this.recentTimelineNoteIds.values().next().value;
+                        if (oldest) this.recentTimelineNoteIds.delete(oldest);
+                }
+                if (this.timelineNotesSinceLastGame >= REQUIRED_TIMELINE_NOTES) return;
+                this.timelineNotesSinceLastGame++;
+                this.ai.setMeta({ kazutoriTimelineNotes: this.timelineNotesSinceLastGame });
         }
 
         /**
@@ -348,6 +379,10 @@ export default class extends Module {
         public install() {
                 this.games = this.ai.getCollection('kazutori');
                 this.loadPityState();
+                // NOTE: 導入直後は過去の投稿数が分からないため、条件を満たしている扱いにする
+                this.timelineNotesSinceLastGame = this.ai.getMeta().kazutoriTimelineNotes ?? REQUIRED_TIMELINE_NOTES;
+                this.ai.connection.useSharedConnection('homeTimeline').on('note', this.onTimelineNote);
+                this.ai.connection.useSharedConnection('localTimeline').on('note', this.onTimelineNote);
 
                 this.crawleGameEnd();
                 setInterval(this.crawleGameEnd, 1000);
@@ -357,6 +392,10 @@ export default class extends Module {
                         const dailyCap = this.ensureDailyCap(now);
                         const rnd = naturalStartProbability(now.getHours(), this.ai.activeFactor);
                         if (Math.random() < rnd) {
+                                if (this.timelineNotesSinceLastGame < REQUIRED_TIMELINE_NOTES) {
+                                        this.log(`Natural kazutori skipped: timeline notes ${this.timelineNotesSinceLastGame}/${REQUIRED_TIMELINE_NOTES}`);
+                                        return;
+                                }
                                 if (this.countTodayNaturalGames(now) >= dailyCap.cap) {
                                         this.log(`Natural kazutori skipped: daily cap reached (${dailyCap.cap})`);
                                         return;
@@ -644,6 +683,8 @@ export default class extends Module {
 
 		this.subscribeReply(null, post.id);
 		this.log('New kazutori game started');
+		this.timelineNotesSinceLastGame = 0;
+		this.ai.setMeta({ kazutoriTimelineNotes: 0 });
 		this.persistPityState();
 	}
 

@@ -6,7 +6,7 @@
  * @remarks
  * 1日の初めの機嫌（activeFactor）で、現在の自動開催ルールに沿った1日を1回シミュレーションし、
  * その開催回数をその日の上限とする。上限の分布が現在の1日の開催回数の分布と同じになる。
- * ただし午前中長時間（8〜10時の48倍）は上限の計算に含めない。
+ * ただし午前中の抽選確率の補正と午前中長時間（8〜10時の48倍）は上限の計算に含めない。
  *
  * @public
  */
@@ -16,15 +16,21 @@ export const NATURAL_START_INTERVAL_MS = 1000 * 30 * 37;
 /** 自動開催後のクールダウン（分）。前回がお流れの場合は考慮しない */
 const NATURAL_COOLDOWN_MINUTES = 50;
 
+/** 午前中（8〜11時）の抽選確率の倍率 */
+const MORNING_BOOST = 2;
+
 /**
  * 自動開催の抽選確率
  *
  * @param hours - 現在の時（0〜23）
  * @param activeFactor - 機嫌
+ * @param morningBoost - 午前中（8〜11時）の補正を掛けるか
  * @public
  */
-export function naturalStartProbability(hours: number, activeFactor: number): number {
-	return (hours === 12 || (hours > 17 && hours < 24) ? 0.5 : 0.1) * activeFactor;
+export function naturalStartProbability(hours: number, activeFactor: number, morningBoost = true): number {
+	const base = hours === 12 || (hours > 17 && hours < 24) ? 0.5 : 0.1;
+	const boost = morningBoost && hours >= 8 && hours < 12 ? MORNING_BOOST : 1;
+	return base * boost * activeFactor;
 }
 
 /**
@@ -80,7 +86,7 @@ export function simulateNaturalGameCount(activeFactor: number, random: () => num
 	let availableAt = 0;
 	for (let t = random() * NATURAL_START_INTERVAL_MS; t < dayMs; t += NATURAL_START_INTERVAL_MS) {
 		const hours = Math.floor(t / (60 * minuteMs));
-		if (random() >= naturalStartProbability(hours, activeFactor)) continue;
+		if (random() >= naturalStartProbability(hours, activeFactor, false)) continue;
 		if (!isStartableHour(hours) || t < availableAt) continue;
 		count++;
 		let limitMinutes = rollBaseLimitMinutes(activeFactor, false, random);

@@ -160,6 +160,8 @@ export type Meta = {
 	 * `src/modules/kazutori/daily-cap.ts` の `KazutoriDailyCap` に対応する。
 	 */
 	kazutoriDailyCap?: { date: string; cap: number; activeFactor: number };
+	/** 前回の数取り開催以降に HTL/LTL に流れた他ユーザーの投稿数（100で頭打ち） */
+	kazutoriTimelineNotes?: number;
 };
 
 /**

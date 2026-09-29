@@ -1,4 +1,4 @@
-import { adjustLimitMinutesForMood, dateKey, simulateNaturalGameCount } from '@/modules/kazutori/daily-cap';
+import { adjustLimitMinutesForMood, dateKey, naturalStartProbability, simulateNaturalGameCount } from '@/modules/kazutori/daily-cap';
 
 /** 再現性のある疑似乱数 */
 function seeded(seed: number) {
@@ -45,4 +45,19 @@ describe('adjustLimitMinutesForMood', () => {
 
 it('dateKey はローカル日付', () => {
 	expect(dateKey(new Date(2026, 8, 29, 0, 5))).toBe('2026-9-29');
+});
+
+describe('naturalStartProbability', () => {
+	it('8〜11時は2倍、それ以外の時間帯は変わらない', () => {
+		expect(naturalStartProbability(7, 1)).toBeCloseTo(0.1);
+		expect(naturalStartProbability(8, 1)).toBeCloseTo(0.2);
+		expect(naturalStartProbability(11, 0.5)).toBeCloseTo(0.1);
+		expect(naturalStartProbability(12, 1)).toBeCloseTo(0.5);
+		expect(naturalStartProbability(13, 1)).toBeCloseTo(0.1);
+		expect(naturalStartProbability(20, 1)).toBeCloseTo(0.5);
+	});
+
+	it('上限計算用には午前中の補正を掛けない', () => {
+		expect(naturalStartProbability(9, 1, false)).toBeCloseTo(0.1);
+	});
 });
