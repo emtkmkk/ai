@@ -4,3 +4,5 @@ node_modules
 memory.json
 font.ttf
 docs/api
+memory.sqlite*
+test.memory.*
