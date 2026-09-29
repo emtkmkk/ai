@@ -135,6 +135,6 @@ export default class TodayModule extends Module {
 
 		this.ai.post({
 			text: serifs.today.msg({ aisatu, date: dateStr, youbi, info: body }),
-		});
+		}, { scheduled: true });
 	}
 }

@@ -1163,20 +1163,26 @@ export default class 藍 {
 	 *
 	 * @remarks
 	 * `config.postNotPublic` が `true` の場合、公開範囲が `public` だと自動的に `home` に変更される。
-	 * リプライ・DM 以外の投稿は {@link PostThrottle} を通り、前回の投稿から1分経過するか、
+	 * リプライ・DM 以外の投稿は {@link PostThrottle} を通り、前回の投稿から45〜75秒経過するか、
 	 * HTL/LTL に他ユーザーの投稿が流れてから3秒経過するまで保留される。
 	 *
 	 * @param param - 投稿パラメータ（`notes/create` API のパラメータ）
+	 * @param opts.scheduled - 決まった時刻に行う投稿。保留せず即時投稿する
 	 * @returns 作成されたノート
 	 * @internal
 	 */
 	@autobind
-	public async post(param: any) {
+	public async post(param: any, opts?: { scheduled?: boolean }) {
 		if (config.postNotPublic && (!param.visibility || param.visibility == "public")) param.visibility = "home";
 		if (!param.visibility && config.defaultVisibility) param.visibility = config.defaultVisibility
 		// NOTE: リプライ・DM は即時投稿し、タイムラインに流れる単独投稿のみ連投抑制キューを通す
 		const create = async () => (await this.api('notes/create', param)).createdNote;
 		if (param.replyId || param.visibility === 'specified') return create();
+		if (opts?.scheduled) {
+			// 時刻が決まっている投稿は保留しないが、後続のランダム投稿は待たせる
+			this.postThrottle.markPosted();
+			return create();
+		}
 		if (this.postThrottle.pendingCount > 0) this.log(`Post queued (pending: ${this.postThrottle.pendingCount})`);
 		return this.postThrottle.enqueue(create);
 	}

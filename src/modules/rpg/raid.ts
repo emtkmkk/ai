@@ -431,7 +431,7 @@ export async function start(triggerUserId?: string, flg?: string | string[]) {
 	/** レイド開始の投稿 */
 	const post = await ai.post({
 		text: enemy.introMsg ? enemy.introMsg(enemy.dname ?? enemy.name, Math.ceil((Date.now() + 1000 * 60 * limitMinutes) / 1000)) : serifs.rpg.intro(enemy.dname ?? enemy.name, Math.ceil((Date.now() + 1000 * 60 * limitMinutes) / 1000)),
-	});
+	}, { scheduled: true });
 
 	// 新しいレイドをデータベースに挿入
 	raids.insertOne({

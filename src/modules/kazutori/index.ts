@@ -375,7 +375,7 @@ export default class extends Module {
                 try {
                         await this.ai.post({
                                 renoteId: game.postId,
-                        });
+                        }, { scheduled: true });
                 } catch (err) {
                         const reason = err instanceof Error ? err.message : String(err);
                         this.log(`Failed to renote kazutori post on specific hour: ${reason}`);

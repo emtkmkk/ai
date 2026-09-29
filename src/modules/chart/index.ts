@@ -209,7 +209,7 @@ export default class extends Module {
 				: serifs.chart.post(stats.todayCount, stats.trend, stats.postsPerUser),
 			visibility: "public",
 			fileIds: [fileNotes.id, fileUsers.id]
-		});
+		}, { scheduled: true });
 		this.ai.decActiveFactor(0.015);
 	}
 

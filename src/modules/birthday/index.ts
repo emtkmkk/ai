@@ -119,7 +119,7 @@ export default class extends Module {
 						visibility: "public",
 						localOnly: config.birthdayPostLocalOnly,
 						...(config.birthdayPostChannel ? {channelId: config.birthdayPostChannel} : {}),
-					});
+					}, { scheduled: true });
 				}
 			} else {
 				// リモートユーザーや親愛度20未満はDMで祝う

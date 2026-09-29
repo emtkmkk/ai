@@ -4,9 +4,11 @@ beforeEach(() => jest.useFakeTimers());
 afterEach(() => jest.useRealTimers());
 
 const flush = () => jest.advanceTimersByTimeAsync(0);
+// random=0.5 で自動解放は 45〜75秒の中央の60秒になる
+const createThrottle = () => new PostThrottle(undefined, undefined, undefined, undefined, () => 0.5);
 
-test('first post is immediate, next waits for 1 minute', async () => {
-	const throttle = new PostThrottle();
+test('first post is immediate, next waits for the auto release time', async () => {
+	const throttle = createThrottle();
 	const posted: string[] = [];
 	const post = (name: string) => throttle.enqueue(async () => { posted.push(name); return name; });
 
@@ -20,7 +22,7 @@ test('first post is immediate, next waits for 1 minute', async () => {
 });
 
 test('other user note releases one queued post after 3 seconds', async () => {
-	const throttle = new PostThrottle();
+	const throttle = createThrottle();
 	const posted: string[] = [];
 	const post = (name: string) => throttle.enqueue(async () => { posted.push(name); });
 
@@ -44,7 +46,7 @@ test('other user note releases one queued post after 3 seconds', async () => {
 });
 
 test('post is immediate once the wait has already elapsed', async () => {
-	const throttle = new PostThrottle();
+	const throttle = createThrottle();
 	const posted: string[] = [];
 	const post = (name: string) => throttle.enqueue(async () => { posted.push(name); });
 
@@ -57,10 +59,34 @@ test('post is immediate once the wait has already elapsed', async () => {
 });
 
 test('failed post rejects and still starts the wait', async () => {
-	const throttle = new PostThrottle();
+	const throttle = createThrottle();
 	await expect(throttle.enqueue(async () => { throw new Error('x'); })).rejects.toThrow('x');
 	let done = false;
 	void throttle.enqueue(async () => { done = true; });
+	await jest.advanceTimersByTimeAsync(59999);
+	expect(done).toBe(false);
+	await jest.advanceTimersByTimeAsync(1);
+	expect(done).toBe(true);
+});
+
+test.each([[0, 45000], [0.999999, 75000]])('auto release wait is between 45 and 75 seconds (random=%p)', async (random, waitMs) => {
+	const throttle = new PostThrottle(undefined, undefined, undefined, undefined, () => random);
+	await throttle.enqueue(async () => {});
+	let done = false;
+	void throttle.enqueue(async () => { done = true; });
+	await jest.advanceTimersByTimeAsync(waitMs - 1);
+	expect(done).toBe(false);
+	await jest.advanceTimersByTimeAsync(1);
+	expect(done).toBe(true);
+});
+
+test('markPosted restarts the wait for queued posts', async () => {
+	const throttle = createThrottle();
+	await throttle.enqueue(async () => {});
+	let done = false;
+	void throttle.enqueue(async () => { done = true; });
+	await jest.advanceTimersByTimeAsync(50000);
+	throttle.markPosted();
 	await jest.advanceTimersByTimeAsync(59999);
 	expect(done).toBe(false);
 	await jest.advanceTimersByTimeAsync(1);

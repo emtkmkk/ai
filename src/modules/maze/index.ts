@@ -94,7 +94,7 @@ export default class extends Module {
 			await this.ai.post({
 				text: serifs.maze.post + " 難易度 : " + mazeSize + "%",
 				fileIds: [file.id]
-			});
+			}, { scheduled: true });
 			this.log(`Daily maze done in ${Date.now() - startedAt}ms`);
 
 			data.lastPosted = date;

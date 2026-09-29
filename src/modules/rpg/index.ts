@@ -362,7 +362,7 @@ export default class extends Module {
 		const me = Math.random() < 0.8 ? colors.find(x => x.default)?.name ?? colors[0].name : filteredColors[Math.floor(Math.random() * filteredColors.length)];
 		this.ai.post({
 			text: serifs.rpg.remind(me, new Date().getHours()),
-		});
+		}, { scheduled: true });
 	}
 
 	/**

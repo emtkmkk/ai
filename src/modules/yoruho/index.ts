@@ -157,7 +157,7 @@ export default class extends Module {
 		const res = this.ai.post({
 			text,
 			localOnly: true,
-		});
+		}, { scheduled: true });
 		this.log("yoruho : " + new Date().toLocaleString('ja-JP') + "." + new Date().getMilliseconds());
 		res.then((res) => {
 			let newErrorInMilliseconds;
