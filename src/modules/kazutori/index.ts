@@ -8,8 +8,8 @@
  *
  * @remarks
  * - NOTE: 数取りの自動開催は18.5分間隔のポーリングで確率判定される（`natural-start.ts` 参照）。
- *       確率は直近30分に HTL/LTL へ投稿した人数（bot除く）と機嫌で決まる。0-7時は自動開催しない。
- *       前回の開催以降に5人以上が投稿し、かつ100投稿または終了から60分（お流れなら110分）が必要。
+ *       確率は直近60分に HTL/LTL へ3回以上投稿した人数（bot除く）と機嫌で決まる。0-7時は自動開催しない。
+ *       前回の開催以降に3回以上投稿した人が5人以上、かつ100投稿または終了から60分（お流れなら110分）が必要。
  *       毎日8:00〜9:59のランダムな時刻に、今日まだ開催がなければ「その日の上限/8」の確率で開催を試みる（保証判定）。
  *       1日の自動開催回数は、日付が変わった最初の抽選時の機嫌で決めた上限を超えない（`daily-cap.ts` 参照）。
  * - NOTE: 最大値は前回・前々回の参加者数の平均値をベースに計算される。
@@ -45,7 +45,7 @@ import type { EnsuredKazutoriData } from './rate';
 import { rollWithPity } from './pity';
 import { adjustLimitMinutesForMood, dateKey, isMorningLongEligible, isStartableHour, NATURAL_START_INTERVAL_MS, rollBaseLimitMinutes, rollHighMoodRareLongLimit, rollMorningLongLimitMinutes, simulateNaturalGameCount } from './daily-cap';
 import type { KazutoriDailyCap } from './daily-cap';
-import { ActiveUserWindow, addToSinceLastGame, guaranteeProbability, isGateOpen, isNaturalStartHour, naturalStartProbabilityByUsers, pickGuaranteeTime } from './natural-start';
+import { ActiveUserWindow, addToSinceLastGame, countQualifiedUsers, emptySinceLastGame, guaranteeProbability, isGateOpen, isNaturalStartHour, naturalStartProbabilityByUsers, pickGuaranteeTime } from './natural-start';
 import type { SinceLastGame } from './natural-start';
 import type { KazutoriPityKey, KazutoriPityState } from './pity';
 var Decimal = require('break_infinity.js');
@@ -172,8 +172,8 @@ export default class extends Module {
         /** ゲーム開始時オプション pity の連続外れ回数 */
         private pityState: KazutoriPityState = {};
         /** 前回の開催以降に HTL/LTL に流れた投稿（bot除く） */
-        private sinceLastGame: SinceLastGame = { posts: 0, userIds: [] };
-        /** 直近30分に HTL/LTL へ投稿した人（bot除く） */
+        private sinceLastGame: SinceLastGame = emptySinceLastGame();
+        /** 直近60分に HTL/LTL へ投稿した人（bot除く） */
         private activeUsers = new ActiveUserWindow();
         /** HTL/LTL の重複カウント防止用（直近のノートID） */
         private recentTimelineNoteIds = new Set<string>();
@@ -253,7 +253,7 @@ export default class extends Module {
                 const rnd = naturalStartProbabilityByUsers(activeUsers, this.ai.activeFactor);
                 if (Math.random() >= rnd) return;
                 if (!isGateOpen(now, this.findRecentGame(), this.sinceLastGame)) {
-                        this.log(`Natural kazutori skipped: gate closed (posts=${this.sinceLastGame.posts} users=${this.sinceLastGame.userIds.length})`);
+                        this.log(`Natural kazutori skipped: gate closed (posts=${this.sinceLastGame.posts} users=${countQualifiedUsers(this.sinceLastGame)})`);
                         return;
                 }
                 if (this.countTodayNaturalGames(now) >= dailyCap.cap) {
@@ -455,7 +455,9 @@ export default class extends Module {
         public install() {
                 this.games = this.ai.getCollection('kazutori');
                 this.loadPityState();
-                this.sinceLastGame = this.ai.getMeta().kazutoriSinceLastGame ?? { posts: 0, userIds: [] };
+                const savedSince = this.ai.getMeta().kazutoriSinceLastGame;
+                // NOTE: 旧形式（userIds）の保存値は捨てて数え直す
+                this.sinceLastGame = savedSince?.userPosts ? { posts: savedSince.posts, userPosts: savedSince.userPosts } : emptySinceLastGame();
                 this.ai.connection.useSharedConnection('homeTimeline').on('note', this.onTimelineNote);
                 this.ai.connection.useSharedConnection('localTimeline').on('note', this.onTimelineNote);
 
@@ -733,7 +735,7 @@ export default class extends Module {
 
 		this.subscribeReply(null, post.id);
 		this.log('New kazutori game started');
-		this.sinceLastGame = { posts: 0, userIds: [] };
+		this.sinceLastGame = emptySinceLastGame();
 		this.ai.setMeta({ kazutoriSinceLastGame: this.sinceLastGame });
 		this.persistPityState();
 	}

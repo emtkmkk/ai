@@ -161,7 +161,7 @@ export type Meta = {
 	 */
 	kazutoriDailyCap?: { date: string; cap: number; activeFactor: number };
 	/** 前回の数取り開催以降に HTL/LTL に流れた投稿（bot除く、開催条件の頭打ちまで） */
-	kazutoriSinceLastGame?: { posts: number; userIds: string[] };
+	kazutoriSinceLastGame?: { posts: number; userPosts?: Record<string, number> };
 	/** 数取りの保証判定の時刻（その日の分） */
 	kazutoriGuarantee?: { date: string; at: number; done: boolean };
 };
