@@ -396,7 +396,8 @@ export default class 藍 {
 			this.log(`Loading the memory from ${sqliteFile}...`);
 			this.db = new loki(jsonFile, { autosave: false });
 			measureSync('sqlite.loadAll', () => this.store.loadAll(this.db));
-			onLoaded();
+			// NOTE: 従来の memory.json の読み込みと同じく、コンストラクタを抜けてから起動する
+			setImmediate(onLoaded);
 			return;
 		}
 
@@ -416,7 +417,7 @@ export default class 藍 {
 		});
 		if (!fs.existsSync(jsonFile)) {
 			this.log(`${jsonFile} not found. Starting with an empty memory.`);
-			onLoaded();
+			setImmediate(onLoaded);
 		}
 	}
 
