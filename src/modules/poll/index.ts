@@ -7,8 +7,9 @@
  * 50種以上のテーマから選ばれたお題に対し、vocabulary から生成されたアイテムを選択肢にする。
  *
  * @remarks
- * - NOTE: アンケートの投稿タイミングは時間帯と activeFactor に依存する。
- *       （朝・昼・夜のアクティブな時間帯に投稿されやすい）
+ * - NOTE: アンケートの投稿タイミングは直近の HTL/LTL の人数と activeFactor に依存する。
+ *       30分ごとに min(1, 0.02 × 機嫌 × (直近60分に3回以上投稿した人数 - 3)) の確率で投稿する。
+ *       前回の投稿以降の開催条件・0-7時は投稿しないことは数取りと共通（`@/utils/timeline-activity` 参照）。
  * - NOTE: 結果は pollresult コレクションに記録され、同じアイテムが連勝している場合は
  *       殿堂入りとして出現率が下がる。
  * - NOTE: 12/31（大晦日）は20:00-20:30に確定で投稿し、選択肢が10個になる。
@@ -27,6 +28,10 @@ import * as loki from 'lokijs';
 import { genItem } from '@/vocabulary';
 import config from '@/config';
 import { Note } from '@/misskey/note';
+import { activityProbability, countQualifiedUsers, isGateOpen, isNaturalStartHour, TimelineActivityTracker } from '@/utils/timeline-activity';
+
+/** 確率の係数（機嫌を掛ける前、1人あたり） */
+const PROBABILITY_PER_USER = 0.02;
 
 /**
  * アンケートモジュールクラス
@@ -92,16 +97,18 @@ export default class extends Module {
 		expiration: number;
 	}>;
 
+	/** HTL/LTL の活動量（直近の人数・前回の投稿以降の投稿） */
+	private timeline: TimelineActivityTracker;
+
 	/**
 	 * モジュールの初期化
 	 *
 	 * @remarks
 	 * 3つのLokiJSコレクションを初期化し、期限切れのongoingPollsを削除。
-	 * 30分間隔でアンケート投稿判定を行う。投稿確率は時間帯に依存:
-	 * - 12時 / 17-23時: 25% × activeFactor
-	 * - 7-12時 / 13-16時: 5% × activeFactor
-	 * - 0-6時: 投稿しない
-	 * - 12/31 20:00-20:30: 確定投稿
+	 * 30分間隔でアンケート投稿判定を行う:
+	 * - 確率: min(1, 0.02 × activeFactor × (直近60分に3回以上投稿した人数 - 3))
+	 * - 前回の投稿以降の開催条件を満たさない場合・0-7時: 投稿しない
+	 * - 12/31: 20:00-20:30 に確定投稿（それ以外の時間は投稿しない）
 	 *
 	 * @returns mentionHook と timeoutCallback を含むフック登録オブジェクト
 	 * @public
@@ -119,26 +126,46 @@ export default class extends Module {
 		});
 		this.ongoingPolls.findAndRemove({'expiration':{ $lt: Date.now() }});
 
-		setInterval(() => {
-			const hours = new Date().getHours();
-			let rnd = ((hours === 12 || (hours > 17 && hours < 24)) ? 0.25 : 0.05) * this.ai.activeFactor;
-			if ((hours > 0 && hours < 7) || (hours > 13 && hours < 17)) return;
-			if (new Date().getMonth() === 11 && new Date().getDate() === 31) {
-				if (hours != 20 || new Date().getMinutes() > 30) {
-					return;
-				} else {
-					rnd = 1;
-				}
-			}
-			if (Math.random() < rnd) {
-				this.post();
-			}
-		}, 1000 * 60 * 30);
+		this.timeline = new TimelineActivityTracker(
+			() => this.ai.account.id,
+			() => this.ai.getMeta().pollSinceLast,
+			since => this.ai.setMeta({ pollSinceLast: since }),
+		);
+		this.ai.connection.useSharedConnection('homeTimeline').on('note', this.timeline.onNote);
+		this.ai.connection.useSharedConnection('localTimeline').on('note', this.timeline.onNote);
+
+		setInterval(this.naturalPostTick, 1000 * 60 * 30);
 
 		return {
 			mentionHook: this.mentionHook,
 			timeoutCallback: this.timeoutCallback,
 		};
+	}
+
+	/**
+	 * 30分ごとのアンケート投稿判定
+	 *
+	 * @internal
+	 */
+	@autobind
+	private naturalPostTick() {
+		const now = new Date();
+		const hours = now.getHours();
+		if (now.getMonth() === 11 && now.getDate() === 31) {
+			if (hours === 20 && now.getMinutes() <= 30) this.post();
+			return;
+		}
+		if (!isNaturalStartHour(hours)) return;
+		const activeUsers = this.timeline.countActiveUsers(now.getTime());
+		const rnd = activityProbability(activeUsers, this.ai.activeFactor, PROBABILITY_PER_USER);
+		if (Math.random() >= rnd) return;
+		const since = this.timeline.since;
+		if (!isGateOpen(now, this.ai.getMeta().pollLast ?? null, since)) {
+			this.log(`Natural poll skipped: gate closed (posts=${since.posts} users=${countQualifiedUsers(since)})`);
+			return;
+		}
+		this.log(`Natural poll start (activeUsers=${activeUsers} p=${rnd.toFixed(3)})`);
+		this.post();
 	}
 
 	/**
@@ -316,6 +343,10 @@ export default class extends Module {
 				multiple: false,
 			}
 		});
+
+		// 次の自動投稿の開催条件は、この投稿から数え直す
+		this.ai.setMeta({ pollLast: { startedAt: Date.now(), finishedAt: Date.now() + duration } });
+		this.timeline.reset();
 
 		// `ongoingPolls`に登録
 		this.ongoingPolls.insertOne({

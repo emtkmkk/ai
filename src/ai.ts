@@ -164,6 +164,10 @@ export type Meta = {
 	kazutoriSinceLastGame?: { posts: number; userPosts?: Record<string, number> };
 	/** 数取りの保証判定の時刻（その日の分） */
 	kazutoriGuarantee?: { date: string; at: number; done: boolean };
+	/** 前回のアンケート投稿以降に HTL/LTL に流れた投稿（bot除く、開催条件の頭打ちまで） */
+	pollSinceLast?: { posts: number; userPosts?: Record<string, number> };
+	/** 前回のアンケートの投稿時刻と締切 */
+	pollLast?: { startedAt: number; finishedAt: number };
 };
 
 /**

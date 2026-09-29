@@ -7,7 +7,7 @@
  * ユーザーが勝利するゲーム。レーティングシステムも搭載。
  *
  * @remarks
- * - NOTE: 数取りの自動開催は18.5分間隔のポーリングで確率判定される（`natural-start.ts` 参照）。
+ * - NOTE: 数取りの自動開催は18.5分間隔のポーリングで確率判定される（`natural-start.ts`・`@/utils/timeline-activity` 参照）。
  *       確率は直近60分に HTL/LTL へ3回以上投稿した人数（bot除く）と機嫌で決まる。0-7時は自動開催しない。
  *       前回の開催以降に3回以上投稿した人が5人以上、かつ100投稿または終了から60分（お流れなら110分）が必要。
  *       毎日8:00〜9:59のランダムな時刻に、今日まだ開催がなければ「その日の上限/8」の確率で開催を試みる（保証判定）。
@@ -45,8 +45,8 @@ import type { EnsuredKazutoriData } from './rate';
 import { rollWithPity } from './pity';
 import { adjustLimitMinutesForMood, dateKey, isMorningLongEligible, isStartableHour, NATURAL_START_INTERVAL_MS, rollBaseLimitMinutes, rollHighMoodRareLongLimit, rollMorningLongLimitMinutes, simulateNaturalGameCount } from './daily-cap';
 import type { KazutoriDailyCap } from './daily-cap';
-import { ActiveUserWindow, addToSinceLastGame, countQualifiedUsers, emptySinceLastGame, guaranteeProbability, isGateOpen, isNaturalStartHour, naturalStartProbabilityByUsers, pickGuaranteeTime } from './natural-start';
-import type { SinceLastGame } from './natural-start';
+import { guaranteeProbability, naturalStartProbabilityByUsers, pickGuaranteeTime } from './natural-start';
+import { countQualifiedUsers, isGateOpen, isNaturalStartHour, TimelineActivityTracker } from '@/utils/timeline-activity';
 import type { KazutoriPityKey, KazutoriPityState } from './pity';
 var Decimal = require('break_infinity.js');
 
@@ -171,12 +171,8 @@ export default class extends Module {
         private lastHourlyRenote: { key: string; postId: string } | null = null;
         /** ゲーム開始時オプション pity の連続外れ回数 */
         private pityState: KazutoriPityState = {};
-        /** 前回の開催以降に HTL/LTL に流れた投稿（bot除く） */
-        private sinceLastGame: SinceLastGame = emptySinceLastGame();
-        /** 直近60分に HTL/LTL へ投稿した人（bot除く） */
-        private activeUsers = new ActiveUserWindow();
-        /** HTL/LTL の重複カウント防止用（直近のノートID） */
-        private recentTimelineNoteIds = new Set<string>();
+        /** HTL/LTL の活動量（直近の人数・前回の開催以降の投稿） */
+        private timeline: TimelineActivityTracker;
 
 
         /**
@@ -205,31 +201,6 @@ export default class extends Module {
         }
 
         /**
-         * HTL/LTL に流れた他ユーザーの投稿を記録する
-         *
-         * @remarks
-         * HTL と LTL の両方に流れた同じ投稿は1件として数える。bot の投稿は数えない。
-         * 前回の開催以降の状況は開催条件の頭打ちまでしか保持せず、変化したときだけ保存する。
-         *
-         * @internal
-         */
-        @autobind
-        private onTimelineNote(note: { id?: string; userId?: string; user?: { isBot?: boolean } }) {
-                if (!note?.id || !note.userId || note.userId === this.ai.account.id || note.user?.isBot) return;
-                if (this.recentTimelineNoteIds.has(note.id)) return;
-                this.recentTimelineNoteIds.add(note.id);
-                if (this.recentTimelineNoteIds.size > 500) {
-                        const oldest = this.recentTimelineNoteIds.values().next().value;
-                        if (oldest) this.recentTimelineNoteIds.delete(oldest);
-                }
-                this.activeUsers.record(note.userId, Date.now());
-                const next = addToSinceLastGame(this.sinceLastGame, note.userId);
-                if (next == null) return;
-                this.sinceLastGame = next;
-                this.ai.setMeta({ kazutoriSinceLastGame: next });
-        }
-
-        /**
          * 直近のゲーム
          *
          * @internal
@@ -249,11 +220,12 @@ export default class extends Module {
                 const now = new Date();
                 const dailyCap = this.ensureDailyCap(now);
                 if (!isNaturalStartHour(now.getHours())) return;
-                const activeUsers = this.activeUsers.count(now.getTime());
+                const activeUsers = this.timeline.countActiveUsers(now.getTime());
                 const rnd = naturalStartProbabilityByUsers(activeUsers, this.ai.activeFactor);
                 if (Math.random() >= rnd) return;
-                if (!isGateOpen(now, this.findRecentGame(), this.sinceLastGame)) {
-                        this.log(`Natural kazutori skipped: gate closed (posts=${this.sinceLastGame.posts} users=${countQualifiedUsers(this.sinceLastGame)})`);
+                const since = this.timeline.since;
+                if (!isGateOpen(now, this.findRecentGame(), since)) {
+                        this.log(`Natural kazutori skipped: gate closed (posts=${since.posts} users=${countQualifiedUsers(since)})`);
                         return;
                 }
                 if (this.countTodayNaturalGames(now) >= dailyCap.cap) {
@@ -455,11 +427,13 @@ export default class extends Module {
         public install() {
                 this.games = this.ai.getCollection('kazutori');
                 this.loadPityState();
-                const savedSince = this.ai.getMeta().kazutoriSinceLastGame;
-                // NOTE: 旧形式（userIds）の保存値は捨てて数え直す
-                this.sinceLastGame = savedSince?.userPosts ? { posts: savedSince.posts, userPosts: savedSince.userPosts } : emptySinceLastGame();
-                this.ai.connection.useSharedConnection('homeTimeline').on('note', this.onTimelineNote);
-                this.ai.connection.useSharedConnection('localTimeline').on('note', this.onTimelineNote);
+                this.timeline = new TimelineActivityTracker(
+                        () => this.ai.account.id,
+                        () => this.ai.getMeta().kazutoriSinceLastGame,
+                        since => this.ai.setMeta({ kazutoriSinceLastGame: since }),
+                );
+                this.ai.connection.useSharedConnection('homeTimeline').on('note', this.timeline.onNote);
+                this.ai.connection.useSharedConnection('localTimeline').on('note', this.timeline.onNote);
 
                 this.crawleGameEnd();
                 setInterval(this.crawleGameEnd, 1000);
@@ -537,7 +511,7 @@ export default class extends Module {
 		const h = new Date().getHours();
 		if (!recentGame.isEnded) return false;
 		if (!isStartableHour(h)) return false;
-		// NOTE: 自動開催の間隔は natural-start.ts の開催条件で判定する（start() の呼び出し前）
+		// NOTE: 自動開催の間隔は timeline-activity.ts の開催条件で判定する（start() の呼び出し前）
 		return true;
 	}
 
@@ -735,8 +709,7 @@ export default class extends Module {
 
 		this.subscribeReply(null, post.id);
 		this.log('New kazutori game started');
-		this.sinceLastGame = emptySinceLastGame();
-		this.ai.setMeta({ kazutoriSinceLastGame: this.sinceLastGame });
+		this.timeline.reset();
 		this.persistPityState();
 	}
 
