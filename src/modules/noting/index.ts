@@ -27,8 +27,6 @@ import { pickFromBag } from '@/utils/shuffle-bag';
 type NotingData = {
 	/** 一巡中にすでに出た定型セリフ */
 	notesUsed?: string[];
-	/** 次の投稿を必ず定型セリフにする（導入時の1回のみ） */
-	forceNextFixed?: boolean;
 };
 
 export default class extends Module {
@@ -61,11 +59,11 @@ export default class extends Module {
 			indices: ['userId']
 		});
 
-		// NOTE: 導入時はリバーシの案内以外を出た扱いにし、次の投稿で必ずリバーシの案内を出す
+		// NOTE: 導入時はリバーシの案内以外を出た扱いにし、次の定型セリフで必ずリバーシの案内を出す
 		const data: NotingData = this.getData() ?? {};
 		if (data.notesUsed == null) {
 			const notesUsed = this.fixedNotes().map(note => note.text).filter(text => !text.includes('リバーシ'));
-			this.setData({ ...data, notesUsed, forceNextFixed: true });
+			this.setData({ ...data, notesUsed });
 		}
 
 		setInterval(() => {
@@ -132,10 +130,10 @@ export default class extends Module {
 		let note;
 		let channel;
 
-		if (data.forceNextFixed || Math.random() < 0.333) {
+		if (Math.random() < 0.333) {
 			// 定型セリフ（一度出たものは、他のすべてが出るまで出さない）
 			const { item: selected, used } = pickFromBag(this.fixedNotes(), note => note.text, data.notesUsed ?? []);
-			this.setData({ ...data, notesUsed: used, forceNextFixed: false });
+			this.setData({ ...data, notesUsed: used });
 			if (selected.server) {
 				if (config.randomPostLocalOnly) localOnly = true;
 				if (config.randomPostChannel) channel = config.randomPostChannel;
