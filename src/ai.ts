@@ -377,6 +377,17 @@ export default class 藍 {
 			setInterval(() => {
 				void this.store.reconcile(this.db).catch(err => this.log(chalk.red(`SQLite reconcile failed: ${err}`)));
 			}, 1000 * 60);
+			// NOTE: 毎日4時以降の最初の確認で、その日のバックアップを取る（7日分を保持）
+			const backup = () => {
+				const now = new Date();
+				if (now.getHours() < 4) return;
+				const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+				this.store.backup(`${memoryDir}/backups`, date, 7)
+					.then(file => file && this.log(`SQLite backup created: ${file}`))
+					.catch(err => this.log(chalk.red(`SQLite backup failed: ${err}`)));
+			};
+			backup();
+			setInterval(backup, 1000 * 60 * 30);
 			const close = () => {
 				try {
 					this.store.close();

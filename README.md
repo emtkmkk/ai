@@ -320,6 +320,8 @@ flowchart LR
 
 - 初回起動時、`memory.sqlite` が空なら `memory.json` を取り込む。`memory.json` は残るが、以降は更新されない。
 - `update()` を通らない直接の書き換えは、1分ごとの差分確認で保存される。
+- 毎日4時以降に `backups/memory-YYYY-MM-DD.sqlite`（`memoryDir` 配下）へバックアップを取り、新しい7日分を残す。
+  バックアップから戻すときは bot を止めて、`memory.sqlite`（と `-wal`・`-shm`）をバックアップのファイルに置き換える。
 - 移行の確認: `node built/scripts/verify-sqlite-migration.js memory.json`（`memory.json` は書き換えない）
 - 旧形式に戻す: bot を止めてから `node built/scripts/export-sqlite-to-json.js memory.sqlite memory.restored.json` で書き出し、
   `memory.restored.json` を `memory.json` として配置して旧バージョンで起動する。

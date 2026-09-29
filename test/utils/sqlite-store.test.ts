@@ -93,3 +93,27 @@ test('一括 insert と findAndRemove も保存する', () => {
 
 	expect(reload().getCollection('polls').find().map(doc => doc.n)).toEqual([3]);
 });
+
+test('バックアップは1日1回作り、新しい7日分だけ残す', async () => {
+	const store = new SqliteStore(file);
+	const db = new loki('db', { autosave: false });
+	const collection = db.addCollection<any>('friends');
+	store.attach(collection);
+	collection.insertOne({ userId: 'a' });
+
+	const backupDir = path.join(dir, 'backups');
+	for (let day = 1; day <= 9; day++) {
+		expect(await store.backup(backupDir, `2026-09-0${day}`, 7)).toBe(path.join(backupDir, `memory-2026-09-0${day}.sqlite`));
+	}
+	// 同じ日は作り直さない
+	expect(await store.backup(backupDir, '2026-09-09', 7)).toBeNull();
+	store.close();
+
+	expect(fs.readdirSync(backupDir).sort()).toEqual(Array.from({ length: 7 }, (_, i) => `memory-2026-09-0${i + 3}.sqlite`));
+	// バックアップから読み込める
+	const restored = new SqliteStore(path.join(backupDir, 'memory-2026-09-09.sqlite'));
+	const restoredDb = new loki('restored', { autosave: false });
+	restored.loadAll(restoredDb);
+	restored.close();
+	expect(restoredDb.getCollection('friends').count()).toBe(1);
+});

@@ -6,3 +6,4 @@ font.ttf
 docs/api
 memory.sqlite*
 test.memory.*
+backups/

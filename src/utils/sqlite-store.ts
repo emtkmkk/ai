@@ -17,6 +17,8 @@
  */
 import Database = require('better-sqlite3');
 import { createHash } from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
 import type * as loki from 'lokijs';
 
 /** コレクションの復元に必要な設定 */
@@ -203,6 +205,35 @@ export class SqliteStore {
 		}
 		if (changed > 0) this.log(`SQLite reconcile: saved ${changed} changed docs`);
 		return changed;
+	}
+
+	/**
+	 * DB をバックアップファイルに書き出し、古いバックアップを削除する
+	 *
+	 * @remarks
+	 * SQLite のオンラインバックアップで少しずつコピーするので、稼働中でもイベントループを長く止めない。
+	 * ファイル名は `memory-YYYY-MM-DD.sqlite`。同じ日のバックアップがあれば何もしない。
+	 *
+	 * @param dir - バックアップの保存先ディレクトリ
+	 * @param date - バックアップの日付（ファイル名に使う）
+	 * @param keep - 残すバックアップの数
+	 * @returns 作成したファイルのパス（作成しなかった場合は null）
+	 * @public
+	 */
+	public async backup(dir: string, date: string, keep: number): Promise<string | null> {
+		fs.mkdirSync(dir, { recursive: true });
+		const file = path.join(dir, `memory-${date}.sqlite`);
+		if (fs.existsSync(file)) return null;
+		this.flush();
+		const temp = `${file}.tmp`;
+		fs.rmSync(temp, { force: true });
+		await this.db.backup(temp);
+		fs.renameSync(temp, file);
+		const backups = fs.readdirSync(dir).filter(name => /^memory-\d{4}-\d{2}-\d{2}\.sqlite$/.test(name)).sort();
+		for (const old of backups.slice(0, Math.max(0, backups.length - keep))) {
+			fs.rmSync(path.join(dir, old), { force: true });
+		}
+		return file;
 	}
 
 	public close() {
