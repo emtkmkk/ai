@@ -42,7 +42,7 @@ import type { FriendDoc } from '@/friend';
 import { ensureKazutoriData, findRateRank, hasKazutoriRateHistory } from './rate';
 import type { EnsuredKazutoriData } from './rate';
 import { rollWithPity } from './pity';
-import { adjustLimitMinutesForMood, dateKey, isStartableHour, NATURAL_START_INTERVAL_MS, naturalStartProbability, rollBaseLimitMinutes, rollHighMoodRareLongLimit, simulateNaturalGameCount } from './daily-cap';
+import { adjustLimitMinutesForMood, dateKey, isMorningLongEligible, isStartableHour, NATURAL_START_INTERVAL_MS, naturalStartProbability, rollBaseLimitMinutes, rollHighMoodRareLongLimit, simulateNaturalGameCount } from './daily-cap';
 import type { KazutoriDailyCap } from './daily-cap';
 
 /** 自然発生に必要な、前回の開催以降に HTL/LTL に流れた他ユーザーの投稿数 */
@@ -558,22 +558,13 @@ export default class extends Module {
 		const now = new Date();
 		/** 基本の制限時間: 10%で短時間(1 or 2分)、90%で5 or 10分 */
 		let limitMinutes = rollBaseLimitMinutes(this.ai.activeFactor, !!triggerUserId);
-		const isSameDate = (left: Date, right: Date) =>
-			left.getFullYear() === right.getFullYear() && left.getMonth() === right.getMonth() && left.getDate() === right.getDate();
-		const recentGameDate = recentGame ? new Date(recentGame.startedAt) : null;
-		const yesterday = new Date(now);
-		yesterday.setDate(now.getDate() - 1);
-		/** 前回ゲームが昨日だったか（今日1回目ボーナス用） */
-		const isRecentGameYesterday = recentGameDate ? isSameDate(recentGameDate, yesterday) : false;
-		/** 8〜10時か（昨日1回目かつ今朝なら長時間モードの抽選対象） */
-		const isYesterdayFirstGameBoostTime = now.getHours() >= 8 && now.getHours() < 10;
 		/** 高機嫌かつ0.1%で長時間（14時未満のみ） */
 		const hasHighMoodRareLongLimit = rollHighMoodRareLongLimit(this.ai.activeFactor, now.getHours());
 		const hasForcedLongLimit = flg?.includes('lng');
-		/** 前回が昨日の1回目かつ今朝で50%で長時間 */
-		const hasMorningYesterdayLongLimit =
-			this.ai.activeFactor > 0.75 && isRecentGameYesterday && isYesterdayFirstGameBoostTime && this.rollPity('morningLong', 0.5);
-		const hasLongLimit = hasHighMoodRareLongLimit || hasForcedLongLimit || hasMorningYesterdayLongLimit;
+		/** 今日1回目かつ今朝なら50%で長時間 */
+		const hasMorningLongLimit =
+			isMorningLongEligible(now, recentGame?.startedAt ?? null, this.ai.activeFactor) && this.rollPity('morningLong', 0.5);
+		const hasLongLimit = hasHighMoodRareLongLimit || hasForcedLongLimit || hasMorningLongLimit;
 		if (hasLongLimit) {
 			limitMinutes *= 48;
 		}

@@ -61,6 +61,25 @@ export function rollHighMoodRareLongLimit(activeFactor: number, hours: number, r
 }
 
 /**
+ * 午前中長時間の抽選対象か
+ *
+ * @remarks
+ * 8〜10時・機嫌0.75超・今日まだ開催がない（前回の開始が昨日以前、または開催履歴なし）のすべてを満たすとき対象。
+ * 前回の開催にはメンションで開始したゲームも含む。
+ *
+ * @param now - 現在時刻
+ * @param recentGameStartedAt - 直近のゲームの開始時刻（なければ null）
+ * @param activeFactor - 機嫌
+ * @public
+ */
+export function isMorningLongEligible(now: Date, recentGameStartedAt: number | null, activeFactor: number): boolean {
+	const hours = now.getHours();
+	if (hours < 8 || hours >= 10 || activeFactor <= 0.75) return false;
+	const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+	return recentGameStartedAt == null || recentGameStartedAt < startOfToday;
+}
+
+/**
  * 低機嫌時は制限時間を延ばす
  *
  * @public
