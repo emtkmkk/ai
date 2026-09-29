@@ -56,7 +56,7 @@ npm start
 | --- | --- | --- | --- |
 | `master` | string | — | 管理者のユーザー名 |
 | `instanceName` | string | `もこきー` | インスタンス名 |
-| `memoryDir` | string | `.` | `memory.json` の保存先 |
+| `memoryDir` | string | `.` | `memory.sqlite`（旧 `memory.json`）の保存先 |
 
 #### 機能ON/OFF
 
@@ -218,7 +218,7 @@ graph TD
 
     subgraph External["外部"]
         Misskey["Misskey API"]
-        DB["LokiJS<br/>(memory.json)"]
+        DB["LokiJS + SQLite<br/>(memory.sqlite)"]
     end
 
     AI --> Stream
@@ -308,13 +308,21 @@ classDiagram
 
 ### データの永続化
 
-藍は **LokiJS**（インメモリDB）を使用してデータを管理している。
+藍は **LokiJS**（インメモリDB）でデータを検索・更新し、**SQLite**（`memory.sqlite`）に保存する。
+変更されたドキュメントだけを書き込むので、DB 全体を毎回シリアライズしない（`src/utils/sqlite-store.ts`）。
 
 ```mermaid
 flowchart LR
     AI["藍"] <-->|読み書き| LokiJS["LokiJS<br/>(インメモリDB)"]
-    LokiJS -->|自動保存| File["memory.json"]
+    LokiJS -->|変更分を保存| File["memory.sqlite"]
+    Json["memory.json（旧形式）"] -.->|初回起動時に1回だけ取り込み| File
 ```
+
+- 初回起動時、`memory.sqlite` が空なら `memory.json` を取り込む。`memory.json` は残るが、以降は更新されない。
+- `update()` を通らない直接の書き換えは、1分ごとの差分確認で保存される。
+- 移行の確認: `node built/scripts/verify-sqlite-migration.js memory.json`（`memory.json` は書き換えない）
+- 旧形式に戻す: bot を止めてから `node built/scripts/export-sqlite-to-json.js memory.sqlite memory.restored.json` で書き出し、
+  `memory.restored.json` を `memory.json` として配置して旧バージョンで起動する。
 
 | コレクション | 内容 |
 | --- | --- |
@@ -337,7 +345,7 @@ sequenceDiagram
     Boot->>API: POST /api/i (アカウント取得)
     API-->>Boot: アカウント情報
     Boot->>AI: new 藍(account, modules)
-    AI->>AI: DB読み込み (memory.json)
+    AI->>AI: DB読み込み (memory.sqlite / 初回は memory.json を取り込み)
     AI->>AI: WebSocket接続開始
     AI->>Mod: 全モジュールの install() を呼び出し
     Note over AI,Mod: メンション受信時は<br/>モジュール登録順に<br/>mentionHook を評価
