@@ -18,11 +18,8 @@ import autobind from 'autobind-decorator';
 import Module from '@/module';
 import serifs from '@/serifs';
 import config from '@/config';
-import { genMaze } from './gen-maze';
-import { renderMaze } from './render-maze';
+import { generateMazeImage, MazeBusyError } from './worker-client';
 import Message from '@/message';
-
-const MAX_MAZE_PROCESSING_MS = 5 * 60 * 1000;
 
 /**
  * 迷路モジュールクラス
@@ -124,16 +121,7 @@ export default class extends Module {
 	private async genMazeFile(seed, size?): Promise<any> {
 		const startedAt = Date.now();
 		this.log('Maze generating...');
-		const maze = genMaze(seed, size);
-		if (Date.now() - startedAt > MAX_MAZE_PROCESSING_MS) {
-			throw new Error(`Maze generation timed out after ${MAX_MAZE_PROCESSING_MS}ms`);
-		}
-
-		this.log('Maze rendering...');
-		const data = renderMaze(seed, maze);
-		if (Date.now() - startedAt > MAX_MAZE_PROCESSING_MS) {
-			throw new Error(`Maze render timed out after ${MAX_MAZE_PROCESSING_MS}ms`);
-		}
+		const data = await generateMazeImage(seed, size);
 
 		this.log('Image uploading...');
 		const file = await this.ai.upload(data, {
@@ -183,11 +171,22 @@ export default class extends Module {
 			if (msg.includes(['死', '鬼', '地獄', '超むずかしい', 'おに'])) size = 'veryHard';
 			if (msg.includes(['もこ']) && msg.includes(['本気']) || msg.includes(['裏']) && msg.includes(['おに'])) size = 'ai';
 			this.log('Maze requested');
-			// 3秒の遅延後に迷路生成（生成処理の負荷分散のため）
+			// リアクション後に生成。重い処理は子プロセスで実行する。
 			setTimeout(async () => {
-				const file = await this.genMazeFile(Date.now(), size);
-				this.log('Replying...');
-				msg.reply(serifs.maze.foryou, { file, visibility: 'public' });
+				try {
+					const file = await this.genMazeFile(Date.now(), size);
+					this.log('Replying...');
+					await msg.reply(serifs.maze.foryou, { file, visibility: 'public' });
+				} catch (error) {
+					this.log(`Maze request failed: ${error}`);
+					try {
+						await msg.reply(error instanceof MazeBusyError
+							? 'いま別の迷路を作っています。少し待ってから、もう一度お願いしてください。'
+							: '迷路を作れませんでした。時間をおいて、もう一度お願いしてください。');
+					} catch (replyError) {
+						this.log(`Maze failure reply failed: ${replyError}`);
+					}
+				}
 			}, 3000);
 			return {
 				reaction: 'like'
