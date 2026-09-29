@@ -1,4 +1,4 @@
-import { adjustLimitMinutesForMood, dateKey, isMorningLongEligible, naturalStartProbability, simulateNaturalGameCount } from '@/modules/kazutori/daily-cap';
+import { adjustLimitMinutesForMood, dateKey, isMorningLongEligible, naturalStartProbability, rollMorningLongLimitMinutes, simulateNaturalGameCount } from '@/modules/kazutori/daily-cap';
 
 /** 再現性のある疑似乱数 */
 function seeded(seed: number) {
@@ -47,34 +47,31 @@ it('dateKey はローカル日付', () => {
 	expect(dateKey(new Date(2026, 8, 29, 0, 5))).toBe('2026-9-29');
 });
 
-describe('naturalStartProbability', () => {
-	it('8〜11時は2倍、それ以外の時間帯は変わらない', () => {
-		expect(naturalStartProbability(7, 1)).toBeCloseTo(0.1);
-		expect(naturalStartProbability(8, 1)).toBeCloseTo(0.2);
-		expect(naturalStartProbability(11, 0.5)).toBeCloseTo(0.1);
+describe('naturalStartProbability（旧ルール・上限計算用）', () => {
+	it('12時・18〜23時は50%、それ以外は10%に機嫌を掛ける', () => {
+		expect(naturalStartProbability(9, 1)).toBeCloseTo(0.1);
 		expect(naturalStartProbability(12, 1)).toBeCloseTo(0.5);
-		expect(naturalStartProbability(13, 1)).toBeCloseTo(0.1);
-		expect(naturalStartProbability(20, 1)).toBeCloseTo(0.5);
-	});
-
-	it('上限計算用には午前中の補正を掛けない', () => {
-		expect(naturalStartProbability(9, 1, false)).toBeCloseTo(0.1);
+		expect(naturalStartProbability(20, 0.5)).toBeCloseTo(0.25);
 	});
 });
 
 describe('isMorningLongEligible', () => {
 	const at = (d: number, h: number) => new Date(2026, 8, d, h, 30);
 	it('前回が昨日以前なら対象（一昨日以前・履歴なしも含む）', () => {
-		expect(isMorningLongEligible(at(29, 9), at(28, 22).getTime(), 1)).toBe(true);
-		expect(isMorningLongEligible(at(29, 9), at(20, 22).getTime(), 1)).toBe(true);
-		expect(isMorningLongEligible(at(29, 9), null, 1)).toBe(true);
+		expect(isMorningLongEligible(at(29, 9), at(28, 22).getTime())).toBe(true);
+		expect(isMorningLongEligible(at(29, 9), at(20, 22).getTime())).toBe(true);
+		expect(isMorningLongEligible(at(29, 9), null)).toBe(true);
 	});
 	it('今日すでに開催があれば対象外（0時台の開催も今日扱い）', () => {
-		expect(isMorningLongEligible(at(29, 9), at(29, 0).getTime(), 1)).toBe(false);
+		expect(isMorningLongEligible(at(29, 9), at(29, 0).getTime())).toBe(false);
 	});
-	it('8〜10時以外・機嫌0.75以下は対象外', () => {
-		expect(isMorningLongEligible(at(29, 7), at(28, 22).getTime(), 1)).toBe(false);
-		expect(isMorningLongEligible(at(29, 10), at(28, 22).getTime(), 1)).toBe(false);
-		expect(isMorningLongEligible(at(29, 9), at(28, 22).getTime(), 0.75)).toBe(false);
+	it('8:00〜9:59以外は対象外', () => {
+		expect(isMorningLongEligible(at(29, 7), at(28, 22).getTime())).toBe(false);
+		expect(isMorningLongEligible(at(29, 10), at(28, 22).getTime())).toBe(false);
 	});
+});
+
+it('午前中長時間は4時間か8時間', () => {
+	expect(rollMorningLongLimitMinutes(() => 0.1)).toBe(240);
+	expect(rollMorningLongLimitMinutes(() => 0.9)).toBe(480);
 });

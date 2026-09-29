@@ -160,8 +160,10 @@ export type Meta = {
 	 * `src/modules/kazutori/daily-cap.ts` の `KazutoriDailyCap` に対応する。
 	 */
 	kazutoriDailyCap?: { date: string; cap: number; activeFactor: number };
-	/** 前回の数取り開催以降に HTL/LTL に流れた他ユーザーの投稿数（100で頭打ち） */
-	kazutoriTimelineNotes?: number;
+	/** 前回の数取り開催以降に HTL/LTL に流れた投稿（bot除く、開催条件の頭打ちまで） */
+	kazutoriSinceLastGame?: { posts: number; userIds: string[] };
+	/** 数取りの保証判定の時刻（その日の分） */
+	kazutoriGuarantee?: { date: string; at: number; done: boolean };
 };
 
 /**
@@ -491,7 +493,7 @@ export default class 藍 {
 
 		// HTL/LTL に他ユーザーの投稿が流れてきたら、保留中の投稿を解放する
 		const onTimelineNote = (note: any) => {
-			if (note?.userId == null || note.userId === this.account.id) return;
+			if (note?.userId == null || note.userId === this.account.id || note.user?.isBot) return;
 			this.postThrottle.notifyOtherNote();
 		};
 		this.connection.useSharedConnection('homeTimeline').on('note', onTimelineNote);

@@ -7,9 +7,10 @@
  * ユーザーが勝利するゲーム。レーティングシステムも搭載。
  *
  * @remarks
- * - NOTE: 数取りの自動開催は18.5分間隔のポーリングで確率判定される。
- *       12時/18-23時は50%、8-11時は20%、それ以外は10%（いずれも機嫌を乗算）。1-7時は開催しない。
- *       前回の開催以降に HTL/LTL に他ユーザーの投稿が100件流れていないと自動開催しない。
+ * - NOTE: 数取りの自動開催は18.5分間隔のポーリングで確率判定される（`natural-start.ts` 参照）。
+ *       確率は直近30分に HTL/LTL へ投稿した人数（bot除く）と機嫌で決まる。0-7時は自動開催しない。
+ *       前回の開催以降に5人以上が投稿し、かつ100投稿または終了から60分（お流れなら110分）が必要。
+ *       毎日8:00〜9:59のランダムな時刻に、今日まだ開催がなければ確率抽選なしで開催を試みる（保証判定）。
  *       1日の自動開催回数は、日付が変わった最初の抽選時の機嫌で決めた上限を超えない（`daily-cap.ts` 参照）。
  * - NOTE: 最大値は前回・前々回の参加者数の平均値をベースに計算される。
  * - NOTE: 勝利条件は3種類: 最大値(通常)、2番目に大きい値、中央値。
@@ -42,11 +43,10 @@ import type { FriendDoc } from '@/friend';
 import { ensureKazutoriData, findRateRank, hasKazutoriRateHistory } from './rate';
 import type { EnsuredKazutoriData } from './rate';
 import { rollWithPity } from './pity';
-import { adjustLimitMinutesForMood, dateKey, isMorningLongEligible, isStartableHour, NATURAL_START_INTERVAL_MS, naturalStartProbability, rollBaseLimitMinutes, rollHighMoodRareLongLimit, simulateNaturalGameCount } from './daily-cap';
+import { adjustLimitMinutesForMood, dateKey, isMorningLongEligible, isStartableHour, NATURAL_START_INTERVAL_MS, rollBaseLimitMinutes, rollHighMoodRareLongLimit, rollMorningLongLimitMinutes, simulateNaturalGameCount } from './daily-cap';
 import type { KazutoriDailyCap } from './daily-cap';
-
-/** 自然発生に必要な、前回の開催以降に HTL/LTL に流れた他ユーザーの投稿数 */
-const REQUIRED_TIMELINE_NOTES = 100;
+import { ActiveUserWindow, addToSinceLastGame, isGateOpen, isNaturalStartHour, naturalStartProbabilityByUsers, pickGuaranteeTime } from './natural-start';
+import type { SinceLastGame } from './natural-start';
 import type { KazutoriPityKey, KazutoriPityState } from './pity';
 var Decimal = require('break_infinity.js');
 
@@ -171,8 +171,10 @@ export default class extends Module {
         private lastHourlyRenote: { key: string; postId: string } | null = null;
         /** ゲーム開始時オプション pity の連続外れ回数 */
         private pityState: KazutoriPityState = {};
-        /** 前回の開催以降に HTL/LTL に流れた他ユーザーの投稿数 */
-        private timelineNotesSinceLastGame = 0;
+        /** 前回の開催以降に HTL/LTL に流れた投稿（bot除く） */
+        private sinceLastGame: SinceLastGame = { posts: 0, userIds: [] };
+        /** 直近30分に HTL/LTL へ投稿した人（bot除く） */
+        private activeUsers = new ActiveUserWindow();
         /** HTL/LTL の重複カウント防止用（直近のノートID） */
         private recentTimelineNoteIds = new Set<string>();
 
@@ -203,26 +205,92 @@ export default class extends Module {
         }
 
         /**
-         * HTL/LTL に流れた他ユーザーの投稿を数える
+         * HTL/LTL に流れた他ユーザーの投稿を記録する
          *
          * @remarks
-         * HTL と LTL の両方に流れた同じ投稿は1件として数える。
-         * 自然発生の条件を満たした後は保存を省く。
+         * HTL と LTL の両方に流れた同じ投稿は1件として数える。bot の投稿は数えない。
+         * 前回の開催以降の状況は開催条件の頭打ちまでしか保持せず、変化したときだけ保存する。
          *
          * @internal
          */
         @autobind
-        private onTimelineNote(note: { id?: string; userId?: string }) {
-                if (!note?.id || note.userId === this.ai.account.id) return;
+        private onTimelineNote(note: { id?: string; userId?: string; user?: { isBot?: boolean } }) {
+                if (!note?.id || !note.userId || note.userId === this.ai.account.id || note.user?.isBot) return;
                 if (this.recentTimelineNoteIds.has(note.id)) return;
                 this.recentTimelineNoteIds.add(note.id);
                 if (this.recentTimelineNoteIds.size > 500) {
                         const oldest = this.recentTimelineNoteIds.values().next().value;
                         if (oldest) this.recentTimelineNoteIds.delete(oldest);
                 }
-                if (this.timelineNotesSinceLastGame >= REQUIRED_TIMELINE_NOTES) return;
-                this.timelineNotesSinceLastGame++;
-                this.ai.setMeta({ kazutoriTimelineNotes: this.timelineNotesSinceLastGame });
+                this.activeUsers.record(note.userId, Date.now());
+                const next = addToSinceLastGame(this.sinceLastGame, note.userId);
+                if (next == null) return;
+                this.sinceLastGame = next;
+                this.ai.setMeta({ kazutoriSinceLastGame: next });
+        }
+
+        /**
+         * 直近のゲーム
+         *
+         * @internal
+         */
+        private findRecentGame(): Game | null {
+                const games = this.games.find({});
+                return games.length === 0 ? null : games[games.length - 1];
+        }
+
+        /**
+         * 18.5分ごとの自然発生の抽選
+         *
+         * @internal
+         */
+        @autobind
+        private naturalStartTick() {
+                const now = new Date();
+                const dailyCap = this.ensureDailyCap(now);
+                if (!isNaturalStartHour(now.getHours())) return;
+                const activeUsers = this.activeUsers.count(now.getTime());
+                const rnd = naturalStartProbabilityByUsers(activeUsers, this.ai.activeFactor);
+                if (Math.random() >= rnd) return;
+                if (!isGateOpen(now, this.findRecentGame(), this.sinceLastGame)) {
+                        this.log(`Natural kazutori skipped: gate closed (posts=${this.sinceLastGame.posts} users=${this.sinceLastGame.userIds.length})`);
+                        return;
+                }
+                if (this.countTodayNaturalGames(now) >= dailyCap.cap) {
+                        this.log(`Natural kazutori skipped: daily cap reached (${dailyCap.cap})`);
+                        return;
+                }
+                this.log(`Natural kazutori start (activeUsers=${activeUsers} p=${rnd.toFixed(3)})`);
+                this.start();
+        }
+
+        /**
+         * 保証判定: 毎日 8:00〜9:59 のランダムな時刻に、今日まだ開催がなければ開催を試みる
+         *
+         * @remarks
+         * 午前中長時間の対象になる（今日まだ開催がない）ときだけ行う。1日の上限には数える。
+         *
+         * @internal
+         */
+        @autobind
+        private guaranteeTick() {
+                const now = new Date();
+                const date = dateKey(now);
+                let guarantee = this.ai.getMeta().kazutoriGuarantee;
+                if (guarantee?.date !== date) {
+                        guarantee = { date, at: pickGuaranteeTime(now), done: false };
+                        this.ai.setMeta({ kazutoriGuarantee: guarantee });
+                        this.log(`Kazutori guarantee time for ${date}: ${new Date(guarantee.at).toLocaleTimeString()}`);
+                }
+                if (guarantee.done || now.getTime() < guarantee.at) return;
+                this.ai.setMeta({ kazutoriGuarantee: { ...guarantee, done: true } });
+                if (!isMorningLongEligible(now, this.findRecentGame()?.startedAt ?? null)) return;
+                if (this.countTodayNaturalGames(now) >= this.ensureDailyCap(now).cap) {
+                        this.log('Kazutori guarantee skipped: daily cap reached');
+                        return;
+                }
+                this.log('Kazutori guarantee start');
+                this.start();
         }
 
         /**
@@ -370,7 +438,8 @@ export default class extends Module {
          * - ゲームコレクションの初期化
          * - 1秒間隔でゲーム終了チェック
          * - 1秒間隔で定時リノートチェック
-         * - 18.5分間隔で自動開催判定（時間帯により確率変動）
+         * - 18.5分間隔で自動開催判定（直近の人数と機嫌により確率変動）
+         * - 1分間隔で保証判定（毎日8:00〜9:59のランダムな時刻に1回）
          *
          * @returns mentionHook と contextHook を含むフック登録オブジェクト
          * @public
@@ -379,30 +448,15 @@ export default class extends Module {
         public install() {
                 this.games = this.ai.getCollection('kazutori');
                 this.loadPityState();
-                // NOTE: 導入直後は過去の投稿数が分からないため、条件を満たしている扱いにする
-                this.timelineNotesSinceLastGame = this.ai.getMeta().kazutoriTimelineNotes ?? REQUIRED_TIMELINE_NOTES;
+                this.sinceLastGame = this.ai.getMeta().kazutoriSinceLastGame ?? { posts: 0, userIds: [] };
                 this.ai.connection.useSharedConnection('homeTimeline').on('note', this.onTimelineNote);
                 this.ai.connection.useSharedConnection('localTimeline').on('note', this.onTimelineNote);
 
                 this.crawleGameEnd();
                 setInterval(this.crawleGameEnd, 1000);
                 setInterval(this.renoteOnSpecificHours, 1000);
-                setInterval(() => {
-                        const now = new Date();
-                        const dailyCap = this.ensureDailyCap(now);
-                        const rnd = naturalStartProbability(now.getHours(), this.ai.activeFactor);
-                        if (Math.random() < rnd) {
-                                if (this.timelineNotesSinceLastGame < REQUIRED_TIMELINE_NOTES) {
-                                        this.log(`Natural kazutori skipped: timeline notes ${this.timelineNotesSinceLastGame}/${REQUIRED_TIMELINE_NOTES}`);
-                                        return;
-                                }
-                                if (this.countTodayNaturalGames(now) >= dailyCap.cap) {
-                                        this.log(`Natural kazutori skipped: daily cap reached (${dailyCap.cap})`);
-                                        return;
-                                }
-                                this.start();
-                        }
-                }, NATURAL_START_INTERVAL_MS);
+                setInterval(this.naturalStartTick, NATURAL_START_INTERVAL_MS);
+                setInterval(this.guaranteeTick, 1000 * 60);
 
                 return {
                         mentionHook: this.mentionHook,
@@ -474,10 +528,7 @@ export default class extends Module {
 		const h = new Date().getHours();
 		if (!recentGame.isEnded) return false;
 		if (!isStartableHour(h)) return false;
-		const cooldownMinutes = (recentGame?.votes?.length ?? 2) <= 1 && !triggerUserId ? 110 : 50;
-		if (!triggerUserId && Date.now() - (recentGame.finishedAt ?? recentGame.startedAt) < 1000 * 60 * cooldownMinutes) {
-			return false;
-		}
+		// NOTE: 自動開催の間隔は natural-start.ts の開催条件で判定する（start() の呼び出し前）
 		return true;
 	}
 
@@ -561,11 +612,12 @@ export default class extends Module {
 		/** 高機嫌かつ0.1%で長時間（14時未満のみ） */
 		const hasHighMoodRareLongLimit = rollHighMoodRareLongLimit(this.ai.activeFactor, now.getHours());
 		const hasForcedLongLimit = flg?.includes('lng');
-		/** 今日1回目かつ今朝なら50%で長時間 */
-		const hasMorningLongLimit =
-			isMorningLongEligible(now, recentGame?.startedAt ?? null, this.ai.activeFactor) && this.rollPity('morningLong', 0.5);
+		/** 今日1回目かつ今朝なら50%で長時間（4時間か8時間） */
+		const hasMorningLongLimit = isMorningLongEligible(now, recentGame?.startedAt ?? null) && this.rollPity('morningLong', 0.5);
 		const hasLongLimit = hasHighMoodRareLongLimit || hasForcedLongLimit || hasMorningLongLimit;
-		if (hasLongLimit) {
+		if (hasMorningLongLimit) {
+			limitMinutes = rollMorningLongLimitMinutes();
+		} else if (hasLongLimit) {
 			limitMinutes *= 48;
 		}
 		if (!hasLongLimit) {
@@ -674,8 +726,8 @@ export default class extends Module {
 
 		this.subscribeReply(null, post.id);
 		this.log('New kazutori game started');
-		this.timelineNotesSinceLastGame = 0;
-		this.ai.setMeta({ kazutoriTimelineNotes: 0 });
+		this.sinceLastGame = { posts: 0, userIds: [] };
+		this.ai.setMeta({ kazutoriSinceLastGame: this.sinceLastGame });
 		this.persistPityState();
 	}
 

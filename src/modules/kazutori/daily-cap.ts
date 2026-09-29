@@ -4,9 +4,10 @@
  * 数取りの自然発生（自動開催）の1日あたり上限回数ユーティリティ
  *
  * @remarks
- * 1日の初めの機嫌（activeFactor）で、現在の自動開催ルールに沿った1日を1回シミュレーションし、
- * その開催回数をその日の上限とする。上限の分布が現在の1日の開催回数の分布と同じになる。
- * ただし午前中の抽選確率の補正と午前中長時間（8〜10時の48倍）は上限の計算に含めない。
+ * 1日の初めの機嫌（activeFactor）で、旧ルール（時間帯別の確率・終了後50分のクールダウン）に沿った
+ * 1日を1回シミュレーションし、その開催回数をその日の上限とする。
+ * 自然発生の判定は `natural-start.ts` の新ルールで行うが、上限は旧ルールの基準で決める。
+ * 午前中長時間は上限の計算に含めない。
  *
  * @public
  */
@@ -16,25 +17,19 @@ export const NATURAL_START_INTERVAL_MS = 1000 * 30 * 37;
 /** 自動開催後のクールダウン（分）。前回がお流れの場合は考慮しない */
 const NATURAL_COOLDOWN_MINUTES = 50;
 
-/** 午前中（8〜11時）の抽選確率の倍率 */
-const MORNING_BOOST = 2;
-
 /**
- * 自動開催の抽選確率
+ * 旧ルールの自動開催の抽選確率（1日の上限の計算用）
  *
  * @param hours - 現在の時（0〜23）
  * @param activeFactor - 機嫌
- * @param morningBoost - 午前中（8〜11時）の補正を掛けるか
  * @public
  */
-export function naturalStartProbability(hours: number, activeFactor: number, morningBoost = true): number {
-	const base = hours === 12 || (hours > 17 && hours < 24) ? 0.5 : 0.1;
-	const boost = morningBoost && hours >= 8 && hours < 12 ? MORNING_BOOST : 1;
-	return base * boost * activeFactor;
+export function naturalStartProbability(hours: number, activeFactor: number): number {
+	return (hours === 12 || (hours > 17 && hours < 24) ? 0.5 : 0.1) * activeFactor;
 }
 
 /**
- * 開催可能な時間帯か（1〜7時は開催しない）
+ * 開催可能な時間帯か（1〜7時は開催しない。メンションでの開催にも適用）
  *
  * @public
  */
@@ -64,19 +59,27 @@ export function rollHighMoodRareLongLimit(activeFactor: number, hours: number, r
  * 午前中長時間の抽選対象か
  *
  * @remarks
- * 8〜10時・機嫌0.75超・今日まだ開催がない（前回の開始が昨日以前、または開催履歴なし）のすべてを満たすとき対象。
- * 前回の開催にはメンションで開始したゲームも含む。
+ * 8〜10時（8:00〜9:59）・今日まだ開催がない（前回の開始が昨日以前、または開催履歴なし）の両方を満たすとき対象。
+ * 前回の開催にはメンションで開始したゲームも含む。機嫌は問わない。
  *
  * @param now - 現在時刻
  * @param recentGameStartedAt - 直近のゲームの開始時刻（なければ null）
- * @param activeFactor - 機嫌
  * @public
  */
-export function isMorningLongEligible(now: Date, recentGameStartedAt: number | null, activeFactor: number): boolean {
+export function isMorningLongEligible(now: Date, recentGameStartedAt: number | null): boolean {
 	const hours = now.getHours();
-	if (hours < 8 || hours >= 10 || activeFactor <= 0.75) return false;
+	if (hours < 8 || hours >= 10) return false;
 	const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 	return recentGameStartedAt == null || recentGameStartedAt < startOfToday;
+}
+
+/**
+ * 午前中長時間の制限時間（4時間か8時間）
+ *
+ * @public
+ */
+export function rollMorningLongLimitMinutes(random: () => number = Math.random): number {
+	return random() < 0.5 ? 240 : 480;
 }
 
 /**
@@ -105,7 +108,7 @@ export function simulateNaturalGameCount(activeFactor: number, random: () => num
 	let availableAt = 0;
 	for (let t = random() * NATURAL_START_INTERVAL_MS; t < dayMs; t += NATURAL_START_INTERVAL_MS) {
 		const hours = Math.floor(t / (60 * minuteMs));
-		if (random() >= naturalStartProbability(hours, activeFactor, false)) continue;
+		if (random() >= naturalStartProbability(hours, activeFactor)) continue;
 		if (!isStartableHour(hours) || t < availableAt) continue;
 		count++;
 		let limitMinutes = rollBaseLimitMinutes(activeFactor, false, random);
