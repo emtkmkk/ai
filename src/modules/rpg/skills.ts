@@ -1159,18 +1159,18 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 			skillEffects.critUpFixed = (skillEffects.critUpFixed ?? 0) + 0.08
 			skillEffects.critDmgUp = Math.max((skillEffects.critDmgUp ?? 0), 0.35)
 		} else if (aggregateTokensEffects(data).blueMode) {
-			skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.2
+			skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.4
 		} else if (aggregateTokensEffects(data).yellowMode) {
 			spd *= 1.1;
-			skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.1
+			skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.2
 		} else if (aggregateTokensEffects(data).greenMode) {
-			skillEffects.itemEquip = ((1 + (skillEffects.itemEquip ?? 0)) * 1.15) - 1;
-			skillEffects.itemBoost = ((1 + (skillEffects.itemBoost ?? 0)) * 1.15) - 1;
-			skillEffects.mindMinusAvoid = ((1 + (skillEffects.mindMinusAvoid ?? 0)) * 1.15) - 1;
-			skillEffects.poisonAvoid = ((1 + (skillEffects.poisonAvoid ?? 0)) * 1.15) - 1;
+			skillEffects.itemEquip = ((1 + (skillEffects.itemEquip ?? 0)) * 1.4) - 1;
+			skillEffects.itemBoost = ((1 + (skillEffects.itemBoost ?? 0)) * 1.4) - 1;
+			skillEffects.mindMinusAvoid = ((1 + (skillEffects.mindMinusAvoid ?? 0)) * 1.4) - 1;
+			skillEffects.poisonAvoid = ((1 + (skillEffects.poisonAvoid ?? 0)) * 1.4) - 1;
 		}
 		if (aggregateTokensEffects(data).hyperMode) {
-			skillEffects.postXUp = (skillEffects.postXUp ?? 0) + 0.005
+			skillEffects.postXUp = (skillEffects.postXUp ?? 0) + 0.015
 			resultS.push("覚醒投稿数ボーナス: 無効");
 		}
 	}

@@ -1085,7 +1085,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 	let continuousBonusX;
 
 	if (isSuper && aggregateTokensEffects(data).hyperMode) {
-		skillEffects.postXUp = (skillEffects.postXUp ?? 0) + 0.005
+		skillEffects.postXUp = (skillEffects.postXUp ?? 0) + 0.015
 	}
 	const superBonusPost = (isSuper && !aggregateTokensEffects(data).hyperMode ? 200 : 0)
 	// 敵が forcePostCount を持っている場合、投稿数は固定
@@ -1556,30 +1556,30 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 				message += `朱覚醒: クリ率固定+8% クリダメ+35%\n(${formatNumber(skillEffects.critUpFixed * 100)}% / ${formatNumber(skillEffects.atkDmgUp * 100)}%)`;
 			}
 		} else if (aggregateTokensEffects(data).blueMode) {
-			skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.2
-			if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`ダメージカット+20%！\n${customStr}`) + `\n`;
+			skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.4
+			if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`ダメージカット+40%！\n${customStr}`) + `\n`;
 			if (verboseLog) {
 				buff += 1;
-				message += `蒼覚醒: 被ダメージ-20% (${formatNumber(skillEffects.defDmgUp * 100)}%)\n`;
+				message += `蒼覚醒: 被ダメージ-40% (${formatNumber(skillEffects.defDmgUp * 100)}%)\n`;
 			}
 		} else if (aggregateTokensEffects(data).yellowMode) {
 			const up = Math.max(spd + 1, Math.round(getSpd(getSpdX(spd) * 1.1))) - spd;
 			spd = spd + up;
-			skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.1
-			if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`行動回数+${up}！\nダメージカット+10%！\n${customStr}`) + `\n`;
+			skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.2
+			if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`行動回数+${up}！\nダメージカット+20%！\n${customStr}`) + `\n`;
 			if (verboseLog) {
 				buff += 1;
-				message += `橙覚醒: S+${up} 被ダメージ-10%\n(${formatNumber(spd)} (${getSpdX(spd) * 100}%) / ${formatNumber(skillEffects.defDmgUp * 100)}%)\n`;
+				message += `橙覚醒: S+${up} 被ダメージ-20%\n(${formatNumber(spd)} (${getSpdX(spd) * 100}%) / ${formatNumber(skillEffects.defDmgUp * 100)}%)\n`;
 			}
 		} else if (aggregateTokensEffects(data).greenMode) {
-			skillEffects.itemEquip = ((1 + (skillEffects.itemEquip ?? 0)) * 1.15) - 1;
-			skillEffects.itemBoost = ((1 + (skillEffects.itemBoost ?? 0)) * 1.15) - 1;
-			skillEffects.mindMinusAvoid = ((1 + (skillEffects.mindMinusAvoid ?? 0)) * 1.15) - 1;
-			skillEffects.poisonAvoid = ((1 + (skillEffects.poisonAvoid ?? 0)) * 1.15) - 1;
-			if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`全アイテム効果+15%！\n${customStr}`) + `\n`;
+			skillEffects.itemEquip = ((1 + (skillEffects.itemEquip ?? 0)) * 1.4) - 1;
+			skillEffects.itemBoost = ((1 + (skillEffects.itemBoost ?? 0)) * 1.4) - 1;
+			skillEffects.mindMinusAvoid = ((1 + (skillEffects.mindMinusAvoid ?? 0)) * 1.4) - 1;
+			skillEffects.poisonAvoid = ((1 + (skillEffects.poisonAvoid ?? 0)) * 1.4) - 1;
+			if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`全アイテム効果+40%！\n${customStr}`) + `\n`;
 			if (verboseLog) {
 				buff += 1;
-				message += `翠覚醒: アイテム効果+15%\n(${formatNumber(skillEffects.itemEquip * 100)}% / ${formatNumber(skillEffects.itemBoost * 100)}% / ${formatNumber(skillEffects.mindMinusAvoid * 100)}% / ${formatNumber(skillEffects.poisonAvoid * 100)}%)\n`;
+				message += `翠覚醒: アイテム効果+40%\n(${formatNumber(skillEffects.itemEquip * 100)}% / ${formatNumber(skillEffects.itemBoost * 100)}% / ${formatNumber(skillEffects.mindMinusAvoid * 100)}% / ${formatNumber(skillEffects.poisonAvoid * 100)}%)\n`;
 			}
 		}
 	}
@@ -2526,7 +2526,8 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 			const rng = (atkMinRnd + random(data, startCharge, skillEffects, false) * atkMaxRnd);
 			if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`;
 			const turnDmgX = (i < 2 ? 1 : i < 3 ? 0.5 : i < 4 ? 0.25 : 0.125);
-			let dmgBonus = ((Math.max(1 + (skillEffects.atkDmgUp ?? 0), atkMinusMin)) * dmgUp * turnDmgX) + (skillEffects.thunder ? (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 0);
+			// 雷は他の与ダメージ補正と同じく、段数による減衰（turnDmgX）の内側で乗算する（通常戦闘と同じ扱い）
+			let dmgBonus = (Math.max(1 + (skillEffects.atkDmgUp ?? 0), atkMinusMin)) * dmgUp * turnDmgX * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1);
 			const rawDmgBonus = dmgBonus / turnDmgX;
 			if (verboseLog && (rawDmgBonus < 0.999 || rawDmgBonus > 1.001)) {
 				buff += 1;

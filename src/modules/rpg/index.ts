@@ -1344,7 +1344,7 @@ export default class extends Module {
 		postCount += superBonusPost;
 
 		if (isSuper && aggregateTokensEffects(data).hyperMode) {
-			skillEffects.postXUp = (skillEffects.postXUp ?? 0) + 0.005
+			skillEffects.postXUp = (skillEffects.postXUp ?? 0) + 0.015
 		}
 
 		// 投稿数に応じてステータス倍率を得る
@@ -1367,15 +1367,15 @@ export default class extends Module {
 				skillEffects.critUpFixed = (skillEffects.critUpFixed ?? 0) + 0.08
 				skillEffects.critDmgUp = Math.max((skillEffects.critDmgUp ?? 0), 0.4)
 			} else if (aggregateTokensEffects(data).blueMode) {
-				skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.2
+				skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.4
 			} else if (aggregateTokensEffects(data).yellowMode) {
 				spd += 1
-				skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.1
+				skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.2
 			} else if (aggregateTokensEffects(data).greenMode) {
-				skillEffects.itemEquip = ((1 + (skillEffects.itemEquip ?? 0)) * 1.15) - 1;
-				skillEffects.itemBoost = ((1 + (skillEffects.itemBoost ?? 0)) * 1.15) - 1;
-				skillEffects.mindMinusAvoid = ((1 + (skillEffects.mindMinusAvoid ?? 0)) * 1.15) - 1;
-				skillEffects.poisonAvoid = ((1 + (skillEffects.poisonAvoid ?? 0)) * 1.15) - 1;
+				skillEffects.itemEquip = ((1 + (skillEffects.itemEquip ?? 0)) * 1.4) - 1;
+				skillEffects.itemBoost = ((1 + (skillEffects.itemBoost ?? 0)) * 1.4) - 1;
+				skillEffects.mindMinusAvoid = ((1 + (skillEffects.mindMinusAvoid ?? 0)) * 1.4) - 1;
+				skillEffects.poisonAvoid = ((1 + (skillEffects.poisonAvoid ?? 0)) * 1.4) - 1;
 			}
 		}
 
@@ -1715,7 +1715,7 @@ export default class extends Module {
 
 		// 覚醒 + hyperMode 札の場合は postXUp を上昇（投稿数加算の代わり）
 		if (isSuper && aggregateTokensEffects(data).hyperMode) {
-			skillEffects.postXUp = (skillEffects.postXUp ?? 0) + 0.005
+			skillEffects.postXUp = (skillEffects.postXUp ?? 0) + 0.015
 		}
 
 		/** ステータス倍率（投稿数に応じた倍率。postXUp でさらに上乗せ） */
@@ -1924,18 +1924,18 @@ export default class extends Module {
 				skillEffects.critDmgUp = Math.max((skillEffects.critDmgUp ?? 0), 0.35)
 				if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`クリティカル性能アップ！\n${customStr}`) + `\n`;
 			} else if (aggregateTokensEffects(data).blueMode) {
-				skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.2
-				if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`ダメージカット+20%！\n${customStr}`) + `\n`;
+				skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.4
+				if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`ダメージカット+40%！\n${customStr}`) + `\n`;
 			} else if (aggregateTokensEffects(data).yellowMode) {
 				spd += 1
-				skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.1
-				if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`行動回数+1！\nダメージカット+10%！\n${customStr}`) + `\n`;
+				skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.2
+				if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`行動回数+1！\nダメージカット+20%！\n${customStr}`) + `\n`;
 			} else if (aggregateTokensEffects(data).greenMode) {
-				skillEffects.itemEquip = ((1 + (skillEffects.itemEquip ?? 0)) * 1.15) - 1;
-				skillEffects.itemBoost = ((1 + (skillEffects.itemBoost ?? 0)) * 1.15) - 1;
-				skillEffects.mindMinusAvoid = ((1 + (skillEffects.mindMinusAvoid ?? 0)) * 1.15) - 1;
-				skillEffects.poisonAvoid = ((1 + (skillEffects.poisonAvoid ?? 0)) * 1.15) - 1;
-				if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`全アイテム効果+15%！\n${customStr}`) + `\n`;
+				skillEffects.itemEquip = ((1 + (skillEffects.itemEquip ?? 0)) * 1.4) - 1;
+				skillEffects.itemBoost = ((1 + (skillEffects.itemBoost ?? 0)) * 1.4) - 1;
+				skillEffects.mindMinusAvoid = ((1 + (skillEffects.mindMinusAvoid ?? 0)) * 1.4) - 1;
+				skillEffects.poisonAvoid = ((1 + (skillEffects.poisonAvoid ?? 0)) * 1.4) - 1;
+				if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`全アイテム効果+40%！\n${customStr}`) + `\n`;
 			}
 
 		}
