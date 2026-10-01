@@ -58,6 +58,73 @@ const resolveSkills = (skillNames: string[]): Skill[] => {
 };
 
 /**
+ * 現在パーツとして選択可能なスキルかどうか
+ *
+ * 一覧に並ぶ候補と同じ条件（作成中のお守りに未追加であることを含む）で判定する。
+ *
+ * @param data RPGモジュールのデータ
+ * @param skill 判定するスキル
+ * @returns 選択可能なら true
+ * @internal
+ */
+const isAvailablePart = (data: any, skill: Skill) => {
+    return !skill.moveTo && !skill.cantReroll && !skill.unique && !skill.skillOnly && !(data.tempAmulet ?? []).includes(skill.name) && !(skill.name === "数取りの達人" && isKazutoriMasterDisabled(data));
+};
+
+/**
+ * 返信テキストからパーツにするスキルを探す（隠し機能）
+ *
+ * 返信全体がスキルの短縮名（** の装飾は無視）かスキル名だけで構成されている場合に限り、
+ * 一番左に書かれたスキルを返す（通常の文章に短縮名の文字が含まれていても反応しないようにするため）。
+ * 数字だけの返信は番号選択として扱うため、ここでは対象にしない。
+ * 同じ短縮名のスキルが複数ある場合（炎 と 炎＋ など）は、スキル一覧で先に定義されている方を使う。
+ *
+ * @param text 返信テキスト
+ * @returns 一番左のスキル、なければ undefined
+ * @internal
+ */
+const findSkillByText = (text: string): Skill | undefined => {
+    const normalized = text.replace(/\s/g, '');
+    if (!normalized || /^[0-9０-９]+$/.test(normalized)) return undefined;
+    const tokens = skills
+        .filter((x) => !x.moveTo)
+        .flatMap((x) => [{ text: x.name, skill: x }, { text: x.short?.replace(/\*/g, '') ?? '', skill: x }])
+        .filter((x) => x.text)
+        // 長い表記を優先して、スキル名の途中を短縮名として拾わないようにする
+        .sort((a, b) => b.text.length - a.text.length);
+    const found: Skill[] = [];
+    let rest = normalized;
+    while (rest.length) {
+        const token = tokens.find((x) => rest.startsWith(x.text));
+        if (!token) return undefined;
+        found.push(token.skill);
+        rest = rest.slice(token.text.length);
+    }
+    return found[0];
+};
+
+/**
+ * 作成中のお守りにパーツを追加し、コインを支払う
+ *
+ * @returns 追加できた場合は true（コイン不足の場合は返信して false）
+ * @internal
+ */
+const addPart = (module: rpg, ai: 藍, msg: Message, rpgData: any, skill: Skill) => {
+    const currentSkills = resolveSkills(rpgData.tempAmulet);
+    const cost = partPrice(ai, currentSkills, skill, rpgData.tempAmuletCost);
+    if ((rpgData.coin ?? 0) < cost) {
+        msg.reply(serifs.rpg.shop.notEnoughCoin);
+        return false;
+    }
+    rpgData.coin -= cost;
+    rpgData.shopExp += cost;
+    rpgData.tempAmulet.push(skill.name);
+    rpgData.tempAmuletCost += cost;
+    msg.friend.setPerModulesData(module, rpgData);
+    return true;
+};
+
+/**
  * カスタムショップの初期表示を行う
  *
  * 「RPG カスタムショップ」コマンドで呼ばれ、パーツ選択画面を表示する。
@@ -136,6 +203,14 @@ export const shopCustomReply = async (module: rpg, ai: 藍, msg: Message) => {
  */
 export const shopCustomContextHook = (module: rpg, ai: 藍, key: any, msg: Message, data: any) => {
     if (key.replace('shopCustom:', '') !== msg.userId) return { reaction: 'hmm' };
+
+    // 隠し機能: スキルの短縮名（またはスキル名）で返信すると、そのパーツの購入確認を出す
+    // 選択できないパーツの場合は、以降の通常の処理に任せる
+    const namedSkill = findSkillByText(msg.extractedText);
+    if (namedSkill && isAvailablePart(initializeData(module, msg), namedSkill)) {
+        return confirmPart(module, ai, msg, namedSkill);
+    }
+
 	if (msg.extractedText.length >= 3) return false;
     const match = msg.extractedText.replace(/[０-９]/g, m => '０１２３４５６７８９'.indexOf(m).toString()).match(/[0-9]+/);
 	if (match === null || match === undefined) {
@@ -191,16 +266,73 @@ export const shopCustomContextHook = (module: rpg, ai: 藍, key: any, msg: Messa
     const skillName = data.skills[skillIndex];
     const skill = skills.find((x) => x.name === skillName);
     if (!skill) return { reaction: 'hmm' };
-    const cost = partPrice(ai, currentSkills, skill, rpgData.tempAmuletCost);
-    if ((rpgData.coin ?? 0) < cost) {
+    if (!addPart(module, ai, msg, rpgData, skill)) return { reaction: 'hmm' };
+    return shopCustomReply(module, ai, msg);
+};
+
+/**
+ * 短縮名で指定されたパーツの説明と値段を返信し、購入確認を待ち受ける（隠し機能）
+ *
+ * @param module RPGモジュール
+ * @param ai 藍オブジェクト
+ * @param msg 返信メッセージ
+ * @param skill 指定されたスキル
+ * @returns リアクションオブジェクト
+ * @internal
+ */
+const confirmPart = async (module: rpg, ai: 藍, msg: Message, skill: Skill) => {
+    const rpgData = initializeData(module, msg);
+    if (!rpgData.tempAmulet) rpgData.tempAmulet = [];
+    const currentSkills = resolveSkills(rpgData.tempAmulet);
+    if (typeof rpgData.tempAmuletCost !== 'number') {
+        rpgData.tempAmuletCost = getAmuletTotalCost(ai, currentSkills);
+    }
+    const price = partPrice(ai, currentSkills, skill, rpgData.tempAmuletCost);
+    if ((rpgData.coin ?? 0) < price) {
         msg.reply(serifs.rpg.shop.notEnoughCoin);
         return { reaction: 'hmm' };
     }
-    rpgData.coin -= cost;
-    rpgData.shopExp += cost;
-    rpgData.tempAmulet.push(skill.name);
-    rpgData.tempAmuletCost += cost;
-    msg.friend.setPerModulesData(module, rpgData);
+    const detail = aggregateTokensEffects(rpgData).showSkillBonus && skill.info ? skill.info : skill.desc ?? "";
+    const reply = await msg.reply(`${skill.name}のパーツ ${price}枚\n${detail ? `${detail}\n` : ""}\nこのパーツを購入しますか？はいかいいえで返信してください。`, { visibility: 'specified' });
+    module.subscribeReply('shopCustomConfirm:' + msg.userId, reply.id, { skill: skill.name });
+    return { reaction: 'love' };
+};
+
+/**
+ * 短縮名で指定したパーツの購入確認（はい / いいえ）の返信を処理する
+ *
+ * @param module RPGモジュール
+ * @param ai 藍オブジェクト
+ * @param key コンテキストキー（shopCustomConfirm:userId）
+ * @param msg 返信メッセージ
+ * @param data コンテキストデータ（skill）
+ * @returns リアクションオブジェクト、または shopCustomReply の戻り値
+ * @internal
+ */
+export const shopCustomConfirmContextHook = async (module: rpg, ai: 藍, key: string, msg: Message, data: any) => {
+    if (key.replace('shopCustomConfirm:', '') !== msg.userId) return { reaction: 'hmm' };
+    const skill = skills.find((x) => x.name === data?.skill);
+    if (msg.text.includes('いいえ')) {
+        module.unsubscribeReply(key);
+        return { reaction: ':mk_muscleok:' };
+    }
+    if (!msg.text.includes('はい')) {
+        const reply = await msg.reply(serifs.core.yesOrNo, { visibility: 'specified' });
+        module.subscribeReply(key, reply.id, data);
+        return { reaction: 'hmm' };
+    }
+    module.unsubscribeReply(key);
+    const rpgData = initializeData(module, msg);
+    if (!rpgData.tempAmulet) rpgData.tempAmulet = [];
+    // 確認中に状況が変わっている可能性があるため、選択可否と値段を確定時にもう一度判定する
+    // （選択できなくなっていた場合は、番号選択で範囲外を選んだ時と同じく何もしない）
+    if (!skill || !isAvailablePart(rpgData, skill)) {
+        return { reaction: 'hmm' };
+    }
+    if (typeof rpgData.tempAmuletCost !== 'number') {
+        rpgData.tempAmuletCost = getAmuletTotalCost(ai, resolveSkills(rpgData.tempAmulet));
+    }
+    if (!addPart(module, ai, msg, rpgData, skill)) return { reaction: 'hmm' };
     return shopCustomReply(module, ai, msg);
 };
 

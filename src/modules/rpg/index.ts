@@ -19,7 +19,7 @@ import { colorReply, colors } from './colors';
 import { endressEnemy, enemys, Enemy, raidEnemys } from './enemys';
 import { rpgItems } from './items';
 import { aggregateTokensEffects, shopContextHook, shopReply } from './shop';
-import { shopCustomReply, shopCustomContextHook } from './shop-custom';
+import { shopCustomReply, shopCustomContextHook, shopCustomConfirmContextHook } from './shop-custom';
 import { shop2Reply } from './shop2';
 import { skills, Skill, SkillEffect, getSkill, skillReply, skillCalculate, aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, countDuplicateSkillNames, skillBorders, canLearnSkillNow } from './skills';
 import { start, raidInstall, raidContextHook, raidTimeoutCallback } from './raid';
@@ -268,6 +268,9 @@ export default class extends Module {
           }
           if (typeof key === "string" && key.startsWith("shopBuy:")) {
                   return shopContextHook(this, key, msg, data);
+          }
+          if (typeof key === "string" && key.startsWith("shopCustomConfirm:")) {
+                  return shopCustomConfirmContextHook(this, this.ai, key, msg, data);
           }
           if (typeof key === "string" && key.startsWith("shopCustom:")) {
                   return shopCustomContextHook(this, this.ai, key, msg, data);
