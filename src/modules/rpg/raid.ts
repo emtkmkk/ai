@@ -1091,8 +1091,9 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 	// 敵が forcePostCount を持っている場合、投稿数は固定
 	if (enemy.forcePostCount) {
 		postCount = enemy.forcePostCount;
-		rawTp = tp;
-		tp = getPostX(postCount) * (1 + ((skillEffects.postXUp ?? 0) * Math.min((postCount - superBonusPost) / 20, 10)));
+		rawTp = getPostX(postCount);
+		// 固定投稿数には覚醒ボーナスが加算されていないため、superBonusPost は差し引かない
+		tp = rawTp * (1 + ((skillEffects.postXUp ?? 0) * Math.min(postCount / 20, 10)));
         } else {
                 postCount = await getPostCount(ai, module_, data, msg, 0, raidPostId ? { type: 'raid', key: raidPostId } : undefined);
                 postCount = applyKazutoriMasterPostCountFloor(postCount, msg, skillEffects);
@@ -1105,9 +1106,9 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 
 		postCount = postCount + continuousBonusNum;
 
-		rawTp = tp;
+		rawTp = getRaidPostX(postCount);
 
-		tp = getRaidPostX(postCount) * (1 + ((skillEffects.postXUp ?? 0) * Math.min((postCount - superBonusPost) / 20, 10)));
+		tp = rawTp * (1 + ((skillEffects.postXUp ?? 0) * Math.min((postCount - superBonusPost) / 20, 10)));
 	}
 
 	if (!isSuper) {
@@ -1728,10 +1729,10 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 	}
 
 	if (skillEffects.enemyCritDmgDown) {
-		def = def * (1 + (skillEffects.enemyCritDmgDown ?? 0) / 30);
+		def = def * (1 + (skillEffects.enemyCritDmgDown ?? 0) / 4);
 		if (verboseLog) {
 			buff += 1;
-			message += `守スキル効果: D${displayDifference((1 + (skillEffects.enemyCritDmgDown ?? 0) / 30))} (${formatNumber(def)})\n`;
+			message += `守スキル効果: D${displayDifference((1 + (skillEffects.enemyCritDmgDown ?? 0) / 4))} (${formatNumber(def)})\n`;
 		}
 	}
 	if (skillEffects.enemyBuff) {
@@ -2382,11 +2383,11 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 					message += `D: ${formatNumber(def)} (x${formatNumber(def / (lv * 3.5))})\n`;
 					message += `合計被ダメージ: ${displayDifference(defDmgX)}\n`;
 				}
+				// 先制攻撃が取りやめになった場合に戻せるよう、炎上スタックとバリアは攻撃確定後に反映する
+				const prevFireStack = fireStack;
 				if (_data.enemy.fire) {
 					fireStack += _data.enemy.fire / 0.15;
 					_data.fireStack = fireStack;
-					const fireStatus = additionalStatuses.find((status) => status.icon === serifs.rpg.fire);
-					if (fireStatus) fireStatus.value = fireStack;
 				}
 				/** ダメージ */
 				let dmg = getEnemyDmg(_data, def, tp, 1, crit ? critDmg : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [count]));
@@ -2394,6 +2395,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 				let normalDmg = getEnemyDmg(_data, lv * 3.75, tp, 1, enemy.alwaysCrit ? 1 : false, enemyAtk, rng * defDmgX, getVal(enemy.atkx, [count]));
 				let addMessage = "";
 				const rawDmg = dmg;
+				let restBarrier = sevenFeverBarrier;
 				if (sevenFeverBarrier > 0) {
 					const reduced = reduceByBarrier(dmg, sevenFeverBarrier);
 					dmg = reduced.reducedDmg;
@@ -2402,22 +2404,19 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 						const noItemReduced = reduceByBarrier(noItemDmg, sevenFeverBarrier);
 						noItemDmg = noItemReduced.reducedDmg;
 					}
-					sevenFeverBarrier = reduced.restBarrier;
-					const barrierStatus = additionalStatuses.find((status) => status.icon === "🛡️");
-					if (barrierStatus) barrierStatus.value = sevenFeverBarrier;
+					restBarrier = reduced.restBarrier;
 				}
 				// ダメージが負けるほど多くなる場合は、先制攻撃しない
 				if (warriorFlg || playerHp > dmg || (count === 3 && enemy.fire && (data.thirdFire ?? 0) <= 2)) {
+					sevenFeverBarrier = restBarrier;
+					const barrierStatus = additionalStatuses.find((status) => status.icon === "🛡️");
+					if (barrierStatus) barrierStatus.value = sevenFeverBarrier;
+					const fireStatus = additionalStatuses.find((status) => status.icon === serifs.rpg.fire);
+					if (fireStatus) fireStatus.value = fireStack;
 					if (normalDmg > rawDmg) {
 						totalResistDmg += (normalDmg - rawDmg);
 					}
 					if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`;
-					playerHp -= dmg;
-					message += (crit ? `**${enemy.defmsg(dmg)}**` : enemy.defmsg(dmg)) + "\n";
-					if (addMessage) message += addMessage;
-					if (itemBonus.def && noItemDmg - dmg > 1) {
-						message += `(道具効果: -${noItemDmg - dmg})\n`;
-					}
 					if (skillEffects.pride) {
 						if (dmg <= (playerMaxHp / 10)) {
 							atkDmgBonus *= 1.15;
@@ -2425,6 +2424,12 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 						if (dmg >= ((playerMaxHp / 10) * 3)) {
 							dmg *= 2;
 						}
+					}
+					playerHp -= dmg;
+					message += (crit ? `**${enemy.defmsg(dmg)}**` : enemy.defmsg(dmg)) + "\n";
+					if (addMessage) message += addMessage;
+					if (itemBonus.def && noItemDmg - dmg > 1) {
+						message += `(道具効果: -${noItemDmg - dmg})\n`;
 					}
 					if (warriorFlg && playerHp <= 0) {
 						playerHp += dmg;
@@ -2440,6 +2445,9 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 					enemyTurnFinished = true;
 					if (enemy.fire && count > (data.thirdFire ?? 0)) data.thirdFire = count;
 					if (dmg > (data.superMuscle ?? 0)) data.superMuscle = dmg;
+				} else {
+					fireStack = prevFireStack;
+					_data.fireStack = prevFireStack;
 				}
 			}
 		}
@@ -2518,7 +2526,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 			const rng = (atkMinRnd + random(data, startCharge, skillEffects, false) * atkMaxRnd);
 			if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`;
 			const turnDmgX = (i < 2 ? 1 : i < 3 ? 0.5 : i < 4 ? 0.25 : 0.125);
-			let dmgBonus = ((Math.max(1 + (skillEffects.atkDmgUp ?? 0) * dmgUp, atkMinusMin)) * turnDmgX) + (skillEffects.thunder ? (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 0);
+			let dmgBonus = ((Math.max(1 + (skillEffects.atkDmgUp ?? 0), atkMinusMin)) * dmgUp * turnDmgX) + (skillEffects.thunder ? (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 0);
 			const rawDmgBonus = dmgBonus / turnDmgX;
 			if (verboseLog && (rawDmgBonus < 0.999 || rawDmgBonus > 1.001)) {
 				buff += 1;
@@ -2614,10 +2622,10 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 				totalDmg += dmg;
 			} else if (!(isBattle && isPhysical)) {
 				// 非戦闘時は闇の効果はないが、防御に還元される
-				def = def * (1 + (skillEffects.dark ?? 0) * 0.3);
+				def = def * (1 + (skillEffects.dark ?? 0) * 0.7);
 				if (verboseLog && (skillEffects.dark ?? 0) > 0) {
 					buff += 1;
-					message += `闇非戦闘: D${displayDifference((1 + (skillEffects.dark ?? 0) * 0.3))} (${formatNumber(def)})\n`;
+					message += `闇非戦闘: D${displayDifference((1 + (skillEffects.dark ?? 0) * 0.7))} (${formatNumber(def)})\n`;
 				}
 			}
 

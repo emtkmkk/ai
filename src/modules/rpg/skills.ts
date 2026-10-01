@@ -268,6 +268,8 @@ export type Skill = {
 	notShop?: boolean;
 	/** 希少度係数（未設定時は1） */
 	rare?: number;
+	/** レイドでのみ効果があるスキルの場合（お守りにした際、通常戦闘では耐久が減らない） */
+	raidOnly?: boolean;
 };
 
 export const isKazutoriMasterDisabled = (data): boolean => {
@@ -356,17 +358,17 @@ export const skills: Skill[] = [
 	{ name: `気性が荒い`, short: "荒", desc: `戦闘が得意になりますが、戦闘以外の効率が大きく下がります`, info: `${serifs.rpg.status.atk}+25% 非戦闘時、${serifs.rpg.status.atk}-40%`, effect: { atkUp5: 0.25, notBattleBonusAtk: -0.4 }, unique: "mind" },
 	{ name: `気性穏やか`, short: "穏", desc: `戦闘以外の効率がとても上がりますが、戦闘が苦手になります`, info: `${serifs.rpg.status.atk}-25% 非戦闘時、${serifs.rpg.status.atk}+70%`, effect: { atkUp5: -0.25, notBattleBonusAtk: 0.7 }, unique: "mind" },
 	{ name: `かるわざ`, short: "軽", desc: `ステータスが上がり、お守りを持っていない時、追加で${serifs.rpg.status.atk}がさらに上がります`, info: `ステータス+6% お守りを持っていない時、追加で${serifs.rpg.status.atk}+6%`, effect: { atkUp6: 0.06, defUp5: 0.06, noAmuletAtkUp: 0.06 }, skillOnly: true },
-	{ name: `攻めの守勢`, short: "勢", desc: `通常よりもダメージを防げば防ぐ程、パワーが上がります（ただし７フィーバー！を除きます）`, info: `ダメージ軽減300毎に防御の12.5~40%分のパワーを得ます（７フィーバー！を除く）\nこの効果は最大4回まで発動し、発動した回数が多いほど効果が上がります\nさらにレイド時は発動した回数分、全力の一撃のダメージが上がります\n${serifs.rpg.status.atk}+4% このスキルは重複しません`, effect: { atkUpBonus: 1, guardAtkUp: 0.125 }, unique: "counter" },
+	{ name: `攻めの守勢`, short: "勢", desc: `通常よりもダメージを防げば防ぐ程、パワーが上がります（ただし７フィーバー！を除きます）`, info: `ダメージ軽減の累計が300/600/900/1200に達すると、防御の12.5%/30%/60%/100%分のパワーを得ます（７フィーバー！を除く）\nさらにレイド時は、戦闘終了時に減った体力の同じ割合分を回復し、その分全力の一撃のダメージが上がります\n${serifs.rpg.status.atk}+4% このスキルは重複しません`, effect: { atkUpBonus: 1, guardAtkUp: 0.125 }, unique: "counter" },
 	{ name: `分散型`, short: "散", desc: `同じスキルを持っていない程、ステータスが上がります（お守りは対象外）`, info: `パワー・防御+10% クリティカル率+10% ダメージ軽減+10% 同じスキルを持つ度に全ての効果-4%（お守りは対象外）`, effect: { distributed: 0.1 }, unique: "distributed" },
-	{ name: `傲慢の力`, short: "**傲**", desc: `敵が弱いほど与ダメージが大きく上昇します`, info: "最大体力の10%以下のダメージを受ける度に、その戦いの間常に与ダメージ+15%\nただし、最大体力の30%以上のダメージを受けた場合、そのダメージは2倍になる", effect: { pride: 0.15 }, notLearn: true, amuletUnique: "sin"},
-	{ name: `強欲の力`, short: "**欲**", desc: `前に装備した武器・防具を次にその能力を上回るものが手に入るまで装備するようになりますが、使いまわした装備は徐々に力を失います……`, info: "", effect: { greed: 0.5 }, notLearn: true, amuletUnique: "sin"},
-	{ name: `憤怒の力`, short: "**憤**", desc: `体力が半減した状態でスタートしますが、クリティカルダメージが大きく上昇します`, info: "体力半減でスタート クリティカルダメージ+40%", effect: { wrath: 0.4 }, notLearn: true, amuletUnique: "sin"},
-	{ name: `暴食の力`, short: "**暴**", desc: `何かを食べる度に与ダメージが上がります さらに食べる程効果が上がります 食べてはいけない物を食べた場合にさらに効果が上がります`, info: "何かを食べる度、その戦いの間常に与ダメージ+10% 毒を食べた場合与ダメージ+20%", effect: { gluttony: 0.2 }, notLearn: true, amuletUnique: "sin"},
-	{ name: `怠惰の力`, short: "**怠**", desc: `時々怠けて行動をしなくなりますが、怠けた後は強くなります`, info: "30%で怠ける 怠ける度に、その戦いの間常に与ダメージ+50%", effect: { sloth: 0.5 }, notLearn: true, amuletUnique: "sin"},
-	{ name: `嫉妬の力`, short: "**嫉**", desc: `レイドで与えたダメージが低い間、ダメージを大きくカットします`, info: "レイドでのダメージ評価が低い間、被ダメージを最大70%カットします\n評価が高くなった場合、被ダメージが★1につき+10%", effect: { envy: 1 }, notLearn: true, amuletUnique: "sin"},
-	{ name: `バーサク`, short: "バ", desc: `レイド時、毎ターンダメージを受けますが、パワーがアップします`, info: "レイド時、毎ターンHP15%減少 パワー+24%", effect: { berserk: 0.15 }, notLearn: true, notShop: true},
-	{ name: `超全力の一撃`, short: "撃", desc: `レイド時、ターン7で発生する全力の一撃を強化します`, info: "レイド時、全力の一撃のダメージ1.3倍", effect: { finalAttackUp: 0.3 }, notLearn: true, notShop: true},
-	{ name: `スロースタート`, short: "ス", desc: `レイド時、最初は弱くなりますが、ターンが進む度にどんどん強くなります`, info: "レイド時、最初は弱くなりますが、ターンが進む度にどんどん強くなります", effect: { slowStart: 1 }, notLearn: true, notShop: true},
+	{ name: `傲慢の力`, short: "**傲**", desc: `レイド時、敵が弱いほど与ダメージが大きく上昇します`, info: "レイド時、最大体力の10%以下のダメージを受ける度に、その戦いの間常に与ダメージ+15%\nただし、最大体力の30%以上のダメージを受けた場合、そのダメージは2倍になる", effect: { pride: 0.15 }, notLearn: true, raidOnly: true, amuletUnique: "sin"},
+	{ name: `強欲の力`, short: "**欲**", desc: `レイド時、前に装備した武器・防具を次にその能力を上回るものが手に入るまで装備するようになりますが、使いまわした装備は徐々に力を失います……`, info: "", effect: { greed: 0.5 }, notLearn: true, raidOnly: true, amuletUnique: "sin"},
+	{ name: `憤怒の力`, short: "**憤**", desc: `レイド時、体力が半減した状態でスタートしますが、クリティカルダメージが大きく上昇します`, info: "レイド時、体力半減でスタート クリティカルダメージ+40%", effect: { wrath: 0.4 }, notLearn: true, raidOnly: true, amuletUnique: "sin"},
+	{ name: `暴食の力`, short: "**暴**", desc: `レイド時、何かを食べる度に与ダメージが上がります さらに食べる程効果が上がります 食べてはいけない物を食べた場合にさらに効果が上がります`, info: "レイド時、何かを食べる度、その戦いの間常に与ダメージ+10% 毒を食べた場合与ダメージ+20%", effect: { gluttony: 0.2 }, notLearn: true, raidOnly: true, amuletUnique: "sin"},
+	{ name: `怠惰の力`, short: "**怠**", desc: `レイド時、時々怠けて行動をしなくなりますが、怠けた後は強くなります`, info: "レイド時、30%で怠ける 怠ける度に、その戦いの間常に与ダメージ+50%", effect: { sloth: 0.5 }, notLearn: true, raidOnly: true, amuletUnique: "sin"},
+	{ name: `嫉妬の力`, short: "**嫉**", desc: `レイドで与えたダメージが低い間、ダメージを大きくカットします`, info: "レイドでのダメージ評価が低い間、被ダメージを最大70%カットします\n評価が高くなった場合、被ダメージが★1につき+10%", effect: { envy: 1 }, notLearn: true, raidOnly: true, amuletUnique: "sin"},
+	{ name: `バーサク`, short: "バ", desc: `レイド時、毎ターンダメージを受けますが、パワーがアップします`, info: "レイド時、毎ターンHP15%減少 パワー+24%", effect: { berserk: 0.15 }, notLearn: true, raidOnly: true, notShop: true},
+	{ name: `超全力の一撃`, short: "撃", desc: `レイド時、ターン7で発生する全力の一撃を強化します`, info: "レイド時、全力の一撃のダメージ1.3倍", effect: { finalAttackUp: 0.3 }, notLearn: true, raidOnly: true, notShop: true},
+	{ name: `スロースタート`, short: "ス", desc: `レイド時、最初は弱くなりますが、ターンが進む度にどんどん強くなります`, info: "レイド時、最初は弱くなりますが、ターンが進む度にどんどん強くなります", effect: { slowStart: 1 }, notLearn: true, raidOnly: true, notShop: true},
 ];
 
 /**
@@ -1222,7 +1224,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 	}
 
 	if (skillEffects.enemyCritDmgDown) {
-		def *= (1 + (skillEffects.enemyCritDmgDown ?? 0) / 30);
+		def *= (1 + (skillEffects.enemyCritDmgDown ?? 0) / 4);
 	}
 
 	if (skillEffects.enemyBuff) {
@@ -1277,7 +1279,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 	if (skillEffects.dark) {
 		resultS.push("戦闘時敵行動回数低下率: "+ showNum((skillEffects.dark ?? 0) * 2 * 100) + "%");
 		resultS.push("戦闘時固定ダメージ付与率: "+ showNum((skillEffects.dark ?? 0) * 100) + "%");
-		nbDef *= 1 + (skillEffects.dark ?? 0) * 0.3;
+		nbDef *= 1 + (skillEffects.dark ?? 0) * 0.7;
 	}
 
 	let lAtkText = "";

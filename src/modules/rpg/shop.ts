@@ -212,6 +212,25 @@ export function getRandomSkills(ai, num, data?) {
 
 	return selectedSkills;
 }
+/**
+ * 複数スキルの効果を1つにまとめる
+ *
+ * 同じキーを持つ効果は、スキルを個別に所持した場合（aggregateSkillsEffects）と同様に加算する。
+ *
+ * @param effects スキル効果の配列
+ * @returns 合成した効果
+ * @internal
+ */
+export function mergeSkillEffects(effects: SkillEffect[]): SkillEffect {
+	const merged: SkillEffect = {};
+	for (const effect of effects) {
+		for (const [key, value] of Object.entries(effect ?? {})) {
+			merged[key] = typeof value === "number" && typeof merged[key] === "number" ? merged[key] + value : value;
+		}
+	}
+	return merged;
+}
+
 export function mergeSkillAmulet(ai, rnd = Math.random, skills: Skill[]) {
 	// スキル名のセットを作成し、同じ名前のスキルを弾く
 	const uniqueSkillsMap = new Map<string, Skill>();
@@ -226,27 +245,28 @@ export function mergeSkillAmulet(ai, rnd = Math.random, skills: Skill[]) {
 
 	const durability = uniqueSkills.length * 6;
 
+	/** レイドでのみ効果があるスキルだけで構成されている場合、通常戦闘では使用（耐久減少）しない */
+	const raidOnly = uniqueSkills.length > 0 && uniqueSkills.every((x) => x.raidOnly);
+
 	const prices = uniqueSkills.map((x) => skillPrice(ai, x.name, rnd));
 
 	const priceSum = prices.reduce((pre, cur) => pre + cur, 0);
 
 	const price = Math.floor(priceSum * (Math.pow(1.5, uniqueSkills.length - 1) * Math.max(prices.reduce((pre, cur) => pre * (0.5 + cur / 24), 1), 1)));
 
-	// スキルの効果をマージ
-	const effect = uniqueSkills.reduce((acc, skill) => {
-		return { ...acc, ...skill.effect };
-	}, {} as SkillEffect);
+	// スキルの効果をマージ（同じ効果を持つスキル同士は加算する）
+	const effect = mergeSkillEffects(uniqueSkills.map((x) => x.effect));
 
 	return ({
 		name: `${name}のお守り`,
 		price,
-		desc: `持っているとスキル${uniqueSkills.map((x) => `「${x.name}」`).join("と")}を使用できる 耐久${durability} 使用時耐久減少`,
+		desc: `持っているとスキル${uniqueSkills.map((x) => `「${x.name}」`).join("と")}を使用できる 耐久${durability} ${raidOnly ? "レイドでの" : ""}使用時耐久減少`,
 		type: "amulet",
 		effect,
 		durability,
 		short: uniqueSkills.map((x) => x.short).join(""),
 		skillName: uniqueSkills.map((x) => x.name),
-		isUsed: (data) => true
+		isUsed: raidOnly ? (data) => !!data.raid : (data) => true
 	});
 }
 const determineOutcome = (ai, data, getShopItems) => {

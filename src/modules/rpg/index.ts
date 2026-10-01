@@ -1411,7 +1411,7 @@ export default class extends Module {
 
 		// 炎属性剣攻撃
 		if (skillEffects.fire) {
-			trueDmg = Math.ceil(data.lv * skillEffects.fire);
+			trueDmg = Math.ceil(Math.min(data.lv, 255) * skillEffects.fire);
 		}
 
 		// ７フィーバー
@@ -2335,8 +2335,21 @@ export default class extends Module {
 
 		const plusActionX = Math.ceil(skillEffects.plusActionX ?? 0);
 
+		// 行動ごとに掛かる補正が2回目以降の行動で重複しないよう、ループ前の値を保持しておく
+		const baseAtk = atk;
+		const baseDef = def;
+		const baseSpd = spd;
+		const baseEnemyAtk = enemyAtk;
+		const baseItemBonus = { ...itemBonus };
+
 		// ---- 戦闘ループ本体（actionX 回繰り返し） ----
 		for (let actionX = 0; actionX < plusActionX + 1; actionX++) {
+
+			atk = baseAtk;
+			def = baseDef;
+			spd = baseSpd;
+			enemyAtk = baseEnemyAtk;
+			itemBonus = { ...baseItemBonus };
 
 			/** バフを得た数。行数のコントロールに使用 */
 			let buff = 0;
@@ -2369,10 +2382,10 @@ export default class extends Module {
 			if (skillEffects.fire && (isBattle && isPhysical)) {
 				buff += 1;
 				message += serifs.rpg.skill.fire + "\n";
-				trueDmg = Math.ceil(lv * skillEffects.fire);
+				trueDmg = Math.ceil(Math.min(lv, 255) * skillEffects.fire);
 			} else if (skillEffects.fire && !(isBattle && isPhysical)) {
 				// 非戦闘時は、パワーに還元される
-				atk = atk + Math.min(lv, 255) * 3.75 * skillEffects.fire;
+				atk = atk + lv * 3.75 * skillEffects.fire;
 			}
 
 			if (skillEffects.guardAtkUp && data.totalResistDmg >= 300) {
@@ -2624,7 +2637,7 @@ export default class extends Module {
 					enemyHp -= dmg;
 				} else if (!(isBattle && isPhysical)) {
 					// 非戦闘時は闇の効果はないが、防御に還元される
-					def = def * (1 + (skillEffects.dark ?? 0) * 0.3);
+					def = def * (1 + (skillEffects.dark ?? 0) * 0.7);
 				}
 				// 敵のターンが既に終了していない場合
 				/** 受けた最大ダメージ */

@@ -16,7 +16,7 @@ import serifs from "@/serifs";
 import * as seedrandom from 'seedrandom';
 import getDate from '@/utils/get-date';
 import { skills, Skill, skillPower, isKazutoriMasterDisabled } from './skills';
-import { aggregateTokensEffects } from "./shop";
+import { aggregateTokensEffects, mergeSkillEffects } from "./shop";
 import { initializeData } from './utils';
 import rpg from './index';
 import 藍 from '@/ai';
@@ -207,16 +207,17 @@ export const shopCustomContextHook = (module: rpg, ai: 藍, key: any, msg: Messa
 function mergeSkills(ai: 藍, skillList: Skill[]) {
     const name = skillList.map((x) => x.name).join('&');
     const durability = skillList.length * 6;
-    const effect = skillList.reduce((acc, skill) => ({ ...acc, ...skill.effect }), {});
+    const effect = mergeSkillEffects(skillList.map((x) => x.effect));
+    const raidOnly = skillList.length > 0 && skillList.every((x) => x.raidOnly);
     return {
         name: `${name}のお守り`,
         price: 0,
-        desc: `持っているとスキル${skillList.map((x) => `「${x.name}」`).join('と')}を使用できる 耐久${durability} 使用時耐久減少`,
+        desc: `持っているとスキル${skillList.map((x) => `「${x.name}」`).join('と')}を使用できる 耐久${durability} ${raidOnly ? 'レイドでの' : ''}使用時耐久減少`,
         type: 'amulet',
         effect,
         durability,
         short: skillList.map((x) => x.short).join(''),
         skillName: skillList.map((x) => x.name),
-        isUsed: () => true
+        isUsed: raidOnly ? (data) => !!data.raid : () => true
     };
 }
