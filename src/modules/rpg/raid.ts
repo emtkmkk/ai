@@ -1027,6 +1027,21 @@ function raidTotalDmg(raid: Raid) {
 }
 
 /**
+ * 再計算コマンドの本文から、レイド投稿IDとユーザーIDを取り出す
+ *
+ * コマンド名（raidRecalc）自体も10文字の英数字なので、先に取り除いてから ID を拾う。
+ *
+ * @param text コマンドの本文（例: "RPG admin raidRecalc <レイド投稿ID> <ユーザーID> ..."）
+ * @returns 最初の ID をレイド投稿ID、残りをユーザーIDとして返す
+ * @internal
+ */
+export function parseRaidRecalcArgs(text: string): { raidPostId: string | undefined; userIds: string[] } {
+	const ids = text.replace(/raidRecalc/gi, " ").match(/\w{10,}/g) ?? [];
+	const [raidPostId, ...userIds] = ids;
+	return { raidPostId, userIds };
+}
+
+/**
  * 指定ユーザーのレイド結果を、現在の計算式と現在のプレイヤーデータで再計算して差し替える
  *
  * 計算式の不具合を修正した後に、影響を受けたユーザーの結果だけをやり直すための管理者向け機能。

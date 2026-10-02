@@ -22,7 +22,7 @@ import { aggregateTokensEffects, shopContextHook, shopReply } from './shop';
 import { shopCustomReply, shopCustomContextHook, shopCustomConfirmContextHook } from './shop-custom';
 import { shop2Reply } from './shop2';
 import { skills, Skill, SkillEffect, getSkill, skillReply, skillCalculate, aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, countDuplicateSkillNames, skillBorders, canLearnSkillNow } from './skills';
-import { start, raidInstall, raidContextHook, raidTimeoutCallback, recalculateRaidResult } from './raid';
+import { start, raidInstall, raidContextHook, raidTimeoutCallback, recalculateRaidResult, parseRaidRecalcArgs } from './raid';
 import type { Raid } from './raid';
 import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatus, getPostCount, getPostX, getVal, random, preLevelUpProcess, deepClone, accumulateVitality } from './utils';
 import { applyKazutoriMasterHiddenBonus, applyKazutoriMasterPostCountFloor, applyWeakAtkReduction, calculateArpen, calculateStats, applySoftCapPow2, ensureKazutoriMasterHistory, getKazutoriMasterMessage } from './battle';
@@ -833,8 +833,7 @@ export default class extends Module {
 		}
 		// レイド結果の再計算: RPG admin raidRecalc <レイド投稿ID> <ユーザーID> [<ユーザーID> ...]
 		if (msg.includes(["raidRecalc"])) {
-			const ids = msg.extractedText.match(/\w{10,}/g) ?? [];
-			const [raidPostId, ...userIds] = ids;
+			const { raidPostId, userIds } = parseRaidRecalcArgs(msg.extractedText);
 			if (!raidPostId || !userIds.length) {
 				msg.reply("使い方: RPG admin raidRecalc <レイド投稿ID> <ユーザーID> [<ユーザーID> ...]", { visibility: "specified" });
 				return { reaction: "hmm" };

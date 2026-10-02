@@ -8,7 +8,7 @@
  * - 乱数は再現しないため、新しいダメージの値そのものではなく「差し替わったこと」と副作用が無いことを確認する
  */
 import * as loki from "lokijs";
-import { raidInstall, recalculateRaidResult } from "@/modules/rpg/raid";
+import { raidInstall, recalculateRaidResult, parseRaidRecalcArgs } from "@/modules/rpg/raid";
 import { raidEnemys } from "@/modules/rpg/enemys";
 import { skills } from "@/modules/rpg/skills";
 
@@ -129,5 +129,19 @@ describe("recalculateRaidResult", () => {
 
 		expect(await recalculateRaidResult("raid-1", "user-b")).toEqual({ ok: false, reason: "このレイドに参加していません" });
 		expect(await recalculateRaidResult("raid-x", "user-a")).toEqual({ ok: false, reason: "レイドが見つかりません" });
+	});
+});
+
+describe("parseRaidRecalcArgs", () => {
+	test("コマンド名（10文字）をIDとして拾わない", () => {
+		expect(parseRaidRecalcArgs("RPG admin raidRecalc artpvd9zt5 ahshzt8src")).toEqual({ raidPostId: "artpvd9zt5", userIds: ["ahshzt8src"] });
+	});
+
+	test("ユーザーIDを複数指定できる", () => {
+		expect(parseRaidRecalcArgs("RPG admin raidRecalc artpvd9zt5 ahshzt8src 9d5ts6in38")).toEqual({ raidPostId: "artpvd9zt5", userIds: ["ahshzt8src", "9d5ts6in38"] });
+	});
+
+	test("IDが足りない場合はユーザーIDが空になる", () => {
+		expect(parseRaidRecalcArgs("RPG admin raidRecalc artpvd9zt5")).toEqual({ raidPostId: "artpvd9zt5", userIds: [] });
 	});
 });
