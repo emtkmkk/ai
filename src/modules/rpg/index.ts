@@ -22,7 +22,7 @@ import { aggregateTokensEffects, shopContextHook, shopReply } from './shop';
 import { shopCustomReply, shopCustomContextHook, shopCustomConfirmContextHook } from './shop-custom';
 import { shop2Reply } from './shop2';
 import { skills, Skill, SkillEffect, getSkill, skillReply, skillCalculate, aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, countDuplicateSkillNames, skillBorders, canLearnSkillNow } from './skills';
-import { start, raidInstall, raidContextHook, raidTimeoutCallback } from './raid';
+import { start, raidInstall, raidContextHook, raidTimeoutCallback, recalculateRaidResult } from './raid';
 import type { Raid } from './raid';
 import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatus, getPostCount, getPostX, getVal, random, preLevelUpProcess, deepClone, accumulateVitality } from './utils';
 import { applyKazutoriMasterHiddenBonus, applyKazutoriMasterPostCountFloor, applyWeakAtkReduction, calculateArpen, calculateStats, applySoftCapPow2, ensureKazutoriMasterHistory, getKazutoriMasterMessage } from './battle';
@@ -830,6 +830,32 @@ export default class extends Module {
 		if (msg.includes(["startRaid"])) {
 			start(undefined, msg.includes(["recent"]) ? "r" : msg.includes(["hato"]) ? "h" : "");
 			return { reaction: "love" };
+		}
+		// レイド結果の再計算: RPG admin raidRecalc <レイド投稿ID> <ユーザーID> [<ユーザーID> ...]
+		if (msg.includes(["raidRecalc"])) {
+			const ids = msg.extractedText.match(/\w{10,}/g) ?? [];
+			const [raidPostId, ...userIds] = ids;
+			if (!raidPostId || !userIds.length) {
+				msg.reply("使い方: RPG admin raidRecalc <レイド投稿ID> <ユーザーID> [<ユーザーID> ...]", { visibility: "specified" });
+				return { reaction: "hmm" };
+			}
+			return (async () => {
+				const lines: string[] = [];
+				for (const userId of userIds) {
+					const r = await recalculateRaidResult(raidPostId, userId);
+					if (!r.ok) {
+						lines.push(`${userId}: ${r.reason}`);
+						continue;
+					}
+					lines.push([
+						`${userId}: ${r.oldDmg.toLocaleString()} → ${r.newDmg.toLocaleString()}${r.isEnded ? "（終了済み）" : "（開催中）"}`,
+						`  自己ベスト: ${(r.personalBest.before ?? 0).toLocaleString()} → ${r.personalBest.after.toLocaleString()}`,
+						r.globalRecord ? `  全体記録: ${(r.globalRecord.before ?? 0).toLocaleString()} → ${r.globalRecord.after.toLocaleString()}` : "",
+					].filter(Boolean).join("\n"));
+				}
+				msg.reply(lines.join("\n"), { visibility: "specified" });
+				return { reaction: "love" };
+			})();
 		}
 		if (msg.includes(["skillPopularity"])) {
 			const { skillNameCountMap } = skillCalculate(this.ai);

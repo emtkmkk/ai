@@ -91,6 +91,10 @@ export type Raid = {
 		/** 攻撃者のマーク */
 		mark: string;
 		replyId?: string;
+		/** 管理者による再計算を行った日時（タイムスタンプ） */
+		recalculatedAt?: number;
+		/** 最初の再計算前のダメージ（再計算の監査用） */
+		originalDmg?: number;
 	}[];
 	/** レイドの敵 */
 	enemy: RaidEnemy;
@@ -971,6 +975,197 @@ export async function raidContextHook(key: string, msg: Message, data: unknown) 
 	return {
 		reaction: result.me
 	};
+}
+
+// -------- 再計算（計算式の不具合修正後の救済） --------
+
+/** {@link recalculateRaidResult} の結果 */
+export type RaidRecalcResult =
+	| { ok: false; reason: string }
+	| {
+		ok: true;
+		/** 再計算前のダメージ */
+		oldDmg: number;
+		/** 再計算後のダメージ */
+		newDmg: number;
+		/** 対象レイドが終了済みか */
+		isEnded: boolean;
+		/** 自己ベスト（ボス別）の変化 */
+		personalBest: { before: number | undefined; after: number };
+		/** 終了済みレイドの場合、ボスごとの全体記録の変化 */
+		globalRecord?: { before: number | undefined; after: number };
+	};
+
+/**
+ * レイドの日付を raidScoreDate と同じ形式（YYYY/M/D）で返す
+ *
+ * @param raid 対象のレイド
+ * @returns 日付文字列
+ * @internal
+ */
+function formatRaidDate(raid: Raid) {
+	const d = new Date(raid.startedAt);
+	return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+/**
+ * 終了処理（finish）と同じ規則でレイドの合計ダメージを求める
+ *
+ * ダメージが負のものを除き、同一ユーザーの重複参加は最初の1件だけを数える。
+ *
+ * @param raid 対象のレイド
+ * @returns 合計ダメージ
+ * @internal
+ */
+function raidTotalDmg(raid: Raid) {
+	const seen = new Set<string>();
+	return (raid.attackers ?? []).reduce((sum, x) => {
+		if (x.dmg < 0 || seen.has(x.user.id)) return sum;
+		seen.add(x.user.id);
+		return sum + x.dmg;
+	}, 0);
+}
+
+/**
+ * 指定ユーザーのレイド結果を、現在の計算式と現在のプレイヤーデータで再計算して差し替える
+ *
+ * 計算式の不具合を修正した後に、影響を受けたユーザーの結果だけをやり直すための管理者向け機能。
+ *
+ * @remarks
+ * - プレイヤーデータは複製して使い、計算後は破棄する（経験値・Lvアップ・お守りの耐久などは反映しない）
+ * - 乱数は再現しないので、結果は元と同じにはならない
+ * - 投稿数は「同じレイドで二重に使わない」制御を通さず、再計算時点の投稿数で計算する
+ * - 平行次元のお札を持っている場合は、参加時と同じく所持数+1回試算して最良の結果を採用する
+ * - 差し替えるのはレイド記録の結果（ダメージ・ターン数・見た目・Lv・スキル表示）と自己ベスト。
+ *   終了済みのレイドでは、ボスごとの全体記録も直す。配布済みのコイン・王冠・結果投稿はそのまま
+ * - 本人への通知は行わない
+ *
+ * @param raidPostId 対象レイドの投稿ID
+ * @param userId 対象ユーザーのID
+ * @returns 再計算の結果
+ * @internal
+ */
+export async function recalculateRaidResult(raidPostId: string, userId: string): Promise<RaidRecalcResult> {
+	const raid = raids.findOne({ postId: raidPostId });
+	if (!raid) return { ok: false, reason: "レイドが見つかりません" };
+
+	// 終了処理と同じく、同一ユーザーの最初の参加記録を対象にする
+	const attacker = (raid.attackers ?? []).find((x) => x.user.id === userId);
+	if (!attacker) return { ok: false, reason: "このレイドに参加していません" };
+
+	const friend = ai.lookupFriend(userId);
+	if (!friend) return { ok: false, reason: "ユーザーが見つかりません" };
+
+	// 計算式やボス定義の修正を反映するため、現在のボス定義を使う
+	const enemy = raidEnemys.find((x) => x.name === raid.enemy.name);
+	if (!enemy) return { ok: false, reason: "ボスの定義が見つかりません" };
+
+	const liveData = friend.getPerModulesData(module_);
+	if (!liveData?.lv) return { ok: false, reason: "RPGのデータがありません" };
+	const snapshot = deepClone(liveData);
+
+	// 計算中の副作用を本物のデータに残さないよう、複製したデータと no-op の保存・返信を持つ msg を組み立てる
+	const runOnce = async () => {
+		const sandboxData = deepClone(snapshot);
+		const sandboxDoc = { ...friend.doc, kazutoriData: deepClone(friend.doc.kazutoriData ?? {}), save: () => { /* no-op */ } };
+		const sandboxFriend = {
+			doc: sandboxDoc,
+			love: friend.love,
+			userId,
+			getPerModulesData: () => sandboxData,
+			setPerModulesData: () => { /* no-op */ },
+			save: () => { /* no-op */ },
+		};
+		const sandboxMsg: any = {
+			userId,
+			user: { id: userId, username: attacker.user.username, host: attacker.user.host },
+			extractedText: "",
+			text: "",
+			includes: () => false,
+			reply: async () => ({ id: undefined }),
+			friend: sandboxFriend,
+		};
+		const enemyForRun = deepClone(enemy) as RaidEnemy;
+		if (enemyForRun.pattern && enemyForRun.pattern > 1) {
+			return enemyForRun.pattern === 3 ? await getTotalDmg3(sandboxMsg, enemyForRun) : await getTotalDmg2(sandboxMsg, enemyForRun);
+		}
+		// raidPostId は渡さない（投稿数の二重使用防止に引っかかって 0 扱いになるのを避ける）
+		return await getTotalDmg(sandboxMsg, enemyForRun);
+	};
+
+	const parallelCount = Math.min(10, Math.max(0, snapshot.parallelDimension ?? 0));
+	let best: any;
+	for (let i = 0; i <= parallelCount; i++) {
+		let r: any;
+		try {
+			r = await runOnce();
+		} catch (err) {
+			module_.log(`レイド再計算中にエラーが発生しました: ${err instanceof Error ? err.stack ?? err.message : err}`);
+			continue;
+		}
+		if (r && typeof r.totalDmg === "number" && !Number.isNaN(r.totalDmg) && (!best || r.totalDmg > best.totalDmg)) best = r;
+	}
+	if (!best) return { ok: false, reason: "再計算に失敗しました" };
+
+	const oldDmg = attacker.dmg;
+	const newDmg = best.totalDmg;
+	const oldTotal = raidTotalDmg(raid);
+
+	attacker.dmg = newDmg;
+	attacker.count = best.count ?? attacker.count;
+	attacker.me = best.me ?? attacker.me;
+	attacker.lv = best.lv ?? attacker.lv;
+	attacker.skillsStr = best.skillsStr ?? attacker.skillsStr;
+	// 終了済みなら王冠などの確定済みマークを残す。開催中なら新しい結果のマークにする
+	if (!raid.isEnded) attacker.mark = best.mark ?? attacker.mark;
+	attacker.recalculatedAt = Date.now();
+	if (attacker.originalDmg === undefined) attacker.originalDmg = oldDmg;
+	raids.update(raid);
+
+	// 自己ベスト: この回が自己ベストだった場合は、他のレイドの記録と新しい結果から付け直す
+	const enemyName = raid.enemy.name;
+	const otherBest = raids.find({}).reduce((max, r) => {
+		if (r.postId === raid.postId || r.enemy?.name !== enemyName) return max;
+		const a = (r.attackers ?? []).find((x) => x.user.id === userId);
+		return a && a.dmg > max ? a.dmg : max;
+	}, 0);
+	if (!liveData.raidScore) liveData.raidScore = {};
+	const pbBefore = liveData.raidScore[enemyName];
+	liveData.raidScore[enemyName] = pbBefore === oldDmg ? Math.max(newDmg, otherBest) : Math.max(pbBefore ?? 0, newDmg);
+	friend.setPerModulesData(module_, liveData);
+
+	// 終了済みのレイド: ボスごとの全体記録（合計ダメージ）を直す
+	let globalRecord: { before: number | undefined; after: number } | undefined;
+	const rpgData = ai.moduleData.findOne({ type: 'rpg' });
+	if (raid.isEnded && rpgData) {
+		if (!rpgData.raidScore) rpgData.raidScore = {};
+		if (!rpgData.raidScoreDate) rpgData.raidScoreDate = {};
+		const newTotal = raidTotalDmg(raid);
+		const before = rpgData.raidScore[enemyName];
+		if (before === oldTotal) {
+			// この回が全体記録だった場合は、他の終了済みレイドと比べて付け直す
+			let recTotal = newTotal;
+			let recDate = formatRaidDate(raid);
+			for (const r of raids.find({ isEnded: true })) {
+				if (r.postId === raid.postId || r.enemy?.name !== enemyName) continue;
+				const t = raidTotalDmg(r);
+				if (t > recTotal) {
+					recTotal = t;
+					recDate = formatRaidDate(r);
+				}
+			}
+			rpgData.raidScore[enemyName] = recTotal;
+			rpgData.raidScoreDate[enemyName] = recDate;
+		} else if (before === undefined || newTotal > before) {
+			rpgData.raidScore[enemyName] = newTotal;
+			rpgData.raidScoreDate[enemyName] = formatRaidDate(raid);
+		}
+		ai.moduleData.update(rpgData);
+		globalRecord = { before, after: rpgData.raidScore[enemyName] };
+	}
+
+	module_.log(`raid recalculated ${raid.postId} ${userId}: ${oldDmg} -> ${newDmg}`);
+	return { ok: true, oldDmg, newDmg, isEnded: raid.isEnded, personalBest: { before: pbBefore, after: liveData.raidScore[enemyName] }, globalRecord };
 }
 
 // -------- タイムアウト処理 --------
