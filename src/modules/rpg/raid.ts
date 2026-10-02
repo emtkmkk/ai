@@ -2730,14 +2730,33 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 			message += `クリティカル率: ${formatNumber((Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0) + critUp), 0) + (skillEffects.critUpFixed ?? 0)) * 100)}%\n`;
 		}
 
+		// 雷（レイド）: そのターンの合計ダメージを、基本は雷の値の半分（雷で+9%）だけ増やす。
+		// 好感度による行動回数（最低5回とみなす）より実際の行動倍率（段数の減衰を含めた getSpdX）が増えている場合、
+		// 増えた割合の1.5乗だけ効果が上がる（風などで速度を上げる専用構成が、クリティカル重ねの専用構成と並ぶ強さになるよう調整）。
+		// 全身全霊などで行動回数が減っていても、基本の効果は保証する。
+		// 増える合計量は変えずに、何回目の攻撃かに比例した上乗せとして各攻撃に配り、後の攻撃ほど上乗せが大きくなるようにする（連撃感）。
+		const turnDmgXOf = (i: number) => (i < 2 ? 1 : i < 3 ? 0.5 : i < 4 ? 0.25 : 0.125);
+		let thunderStep = 0;
+		if (skillEffects.thunder && spd > 0) {
+			const baseSpd = Math.max(Math.floor((msg.friend.love ?? 0) / 100) + 1, 5);
+			const thunderRate = (skillEffects.thunder / 2) * Math.pow(Math.max(1, getSpdX(spd) / getSpdX(baseSpd)), 1.5);
+			let totalTurnDmgX = 0;
+			for (let i = 0; i < spd; i++) totalTurnDmgX += turnDmgXOf(i);
+			// i 回目（0始まり）の上乗せは thunderStep × (i + 1)。合計が totalTurnDmgX × thunderRate になるよう決める
+			thunderStep = (totalTurnDmgX * thunderRate) / (spd * (spd + 1) / 2);
+			if (verboseLog) {
+				buff += 1;
+				message += `雷戦闘: Dmg+${formatNumber(thunderRate * 100)}%\n`;
+			}
+		}
+
 		// 自身攻撃の処理
 		// spdの回数分、以下の処理を繰り返す
 		for (let i = 0; i < spd; i++) {
 			const rng = (atkMinRnd + random(data, startCharge, skillEffects, false) * atkMaxRnd);
 			if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`;
-			const turnDmgX = (i < 2 ? 1 : i < 3 ? 0.5 : i < 4 ? 0.25 : 0.125);
-			// 雷は他の与ダメージ補正と同じく、段数による減衰（turnDmgX）の内側で乗算する（通常戦闘と同じ扱い）
-			let dmgBonus = (Math.max(1 + (skillEffects.atkDmgUp ?? 0), atkMinusMin)) * dmgUp * turnDmgX * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1);
+			const turnDmgX = turnDmgXOf(i);
+			let dmgBonus = (Math.max(1 + (skillEffects.atkDmgUp ?? 0), atkMinusMin)) * dmgUp * (turnDmgX + thunderStep * (i + 1));
 			const rawDmgBonus = dmgBonus / turnDmgX;
 			if (verboseLog && (rawDmgBonus < 0.999 || rawDmgBonus > 1.001)) {
 				buff += 1;

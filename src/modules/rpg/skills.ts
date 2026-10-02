@@ -297,7 +297,7 @@ export const skills: Skill[] = [
 	{ name: `${serifs.rpg.status.def}アップ`, short: `Ｄ`, desc: `常に${serifs.rpg.status.def}が上がります`, info: `${serifs.rpg.status.atk}+4% ${serifs.rpg.status.def}+13%`, effect: { atkUpBonus: 1, defUp: 0.13 } },
 	{ name: `炎属性剣攻撃`, short: "炎", desc: `戦闘時、最低ダメージが上昇します`, info: `戦闘時、Lvの9%がダメージに固定加算\n非戦闘時、${serifs.rpg.status.atk}+Lvの35%\n火曜日に全ての効果量が66%アップ`, effect: { fire: 0.09 } },
 	{ name: `氷属性剣攻撃`, short: "氷", desc: `戦闘時、たまに敵を凍らせます`, info: `戦闘時、9%で相手のターンをスキップ\n非戦闘時、${serifs.rpg.status.def}+9%\n水曜日にここまでに記載された効果の効果量が66%アップ\n${serifs.rpg.status.atk}+4%`, effect: { atkUpBonus: 1, ice: 0.09 } },
-	{ name: `雷属性剣攻撃`, short: "雷", desc: `戦闘時、連続攻撃をすればダメージが上がります`, info: `(現在攻撃数/最大攻撃数)×18%のダメージ上昇を得る\n日曜日に全ての効果量が66%アップ`, effect: { thunder: 0.18 } },
+	{ name: `雷属性剣攻撃`, short: "雷", desc: `戦闘時、連続攻撃をすればダメージが上がります`, info: `(現在攻撃数/最大攻撃数)×18%のダメージ上昇を得る\nレイドでは、ダメージ+9% 行動回数が強化されているほど効果アップ\n日曜日に全ての効果量が66%アップ`, effect: { thunder: 0.18 } },
 	{ name: `風属性剣攻撃`, short: "風", desc: `戦闘時、たまに行動回数が上がります`, info: `戦闘時、9%で行動回数が2倍\n非戦闘時、${serifs.rpg.status.atk}+9%\n木曜日に全ての効果量が66%アップ`, effect: { spdUp: 0.09 } },
 	{ name: `土属性剣攻撃`, short: "土", desc: `戦闘時、最大ダメージが上昇します`, info: `戦闘時かつ最大ダメージ制限がある場合、その制限を18%増加\n非戦闘時、${serifs.rpg.status.atk}+9%\n土曜日に全ての効果量が66%アップ`, effect: { dart: 0.18 } },
 	{ name: `光属性剣攻撃`, short: "光", desc: `戦闘時、たまに敵の攻撃力を下げます`, info: `戦闘時、18%でダメージカット50%\nそれ以外の場合、${serifs.rpg.status.def}+9%\n金曜日にここまでに記載された効果の効果量が66%アップ\n${serifs.rpg.status.atk}+4%`, effect: { atkUpBonus: 1, light: 0.18 } },
@@ -305,7 +305,7 @@ export const skills: Skill[] = [
 	{ name: `水属性剣攻撃`, short: "水", desc: `炎属性の敵に対して、非常に有効です さらに、氷属性と雷属性の力を高めます`, info: `炎属性の敵に対し与ダメージ+18%かつ火炎ダメージのダメージカット+54%\n水曜日にここまでに記載された効果の効果量が66%アップ\n氷属性剣攻撃と雷属性剣攻撃の効果が+25%`, effect: { water: 0.18 } },
 	{ name: `炎属性剣攻撃＋`, short: "**炎**", desc: `戦闘時、最低ダメージが大きく上昇します`, info: `戦闘時、Lvの15%がダメージに固定加算\n非戦闘時、${serifs.rpg.status.atk}+Lvの58%\n火曜日に全ての効果量が66%アップ`, effect: { fire: 0.15 }, notLearn: true, skillOnly: true },
 	{ name: `氷属性剣攻撃＋`, short: "**氷**", desc: `戦闘時、たまに敵を凍らせます`, info: `戦闘時、15%で相手のターンをスキップ\n非戦闘時、${serifs.rpg.status.def}+15%\n水曜日ここまでに記載された効果の効果量が66%アップ\n${serifs.rpg.status.atk}+4%`, effect: { atkUpBonus: 1, ice: 0.15 }, notLearn: true, skillOnly: true },
-	{ name: `雷属性剣攻撃＋`, short: "**雷**", desc: `戦闘時、連続攻撃をすればダメージが上がります`, info: `(現在攻撃数/最大攻撃数)×30%のダメージ上昇を得る\n日曜日に全ての効果量が66%アップ`, effect: { thunder: 0.3 }, notLearn: true, skillOnly: true },
+	{ name: `雷属性剣攻撃＋`, short: "**雷**", desc: `戦闘時、連続攻撃をすればダメージが上がります`, info: `(現在攻撃数/最大攻撃数)×30%のダメージ上昇を得る\nレイドでは、ダメージ+15% 行動回数が強化されているほど効果アップ\n日曜日に全ての効果量が66%アップ`, effect: { thunder: 0.3 }, notLearn: true, skillOnly: true },
 	{ name: `風属性剣攻撃＋`, short: "**風**", desc: `戦闘時、たまに行動回数が上がります`, info: `戦闘時、15%で行動回数が2倍\n非戦闘時、${serifs.rpg.status.atk}+15%\n木曜日に全ての効果量が66%アップ`, effect: { spdUp: 0.15 }, notLearn: true, skillOnly: true },
 	{ name: `土属性剣攻撃＋`, short: "**土**", desc: `戦闘時、最大ダメージが上昇します`, info: `戦闘時かつ最大ダメージ制限がある場合、その制限を30%増加\n非戦闘時、${serifs.rpg.status.atk}+15%\n土曜日に全ての効果量が66%アップ`, effect: { dart: 0.3 }, notLearn: true, skillOnly: true },
 	{ name: `光属性剣攻撃＋`, short: "**光**", desc: `戦闘時、たまに敵の攻撃力を下げます`, info: `戦闘時、30%でダメージカット50%\nそれ以外の場合、${serifs.rpg.status.def}+15%\n金曜日にここまでに記載された効果の効果量が66%アップ\n${serifs.rpg.status.atk}+4%`, effect: { atkUpBonus: 1, light: 0.3 }, notLearn: true, skillOnly: true },
@@ -1370,7 +1370,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 	}
 
 	const atkMinusMin = skillEffects.atkDmgUp && skillEffects.atkDmgUp < 0 ? (1 / (-1 + (skillEffects.atkDmgUp ?? 0)) * -1) : 1;
-	let dmgBonus = ((Math.max(1 + (skillEffects.atkDmgUp ?? 0), atkMinusMin)) * 1) * (1 + ((skillEffects.thunder ?? 0) * 0.1));
+	let dmgBonus = ((Math.max(1 + (skillEffects.atkDmgUp ?? 0), atkMinusMin)) * 1) * (1 + ((skillEffects.thunder ?? 0) / 2));
 
 	const defMinusMin = skillEffects.defDmgUp && skillEffects.defDmgUp < 0 ? (1 / (-1 + (skillEffects.defDmgUp ?? 0)) * -1) : 1;
 	let defDmgX = (Math.max(1 + (skillEffects.defDmgUp ?? 0), defMinusMin));
