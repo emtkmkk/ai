@@ -17,7 +17,7 @@ import 藍 from '@/ai';
 import { Collection } from 'lokijs';
 import Message from '@/message';
 import { User } from '@/misskey/user';
-import rpg from './index';
+import type rpg from './index';
 import { colors } from './colors';
 import { endressEnemy, Enemy, RaidEnemy, raidEnemys } from './enemys';
 import { rpgItems } from './items';

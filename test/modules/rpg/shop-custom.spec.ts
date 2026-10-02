@@ -3,8 +3,6 @@
  *
  * カスタムショップの隠し機能（短縮名で返信 → 購入確認 → はい/いいえ）のテスト
  */
-// shop-custom → skills → shop の循環 import で初期化順が崩れないよう、先に shop を読み込む
-import "@/modules/rpg/shop";
 import { shopCustomContextHook, shopCustomConfirmContextHook } from "@/modules/rpg/shop-custom";
 import { skillCalculate } from "@/modules/rpg/skills";
 

@@ -15,7 +15,7 @@ import 藍 from '@/ai';
 import Message from '@/message';
 import Module from '@/module';
 import serifs from '@/serifs';
-import rpg from './index';
+import type rpg from './index';
 import { colorReply, colors } from './colors';
 import { aggregateTokensEffects, shopItems } from './shop';
 import { countDuplicateSkillNames, getSkill, Skill, skillBorders, skills, ultimateAmulet } from './skills';

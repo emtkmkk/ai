@@ -18,10 +18,11 @@ import serifs from "@/serifs";
 import { colors, enhanceCount } from './colors';
 import * as seedrandom from 'seedrandom';
 import getDate from '@/utils/get-date';
-import { skillNameCountMap, totalSkillCount, skills, SkillEffect, skillCalculate, Skill, skillPower, aggregateSkillsEffects, countDuplicateSkillNames, ultimateAmulet, isKazutoriMasterDisabled } from './skills';
+import { skills, SkillEffect, Skill, ultimateAmulet, isKazutoriMasterDisabled } from './skill-data';
+import { skillNameCountMap, totalSkillCount, skillCalculate, skillPower, aggregateSkillsEffects, countDuplicateSkillNames } from './skills';
 import { getVal, initializeData, deepClone, numberCharConvert } from './utils';
 import 藍 from '@/ai';
-import rpg from './index';
+import type rpg from './index';
 import { aggregateTokensEffects, AmuletItem, BaseItem, Item, mergeSkillAmulet, ShopItem, TokenItem } from "./shop";
 import config from "@/config";
 

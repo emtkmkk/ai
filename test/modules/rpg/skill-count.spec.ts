@@ -3,8 +3,6 @@
  *
  * スキル所持数の集計（skillCalculate）のキャッシュのテスト
  */
-// shop → skills の循環 import で初期化順が崩れないよう、先に shop を読み込む
-import "@/modules/rpg/shop";
 import { skillCalculate } from "@/modules/rpg/skills";
 
 describe("skillCalculate のキャッシュ", () => {

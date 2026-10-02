@@ -18,7 +18,7 @@ import getDate from '@/utils/get-date';
 import { skills, Skill, skillPower, isKazutoriMasterDisabled } from './skills';
 import { aggregateTokensEffects, mergeSkillEffects } from "./shop";
 import { initializeData } from './utils';
-import rpg from './index';
+import type rpg from './index';
 import 藍 from '@/ai';
 
 export const skillPriceFixed = (_ai: 藍, skillName: Skill["name"]) => {

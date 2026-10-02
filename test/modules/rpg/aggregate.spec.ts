@@ -6,8 +6,6 @@
  * @remarks
  * 曜日によって属性の効果量が変わるため、属性の強化が無い月曜日（闇のみ強化）に固定して確認する。
  */
-// shop → skills の循環 import で初期化順が崩れないよう、先に shop を読み込む
-import "@/modules/rpg/shop";
 import { aggregateSkillsEffects, skills } from "@/modules/rpg/skills";
 
 const data = (names: string[]) => ({ lv: 100, skills: names.map((name) => ({ ...skills.find((s) => s.name === name) })), items: [] });

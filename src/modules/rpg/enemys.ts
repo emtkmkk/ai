@@ -14,7 +14,7 @@
  */
 import Message from "@/message";
 import { colors, unlockCount } from "./colors";
-import rpg from "./index";
+import type rpg from "./index";
 import serifs from "@/serifs";
 import { aggregateTokensEffects } from './shop';
 import { acct } from "@/utils/acct";
