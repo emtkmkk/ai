@@ -21,7 +21,7 @@ import rpg from './index';
 import { colors } from './colors';
 import { endressEnemy, Enemy, RaidEnemy, raidEnemys } from './enemys';
 import { rpgItems } from './items';
-import { aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, getSkillsShortName, aggregateSkillsEffectsSkillX, countDuplicateSkillNames } from './skills';
+import { aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, getSkillsShortName, countDuplicateSkillNames } from './skills';
 import { aggregateTokensEffects } from './shop';
 import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatusDmg, getPostCount, getPostX, getVal, random, getRaidPostX, preLevelUpProcess, deepClone } from './utils';
 import { applyKazutoriMasterHiddenBonus, applyKazutoriMasterPostCountFloor, applyWeakAtkReduction, calculateArpen, calculateStats, ensureKazutoriMasterHistory, fortune, getKazutoriMasterBonus, getKazutoriMasterMessage, stockRandom } from './battle';
@@ -1235,12 +1235,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 	if (msg.includes(['-v'])) verboseLog = true;
 	const colorData = colors.map((x) => x.unlock(data));
 	// 所持しているスキル効果を読み込み
-	let skillEffects;
-	if (enemy.skillX) {
-		skillEffects = aggregateSkillsEffectsSkillX(data, enemy.skillX);
-	} else {
-		skillEffects = aggregateSkillsEffects(data);
-	}
+	let skillEffects: any = aggregateSkillsEffects(data, enemy.skillX ?? 1);
 
 	const skillsStr = getSkillsShortName(data);
 
@@ -1262,11 +1257,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 				data.items.push({ name: `謎のお守り`, price: 1, desc: `貰ったお守り。よくわからないが不思議な力を感じる…… 持っていると何かいい事があるかもしれない。`, type: "amulet", effect: { stockRandomEffect: 1 }, durability: 1, short: "？" });
 			}
 			// スキル効果を再度読み込み
-			if (enemy.skillX) {
-				skillEffects = aggregateSkillsEffectsSkillX(data, enemy.skillX);
-			} else {
-				skillEffects = aggregateSkillsEffects(data);
-			}
+			skillEffects = aggregateSkillsEffects(data, enemy.skillX ?? 1);
 		} else if (!skillEffects.noAmuletAtkUp && !skillsStr.amulet) {
 			data.noAmuletCount = (data.noAmuletCount ?? 0) + 1;
 		}
@@ -3526,12 +3517,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	const colorData = colors.map((x) => x.unlock(data));
 
 	// 所持しているスキル効果を読み込み
-	let skillEffects;
-	if (enemy.skillX) {
-		skillEffects = aggregateSkillsEffectsSkillX(data, enemy.skillX);
-	} else {
-		skillEffects = aggregateSkillsEffects(data);
-	}
+	let skillEffects: any = aggregateSkillsEffects(data, enemy.skillX ?? 1);
 
 	const stockRandomResult = stockRandom(data, skillEffects);
 

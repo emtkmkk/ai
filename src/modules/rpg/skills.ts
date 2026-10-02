@@ -696,10 +696,12 @@ export const skillPower = (ai: 藍, skillName: Skill["name"]) => {
  * 戦闘・レイド・木人モード等で参照され、atkUp / defUp / spdUp 等の倍率を返す。
  *
  * @param data RPGモジュールのデータ
+ * @param skillX スキル効果の倍率（スキル効果がX倍になるレイドボス用。通常は1）。
+ *               重複しないスキル（unique / amuletUnique）は効果をX倍にする代わりに、パワー・防御を1つにつき 1 + 0.06×(X-1) 倍にする
  * @returns SkillEffect 集計結果
  * @internal
  */
-export function aggregateSkillsEffects(data: any): SkillEffect {
+export function aggregateSkillsEffects(data: any, skillX = 1): SkillEffect {
 	const aggregatedEffect: SkillEffect = {};
 
 	if (!data.skills) return aggregatedEffect;
@@ -739,8 +741,19 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
 			}
 		}
 	}
+	let uniqueX = 1;
 	dataSkills.forEach(_skill => {
-		const skill = _skill.name ? skills.find((x) => x.name === _skill.name) ?? _skill : _skill;
+		let skill = _skill.name ? skills.find((x) => x.name === _skill.name) ?? _skill : _skill;
+		if (skillX !== 1) {
+			skill = deepClone(skill);
+			if (skill.unique || skill.amuletUnique) {
+				uniqueX = uniqueX * (1 + (0.06 * (skillX - 1)));
+			} else {
+				for (const eff in skill.effect) {
+					skill.effect[eff] = skill.effect[eff] * skillX;
+				}
+			}
+		}
 		if (skill.effect) {
 			Object.entries(skill.effect).forEach(([key, value]) => {
 				if (aggregatedEffect[key] !== undefined) {
@@ -756,8 +769,8 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
 
 	const day = new Date().getDay();
 
-	aggregatedEffect.atkUp = (1 + (aggregatedEffect.atkUp ?? 0)) * (1 + (aggregatedEffect.atkUp2 ?? 0)) * (1 + (aggregatedEffect.atkUp3 ?? 0)) * (1 + (aggregatedEffect.atkUp4 ?? 0)) * (1 + (aggregatedEffect.atkUp5 ?? 0)) * (1 + (aggregatedEffect.atkUp6 ?? 0)) * (1.04 ** (aggregatedEffect.atkUpBonus ?? 0));
-	aggregatedEffect.defUp = (1 + (aggregatedEffect.defUp ?? 0)) * (1 + (aggregatedEffect.defUp2 ?? 0)) * (1 + (aggregatedEffect.defUp3 ?? 0)) * (1 + (aggregatedEffect.defUp4 ?? 0)) * (1 + (aggregatedEffect.defUp5 ?? 0));
+	aggregatedEffect.atkUp = (1 + (aggregatedEffect.atkUp ?? 0)) * (1 + (aggregatedEffect.atkUp2 ?? 0)) * (1 + (aggregatedEffect.atkUp3 ?? 0)) * (1 + (aggregatedEffect.atkUp4 ?? 0)) * (1 + (aggregatedEffect.atkUp5 ?? 0)) * (1 + (aggregatedEffect.atkUp6 ?? 0)) * (1.04 ** (aggregatedEffect.atkUpBonus ?? 0)) * uniqueX;
+	aggregatedEffect.defUp = (1 + (aggregatedEffect.defUp ?? 0)) * (1 + (aggregatedEffect.defUp2 ?? 0)) * (1 + (aggregatedEffect.defUp3 ?? 0)) * (1 + (aggregatedEffect.defUp4 ?? 0)) * (1 + (aggregatedEffect.defUp5 ?? 0)) * uniqueX;
 	aggregatedEffect.atkDmgUp = ((1 + (aggregatedEffect.atkDmgUp ?? 0)) * (1 + (aggregatedEffect.atkDmgUp2 ?? 0))) - 1;
 	aggregatedEffect.defDmgUp = ((1 + (aggregatedEffect.defDmgUp ?? 0)) * (1 + (aggregatedEffect.defDmgUp2 ?? 0))) - 1;
 
@@ -834,159 +847,6 @@ export function aggregateSkillsEffects(data: any): SkillEffect {
 
 	if (aggregatedEffect.abortDown && aggregatedEffect.abortDown > 1) {
 		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) * (1 + (aggregatedEffect.abortDown - 1) * (1 / 3));
-		aggregatedEffect.abortDown = 1;
-	}
-
-	if (aggregatedEffect.enemyCritDown && aggregatedEffect.enemyCritDown > 1) {
-		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) * (1 + (aggregatedEffect.enemyCritDown - 1) * (1 / 3));
-		aggregatedEffect.enemyCritDown = 1;
-	}
-
-	aggregatedEffect.atkUp = aggregatedEffect.atkUp - 1;
-	aggregatedEffect.defUp = aggregatedEffect.defUp - 1;
-
-	return aggregatedEffect;
-}
-
-export function aggregateSkillsEffectsSkillX(data: any, skillX: number): SkillEffect {
-	const aggregatedEffect: SkillEffect = {};
-
-	if (!data.skills) return aggregatedEffect;
-	let dataSkills = data.skills;
-	if (data.items?.filter((x) => x.type === "amulet").length) {
-		const amulet = data.items?.filter((x) => x.type === "amulet")[0] as AmuletItem;
-		console.log("amulet: " + amulet.name);
-		const item = [...shopItems, ultimateAmulet, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y !== null && y !== undefined) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem;
-		if (!item) {
-			data.items.filter((x) => x.type === "amulet").forEach((x) => {
-				data.coin = (data.coin ?? 0) + (x.price || 0);
-			});
-			data.items = data.items.filter((x) => x.type !== "amulet");
-		} else {
-			if (item.isUsed(data) && (!aggregateTokensEffects(data).normalModeNotUseAmulet || data.raid)) {
-			const boost = dataSkills.filter((x) => x.effect?.amuletBoost).reduce((acc, cur) => acc + (cur.effect?.amuletBoost ?? 0), 0) ?? 0;
-			const adjustEffect = (effect: any, boost: number): any => {
-				const multiplier = 1 + (boost ?? 0);
-				const adjustedEffect: any = {};
-
-				for (const key in effect) {
-					if (typeof effect[key] === 'number') {
-						if (Number.isInteger(effect[key])) {
-							adjustedEffect[key] = Math.floor(effect[key] * multiplier);
-						} else {
-							adjustedEffect[key] = effect[key] * multiplier;
-						}
-					} else {
-						adjustedEffect[key] = effect[key];
-					}
-				}
-				adjustedEffect.amuletPower = (adjustedEffect.amuletPower ?? 0) + ((amulet.skillName && Array.isArray(amulet.skillName) ? amulet.skillName.length : 1) * multiplier);
-				return { effect: adjustedEffect };
-			};
-				console.log("effect: " + JSON.stringify(adjustEffect(item.effect, boost)));
-				dataSkills = dataSkills.concat([adjustEffect(item.effect, boost)] as any);
-			}
-		}
-	}
-	let uniqueX = 1;
-	dataSkills.forEach(_skill => {
-		const skill = _skill.name ? skills.find((x) => x.name === _skill.name) ?? _skill : _skill;
-		const __skill = deepClone(skill);
-		if (__skill.unique || __skill.amuletUnique) {
-			uniqueX = uniqueX * (1 + (0.06 * (skillX - 1)));
-		} else {
-			for (const eff in __skill.effect) {
-				__skill.effect[eff] = __skill.effect[eff] * skillX;
-			}
-		}
-		if (__skill.effect) {
-			Object.entries(__skill.effect).forEach(([key, value]) => {
-				let value2 = value;
-				if (aggregatedEffect[key] !== undefined) {
-					aggregatedEffect[key] += value;
-				} else {
-					aggregatedEffect[key] = value;
-				}
-			});
-		} else {
-			console.log(JSON.stringify(_skill));
-		}
-	});
-
-	const day = new Date().getDay();
-
-
-	aggregatedEffect.atkUp = (1 + (aggregatedEffect.atkUp ?? 0)) * (1 + (aggregatedEffect.atkUp2 ?? 0)) * (1 + (aggregatedEffect.atkUp3 ?? 0)) * (1 + (aggregatedEffect.atkUp4 ?? 0)) * (1 + (aggregatedEffect.atkUp5 ?? 0)) * (1 + (aggregatedEffect.atkUp6 ?? 0)) * (1.04 ** (aggregatedEffect.atkUpBonus ?? 0)) * uniqueX;
-	aggregatedEffect.defUp = (1 + (aggregatedEffect.defUp ?? 0)) * (1 + (aggregatedEffect.defUp2 ?? 0)) * (1 + (aggregatedEffect.defUp3 ?? 0)) * (1 + (aggregatedEffect.defUp4 ?? 0)) * (1 + (aggregatedEffect.defUp5 ?? 0)) * uniqueX;
-	aggregatedEffect.atkDmgUp = ((1 + (aggregatedEffect.atkDmgUp ?? 0)) * (1 + (aggregatedEffect.atkDmgUp2 ?? 0))) - 1;
-	aggregatedEffect.defDmgUp = ((1 + (aggregatedEffect.defDmgUp ?? 0)) * (1 + (aggregatedEffect.defDmgUp2 ?? 0))) - 1;
-
-	if (data.itemMedal) {
-		aggregatedEffect.itemEquip = (aggregatedEffect.itemEquip ?? 0) + data.itemMedal * 0.01;
-		aggregatedEffect.itemBoost = (aggregatedEffect.itemBoost ?? 0) + data.itemMedal * 0.01;
-		aggregatedEffect.mindMinusAvoid = (aggregatedEffect.mindMinusAvoid ?? 0) + data.itemMedal * 0.01;
-		aggregatedEffect.poisonAvoid = (aggregatedEffect.poisonAvoid ?? 0) + data.itemMedal * 0.01;
-	}
-
-	if (aggregatedEffect.beginner) {
-		/** 常時覚醒？ */
-		let alwaysSuper = getColor(data).alwaysSuper;
-		/* スキル数が1少ない度に×1.06 レイドかつ常時覚醒でない場合さらに×1.15 */
-		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) * ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) * (alwaysSuper || !data.raid ? 1 : 1.15)));
-		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) * ((Math.pow(1 + aggregatedEffect.beginner, 5 - (data.skills?.length ?? 0)) * (alwaysSuper || !data.raid ? 1 : 1.15)));
-	}
-
-	if (aggregatedEffect.rainbow && aggregatedEffect.rainbow > 1) {
-		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) * (1 + (aggregatedEffect.rainbow - 1) * 0.05);
-		aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) * (1 + (aggregatedEffect.rainbow - 1) * 0.05);
-		aggregatedEffect.rainbow = 1;
-	}
-
-	//曜日ボーナス
-	if ((day === 0 || aggregatedEffect.rainbow) && aggregatedEffect.thunder) {
-		aggregatedEffect.thunder *= 5 / 3;
-	}
-	if ((day === 1 || aggregatedEffect.rainbow) && aggregatedEffect.dark) {
-		aggregatedEffect.dark *= 5 / 3;
-	}
-	if ((day === 2 || aggregatedEffect.rainbow) && aggregatedEffect.fire) {
-		aggregatedEffect.fire *= 5 / 3;
-	}
-	if ((day === 3 || aggregatedEffect.rainbow) && aggregatedEffect.ice) {
-		aggregatedEffect.ice *= 5 / 3;
-	}
-	if ((day === 4 || aggregatedEffect.rainbow) && aggregatedEffect.spdUp) {
-		aggregatedEffect.spdUp *= 5 / 3;
-	}
-	if ((day === 5 || aggregatedEffect.rainbow) && aggregatedEffect.light) {
-		aggregatedEffect.light *= 5 / 3;
-	}
-	if ((day === 6 || aggregatedEffect.rainbow) && aggregatedEffect.dart) {
-		aggregatedEffect.dart *= 5 / 3;
-	}
-
-	if (aggregatedEffect.distributed) {
-		const count = countDuplicateSkillNames(data.skills)
-		if (count < 3) {
-			aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) * (1 + (aggregatedEffect.distributed) * (1 - (count * 0.4)));
-			aggregatedEffect.defUp = (aggregatedEffect.defUp ?? 0) * (1 + (aggregatedEffect.distributed) * (1 - (count * 0.4)));
-			aggregatedEffect.critUpFixed = (aggregatedEffect.critUpFixed ?? 0) + (aggregatedEffect.distributed) * (1 - (count * 0.4));
-			aggregatedEffect.defDmgUp = (aggregatedEffect.defDmgUp ?? 0) - (aggregatedEffect.distributed) * (1 - (count * 0.4));
-		}
-	}
-
-	if (aggregatedEffect.itemEquip && aggregatedEffect.itemEquip > 1.5) {
-		aggregatedEffect.itemBoost = (aggregatedEffect.itemBoost ?? 0) + (aggregatedEffect.itemEquip - 1.5);
-		aggregatedEffect.itemEquip = 1.5;
-	}
-
-	if (aggregatedEffect.poisonAvoid && aggregatedEffect.poisonAvoid > 1) {
-		aggregatedEffect.mindMinusAvoid = (aggregatedEffect.mindMinusAvoid ?? 0) + (aggregatedEffect.poisonAvoid - 1) * 0.6;
-		aggregatedEffect.poisonAvoid = 1;
-	}
-
-	if (aggregatedEffect.abortDown && aggregatedEffect.abortDown > 1) {
-		aggregatedEffect.atkUp = (aggregatedEffect.atkUp ?? 0) * (1 + ((aggregatedEffect.abortDown - 1) * (1 / 3)));
 		aggregatedEffect.abortDown = 1;
 	}
 
@@ -1104,12 +964,7 @@ export function getTotalEffectString(data: any, skillX = 1): string {
 	const prevRaid = data.raid;
 	data.raid = true;
 
-	let skillEffects: SkillEffect;
-	if (skillX > 1) {
-		skillEffects = aggregateSkillsEffectsSkillX(data, skillX)
-	} else {
-		skillEffects = aggregateSkillsEffects(data);
-	}
+	const skillEffects: SkillEffect = aggregateSkillsEffects(data, skillX);
 
 	if (!skillEffects) return "";
 
@@ -1598,7 +1453,7 @@ export function getHatogurumaEffectString(data: any, skillX = 1): string {
 	const prevRaid = data.raid;
 	data.raid = true;
 
-	const skillEffects = skillX > 1 ? aggregateSkillsEffectsSkillX(data, skillX) : aggregateSkillsEffects(data);
+	const skillEffects = aggregateSkillsEffects(data, skillX);
 
 	if (!skillEffects) {
 		data.raid = prevRaid || false;

@@ -10,8 +10,8 @@
 
 ```
 skills.ts  スキル定義 (effect) ─┐
-shop*.ts   お守り定義 (effect) ─┼─▶ aggregateSkillsEffects(data)        ← 合算・曜日補正・上限処理
-ultimateEffect                  ─┘    aggregateSkillsEffectsSkillX(data, x) ← ほぼコピー（後述）
+shop*.ts   お守り定義 (effect) ─┼─▶ aggregateSkillsEffects(data, skillX = 1) ← 合算・曜日補正・上限処理
+ultimateEffect                  ─┘    （skillX はスキル効果がX倍になるレイドボス用）
                                           │
           ┌───────────────┬─────────────┼───────────────┬──────────────────┐
           ▼               ▼             ▼               ▼                  ▼
@@ -38,7 +38,7 @@ ultimateEffect                  ─┘    aggregateSkillsEffectsSkillX(data, x) 
 | 2 | **傲慢の力の「被ダメ2倍」が先制攻撃では HP に反映されない**。先制攻撃は HP を減らした**後**に `dmg *= 2` している（敵ターン側は減らす前で正しい） | raid.ts:2415→2421 | 先制攻撃での被ダメ2倍デメリットが発生しない | ✅ 修正済み（HP を減らす前に2倍） |
 | 3 | **通常戦闘で高速RPG（plusActionX）時に一部効果が二重がけ**。通常戦闘は `actionX` ループの中で atk/def をリセットしないため、ループ内の「非戦闘時の変換」（土・炎→パワー、氷・光・闇→防御）、攻めの守勢、毒の貫通、遂の変換が2回目の行動で重複して掛かる。レイドは毎ターン `_atk` からリセットしているので重複しない | index.ts:2339 のループ内（2355-2412, 2597-2628） | 高速RPG / 究極のお守り所持者の2ターン目が想定より強い | ✅ 修正済み（行動ごとに atk/def/spd/敵atk をループ前の値に戻す） |
 | 4 | **炎属性の Lv 上限処理が通常とレイドで逆**。通常: 戦闘時 `lv`・非戦闘時 `min(lv,255)`。レイド: 戦闘時 `min(lv,255)`・非戦闘時 `lv`。表示はレイドと同じ | index.ts:2372,2375 / raid.ts:2312,2319 | Lv255超（旅モード）でモード間の効果量が変わる | ✅ レイドに統一（固定ダメージは `min(lv,255)`、パワー換算は `lv`）|
-| 5 | **`aggregateSkillsEffectsSkillX` に水属性の処理が無い**。氷・雷の強化と、水曜・虹の水強化が抜けている。他の部分は `aggregateSkillsEffects` のコピー | skills.ts:849 | skillX 付きレイドと、skillX>1 の効果表示で水の効果が消える | 未対応（集計関数の統合時に対応予定） |
+| 5 | **`aggregateSkillsEffectsSkillX` に水属性の処理が無い**。氷・雷の強化と、水曜・虹の水強化が抜けている。他の部分は `aggregateSkillsEffects` のコピー | skills.ts:849 | skillX 付きレイドと、skillX>1 の効果表示で水の効果が消える | ✅ 集計関数を `aggregateSkillsEffects(data, skillX)` の1つに統合して解消 |
 | 6 | **罪のお守り（傲慢・強欲・憤怒・暴食・怠惰）が通常戦闘で何もしない**。説明文にレイド限定とは書いていない（嫉妬だけはレイドと明記） | raid.ts のみ | 通常戦闘では装備しても無効果 | ✅ 説明文に「レイド時」を追記。罪スキルなどレイド専用スキル（`raidOnly`）だけのお守りは、通常戦闘で耐久が減らないように |
 | 7 | **罪スキル系の effect 値が使われていない**。pride 0.15 / gluttony 0.2 / sloth 0.5 / wrath 0.4 / greed 0.5 は真偽値としてしか見ておらず、倍率はコードに直書き（1.15, 1.1/1.2, 1.5, 0.4, 2/3） | raid.ts 各所 | お守り整備・skillX による強化が乗らない | 未対応 |
 | 8 | **敵のクリティカル性能減少: レイドの防御ボーナスが説明と違う**。info「レイド時は追加で防御+10%」→ コードは `enemyCritDmgDown / 30` = **+1.3%** | raid.ts:1731 / skills.ts:349 | 説明と10倍近い差 | ✅ 説明文に合わせて `/4`（+10%）に |
