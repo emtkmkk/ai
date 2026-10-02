@@ -28,19 +28,36 @@ export let skillNameCountMap = new Map();
 export let totalSkillCount = 0;
 let ai: 藍;
 
+/** skillCalculate の集計結果を使い回す時間（ミリ秒） */
+const SKILL_COUNT_CACHE_MS = 5 * 60 * 1000;
+/** 最後に集計した時刻と、そのときの藍オブジェクト */
+let skillCountCalculatedAt = 0;
+let skillCountCalculatedAi: 藍 | undefined;
+
 /**
  * 全ユーザーのスキル所持状況を集計する
  *
  * skillNameCountMap / totalSkillCount を更新し、ショップ価格や人気度計算に使用される。
  *
+ * @remarks
+ * 全プレイヤーを走査するため重い。値段の計算などで1回の操作中に何度も呼ばれるので、
+ * 集計結果を {@link SKILL_COUNT_CACHE_MS} の間は使い回す。
+ * スキル変更の直後など、すぐ反映したい場合は force を指定する。
+ *
  * @param _ai 藍オブジェクト（省略時は前回の ai）
+ * @param force キャッシュを使わずに集計し直す
  * @returns { skillNameCountMap, totalSkillCount }
  * @internal
  */
-export function skillCalculate(_ai: 藍 = ai) {
+export function skillCalculate(_ai: 藍 = ai, force = false) {
+	if (_ai) ai = _ai;
+	if (!force && skillCountCalculatedAi === ai && Date.now() - skillCountCalculatedAt < SKILL_COUNT_CACHE_MS) {
+		return { skillNameCountMap, totalSkillCount };
+	}
+	skillCountCalculatedAt = Date.now();
+	skillCountCalculatedAi = ai;
 	skillNameCountMap = new Map();
 	totalSkillCount = 0;
-	if (_ai) ai = _ai;
 	const friends = ai.friends.find().filter((x) => x.perModulesData?.rpg?.lv && x.perModulesData.rpg.lv > 1 && x.perModulesData.rpg.skills?.length);
 	friends.forEach(friend => {
 		const playerSkills = friend.perModulesData.rpg.skills;
@@ -587,7 +604,7 @@ export const skillReply = async (module: Module, ai: 藍, msg: Message) => {
 					msg.reply(`\n` + serifs.rpg.moveToSkill(oldSkillName, data.skills[i].name) + `\n効果: ${data.skills[i].desc}` + (aggregateTokensEffects(data).showSkillBonus && data.skills[i].info ? `\n詳細効果: ${data.skills[i].info}` : ""));
 					data.duplicationOrb -= 1;
 					msg.friend.setPerModulesData(module, data);
-					skillCalculate(ai);
+					skillCalculate(ai, true);
 					return {
 						reaction: 'love'
 					};
@@ -640,7 +657,7 @@ export const skillReply = async (module: Module, ai: 藍, msg: Message) => {
                                        msg.reply(`\n` + serifs.rpg.moveToSkill(oldSkillName, data.skills[i].name) + `\n効果: ${data.skills[i].desc}` + (aggregateTokensEffects(data).showSkillBonus && data.skills[i].info ? `\n詳細効果: ${data.skills[i].info}` : ""));
                                        data.rerollOrb -= 1;
                                        msg.friend.setPerModulesData(module, data);
-                                       skillCalculate(ai);
+                                       skillCalculate(ai, true);
                                        return {
                                                reaction: 'love'
                                        };
@@ -708,7 +725,6 @@ export function aggregateSkillsEffects(data: any, skillX = 1): SkillEffect {
 	let dataSkills = data.skills;
 	if (data.items?.filter((x) => x.type === "amulet").length) {
 		const amulet = data.items?.filter((x) => x.type === "amulet")[0] as AmuletItem;
-		console.log("amulet: " + amulet.name);
 		const item = [...shopItems, ultimateAmulet, ...(Array.isArray(amulet.skillName) ? [mergeSkillAmulet(ai, undefined, amulet.skillName.map((y) => skills.find((z) => y === z.name) ?? undefined).filter((y) => y !== null && y !== undefined) as Skill[]) as AmuletItem] : [])].find((x) => x.name === amulet.name) as AmuletItem;
 		if (!item) {
 			data.items.filter((x) => x.type === "amulet").forEach((x) => {
@@ -736,7 +752,6 @@ export function aggregateSkillsEffects(data: any, skillX = 1): SkillEffect {
 				adjustedEffect.amuletPower = (adjustedEffect.amuletPower ?? 0) + ((amulet.skillName && Array.isArray(amulet.skillName) ? amulet.skillName.length : 1) * multiplier);
 				return { effect: adjustedEffect };
 			};
-				console.log("effect: " + JSON.stringify(adjustEffect(item.effect, boost)));
 				dataSkills = dataSkills.concat([adjustEffect(item.effect, boost)] as any);
 			}
 		}

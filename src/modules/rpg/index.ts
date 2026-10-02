@@ -165,7 +165,7 @@ export default class extends Module {
 		setInterval(this.scheduleDailyNoteCountsUpdate, 1000 * 60 * 5);
 		this.calculateMaxLv();
 		this.rpgAccountListAdd();
-		skillCalculate(this.ai);
+		skillCalculate(this.ai, true);
 
 		return {
 			mentionHook: this.mentionHook,
@@ -857,7 +857,7 @@ export default class extends Module {
 			})();
 		}
 		if (msg.includes(["skillPopularity"])) {
-			const { skillNameCountMap } = skillCalculate(this.ai);
+			const { skillNameCountMap } = skillCalculate(this.ai, true);
 			const filteredSkills = skills.filter((x) => !x.moveTo && !x.cantReroll && !x.unique && !x.skillOnly);
 			const totalSkillCount = filteredSkills.reduce((acc, skill) => acc + (skillNameCountMap.get(skill.name) || 0), 0);
 			const averageBase = filteredSkills.length ? totalSkillCount / filteredSkills.filter((x) => !x.notLearn).length : 0;
@@ -3001,7 +3001,7 @@ export default class extends Module {
                }
                msg.reply(`\n` + serifs.rpg.moveToSkill(selectData.oldSkillName, skill.name) + `\n効果: ${skill.desc}` + (aggregateTokensEffects(rpgData).showSkillBonus && skill.info ? `\n詳細効果: ${skill.info}` : ''), { visibility: 'specified' });
                msg.friend.setPerModulesData(this, rpgData);
-               skillCalculate(this.ai);
+               skillCalculate(this.ai, true);
                return { reaction: 'love' };
         }
 
