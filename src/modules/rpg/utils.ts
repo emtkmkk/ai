@@ -367,6 +367,8 @@ export function showStatusDmg(data, playerHp: number, totalDmg: number, playerMa
  * @param data RPGモジュールのData
  * @param msg Message
  * @param bonus 投稿数に上乗せする値
+ * @param usage 投稿数の二重使用を防ぐためのキー
+ * @param readonly true の場合、連携アカウントのデータや使用済みの印を書き換えない（試算用）
  * @returns 投稿数
  */
 export async function getPostCount(
@@ -375,7 +377,8 @@ export async function getPostCount(
     data,
     msg,
     bonus = 0,
-    usage?: PostCountUsageContext
+    usage?: PostCountUsageContext,
+    readonly = false
 ): Promise<number> {
 
     let chart;
@@ -396,7 +399,7 @@ export async function getPostCount(
         return targetData?.[usageField] === usage.key;
     };
     const markUsage = (targetData) => {
-        if (!usageField || !usage) return;
+        if (readonly || !usageField || !usage) return;
         targetData[usageField] = usage.key;
     };
 
@@ -421,7 +424,7 @@ export async function getPostCount(
 
         if (msg.friend.doc.linkedAccounts?.length) {
             for (const userId of msg.friend.doc.linkedAccounts) {
-                if (msg.userId === userId) {
+                if (msg.userId === userId && !readonly) {
                     msg.friend.doc.linkedAccounts = msg.friend.doc.linkedAccounts.filter((x) => x !== userId);
                     msg.friend.doc.save();
                 }
@@ -436,7 +439,7 @@ export async function getPostCount(
                         (friend.doc.user?.notesCount ?? linkData.todayNotesCount) - linkData.todayNotesCount,
                         linkData.todayNotesCount - (linkData.yesterdayNotesCount ?? linkData.todayNotesCount)
                     );
-                } else {
+                } else if (!readonly) {
                     linkData.noChart = true;
                 }
 
@@ -448,7 +451,7 @@ export async function getPostCount(
                 }
 
                 postCount += linkedPostCount;
-                friend.setPerModulesData(module, linkData);
+                if (!readonly) friend.setPerModulesData(module, linkData);
             }
         }
         return postCount + bonus;
@@ -467,7 +470,7 @@ export async function getPostCount(
 
         if (msg.friend.doc.linkedAccounts?.length) {
             for (const userId of msg.friend.doc.linkedAccounts) {
-                if (msg.userId === userId) {
+                if (msg.userId === userId && !readonly) {
                     msg.friend.doc.linkedAccounts = msg.friend.doc.linkedAccounts.filter((x) => x !== userId);
                     msg.friend.doc.save();
                 }
@@ -501,7 +504,7 @@ export async function getPostCount(
                 }
 
                 postCount += linkedPostCount;
-                friend.setPerModulesData(module, linkData);
+                if (!readonly) friend.setPerModulesData(module, linkData);
             }
         }
         if (!mainBlocked && chart?.add) {

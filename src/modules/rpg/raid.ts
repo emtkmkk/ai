@@ -977,6 +977,173 @@ export async function raidContextHook(key: string, msg: Message, data: unknown) 
 	};
 }
 
+// -------- 副作用なしのレイド試算 --------
+
+/** 試算するプレイヤーの情報 */
+export type RaidSimulationPlayer = {
+	userId: string;
+	username?: string;
+	host?: string | null;
+	/** RPG のプレイヤーデータ（試算では複製して使い、元のデータは書き換えない） */
+	data: any;
+	/** 好感度（行動回数に影響する） */
+	love?: number;
+	/** 数取りの記録（数取りの達人に影響する） */
+	kazutoriData?: any;
+	/** フレンドの doc（投稿数の取得で、登録時の投稿数や連携アカウントを参照する。読み取りのみ） */
+	doc?: any;
+};
+
+/** {@link getTotalDmg} に渡す試算用のオプション */
+export type RaidDamageOptions = {
+	/** 投稿数を固定する（省略時は実際の投稿数を取得する） */
+	postCount?: number;
+	/** 投稿数の取得で、連携アカウントのデータや使用済みの印を書き換えない */
+	readonly?: boolean;
+};
+
+/** {@link simulateRaidBattle} のオプション */
+export type RaidSimulationOptions = {
+	/** 試行回数（既定 1） */
+	runs?: number;
+	/** 投稿数を固定する（省略時は実際の投稿数を取得する。テストでは固定すると外部に問い合わせない） */
+	postCount?: number;
+	/**
+	 * 乱数を差し替える（テストで結果を固定する用）
+	 *
+	 * WARNING: 試行中は Math.random を差し替えるため、本番で他の処理と並行して使わないこと
+	 */
+	random?: () => number;
+	/** 試算に使うデータを書き換える（構成を変えて試す用。元のデータは書き換わらない） */
+	modifyData?: (data: any) => void;
+};
+
+/** 試行1回分の結果 */
+export type RaidSimulationRun = {
+	totalDmg: number;
+	count: number;
+	me: string;
+	lv: number;
+	mark: string;
+	skillsStr: { skills?: string; amulet?: string };
+	/** 本来なら返信される戦闘ログ */
+	log: string;
+};
+
+/**
+ * フレンドから試算用のプレイヤー情報を作る
+ *
+ * @param friend 対象のフレンド
+ * @param user ユーザー名などの上書き（レイドの参加記録にある情報を使う場合）
+ * @returns 試算用のプレイヤー情報
+ * @internal
+ */
+export function playerFromFriend(friend: any, user?: { id?: string; username?: string; host?: string | null }): RaidSimulationPlayer {
+	return {
+		userId: user?.id ?? friend.userId,
+		username: user?.username ?? friend.doc?.user?.username,
+		host: user?.host ?? friend.doc?.user?.host ?? null,
+		data: friend.getPerModulesData(module_),
+		love: friend.love,
+		kazutoriData: friend.doc?.kazutoriData,
+		doc: friend.doc,
+	};
+}
+
+/**
+ * 試行結果のうち、ダメージが一番大きいものを返す
+ *
+ * @param runs 試行結果
+ * @returns 最良の結果（なければ undefined）
+ * @internal
+ */
+export function bestRaidRun(runs: RaidSimulationRun[]): RaidSimulationRun | undefined {
+	return runs.reduce<RaidSimulationRun | undefined>((best, r) => (!best || r.totalDmg > best.totalDmg ? r : best), undefined);
+}
+
+/**
+ * 副作用なしでレイドを試算する
+ *
+ * @remarks
+ * 実際のレイドと同じ計算（getTotalDmg / getTotalDmg2 / getTotalDmg3）を、複製したデータで動かす。
+ * プレイヤーデータ・数取りの記録・連携アカウントのデータは書き換えず、返信もしない（戦闘ログとして返す）。
+ * 経験値・Lvアップ・お守りの耐久なども、試算では反映されない。
+ *
+ * @param player 試算するプレイヤー
+ * @param enemyOrName ボス（定義そのもの、または名前）
+ * @param options 試行回数・投稿数の固定・乱数の差し替え・データの書き換え
+ * @returns 試行ごとの結果（失敗した試行は含まない）
+ * @internal
+ */
+export async function simulateRaidBattle(player: RaidSimulationPlayer, enemyOrName: RaidEnemy | string, options: RaidSimulationOptions = {}): Promise<RaidSimulationRun[]> {
+	const enemy = typeof enemyOrName === "string" ? raidEnemys.find((x) => x.name === enemyOrName) : enemyOrName;
+	if (!enemy) return [];
+
+	const runs: RaidSimulationRun[] = [];
+	for (let i = 0; i < Math.max(1, options.runs ?? 1); i++) {
+		const sandboxData = deepClone(player.data);
+		options.modifyData?.(sandboxData);
+		const sandboxDoc = { ...(player.doc ?? {}), kazutoriData: deepClone(player.kazutoriData ?? player.doc?.kazutoriData ?? {}), save: () => { /* no-op */ } };
+		const replies: string[] = [];
+		const sandboxMsg: any = {
+			userId: player.userId,
+			user: { id: player.userId, username: player.username ?? "", host: player.host ?? null },
+			extractedText: "",
+			text: "",
+			includes: () => false,
+			reply: async (text: string) => {
+				replies.push(text);
+				return { id: undefined };
+			},
+			friend: {
+				doc: sandboxDoc,
+				love: player.love ?? 0,
+				userId: player.userId,
+				getPerModulesData: () => sandboxData,
+				setPerModulesData: () => { /* no-op */ },
+				save: () => { /* no-op */ },
+			},
+		};
+		const enemyForRun = deepClone(enemy) as RaidEnemy;
+		const originalRandom = Math.random;
+		if (options.random) Math.random = options.random;
+		try {
+			let r: any;
+			if (enemyForRun.pattern && enemyForRun.pattern > 1) {
+				r = enemyForRun.pattern === 3 ? await getTotalDmg3(sandboxMsg, enemyForRun) : await getTotalDmg2(sandboxMsg, enemyForRun);
+			} else {
+				// raidPostId は渡さない（投稿数の二重使用防止に引っかかって 0 扱いになるのを避ける）
+				r = await getTotalDmg(sandboxMsg, enemyForRun, undefined, { postCount: options.postCount, readonly: true });
+			}
+			if (r && typeof r.totalDmg === "number" && !Number.isNaN(r.totalDmg)) {
+				runs.push({ totalDmg: r.totalDmg, count: r.count, me: r.me, lv: r.lv, mark: r.mark, skillsStr: r.skillsStr ?? {}, log: replies.join("\n") });
+			}
+		} catch (err) {
+			module_?.log?.(`レイドの試算中にエラーが発生しました: ${err instanceof Error ? err.stack ?? err.message : err}`);
+		} finally {
+			Math.random = originalRandom;
+		}
+	}
+	return runs;
+}
+
+/**
+ * 登録済みのユーザーで、副作用なしにレイドを試算する
+ *
+ * @param userId 対象ユーザーのID
+ * @param enemyName ボスの名前
+ * @param options 試行回数などのオプション（{@link RaidSimulationOptions}）
+ * @returns 試行ごとの結果、またはユーザー・ボスが見つからない理由
+ * @internal
+ */
+export async function simulateRaidDamage(userId: string, enemyName: string, options: RaidSimulationOptions = {}): Promise<{ ok: true; runs: RaidSimulationRun[] } | { ok: false; reason: string }> {
+	const friend = ai.lookupFriend(userId);
+	if (!friend) return { ok: false, reason: "ユーザーが見つかりません" };
+	if (!friend.getPerModulesData(module_)?.lv) return { ok: false, reason: "RPGのデータがありません" };
+	if (!raidEnemys.some((x) => x.name === enemyName)) return { ok: false, reason: "ボスの定義が見つかりません" };
+	return { ok: true, runs: await simulateRaidBattle(playerFromFriend(friend), enemyName, options) };
+}
+
 // -------- 再計算（計算式の不具合修正後の救済） --------
 
 /** {@link recalculateRaidResult} の結果 */
@@ -1077,49 +1244,11 @@ export async function recalculateRaidResult(raidPostId: string, userId: string):
 
 	const liveData = friend.getPerModulesData(module_);
 	if (!liveData?.lv) return { ok: false, reason: "RPGのデータがありません" };
-	const snapshot = deepClone(liveData);
 
-	// 計算中の副作用を本物のデータに残さないよう、複製したデータと no-op の保存・返信を持つ msg を組み立てる
-	const runOnce = async () => {
-		const sandboxData = deepClone(snapshot);
-		const sandboxDoc = { ...friend.doc, kazutoriData: deepClone(friend.doc.kazutoriData ?? {}), save: () => { /* no-op */ } };
-		const sandboxFriend = {
-			doc: sandboxDoc,
-			love: friend.love,
-			userId,
-			getPerModulesData: () => sandboxData,
-			setPerModulesData: () => { /* no-op */ },
-			save: () => { /* no-op */ },
-		};
-		const sandboxMsg: any = {
-			userId,
-			user: { id: userId, username: attacker.user.username, host: attacker.user.host },
-			extractedText: "",
-			text: "",
-			includes: () => false,
-			reply: async () => ({ id: undefined }),
-			friend: sandboxFriend,
-		};
-		const enemyForRun = deepClone(enemy) as RaidEnemy;
-		if (enemyForRun.pattern && enemyForRun.pattern > 1) {
-			return enemyForRun.pattern === 3 ? await getTotalDmg3(sandboxMsg, enemyForRun) : await getTotalDmg2(sandboxMsg, enemyForRun);
-		}
-		// raidPostId は渡さない（投稿数の二重使用防止に引っかかって 0 扱いになるのを避ける）
-		return await getTotalDmg(sandboxMsg, enemyForRun);
-	};
-
-	const parallelCount = Math.min(10, Math.max(0, snapshot.parallelDimension ?? 0));
-	let best: any;
-	for (let i = 0; i <= parallelCount; i++) {
-		let r: any;
-		try {
-			r = await runOnce();
-		} catch (err) {
-			module_.log(`レイド再計算中にエラーが発生しました: ${err instanceof Error ? err.stack ?? err.message : err}`);
-			continue;
-		}
-		if (r && typeof r.totalDmg === "number" && !Number.isNaN(r.totalDmg) && (!best || r.totalDmg > best.totalDmg)) best = r;
-	}
+	// 平行次元のお札を持っている場合は、参加時と同じく所持数+1回試算して最良の結果を採用する
+	const parallelCount = Math.min(10, Math.max(0, liveData.parallelDimension ?? 0));
+	const runs = await simulateRaidBattle(playerFromFriend(friend, attacker.user), enemy, { runs: parallelCount + 1 });
+	const best = bestRaidRun(runs);
 	if (!best) return { ok: false, reason: "再計算に失敗しました" };
 
 	const oldDmg = attacker.dmg;
@@ -1221,10 +1350,11 @@ export function raidTimeoutCallback(data: { id: string }) {
  * @param msg 参加返信メッセージ
  * @param enemy レイド敵
  * @param raidPostId レイド投稿ID（オプション）
+ * @param options 試算用のオプション（{@link RaidDamageOptions}）
  * @returns { totalDmg, me, lv, count, mark, skillsStr, reply } またはリアクションオブジェクト
  * @internal
  */
-export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
+export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string, options: RaidDamageOptions = {}) {
 	// データを読み込み
 	const data = initializeData(module_, msg);
 	if (!data.lv) return {
@@ -1296,7 +1426,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string) {
 		// 固定投稿数には覚醒ボーナスが加算されていないため、superBonusPost は差し引かない
 		tp = rawTp * (1 + ((skillEffects.postXUp ?? 0) * Math.min(postCount / 20, 10)));
         } else {
-                postCount = await getPostCount(ai, module_, data, msg, 0, raidPostId ? { type: 'raid', key: raidPostId } : undefined);
+                postCount = options.postCount ?? await getPostCount(ai, module_, data, msg, 0, raidPostId ? { type: 'raid', key: raidPostId } : undefined, options.readonly);
                 postCount = applyKazutoriMasterPostCountFloor(postCount, msg, skillEffects);
                 postCount += superBonusPost;
 
