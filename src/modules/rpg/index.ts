@@ -537,13 +537,16 @@ export default class extends Module {
                 const createRankMessage = (
                         score: number | null,
                         label: string,
-                        dataKey: string,
-                        options?: { prefix?: string; suffix?: string; addValue?: number; firstPlaceAppend?: (friend: FriendDocWithMeta | undefined, score?: number) => string | undefined; }
+                        dataKey: string | ((friend: FriendDocWithMeta) => number | undefined),
+                        options?: { prefix?: string; suffix?: string; addValue?: number; format?: (value: number) => string; firstPlaceAppend?: (friend: FriendDocWithMeta | undefined, score?: number) => string | undefined; }
                 ) => {
+                        const fmt = options?.format ?? ((value: number) => value.toLocaleString());
                         const entries = allData
                                 .map(friend => {
                                         let value;
-                                        if (dataKey.includes(".")) {
+                                        if (typeof dataKey === "function") {
+                                                value = dataKey(friend);
+                                        } else if (dataKey.includes(".")) {
                                                 // 動的にプロパティにアクセスするための処理
                                                 const keys = dataKey.replace(/\[(\w+)\]/g, '.$1').split('.');
                                                 value = keys.reduce((acc, key) => acc?.[key], friend.perModulesData?.rpg);
@@ -593,14 +596,14 @@ export default class extends Module {
 					if (sameRankCount > 1) {
 						rankmsg += `（同順位：${sameRankCount - 1}人）`;
 					} else if (rank <= 10 && rank >= 2) {
-						rankmsg += `（1位：${(values?.[0] + (options?.addValue || 0)).toLocaleString()}）`;
+						rankmsg += `（1位：${fmt(values?.[0] + (options?.addValue || 0))}）`;
 					} else if (rank === 1 && values?.[1]) {
-						rankmsg += `（2位：${(values?.[1] + (options?.addValue || 0)).toLocaleString()}）`;
+						rankmsg += `（2位：${fmt(values?.[1] + (options?.addValue || 0))}）`;
 					}
 				}
 
 				// 表示するスコアにだけaddValueを適用
-				const finalScoreDisplay = `${options?.prefix || ''}${(score + (options?.addValue || 0)).toLocaleString()}${options?.suffix || ''}`;
+				const finalScoreDisplay = `${options?.prefix || ''}${fmt(score + (options?.addValue || 0))}${options?.suffix || ''}`;
 
                                 return `${label}\n${finalScoreDisplay} ${rankmsg}`;
                         } else {
@@ -618,7 +621,7 @@ export default class extends Module {
 					rankmsg2 += `（同順位：${sameRankCount2 - 1}人）`;
 				}
 
-                                return `${label}\n1位：${(values?.[0] + (options?.addValue || 0)).toLocaleString()} ${rankmsg}${firstPlaceAppend ? `\n${firstPlaceAppend}` : ""}${sameRankCount < 9 && values.length >= 10 ? `\n10位：${(values?.[9] + (options?.addValue || 0)).toLocaleString()} ${rankmsg2}` : ""}`;
+                                return `${label}\n1位：${fmt(values?.[0] + (options?.addValue || 0))} ${rankmsg}${firstPlaceAppend ? `\n${firstPlaceAppend}` : ""}${sameRankCount < 9 && values.length >= 10 ? `\n10位：${fmt(values?.[9] + (options?.addValue || 0))} ${rankmsg2}` : ""}`;
                         }
                 };
 
@@ -665,6 +668,31 @@ export default class extends Module {
                         return `<small>${parts.join(" ")}</small>`;
                 };
 
+		// レイドボス名 → power の索引（全員分の評価値計算で線形検索を繰り返さないため）
+		const raidEnemyPowerMap = new Map(raidEnemys.filter((x) => x.power).map((x) => [x.name, x.power as number]));
+
+		/** レイドボス1体の最大スコアから評価値（★）を計算する。power 未設定のボスは undefined */
+		const calcRaidRating = (name: string, value: number) => {
+			const power = raidEnemyPowerMap.get(name);
+			return power ? Math.max(Math.log2((value * 20) / (1024 / (power / 30))) + 1, 1) : undefined;
+		};
+
+		/**
+		 * 合計レイドボス評価値を計算する
+		 *
+		 * NOTE: createRankMessage は indexOf で順位を探すため、表示と同じ小数2桁に丸めて
+		 *       自分の値と全員分の値を必ずこの関数で揃える。
+		 */
+		const calcTotalRaidRating = (raidScore: Record<string, unknown> | undefined) => {
+			if (!raidScore) return undefined;
+			let total = 0;
+			for (const [key, value] of Object.entries(raidScore)) {
+				if (value && typeof value === "number") total += calcRaidRating(key, value) ?? 0;
+			}
+			return total > 0 ? Math.round(total * 100) / 100 : undefined;
+		};
+		const totalRaidRatingOptions = { format: (value: number) => `★${value.toFixed(2)}` };
+
 		const canShowHatogurumaScore = isAdmin || (data.raidScore?.[":hatoguruma:"] ?? 0) >= 100;
 
 		if (msg.includes(["ランク"])){
@@ -686,6 +714,7 @@ export default class extends Module {
 			if (canShowHatogurumaScore) {
 				message.push(createRankMessage(null, ":hatoguruma: マスタースコア", "hatogurumaMaxScore", { suffix: "pts" }));
 			}
+			message.push(createRankMessage(null, "合計レイドボス評価値", (friend) => calcTotalRaidRating(friend.perModulesData?.rpg?.raidScore), totalRaidRatingOptions));
 			message.push(createRankMessage(null, "7ターン戦ったレイドボス (⭐️)", "clearRaidNum", { suffix: "種類" }));
 
 		} else {
@@ -714,18 +743,17 @@ export default class extends Module {
 				message.push(createRankMessage(data.jar, "壺購入数", "jar", { suffix: "個" }));
 			}
 
-			let totalScore = 0;
-
 			if (data.raidScore) {
 				for (const [key, value] of Object.entries(data.raidScore)) {
 					if (value && typeof value === "number") {
 						const enemy = raidEnemys.find((x) => x.name === key);
-						const score = enemy?.power ? Math.max(Math.log2((value * 20) / (1024 / ((enemy.power ?? 30) / 30))) + 1, 1) : undefined;
-						if (score) totalScore += score
+						const score = calcRaidRating(key, value);
 						message.push(`${createRankMessage(value, key + ` 最大${enemy?.scoreMsg ?? "ダメージ"}`, `raidScore.${key}`, { suffix: data.clearRaid?.includes(key) ? `${enemy?.scoreMsg2 ?? "ダメージ"} ⭐️` : `${enemy?.scoreMsg2 ?? "ダメージ"}` })}${score ? `\n★${Math.floor(score)} ${Math.floor((score % 1) * 8) !== 0 ? `$[bg.color=ffff90 ${":blank:".repeat(Math.floor((score % 1) * 8))}]` : ""}$[bg.color=ff9090 ${":blank:".repeat(8 - Math.floor((score % 1) * 8))}] ★${Math.floor(score) + 1}` : ""}`);
 					}
 				}
-				if (totalScore > 0 && Object.entries(data.raidScore).length >= 2) message.push(`合計レイドボス評価値\n★${totalScore.toFixed(2)}`);
+				const totalRaidRating = calcTotalRaidRating(data.raidScore);
+				// 個人表示は2体以上で出す（ランキングの集計対象は評価値が0でなければ1体からでも含める）
+				if (totalRaidRating && Object.entries(data.raidScore).length >= 2) message.push(createRankMessage(totalRaidRating, "合計レイドボス評価値", (friend) => calcTotalRaidRating(friend.perModulesData?.rpg?.raidScore), totalRaidRatingOptions));
 			}
 
 			if (canShowHatogurumaScore && (data.hatogurumaMaxScore ?? 0) > 0) {
