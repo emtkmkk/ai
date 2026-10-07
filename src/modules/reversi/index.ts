@@ -7,8 +7,8 @@
  * 対局は reversi-service にのみ接続する。Misskey のリバーシ機能には依存しない。
  * メンションで招待URLを作成し、招待を依頼した投稿へダイレクトで返信する。
  * 同時対局は最大 5 件。同一プレイヤーは 1 日 5 回まで・同時に 1 対局のみ（管理者は 1 日の対局制限なし）。
- * 終局時に勝敗（wins/losses）を Friend に記録し、相手が勝ち越しているときは単純モードで思考する。
- * 超単純・単純それぞれで、全ユーザー累計の勝数・負数・引き分け・投了・時間切れをモジュール永続データに記録する。
+ * 終局時に勝敗（wins/losses）と連勝を Friend に記録し、相手が勝ち越しているときは単純モード、相手が 5 連勝以上しているときは強モードで思考する。
+ * 超単純・単純・強それぞれで、全ユーザー累計の勝数・負数・引き分け・投了・時間切れをモジュール永続データに記録する。
  *
  * @public
  */
@@ -24,7 +24,7 @@ import getDate from '@/utils/get-date';
 import log from '@/utils/log';
 import { acct } from '@/utils/acct';
 import { ReversiStreamClient } from './reversi-stream';
-import { ReversiGameSession } from './back';
+import { ReversiGameSession, ReversiThinkMode } from './back';
 import type { User } from '@/misskey/user';
 
 /**
@@ -53,7 +53,7 @@ interface ReversiGameEntry {
  * 難易度ごとの全ユーザー累計成績（勝敗・引き分け・投了・時間切れ）
  *
  * @remarks
- * 超単純／単純それぞれで、全ユーザー累計の件数を保持する。
+ * 超単純／単純／強それぞれで、全ユーザー累計の件数を保持する。
  *
  * @internal
  */
@@ -87,7 +87,19 @@ interface ReversiModuleData {
 	difficultyStatsSuperSimple?: DifficultyStats;
 	/** 単純モードの全ユーザー累計統計 */
 	difficultyStatsSimple?: DifficultyStats;
+	/** 強モードの全ユーザー累計統計 */
+	difficultyStatsStrong?: DifficultyStats;
 }
+
+/** 相手の現在連勝数がこの値以上なら強モードで思考する */
+const STRONG_MODE_STREAK = 5;
+
+/** 思考モードごとの難易度別統計の保存キー */
+const DIFFICULTY_STATS_KEY: Record<ReversiThinkMode, keyof Pick<ReversiModuleData, 'difficultyStatsSuperSimple' | 'difficultyStatsSimple' | 'difficultyStatsStrong'>> = {
+	superSimple: 'difficultyStatsSuperSimple',
+	simple: 'difficultyStatsSimple',
+	strong: 'difficultyStatsStrong',
+};
 
 /** 難易度別統計のデフォルト値（未初期化時用） */
 const DEFAULT_DIFFICULTY_STATS: DifficultyStats = {
@@ -106,7 +118,7 @@ const GAME_RECONNECT_DELAY_MS = 5000;
  *
  * @remarks
  * 招待・matched 受信・対局セッション・終局・時間切れを管理する。
- * 思考は back の ReversiGameSession（超単純／単純モード）で同一プロセス内で実行する。
+ * 思考は back の ReversiGameSession（超単純／単純／強モード）で同一プロセス内で実行する。
  *
  * @public
  */
@@ -167,13 +179,13 @@ export default class extends Module {
 	/**
 	 * 指定難易度の統計を取得する（未初期化時はゼロのオブジェクト）
 	 *
-	 * @param useSimpleMode - 単純モードなら true、超単純なら false
+	 * @param mode - 思考モード
 	 * @returns その難易度の全ユーザー累計統計
 	 * @internal
 	 */
-	private getDifficultyStats(useSimpleMode: boolean): DifficultyStats {
+	private getDifficultyStats(mode: ReversiThinkMode): DifficultyStats {
 		const data = this.getData() as ReversiModuleData;
-		const key = useSimpleMode ? 'difficultyStatsSimple' : 'difficultyStatsSuperSimple';
+		const key = DIFFICULTY_STATS_KEY[mode];
 		const raw = data?.[key];
 		if (raw && typeof raw.wins === 'number' && typeof raw.losses === 'number') {
 			return {
@@ -190,14 +202,14 @@ export default class extends Module {
 	/**
 	 * 指定難易度の統計のいずれか 1 つを 1 加算して永続化する
 	 *
-	 * @param useSimpleMode - 単純モードなら true、超単純なら false
+	 * @param mode - 思考モード
 	 * @param key - 加算する項目（wins / losses / draws / surrendered / timeout）
 	 * @internal
 	 */
-	private incrementDifficultyStat(useSimpleMode: boolean, key: keyof DifficultyStats) {
+	private incrementDifficultyStat(mode: ReversiThinkMode, key: keyof DifficultyStats) {
 		const data = this.getData() as ReversiModuleData;
-		const statKey = useSimpleMode ? 'difficultyStatsSimple' : 'difficultyStatsSuperSimple';
-		const current = this.getDifficultyStats(useSimpleMode);
+		const statKey = DIFFICULTY_STATS_KEY[mode];
+		const current = this.getDifficultyStats(mode);
 		current[key] += 1;
 		this.setData({ ...data, [statKey]: current });
 	}
@@ -247,29 +259,33 @@ export default class extends Module {
 	}
 
 	/**
-	 * 対戦相手の勝敗記録から、その対局で単純モードを使うかを決める。
+	 * 対戦相手の勝敗記録から、その対局の思考モードを決める。
 	 *
 	 * @remarks
-	 * 勝ち越し（wins > losses）のときは単純モード。
-	 * ただし 5 以上勝ち越している場合（wins - losses >= 5）は、20% の確率で超単純モードに落とす。
+	 * 1. 相手の現在連勝数が {@link STRONG_MODE_STREAK} 以上 → 強モード。
+	 * 2. 勝ち越し（wins > losses）→ 単純モード。ただし 5 以上勝ち越している場合（wins - losses >= 5）は、20% の確率で超単純モードに落とす。
+	 * 3. それ以外 → 超単純モード。
 	 */
-	private shouldUseSimpleMode(opponentUserId: string): boolean {
+	private selectThinkMode(opponentUserId: string): ReversiThinkMode {
 		const opponentReversi = this.getOpponentReversiRecord(opponentUserId);
 		const wins = opponentReversi?.wins ?? 0;
 		const losses = opponentReversi?.losses ?? 0;
+		const streak = opponentReversi?.currentStreak ?? 0;
 		const lead = wins - losses;
 
-		if (lead >= 5) {
-			return Math.random() >= 0.2;
+		if (streak >= STRONG_MODE_STREAK) {
+			return 'strong';
 		}
-
-		return wins > losses;
+		if (lead >= 5) {
+			return Math.random() >= 0.2 ? 'simple' : 'superSimple';
+		}
+		return wins > losses ? 'simple' : 'superSimple';
 	}
 
 	/** 対戦相手のリバーシ勝敗記録を取得する。 */
-	private getOpponentReversiRecord(opponentUserId: string): { wins?: number; losses?: number } | undefined {
+	private getOpponentReversiRecord(opponentUserId: string): { wins?: number; losses?: number; currentStreak?: number } | undefined {
 		return this.ai.lookupFriend(opponentUserId)?.getPerModulesData(this)
-			?.reversi as { wins?: number; losses?: number } | undefined;
+			?.reversi as { wins?: number; losses?: number; currentStreak?: number } | undefined;
 	}
 
 	/** 対戦相手の負け越し数（losses - wins）に応じた、思考スキップ時のランダム着手確率を計算する。 */
@@ -436,8 +452,8 @@ export default class extends Module {
 			const sendReady = () => {
 				this.client!.sendReady(inviteToken, true);
 			};
-		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number; totalCells: number }, winnerHostOrGuest?: 'host' | 'guest') => {
-			this.onGameEnded(inviteToken, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff, totalOpponentThinkingMs, gameStartedAtMs, boardSnapshot, winnerHostOrGuest);
+		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, mode: ReversiThinkMode, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number; totalCells: number }, winnerHostOrGuest?: 'host' | 'guest') => {
+			this.onGameEnded(inviteToken, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, mode, stoneDiff, totalOpponentThinkingMs, gameStartedAtMs, boardSnapshot, winnerHostOrGuest);
 			this.cancelGameReconnect(inviteToken);
 			this.client!.closeGame(inviteToken);
 			this.gameSessions.delete(inviteToken);
@@ -445,7 +461,7 @@ export default class extends Module {
 			const gameUrl = config.reversiServiceApiUrl
 				? `${config.reversiServiceApiUrl}/game/${encodeURIComponent(inviteToken)}`
 				: '';
-			const useSimpleMode = this.shouldUseSimpleMode(entry.opponentUserId);
+			const mode = this.selectThinkMode(entry.opponentUserId);
 			const randomMoveChance = this.getRandomMoveChance(entry.opponentUserId);
 			const session = new ReversiGameSession(
 				inviteToken,
@@ -454,7 +470,7 @@ export default class extends Module {
 				sendReady,
 				onEnded,
 				gameUrl,
-				useSimpleMode,
+				mode,
 				randomMoveChance
 			);
 			this.gameSessions.set(inviteToken, session);
@@ -509,7 +525,7 @@ export default class extends Module {
 	 * 5 件以上のとき、該当する招待依頼者がいれば「忙しいから」とダイレクト返信してから false を返す。
 	 * 一覧に game が無い（招待していない game の matched）場合は何もせず false。
 	 * reversi-service の matched では body.game.id が inviteToken のため、inviteToken で一覧を検索する。
-	 * 対戦相手が勝ち越し（wins > losses）なら単純モード。さらに 5 以上勝ち越し時は 20% で超単純モードに落としてセッションへ渡す。
+	 * 対戦相手が 5 連勝以上なら強モード、勝ち越し（wins > losses）なら単純モード（5 以上勝ち越し時は 20% で超単純モードに落とす）をセッションへ渡す。
 	 *
 	 * @internal
 	 */
@@ -541,12 +557,12 @@ export default class extends Module {
 		const sendReady = () => {
 			this.client!.sendReady(game.id, true);
 		};
-		// 対戦相手の勝敗記録から難易度を決める（5以上勝ち越し時は20%で超単純に落とす）
-		const useSimpleMode = this.shouldUseSimpleMode(entry.opponentUserId);
+		// 対戦相手の勝敗記録から難易度を決める（5連勝以上は強、勝ち越しは単純。5以上勝ち越し時は20%で超単純に落とす）
+		const mode = this.selectThinkMode(entry.opponentUserId);
 
 		// 終局時は結果種別・対戦相手・勝者 ID ・難易度・石差を渡し、index 側で本文と wins/losses・連勝・難易度別統計を更新する
-		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number; totalCells: number }, winnerHostOrGuest?: 'host' | 'guest') => {
-			this.onGameEnded(game.id, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff, totalOpponentThinkingMs, gameStartedAtMs, boardSnapshot, winnerHostOrGuest);
+		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, mode: ReversiThinkMode, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number; totalCells: number }, winnerHostOrGuest?: 'host' | 'guest') => {
+			this.onGameEnded(game.id, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, mode, stoneDiff, totalOpponentThinkingMs, gameStartedAtMs, boardSnapshot, winnerHostOrGuest);
 			this.cancelGameReconnect(game.id);
 			this.client!.closeGame(game.id);
 			this.gameSessions.delete(game.id);
@@ -560,7 +576,7 @@ export default class extends Module {
 			sendReady,
 			onEnded,
 			gameUrl,
-			useSimpleMode,
+			mode,
 			randomMoveChance
 		);
 		this.gameSessions.set(game.id, session);
@@ -690,13 +706,13 @@ export default class extends Module {
 					// セッションがない（例: 再起動後）場合は reopenOngoingGames と同様にセッションを作成して接続
 					const sendPutStone = (pos: number) => this.client!.sendPutStone(inviteToken, pos);
 					const sendReady = () => this.client!.sendReady(inviteToken, true);
-					const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number; totalCells: number }, winnerHostOrGuest?: 'host' | 'guest') => {
-						this.onGameEnded(inviteToken, existingEntry.opponentUserId, existingEntry.replyNoteId, resultType, opponentUser, winnerId, useSimpleMode, stoneDiff, totalOpponentThinkingMs, gameStartedAtMs, boardSnapshot, winnerHostOrGuest);
+					const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, mode: ReversiThinkMode, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number; totalCells: number }, winnerHostOrGuest?: 'host' | 'guest') => {
+						this.onGameEnded(inviteToken, existingEntry.opponentUserId, existingEntry.replyNoteId, resultType, opponentUser, winnerId, mode, stoneDiff, totalOpponentThinkingMs, gameStartedAtMs, boardSnapshot, winnerHostOrGuest);
 						this.cancelGameReconnect(inviteToken);
 						this.client!.closeGame(inviteToken);
 						this.gameSessions.delete(inviteToken);
 					};
-					const useSimpleMode = this.shouldUseSimpleMode(existingEntry.opponentUserId);
+					const mode = this.selectThinkMode(existingEntry.opponentUserId);
 					const randomMoveChance = this.getRandomMoveChance(existingEntry.opponentUserId);
 					const newSession = new ReversiGameSession(
 						inviteToken,
@@ -705,7 +721,7 @@ export default class extends Module {
 						sendReady,
 						onEnded,
 						gameUrl,
-						useSimpleMode,
+						mode,
 						randomMoveChance
 					);
 					this.gameSessions.set(inviteToken, newSession);
@@ -838,7 +854,7 @@ export default class extends Module {
 	 * @param resultType - 結果種別（'iWon' | 'iLose' | 'drawn' | 'youSurrendered' | 'timeout' | 'decline'）
 	 * @param opponentUser - 対戦相手の User（decline 時は null）。表示名・@acct 用
 	 * @param winnerId - 勝者のユーザー ID。引き分け・投了・時間切れ時は null
-	 * @param useSimpleMode - 単純モードで対局したか。難易度別統計の加算に使用。decline 等の場合は undefined 可
+	 * @param mode - 対局した思考モード。難易度別統計の加算に使用。decline 等の場合は undefined 可
 	 * @param stoneDiff - 石差（iWon/iLose のときのみ。引き分け・投了・時間切れでは不要）
 	 * @param winnerHostOrGuest - reversi-service が返す場合の勝者（'host'|'guest'）。'guest' のときは相手の勝ちとして wins に加算する
 	 *
@@ -849,7 +865,7 @@ export default class extends Module {
 	 * 相手の思考時間合計（1手ごとに最大5秒）を終局時に集計し、40秒ごとに実効 +0.5 相当で親愛度を離散加算する。端数時間は同日内のみ繰り越し、日付を跨いだら破棄する。加算回数は1日あたり最大6チャンク。日付判定は対局開始時刻を使用する。
 	 * 勝敗: 相手が勝ったときのみ reversi.wins +1、それ以外（自分勝ち・引き分け・投了・時間切れ）は reversi.losses +1。decline は対局不成立として勝敗を記録しない。
 	 * winnerId が opponentUserId と一致しない場合（ゲストでプレイした場合など）は、boardSnapshot の石数・winnerHostOrGuest === 'guest'・resultType === 'iLose' の順でフォールバックして相手の勝ちを判定する。
-	 * 難易度別統計: useSimpleMode が渡されたとき、超単純/単純の該当項目（勝・負・引き分け・投了・時間切れ）を 1 加算する。
+	 * 難易度別統計: mode が渡されたとき、超単純/単純/強の該当項目（勝・負・引き分け・投了・時間切れ）を 1 加算する。
 	 *
 	 * @internal
 	 */
@@ -860,7 +876,7 @@ export default class extends Module {
 		resultType: string,
 		opponentUser: User | null,
 		winnerId: string | null,
-		useSimpleMode?: boolean,
+		mode?: ReversiThinkMode,
 		stoneDiff?: number,
 		totalOpponentThinkingMs?: number,
 		gameStartedAtMs?: number,
@@ -871,8 +887,8 @@ export default class extends Module {
 			this.setFirstGameCompletedAt(Date.now());
 		}
 
-		// 難易度別の全ユーザー累計統計（超単純・単純それぞれで勝敗・引き分け・投了・時間切れを記録）
-		if (typeof useSimpleMode === 'boolean') {
+		// 難易度別の全ユーザー累計統計（超単純・単純・強それぞれで勝敗・引き分け・投了・時間切れを記録）
+		if (mode != null) {
 			const statKey: keyof DifficultyStats | null =
 				resultType === 'iWon' ? 'wins' :
 				resultType === 'iLose' ? 'losses' :
@@ -880,7 +896,7 @@ export default class extends Module {
 				resultType === 'youSurrendered' ? 'surrendered' :
 				resultType === 'timeout' ? 'timeout' : null;
 			if (statKey !== null) {
-				this.incrementDifficultyStat(useSimpleMode, statKey);
+				this.incrementDifficultyStat(mode, statKey);
 			}
 		}
 
@@ -990,7 +1006,7 @@ export default class extends Module {
 		const callerAcct = opponentUser
 			? `${opponentUser.username}${opponentUser.host ? `@${opponentUser.host}` : ''}`
 			: `(unknown:${opponentUserId})`;
-		log(`[reversi] game summary: result=${resultType} winnerId=${winnerId ?? 'none'} caller=${callerAcct} callerId=${opponentUserId} botStone=${boardSnapshot?.botStoneColor ?? 'unknown'} stones=${boardSnapshot?.blackStones ?? 0}-${boardSnapshot?.whiteStones ?? 0} level=${useSimpleMode ? 'simple' : 'super-simple'} opponentThinkingMsRaw=${rawOpponentThinkingMs} bonusMultiplier=${thinkingBonusMultiplier.toFixed(2)} stoneFillCorrection=${thinkingStoneFillCorrection.toFixed(2)} opponentThinkingMsAdjusted=${Math.round(adjustedThinkingMsForLog)} loveBefore=${beforeLoveChunksAppliedToday}/${Math.round(beforeLoveThinkingCarryMs / 1000)}s loveAfter=${afterLoveChunksAppliedToday}/${Math.round(afterLoveThinkingCarryMs / 1000)}s inviteUrl=${inviteUrl || '(none)'}`);
+		log(`[reversi] game summary: result=${resultType} winnerId=${winnerId ?? 'none'} caller=${callerAcct} callerId=${opponentUserId} botStone=${boardSnapshot?.botStoneColor ?? 'unknown'} stones=${boardSnapshot?.blackStones ?? 0}-${boardSnapshot?.whiteStones ?? 0} level=${mode ?? 'unknown'} opponentThinkingMsRaw=${rawOpponentThinkingMs} bonusMultiplier=${thinkingBonusMultiplier.toFixed(2)} stoneFillCorrection=${thinkingStoneFillCorrection.toFixed(2)} opponentThinkingMsAdjusted=${Math.round(adjustedThinkingMsForLog)} loveBefore=${beforeLoveChunksAppliedToday}/${Math.round(beforeLoveThinkingCarryMs / 1000)}s loveAfter=${afterLoveChunksAppliedToday}/${Math.round(afterLoveThinkingCarryMs / 1000)}s inviteUrl=${inviteUrl || '(none)'}`);
 
 		// 返信する場合は返信先（招待依頼者）のユーザが取得できるときのみ。friend が無いなどで取れない場合は返信をスキップする
 		let resultText: string | null = null;

@@ -5,7 +5,7 @@
  *
  * @remarks
  * - **Session**: 従来の Misskey リバーシ用。子プロセスとして fork され、親から _init_ / started / set / ended を受信する。本ファイルを直接実行したときのみ使用。
- * - **ReversiGameSession**: reversi-service 用。同一プロセス内で started / log / ended / sync を受け、超単純モードで思考し putStone / ready を送信する。{@link ../index | reversi モジュール}から利用される。
+ * - **ReversiGameSession**: reversi-service 用。同一プロセス内で started / log / ended / sync を受け、超単純／単純／強モードで思考し putStone / ready を送信する。{@link ../index | reversi モジュール}から利用される。
  *
  * @internal
  */
@@ -20,6 +20,7 @@ import log from '@/utils/log';
 import { acct } from '@/utils/acct';
 import { User } from '@/misskey/user';
 import { traceSync } from '@/utils/slow-operation';
+import { chooseSimpleMove, DEFAULT_SIMPLE_WEIGHTS } from '@/modules/reversi/simple-eval';
 
 function getUserName(user) {
 	return user.name || user.username;
@@ -459,6 +460,18 @@ class Session {
 }
 
 /**
+ * ReversiGameSession の思考モード
+ *
+ * @remarks
+ * - `superSimple`: 隅優先・角周辺回避・反転数最大の超単純思考
+ * - `simple`: 優先順位の連鎖とタイブレークで 1 手を決める単純思考（変則盤対応・未来読みなし）
+ * - `strong`: 着手直後の盤面の特徴量の重み付き合計で 1 手を決める強い思考（simple-eval.ts。変則盤対応・未来読みなし）
+ *
+ * @internal
+ */
+export type ReversiThinkMode = 'superSimple' | 'simple' | 'strong';
+
+/**
  * reversi-service 用の対局セッション（同一プロセスで使用）
  *
  * @remarks
@@ -474,7 +487,7 @@ export class ReversiGameSession {
 	private sendPutStone: (pos: number) => void;
 	private sendReady: () => void;
 	/** 終局時: (結果種別, 対戦相手 User, winnerId, 単純モードか, 石差, ...)。decline のときは ('decline', null, null, false)。reversi-service が winner: 'host'|'guest' を返す場合は渡す（ゲスト勝ちの wins 記録用） */
-	private onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number; totalCells: number }, winnerHostOrGuest?: 'host' | 'guest') => void;
+	private onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null, mode: ReversiThinkMode, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number; totalCells: number }, winnerHostOrGuest?: 'host' | 'guest') => void;
 	/** 現在の game オブジェクト（started / sync でセット）。user1, user2 等を含む */
 	private game: any;
 	/** リバーシエンジン（misskey-reversi）。started / sync で初期化、log で着手を適用 */
@@ -488,8 +501,8 @@ export class ReversiGameSession {
 	private maxTurn = 0;
 	/** 観戦URL（任意）。表示用 */
 	private gameUrl: string;
-	/** 単純モード（変則盤対応・未来読みなし）で思考するか。false のときは超単純モード */
-	private useSimpleMode: boolean;
+	/** 思考モード（超単純／単純／強） */
+	private mode: ReversiThinkMode;
 	/** 思考を省略して合法手からランダム着手する確率（0〜1）。超単純モードでのみ適用。 */
 	private randomMoveChance: number;
 	/** 思考実行を既にスケジュールしたか。sync と started の両方で二重スケジュールしないようガードする */
@@ -518,7 +531,7 @@ export class ReversiGameSession {
 	 * @param sendReady - ready を送信するコールバック
 	 * @param onEndedCallback - 終局時に結果種別・対戦相手・勝者 ID ・単純モード・石差（任意）・winnerHostOrGuest（任意）を渡して呼ぶコールバック
 	 * @param gameUrl - 観戦用 URL（省略可）
-	 * @param useSimpleMode - 単純モードで思考するか。省略時は false（超単純）
+	 * @param mode - 思考モード。省略時は 'superSimple'
 	 * @param randomMoveChance - 思考を省略して合法手からランダム着手する確率（0〜1）。省略時は 0
 	 *
 	 * @internal
@@ -528,9 +541,9 @@ export class ReversiGameSession {
 		account: User,
 		sendPutStone: (pos: number) => void,
 		sendReady: () => void,
-		onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null, useSimpleMode: boolean, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number; totalCells: number }, winnerHostOrGuest?: 'host' | 'guest') => void,
+		onEndedCallback: (resultType: string, opponentUser: User | null, winnerId: string | null, mode: ReversiThinkMode, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number; totalCells: number }, winnerHostOrGuest?: 'host' | 'guest') => void,
 		gameUrl?: string,
-		useSimpleMode?: boolean,
+		mode?: ReversiThinkMode,
 		randomMoveChance?: number
 	) {
 		this.gameId = gameId;
@@ -539,7 +552,7 @@ export class ReversiGameSession {
 		this.sendReady = sendReady;
 		this.onEndedCallback = onEndedCallback;
 		this.gameUrl = gameUrl || '';
-		this.useSimpleMode = useSimpleMode === true;
+		this.mode = mode ?? 'superSimple';
 		const chance = typeof randomMoveChance === 'number' && Number.isFinite(randomMoveChance)
 			? randomMoveChance
 			: 0;
@@ -701,7 +714,7 @@ export class ReversiGameSession {
 	onStarted(body: { game: any }) {
 		this.game = body.game;
 		if (this.game.canPutEverywhere) {
-			this.onEndedCallback('decline', null, null, this.useSimpleMode);
+			this.onEndedCallback('decline', null, null, this.mode);
 			return; // 変則ルールは未対応
 		}
 		this.o = new Reversi(ReversiGameSession.normalizeMapForEngine(this.game.map), {
@@ -729,7 +742,7 @@ export class ReversiGameSession {
 		if (isMyTurn && !this.thinkScheduled) {
 			this.thinkScheduled = true;
 			this.thinkStartTime = Date.now();
-			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), 0);
+			setTimeout(() => this.think(), 0);
 		}
 	}
 
@@ -760,7 +773,7 @@ export class ReversiGameSession {
 		const isMyTurn = (this.o as any).turn === this.botColor;
 		if (isMyTurn) {
 			this.thinkStartTime = Date.now();
-			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), 0);
+			setTimeout(() => this.think(), 0);
 		}
 	}
 
@@ -781,7 +794,7 @@ export class ReversiGameSession {
 		if (this.endHandled) return;
 		if (game.canPutEverywhere) {
 			this.endHandled = true;
-			this.onEndedCallback('decline', null, null, this.useSimpleMode);
+			this.onEndedCallback('decline', null, null, this.mode);
 			return;
 		}
 		this.o = new Reversi(ReversiGameSession.normalizeMapForEngine(game.map), {
@@ -825,7 +838,7 @@ export class ReversiGameSession {
 		if (isMyTurn && !this.thinkScheduled) {
 			this.thinkScheduled = true;
 			this.thinkStartTime = Date.now();
-			setTimeout(() => (this.useSimpleMode ? this.thinkSimple() : this.thinkSuperSimple()), 0);
+			setTimeout(() => this.think(), 0);
 		}
 	}
 
@@ -889,7 +902,7 @@ export class ReversiGameSession {
 		const winnerRaw = msg.winner ?? msg.game?.winner;
 		const winnerHostOrGuest: 'host' | 'guest' | undefined =
 			winnerRaw === 'host' || winnerRaw === 'guest' ? winnerRaw : undefined;
-		this.onEndedCallback(resultType, opponentUser, winnerId, this.useSimpleMode, stoneDiff, totalOpponentThinkingMs, this.gameStartedAtMs ?? undefined, {
+		this.onEndedCallback(resultType, opponentUser, winnerId, this.mode, stoneDiff, totalOpponentThinkingMs, this.gameStartedAtMs ?? undefined, {
 			botStoneColor: this.botColor === true ? 'black' : this.botColor === false ? 'white' : 'unknown',
 			blackStones,
 			whiteStones,
@@ -991,9 +1004,10 @@ export class ReversiGameSession {
 		// 角が打てる場合は常に最短（超単純 2 秒・単純 0.5 秒）
 		const cornerSet = new Set(this.simpleCorners().map(c => c.pos));
 		const canTakeCorner = legalMoves.some((pos: number) => cornerSet.has(pos));
-		if (canTakeCorner) return this.useSimpleMode ? 500 : 2000;
+		const quick = this.mode !== 'superSimple';
+		if (canTakeCorner) return quick ? 500 : 2000;
 		const numLegalMoves = legalMoves.length;
-		return this.useSimpleMode
+		return quick
 			? this.calcThinkDelaySimple(numLegalMoves)
 			: this.calcThinkDelaySuperSimple(numLegalMoves);
 	}
@@ -1550,33 +1564,21 @@ export class ReversiGameSession {
 	}
 
 	/**
-	 * 単純モードの思考。変則盤対応・未来読みなし・必ず1手。
+	 * 単純モードの着手を決める。変則盤対応・未来読みなし・必ず1手。
 	 *
 	 * @remarks
 	 * 回避 → 隅攻防 → 優先 → タイブレーク（T1 反転 min/max → T1.5 モビリティ → T2 フロンティア → T3/T4 露出 → T5 パリティ → T6 反転 min（序盤）→ T7 辺距離 → T8 ランダム）。
 	 *
+	 * @param rng - 同点時の乱択に使う乱数生成器。省略時は Math.random
+	 * @returns 着手位置。合法手がなければ -1
 	 * @internal
 	 */
-	@traceSync('reversi.thinkSimple')
-	private thinkSimple() {
-		this.thinkScheduled = false;
-		log(`[reversi] thinkSimple gameId=${this.gameId}`);
-		if (!this.o || this.botColor == null) {
-			log(`[reversi] thinkSimple skip: no engine or botColor`);
-			return;
-		}
+	private chooseMoveSimple(rng: () => number = Math.random): number {
+		if (!this.o || this.botColor == null) return -1;
 		const o = this.o as any;
 		const cans = o.canPutSomewhere(this.botColor) as number[];
-		if (cans.length === 0) {
-			log(`[reversi] thinkSimple skip: no legal moves`);
-			return;
-		}
-		if (cans.length === 1) {
-			const pos = cans[0];
-			log(`[reversi] thinkSimple gameId=${this.gameId} → putStone pos=${pos} (single legal move)`);
-			this.commitMove(pos);
-			return;
-		}
+		if (cans.length === 0) return -1;
+		if (cans.length === 1) return cans[0];
 
 		const cornersWithDirs = this.simpleCorners();
 		const emptyCornerPoses = cornersWithDirs.map(c => c.pos).filter(k => this.simpleIsEmpty(k));
@@ -1674,8 +1676,68 @@ export class ReversiGameSession {
 		cand = this.tiebreakMax(cand, p => edgeDist.get(p) ?? 0);
 
 		// T8: ランダム
-		const pos = cand[Math.floor(Math.random() * cand.length)];
+		return cand[Math.floor(rng() * cand.length)];
+	}
+
+	/**
+	 * 現在のモードに応じた思考を実行する
+	 *
+	 * @internal
+	 */
+	private think() {
+		switch (this.mode) {
+			case 'strong': this.thinkStrong(); break;
+			case 'simple': this.thinkSimple(); break;
+			default: this.thinkSuperSimple(); break;
+		}
+	}
+
+	/**
+	 * 単純モードの思考。{@link chooseMoveSimple} で決めた手を着手する。
+	 *
+	 * @internal
+	 */
+	@traceSync('reversi.thinkSimple')
+	private thinkSimple() {
+		this.thinkScheduled = false;
+		log(`[reversi] thinkSimple gameId=${this.gameId}`);
+		if (!this.o || this.botColor == null) {
+			log(`[reversi] thinkSimple skip: no engine or botColor`);
+			return;
+		}
+		const pos = this.chooseMoveSimple();
+		if (pos < 0) {
+			log(`[reversi] thinkSimple skip: no legal moves`);
+			return;
+		}
 		log(`[reversi] thinkSimple gameId=${this.gameId} → putStone pos=${pos}`);
+		this.commitMove(pos);
+	}
+
+	/**
+	 * 強モードの思考。変則盤対応・未来読みなし・必ず1手。
+	 *
+	 * @remarks
+	 * 着手の選択は {@link chooseSimpleMove}（重み付き合計方式）に委ねる。各合法手について着手直後の盤面から
+	 * 角・X/C・隅渡し・相手モビリティ・フロンティア・反転数・安定石・パリティなどの特徴量を取り、重み付き合計が最大の手を選ぶ。
+	 * 重みは自己対戦ハーネス（test/modules/reversi/selfplay）で調整した {@link DEFAULT_SIMPLE_WEIGHTS}。
+	 *
+	 * @internal
+	 */
+	@traceSync('reversi.thinkStrong')
+	private thinkStrong() {
+		this.thinkScheduled = false;
+		log(`[reversi] thinkStrong gameId=${this.gameId}`);
+		if (!this.o || this.botColor == null) {
+			log(`[reversi] thinkStrong skip: no engine or botColor`);
+			return;
+		}
+		const pos = chooseSimpleMove(this.o, this.botColor, DEFAULT_SIMPLE_WEIGHTS);
+		if (pos < 0) {
+			log(`[reversi] thinkStrong skip: no legal moves`);
+			return;
+		}
+		log(`[reversi] thinkStrong gameId=${this.gameId} → putStone pos=${pos}`);
 		this.commitMove(pos);
 	}
 

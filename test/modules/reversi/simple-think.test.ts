@@ -34,7 +34,7 @@ function createTestSession(botIsBlack = true): TestSession {
 		() => {},
 		() => {},
 		'',
-		true,
+		'simple',
 		0
 	);
 	session.o = new Reversi(STANDARD_MAP, REVERSI_OPTS);
