@@ -624,11 +624,12 @@ export function getEnemyDmg(data, def: number, tp: number, count: number, crit: 
  * @param startCharge 開始時のチャージ量
  * @param skillEffects スキル効果集計
  * @param reverse charge の増減を反転するか（逃走等で使用）
+ * @param source 元にする乱数（省略時は Math.random）
  * @returns 0〜1 の乱数
  * @internal
  */
-export function random(data, startCharge = 0, skillEffects, reverse = false) {
-    let rnd = (skillEffects.notRandom || aggregateTokensEffects(data).notRandom) && !reverse ? 0.5 + (skillEffects.notRandom ?? 0) * 0.05 : Math.random();
+export function random(data, startCharge = 0, skillEffects, reverse = false, source: () => number = Math.random) {
+    let rnd = (skillEffects.notRandom || aggregateTokensEffects(data).notRandom) && !reverse ? 0.5 + (skillEffects.notRandom ?? 0) * 0.05 : source();
     if (skillEffects.charge) {
         const charge = Math.min(startCharge, data.charge);
         if (charge > 0) {

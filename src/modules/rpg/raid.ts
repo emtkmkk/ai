@@ -30,6 +30,7 @@ import getDate from '@/utils/get-date';
 import { acct } from '@/utils/acct';
 import * as seedrandom from 'seedrandom';
 import config from '@/config';
+import { createRaidRandom, RaidRandom } from './raid-random';
 
 type RaidAdditionalStatus = {
 	icon: string;
@@ -698,7 +699,7 @@ function defineDataProperty(target: object, key: string, value: unknown): void {
  * @param msg 参加返信メッセージ
  * @param enemy レイド敵（元オブジェクト。各試行には deepClone を渡す）
  * @param module 対象モジュール（perModulesData のキー取得に使用）
- * @param runRaidDamage 実際のダメージ計算を行う関数（pattern によって 3 種のいずれかを内部で振り分ける）
+ * @param runRaidDamage 実際のダメージ計算を行う関数（pattern によって 3 種のいずれかを内部で振り分ける。2つ目の引数は平行次元の番号で、正史 = 0）
  * @param parallelCount 追加で走らせる平行次元数（お札所持枚数を安全上限でクランプ済みの値。正史の1回はこれに+1される）
  * @param logError エラー時のロガー（module.log 等）
  * @returns 正史として採用されたダメージ計算結果。全試行失敗時は undefined
@@ -708,7 +709,7 @@ export async function runParallelDimensionRaid(
 	msg: Message,
 	enemy: RaidEnemy,
 	module: { name: string },
-	runRaidDamage: (enemyForRun: RaidEnemy) => Promise<any>,
+	runRaidDamage: (enemyForRun: RaidEnemy, dimension: number) => Promise<any>,
 	parallelCount: number,
 	logError: (text: string) => void,
 ): Promise<any> {
@@ -739,7 +740,7 @@ export async function runParallelDimensionRaid(
 
 			let r: any;
 			try {
-				r = await runRaidDamage(deepClone(enemy) as RaidEnemy);
+				r = await runRaidDamage(deepClone(enemy) as RaidEnemy, i);
 			} catch (err) {
 				logError(`平行次元 ${i + 1}/${parallelCount + 1} の処理中にエラーが発生しました: ${err instanceof Error ? err.stack ?? err.message : err}`);
 				r = undefined;
@@ -886,17 +887,19 @@ export async function raidContextHook(key: string, msg: Message, data: unknown) 
         const parallelCount = Math.min(PARALLEL_DIMENSION_CAP, Math.max(0, _data.parallelDimension ?? 0));
 
         // 敵の pattern に応じたダメージ計算ディスパッチ
-        const runRaidDamage = async (enemyForRun: RaidEnemy) => {
+        // 乱数はレイドの投稿ID + ユーザーID + 平行次元の番号から決める（同じ条件なら戦闘を再現できる）
+        const runRaidDamage = async (enemyForRun: RaidEnemy, dimension = 0) => {
+                const rng = createRaidRandom({ postId: raid.postId, userId: msg.userId, dimension });
                 if (enemyForRun.pattern && enemyForRun.pattern > 1) {
                         switch (enemyForRun.pattern) {
                                 case 3:
-                                        return await getTotalDmg3(msg, enemyForRun);
+                                        return await getTotalDmg3(msg, enemyForRun, { rng });
                                 case 2:
                                 default:
-                                        return await getTotalDmg2(msg, enemyForRun);
+                                        return await getTotalDmg2(msg, enemyForRun, { rng });
                         }
                 }
-                return await getTotalDmg(msg, enemyForRun, raid.postId);
+                return await getTotalDmg(msg, enemyForRun, raid.postId, { rng });
         };
 
         let result;
@@ -1000,6 +1003,8 @@ export type RaidDamageOptions = {
 	postCount?: number;
 	/** 投稿数の取得で、連携アカウントのデータや使用済みの印を書き換えない */
 	readonly?: boolean;
+	/** 乱数（省略時は Math.random() を使う。シードつきの乱数を渡すと戦闘を再現できる） */
+	rng?: RaidRandom;
 };
 
 /** {@link simulateRaidBattle} のオプション */
@@ -1014,6 +1019,14 @@ export type RaidSimulationOptions = {
 	 * WARNING: 試行中は Math.random を差し替えるため、本番で他の処理と並行して使わないこと
 	 */
 	random?: () => number;
+	/**
+	 * 乱数のシードにするレイドの投稿ID
+	 *
+	 * @remarks
+	 * 指定すると、実際のレイドと同じシード（投稿ID + ユーザーID + 平行次元の番号）で乱数を引く。
+	 * 試行 i 回目は平行次元 i 番目（0 = 正史）と同じ乱数になる。指定した場合 random は使われない。
+	 */
+	seedPostId?: string;
 	/** 試算に使うデータを書き換える（構成を変えて試す用。元のデータは書き換わらない） */
 	modifyData?: (data: any) => void;
 };
@@ -1105,15 +1118,16 @@ export async function simulateRaidBattle(player: RaidSimulationPlayer, enemyOrNa
 			},
 		};
 		const enemyForRun = deepClone(enemy) as RaidEnemy;
+		const rng = options.seedPostId ? createRaidRandom({ postId: options.seedPostId, userId: player.userId, dimension: i }) : undefined;
 		const originalRandom = Math.random;
 		if (options.random) Math.random = options.random;
 		try {
 			let r: any;
 			if (enemyForRun.pattern && enemyForRun.pattern > 1) {
-				r = enemyForRun.pattern === 3 ? await getTotalDmg3(sandboxMsg, enemyForRun) : await getTotalDmg2(sandboxMsg, enemyForRun);
+				r = enemyForRun.pattern === 3 ? await getTotalDmg3(sandboxMsg, enemyForRun, { rng }) : await getTotalDmg2(sandboxMsg, enemyForRun, { rng });
 			} else {
 				// raidPostId は渡さない（投稿数の二重使用防止に引っかかって 0 扱いになるのを避ける）
-				r = await getTotalDmg(sandboxMsg, enemyForRun, undefined, { postCount: options.postCount, readonly: true });
+				r = await getTotalDmg(sandboxMsg, enemyForRun, undefined, { postCount: options.postCount, readonly: true, rng });
 			}
 			if (r && typeof r.totalDmg === "number" && !Number.isNaN(r.totalDmg)) {
 				runs.push({ totalDmg: r.totalDmg, count: r.count, me: r.me, lv: r.lv, mark: r.mark, skillsStr: r.skillsStr ?? {}, log: replies.join("\n") });
@@ -1246,8 +1260,9 @@ export async function recalculateRaidResult(raidPostId: string, userId: string):
 	if (!liveData?.lv) return { ok: false, reason: "RPGのデータがありません" };
 
 	// 平行次元のお札を持っている場合は、参加時と同じく所持数+1回試算して最良の結果を採用する
+	// 参加時と同じシードを使うので、計算式が変わっていなければ同じ展開になる
 	const parallelCount = Math.min(10, Math.max(0, liveData.parallelDimension ?? 0));
-	const runs = await simulateRaidBattle(playerFromFriend(friend, attacker.user), enemy, { runs: parallelCount + 1 });
+	const runs = await simulateRaidBattle(playerFromFriend(friend, attacker.user), enemy, { runs: parallelCount + 1, seedPostId: raid.postId });
 	const best = bestRaidRun(runs);
 	if (!best) return { ok: false, reason: "再計算に失敗しました" };
 
@@ -1350,11 +1365,14 @@ export function raidTimeoutCallback(data: { id: string }) {
  * @param msg 参加返信メッセージ
  * @param enemy レイド敵
  * @param raidPostId レイド投稿ID（オプション）
+ * @param options 投稿数の固定・乱数の指定など（{@link RaidDamageOptions}）
  * @param options 試算用のオプション（{@link RaidDamageOptions}）
  * @returns { totalDmg, me, lv, count, mark, skillsStr, reply } またはリアクションオブジェクト
  * @internal
  */
 export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string, options: RaidDamageOptions = {}) {
+	/** 乱数（シードが指定されていれば、同じレイド・同じユーザーで同じ値になる） */
+	const rand = options.rng ?? createRaidRandom();
 	// データを読み込み
 	const data = initializeData(module_, msg);
 	if (!data.lv) return {
@@ -1376,11 +1394,11 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string, op
 	// Lv20以上でお守り未所持かつ確率（10% + noAmuletCount*5%、最低-18から始まる）でお守り付与
 	if (data.lv >= 20) {
 		if (data.noAmuletCount === null || data.noAmuletCount === undefined) data.noAmuletCount = 0;
-		if (!skillEffects.noAmuletAtkUp && !skillsStr.amulet && Math.random() < 0.1 + ((data.noAmuletCount + 18) * 0.05)) {
+		if (!skillEffects.noAmuletAtkUp && !skillsStr.amulet && rand("noAmulet") < 0.1 + ((data.noAmuletCount + 18) * 0.05)) {
 			amuletGetFlg = true;
 			data.noAmuletCount = -18;
 			// スキル2個未満 or（3個未満かつ50%）ならわかばのお守り、それ以外は謎のお守り
-			if (data.skills?.length < 2 || (data.skills?.length < 3 && Math.random() < 0.5)) {
+			if (data.skills?.length < 2 || (data.skills?.length < 3 && rand("noAmulet.skill") < 0.5)) {
 				wakabaFlg = true;
 				data.items.push({ name: `わかばのお守り`, price: 1, desc: `もこチキの持っているスキルが5個より少ない場合（もこチキのレベルが低い場合）、少ないスキル1つにつき約6%分パワー・防御が上がります 特定条件でさらにパワー・防御が+12%されます 耐久20`, type: "amulet", effect: { beginner: 0.06 }, durability: 20, short: "🔰" });
 			} else {
@@ -1393,7 +1411,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string, op
 		}
 	}
 
-	const stockRandomResult = stockRandom(data, skillEffects);
+	const stockRandomResult = stockRandom(data, skillEffects, () => rand("stockRandom"));
 
 	skillEffects = stockRandomResult.skillEffects;
 	ensureKazutoriMasterHistory(ai, msg, skillEffects);
@@ -1406,7 +1424,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string, op
 	let color = getColor(data);
 
 	/** 覚醒状態か？*/
-	const isSuper = Math.random() < (0.02 + Math.max(data.superPoint / 200, 0)) || color.alwaysSuper;
+	const isSuper = rand("super") < (0.02 + Math.max(data.superPoint / 200, 0)) || color.alwaysSuper;
 
 	/** 投稿数（今日と明日の多い方）*/
 	let postCount = 0;
@@ -1574,7 +1592,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string, op
 	}
 
 	if (skillEffects.fortuneEffect || aggregateTokensEffects(data).fortuneEffect) {
-		const result = fortune(atk, def, skillEffects.fortuneEffect);
+		const result = fortune(atk, def, skillEffects.fortuneEffect, () => rand("fortune"));
 		atk = result.atk;
 		def = result.def;
 		if (skillEffects.fortuneEffect) {
@@ -1593,9 +1611,9 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string, op
 	if (raidVitalityState.moodUsed > 0) {
 		data.raidVitality = Math.max(0, (data.raidVitality ?? 0) - raidVitalityState.moodUsed);
 	}
-	bonusX += (Math.random() < 0.01 ? 0.3 : 0) + (Math.random() < 0.01 ? 0.3 : 0);
+	bonusX += (rand("mood.jackpot") < 0.01 ? 0.3 : 0) + (rand("mood.jackpot") < 0.01 ? 0.3 : 0);
 	// 1%でさらに +0.3 を加算（複数回当たる可能性あり）
-	while (Math.random() < 0.01) {
+	while (rand("mood.jackpot") < 0.01) {
 		bonusX += 0.3;
 	}
 	atk = Math.round(atk * (0.75 + bonusX));
@@ -1607,7 +1625,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string, op
 	}
 
 	if (false && data.raidAdjust > 0 && bonusX < 1 && skillEffects.pride) {
-		if (Math.random() < 0.8) {
+		if (rand("raidAdjust") < 0.8) {
 			atk = Math.round(atk * (1 / (1 + (data.raidAdjust * 0.0005))));
 			def = Math.round(def * (1 / (1 + (data.raidAdjust * 0.0005))));
 			if (verboseLog) {
@@ -1616,7 +1634,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string, op
 			}
 		}
 	} else {
-		if (false && data.raidAdjust > 0 && bonusX < 1 && Math.random() < 0.9) {
+		if (false && data.raidAdjust > 0 && bonusX < 1 && rand("raidAdjust") < 0.9) {
 			atk = Math.round(atk * (1 / (1 + (data.raidAdjust * 0.001))));
 			def = Math.round(def * (1 / (1 + (data.raidAdjust * 0.001))));
 			if (verboseLog) {
@@ -1642,7 +1660,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string, op
 			predictedDmg: (argTriggerData?.predictedDmg) ?? 0,
 		};
 
-		const useMagics = data.magic.filter((m) => m.phase === phase && (m.trigger(triggerData) || Math.random() < 0.08));
+		const useMagics = data.magic.filter((m) => m.phase === phase && (m.trigger(triggerData) || rand("magic", phase) < 0.08));
 
 		for (const magic of useMagics) {
 			message += `「${magic.name}」の魔法を唱えた！\n`;
@@ -1768,7 +1786,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string, op
 	/** プレイヤーのボーナス体力 */
 	let bonusMaxHp = 100 + Math.min(maxLv * 3, 765);
 	/** プレイヤーの最大HP */
-	let playerMaxHp = Math.max(Math.round(bonusMaxHp * Math.random()), rawMaxHp);
+	let playerMaxHp = Math.max(Math.round(bonusMaxHp * rand("maxHp")), rawMaxHp);
 	playerMaxHp = applyRaidVitalityHp(raidVitalityState, playerMaxHp, rawMaxHp, bonusMaxHp);
 	finalizeRaidVitalityHpConsumption(data, raidVitalityState);
 	/** プレイヤーのHP */
@@ -1921,7 +1939,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string, op
 	let warriorCritX = 2;
 
 	// 戦士マーク：物理戦闘かつ非疲労かつ、確率（2% + レベル差×1%/10Lv）で付与
-	if (!enemy.skillX && (isBattle && isPhysical && !isTired) && Math.random() < 0.02 + (Math.max(Math.floor((Math.min(maxLv, 170) - lv) / 10), 0) * 0.01)) {
+	if (!enemy.skillX && (isBattle && isPhysical && !isTired) && rand("warrior") < 0.02 + (Math.max(Math.floor((Math.min(maxLv, 170) - lv) / 10), 0) * 0.01)) {
 		warriorFlg = true;
 		if (buff > 0) message += "\n";
 		buff = 0;
@@ -1933,7 +1951,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string, op
 
 	// 天国か地獄か：60%で天国（ADアップ）、40%で地獄（ADダウン）
 	if (skillEffects.heavenOrHell) {
-		if (Math.random() < 0.6) {
+		if (rand("heavenOrHell") < 0.6) {
 			message += serifs.rpg.skill.heaven + "\n";
 			buff += 1;
 			atk = atk * (1 + skillEffects.heavenOrHell);
@@ -1979,7 +1997,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string, op
 
 	// 風魔法：戦闘時は速度を上げる、非戦闘時は速度ではなくパワーに還元
 	let spdUp = getSpd(getSpdX(spd) * (1 + (skillEffects.spdUp ?? 0))) - getSpd(getSpdX(spd));
-	if (Math.random() < spdUp % 1) {
+	if (rand("spdUp") < spdUp % 1) {
 		spdUp = Math.floor(spdUp) + 1;
 	} else {
 		spdUp = Math.floor(spdUp);
@@ -2158,7 +2176,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 
 		let slothFlg = false;
 
-		if (skillEffects.sloth && Math.random() < 0.3) {
+		if (skillEffects.sloth && rand("sloth", count) < 0.3) {
 			atkDmgBonus *= 1.5;
 			atk = Math.ceil(atk * 0.001);
 			buff += 1;
@@ -2228,12 +2246,12 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 
 		// spdが低い場合、確率でspdが+1。
 		if (!slothFlg) {
-			if (spd === 2 && Math.random() < 0.2) {
+			if (spd === 2 && rand("lowSpdUp", count) < 0.2) {
 				buff += 1;
 				message += serifs.rpg.spdUp + "\n";
 				spd = 3;
 			}
-			if (spd === 1 && Math.random() < 0.6) {
+			if (spd === 1 && rand("lowSpdUp", count) < 0.6) {
 				buff += 1;
 				message += serifs.rpg.spdUp + "\n";
 				spd = 2;
@@ -2300,14 +2318,14 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 			buff += 1;
 			message += `アイテム二刀流率: ${Math.round(Math.min(itemEquip * (1 + (skillEffects.itemEquip ?? 0)), 1) * 100)}%\n`;
 		}
-		if (rpgItems.length && ((count === 1 && skillEffects.firstTurnItem) || Math.random() < itemEquip * (1 + (skillEffects.itemEquip ?? 0)))) {
+		if (rpgItems.length && ((count === 1 && skillEffects.firstTurnItem) || rand("item.equip", count) < itemEquip * (1 + (skillEffects.itemEquip ?? 0)))) {
 			//アイテム
 			buff += 1;
 			if ((count === 1 && skillEffects.firstTurnItem)) message += serifs.rpg.skill.firstItem;
 			if (enemy.pLToR) {
-				let isPlus = Math.random() < 0.5;
+				let isPlus = rand("item.plus", count) < 0.5;
 				const items = rpgItems.filter((x) => isPlus ? x.mind > 0 : x.mind < 0);
-				item = { ...items[Math.floor(Math.random() * items.length)] };
+				item = { ...items[Math.floor(rand("item.pick", count) * items.length)] };
 			} else {
 				let types = ["weapon", "armor"];
 				for (let i = 0; i < (skillEffects.weaponSelect ?? 0); i++) {
@@ -2333,23 +2351,23 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 				if ((skillEffects.foodSelect ?? 0) >= 1) {
 					types = ["medicine", "poison"];
 				}
-				if ((count !== 1 || enemy.pLToR) && skillEffects.lowHpFood && playerHpPercent < 0.95 && Math.random() < skillEffects.lowHpFood * playerHpPercent) {
+				if ((count !== 1 || enemy.pLToR) && skillEffects.lowHpFood && playerHpPercent < 0.95 && rand("item.lowHpFood", count) < skillEffects.lowHpFood * playerHpPercent) {
 					if (skillEffects.lowHpFood && playerHpPercent < 0.5) message += serifs.rpg.skill.lowHpFood;
 					types = ["medicine", "poison"];
-					if (Math.random() < skillEffects.lowHpFood * playerHpPercent) types = ["medicine"];
+					if (rand("item.lowHpFood", count) < skillEffects.lowHpFood * playerHpPercent) types = ["medicine"];
 				}
-				if (types.includes("poison") && Math.random() < (skillEffects.poisonAvoid ?? 0)) {
+				if (types.includes("poison") && rand("item.poisonAvoid", count) < (skillEffects.poisonAvoid ?? 0)) {
          			types = types.filter((x) => x!== "poison");
 				}
-				const type = types[Math.floor(Math.random() * types.length)];
+				const type = types[Math.floor(rand("item.type", count) * types.length)];
 				const mEffect = Math.max((count !== 1 ? 0 : skillEffects.firstTurnItemChoice), itemMinEffect);
 				if ((type === "weapon" && !(isBattle && isPhysical)) || (type === "armor" && isTired) || enemy.pLToR) {
-					let isPlus = Math.random() < (0.5 + (skillEffects.mindMinusAvoid ?? 0) + (count === 1 ? skillEffects.firstTurnMindMinusAvoid ?? 0 : 0));
+					let isPlus = rand("item.plus", count) < (0.5 + (skillEffects.mindMinusAvoid ?? 0) + (count === 1 ? skillEffects.firstTurnMindMinusAvoid ?? 0 : 0));
 					const items = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind < 0) && (!mEffect || x.mind >= (mEffect * 100)));
-					item = { ...items[Math.floor(Math.random() * items.length)] };
+					item = { ...items[Math.floor(rand("item.pick", count) * items.length)] };
 				} else {
 					const items = rpgItems.filter((x) => x.type === type && x.effect > 0 && (!mEffect || x.effect >= (mEffect * 100)));
-					item = { ...items[Math.floor(Math.random() * items.length)] };
+					item = { ...items[Math.floor(rand("item.pick", count) * items.length)] };
 				}
 				if (skillEffects.greed) {
 					if (!data.stockItem) data.stockItem = { ...item };
@@ -2379,14 +2397,14 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 				} else {
 					data.stockItem = undefined;
 				}
-				if (count === 1 && skillEffects.firstTurnDoubleItem && Math.random() < itemEquip * (1 + (skillEffects.itemEquip ?? 0))) {
+				if (count === 1 && skillEffects.firstTurnDoubleItem && rand("item2.equip", count) < itemEquip * (1 + (skillEffects.itemEquip ?? 0))) {
 					if ((type === "weapon" && !(isBattle && isPhysical)) || (type === "armor" && isTired) || enemy.pLToR) {
-						let isPlus = Math.random() < (0.5 + (skillEffects.mindMinusAvoid ?? 0) + (count === 1 ? skillEffects.firstTurnMindMinusAvoid ?? 0 : 0));
+						let isPlus = rand("item2.plus", count) < (0.5 + (skillEffects.mindMinusAvoid ?? 0) + (count === 1 ? skillEffects.firstTurnMindMinusAvoid ?? 0 : 0));
 						const items = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind < 0));
-						item2 = { ...items[Math.floor(Math.random() * items.length)] };
+						item2 = { ...items[Math.floor(rand("item2.pick", count) * items.length)] };
 					} else {
 						const items = rpgItems.filter((x) => x.type === type && x.effect > 0);
-						item2 = { ...items[Math.floor(Math.random() * items.length)] };
+						item2 = { ...items[Math.floor(rand("item2.pick", count) * items.length)] };
 					}
 					item.effect = item.effect + item2.effect;
 					item.mind = item.mind + item2.mind;
@@ -2666,7 +2684,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 
 		// 敵が中断能力持ちの場合、ここで何回攻撃可能か判定
 		for (let i = 1; i < spd; i++) {
-			if (enemy.abort && Math.random() < enemy.abort * (1 - (skillEffects.abortDown ?? 0))) {
+			if (enemy.abort && rand("abort", count) < enemy.abort * (1 - (skillEffects.abortDown ?? 0))) {
 				abort = i;
 				break;
 			}
@@ -2704,10 +2722,10 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 		// spdが1ではない、または戦闘ではない場合は先制攻撃しない
 		if (!enemy.spd && !enemy.hpmsg && !isTired) {
 			/** クリティカルかどうか */
-			const crit = Math.random() < (enemy.alwaysCrit ? 1 : 0) * (1 - (skillEffects.enemyCritDown ?? 0));
+			const crit = rand("enemyCrit", count) < (enemy.alwaysCrit ? 1 : 0) * (1 - (skillEffects.enemyCritDown ?? 0));
 			// 予測最大ダメージが相手のHPの何割かで先制攻撃の確率が判定される
-			if (Math.random() < predictedDmg / enemyHp || (count === 3 && enemy.fire && (data.thirdFire ?? 0) <= 2)) {
-				const rng = (defMinRnd + (enemy.fixRnd ?? random(data, startCharge, skillEffects, true)) * defMaxRnd);
+			if (rand("enemyFirst", count) < predictedDmg / enemyHp || (count === 3 && enemy.fire && (data.thirdFire ?? 0) <= 2)) {
+				const rng = (defMinRnd + (enemy.fixRnd ?? random(data, startCharge, skillEffects, true, () => rand("enemyDmg", count))) * defMaxRnd);
 				const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
 				if (verboseLog && (defDmgX < 0.999 || defDmgX > 1.001)) {
 					buff += 1;
@@ -2834,7 +2852,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 
 		if (warriorFlg) {
 			//** クリティカルかどうか */
-			let crit = Math.random() < 0.5;
+			let crit = rand("warrior.crit", count) < 0.5;
 			const dmg = getAtkDmg(data, lv * 5, tp, 1, crit ? warriorCritX : false, enemyDef, enemyMaxHp, 0.5, getVal(enemy.defx, [count]));
 			// メッセージの出力
 			message += (crit ? `**${serifs.rpg.warrior.atk(dmg)}**` : serifs.rpg.warrior.atk(dmg)) + "\n";
@@ -2874,7 +2892,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 		// 自身攻撃の処理
 		// spdの回数分、以下の処理を繰り返す
 		for (let i = 0; i < spd; i++) {
-			const rng = (atkMinRnd + random(data, startCharge, skillEffects, false) * atkMaxRnd);
+			const rng = (atkMinRnd + random(data, startCharge, skillEffects, false, () => rand("atkDmg", count)) * atkMaxRnd);
 			if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`;
 			const turnDmgX = turnDmgXOf(i);
 			let dmgBonus = (Math.max(1 + (skillEffects.atkDmgUp ?? 0), atkMinusMin)) * dmgUp * (turnDmgX + thunderStep * (i + 1));
@@ -2884,7 +2902,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 				message += `合計与ダメージ: ${displayDifference(rawDmgBonus)}\n`;
 			}
 			//** クリティカルかどうか */
-			let crit = Math.random() < Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0) + critUp), 0) + (skillEffects.critUpFixed ?? 0);
+			let crit = rand("crit", count) < Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0) + critUp), 0) + (skillEffects.critUpFixed ?? 0);
 			const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
 			if (skillEffects.noCrit) {
 				crit = false;
@@ -2940,7 +2958,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 		} else {
 			// 攻撃後発動スキル効果
 			// 氷属性剣攻撃
-			if ((isBattle && isPhysical && !isTired) && Math.random() < (skillEffects.ice ?? 0)) {
+			if ((isBattle && isPhysical && !isTired) && rand("ice", count) < (skillEffects.ice ?? 0)) {
 				message += serifs.rpg.skill.ice(enemy.dname ?? enemy.name) + `\n`;
 				enemyTurnFinished = true;
 			} else if (!(isBattle && isPhysical && !isTired)) {
@@ -2952,7 +2970,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 				}
 			}
 			// 光属性剣攻撃
-			if ((isBattle && isPhysical && !isTired) && Math.random() < (skillEffects.light ?? 0)) {
+			if ((isBattle && isPhysical && !isTired) && rand("light", count) < (skillEffects.light ?? 0)) {
 				message += serifs.rpg.skill.light(enemy.dname ?? enemy.name) + `\n`;
 				enemyAtkX = enemyAtkX * 0.5;
 			} else if (!(isBattle && isPhysical && !isTired)) {
@@ -2964,10 +2982,10 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 				}
 			}
 			// 闇属性剣攻撃
-			if (enemy.spd && enemy.spd >= 2 && Math.random() < (skillEffects.dark ?? 0) * 2) {
+			if (enemy.spd && enemy.spd >= 2 && rand("dark.spd", count) < (skillEffects.dark ?? 0) * 2) {
 				message += serifs.rpg.skill.spdDown(enemy.dname ?? enemy.name) + `\n`;
 				enemy.spd = 1;
-			} else if ((isBattle && isPhysical) && enemyHp > 150 && Math.random() < (skillEffects.dark ?? 0)) {
+			} else if ((isBattle && isPhysical) && enemyHp > 150 && rand("dark", count) < (skillEffects.dark ?? 0)) {
 				const dmg = Math.floor(300 / 2);
 				message += serifs.rpg.skill.dark(enemy.dname ?? enemy.name, dmg) + `\n`;
 				totalDmg += dmg;
@@ -3021,10 +3039,10 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 			if (!enemyTurnFinished) {
 				message += "\n";
 				for (let i = 0; i < (enemy.spd ?? 1); i++) {
-					const rng = (defMinRnd + (enemy.fixRnd ?? random(data, startCharge, skillEffects, true)) * defMaxRnd);
+					const rng = (defMinRnd + (enemy.fixRnd ?? random(data, startCharge, skillEffects, true, () => rand("enemyDmg", count))) * defMaxRnd);
 					if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`;
 					/** クリティカルかどうか */
-					const crit = Math.random() < (enemy.alwaysCrit ? 1 : 0) * (1 - (skillEffects.enemyCritDown ?? 0));
+					const crit = rand("enemyCrit", count) < (enemy.alwaysCrit ? 1 : 0) * (1 - (skillEffects.enemyCritDown ?? 0));
 					const critDmg = 1 + ((skillEffects.enemyCritDmgDown ?? 0) * -1);
 					if (verboseLog && (defDmgX < 0.999 || defDmgX > 1.001)) {
 						buff += 1;
@@ -3087,7 +3105,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 					buff += 1;
 					message += `食いしばり率: ${formatNumber(endure * 100)}%\n`;
 				}
-				if (playerHp <= 0 && !enemy.notEndure && Math.random() < endure) {
+				if (playerHp <= 0 && !enemy.notEndure && rand("endure", count) < endure) {
 					message += serifs.rpg.endure + "\n";
 					playerHp = 1;
 					endureCount -= 1;
@@ -3131,7 +3149,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 
 	if (warriorFlg) {
 		//** クリティカルかどうか */
-		let crit = Math.random() < 0.5;
+		let crit = rand("warrior.crit") < 0.5;
 		const dmg = getAtkDmg(data, lv * 5, tp, 1, crit ? warriorCritX : false, enemyDef, enemyMaxHp, 1, getVal(enemy.defx, [count]));
 		// メッセージの出力
 		message += "\n\n" + (crit ? `**${serifs.rpg.warrior.atk(dmg)}**` : serifs.rpg.warrior.atk(dmg));
@@ -3243,11 +3261,11 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 
 		// レベルアップ処理
 		data.lv = (data.lv ?? 1) + 1;
-		let atkUp = (2 + Math.floor(Math.random() * 4));
+		let atkUp = (2 + Math.floor(rand("levelUp") * 4));
 		let totalUp = 7;
-		while (Math.random() < 0.335) {
+		while (rand("levelUp") < 0.335) {
 			totalUp += 1;
-			if (Math.random() < 0.5) atkUp += 1;
+			if (rand("levelUp") < 0.5) atkUp += 1;
 		}
 
 		if (totalUp > (data.maxStatusUp ?? 7)) data.maxStatusUp = totalUp;
@@ -3256,13 +3274,13 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 			const upBonus = Math.ceil(skillEffects.statusBonus / 2);
 			for (let i = 0; i < upBonus; i++) {
 				totalUp += 1;
-				if (Math.random() < 0.5) atkUp += 1;
+				if (rand("levelUp") < 0.5) atkUp += 1;
 			}
 		}
 
 		while (data.lv >= 3 && data.atk + data.def + totalUp < (data.lv - 1) * 7) {
 			totalUp += 1;
-			if (Math.random() < 0.5) atkUp += 1;
+			if (rand("levelUp") < 0.5) atkUp += 1;
 		}
 
 		data.atk = (data.atk ?? 0) + atkUp;
@@ -3348,10 +3366,13 @@ function getSpd(spdX: number) {
  *
  * @param msg 参加返信メッセージ
  * @param enemy レイド敵
+ * @param options 乱数の指定など（{@link RaidDamageOptions}）
  * @returns { totalDmg, me, lv, count, mark, skillsStr, reply } またはリアクションオブジェクト
  * @internal
  */
-export async function getTotalDmg2(msg, enemy: RaidEnemy) {
+export async function getTotalDmg2(msg, enemy: RaidEnemy, options: RaidDamageOptions = {}) {
+	/** 乱数（シードが指定されていれば、同じレイド・同じユーザーで同じ値になる） */
+	const rand = options.rng ?? createRaidRandom();
 	// データを読み込み
 	const data = initializeData(module_, msg);
 	if (!data.lv) return {
@@ -3396,7 +3417,7 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 	/** プレイヤーのボーナス体力 */
 	let bonusMaxHp = 100 + Math.min(maxLv * 3, 765);
 	/** プレイヤーの最大HP */
-	let playerMaxHp = Math.max(Math.round(bonusMaxHp * Math.random()), rawMaxHp);
+	let playerMaxHp = Math.max(Math.round(bonusMaxHp * rand("maxHp")), rawMaxHp);
 	const raidVitalityState = createRaidVitalityState(data);
 	playerMaxHp = applyRaidVitalityHp(raidVitalityState, playerMaxHp, rawMaxHp, bonusMaxHp);
 	finalizeRaidVitalityHpConsumption(data, raidVitalityState);
@@ -3439,7 +3460,7 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 		// 自身攻撃の処理
 
 		// じゃんけん型：1/3 で勝ち、勝ち時は attackCount 増加。drawCount で倍率アップ、負け時は被ダメ
-		const rnd = Math.random() < (1/3);
+		const rnd = rand("janken", count) < (1/3);
 
 		if (count === 1 || rnd) {
 			if (rnd) attackCount += 1;
@@ -3451,7 +3472,7 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 			// メッセージの出力
 			message += (crit ? `**${enemy.atkmsg(dmg)}**` : enemy.atkmsg(dmg)) + "\n";
 			totalDmg += dmg;
-		} else if (Math.random() < (1/2)) {
+		} else if (rand("janken.draw", count) < (1/2)) {
 			drawCount += 1;
 			message += serifs.rpg.draw + "\n";
 		} else {
@@ -3463,7 +3484,7 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 
 		// 食いしばり：HP0 時に endure 確率で HP1 で復活。確率は endureCount で増加、count で減少
 		const endure = (0.1 + (endureCount * 0.1)) - (count * 0.05);
-		if (playerHp <= 0 && !enemy.notEndure && Math.random() < endure) {
+		if (playerHp <= 0 && !enemy.notEndure && rand("endure", count) < endure) {
 			message += serifs.rpg.endure + "\n";
 			playerHp = 1;
 			endureCount -= 1;
@@ -3489,7 +3510,7 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 		/** ダメージ */
 		let dmg = Math.round(Math.round(500 * Math.max(attackCount, 1) * (1 + dmgup) * (1.5 ** drawCount) / 250) * 250);
 		if (attackCount >= 7) {
-			while (Math.random() < (1/3)) {
+			while (rand("janken.bonus") < (1/3)) {
 				dmg += 1000;
 			}
 		}
@@ -3545,18 +3566,18 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
 
 		// レベルアップ処理
 		data.lv = (data.lv ?? 1) + 1;
-		let atkUp = (2 + Math.floor(Math.random() * 4));
+		let atkUp = (2 + Math.floor(rand("levelUp") * 4));
 		let totalUp = 7;
-		while (Math.random() < 0.335) {
+		while (rand("levelUp") < 0.335) {
 			totalUp += 1;
-			if (Math.random() < 0.5) atkUp += 1;
+			if (rand("levelUp") < 0.5) atkUp += 1;
 		}
 
 		if (totalUp > (data.maxStatusUp ?? 7)) data.maxStatusUp = totalUp;
 
 		while (data.lv >= 3 && data.atk + data.def + totalUp < (data.lv - 1) * 7) {
 			totalUp += 1;
-			if (Math.random() < 0.5) atkUp += 1;
+			if (rand("levelUp") < 0.5) atkUp += 1;
 		}
 
 		data.atk = (data.atk ?? 0) + atkUp;
@@ -3632,10 +3653,13 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy) {
  *
  * @param msg 参加返信メッセージ
  * @param enemy レイド敵
+ * @param options 乱数の指定など（{@link RaidDamageOptions}）
  * @returns { totalDmg, me, lv, count, mark, skillsStr, reply } またはリアクションオブジェクト
  * @internal
  */
-export async function getTotalDmg3(msg, enemy: RaidEnemy) {
+export async function getTotalDmg3(msg, enemy: RaidEnemy, options: RaidDamageOptions = {}) {
+	/** 乱数（シードが指定されていれば、同じレイド・同じユーザーで同じ値になる） */
+	const rand = options.rng ?? createRaidRandom();
 	// データを読み込み
 	const data = initializeData(module_, msg);
 	if (!data.lv) return {
@@ -3649,7 +3673,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	// 所持しているスキル効果を読み込み
 	let skillEffects: any = aggregateSkillsEffects(data, enemy.skillX ?? 1);
 
-	const stockRandomResult = stockRandom(data, skillEffects);
+	const stockRandomResult = stockRandom(data, skillEffects, () => rand("stockRandom"));
 
 	skillEffects = stockRandomResult.skillEffects;
 
@@ -3853,11 +3877,11 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	if (buff > 0) message += "\n";
 	buff = 0;
 
-	if (dex < 150 && Math.random() < 0.1) {
+	if (dex < 150 && rand("contest.dex") < 0.1) {
 		buff += 1;
 		message += `${config.rpgHeroName}は調子が良さそうだ！\n器用さ+${Math.round((150 - dex) * 0.3)}%！` + `\n`;
 		dex += Math.round((150 - dex) * 0.3)
-	} else if (fix < 0.75 && Math.random() < 0.1) {
+	} else if (fix < 0.75 && rand("contest.fix") < 0.1) {
 		buff += 1;
 		message += `${config.rpgHeroName}は集中している！\n仕上げ+${Math.round((0.75 - fix) * 0.3 * 100)}%！` + `\n`;
 		fix += (0.75 - fix) * 0.3;
@@ -3874,7 +3898,7 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 	}
 
   if (dex > 250) {
-	const rndNum = Math.random();
+	const rndNum = rand("contest.dexCap");
 	if (rndNum < 0.1) {
 		dex = 250
 	} else if (rndNum < 0.9) {
@@ -3887,18 +3911,18 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
   let spFlg = false;
 
   while (life > 0) {
-	if (Math.random() < 0.5) {
+	if (rand("contest.step") < 0.5) {
 		plus += dex < 120 ? 0.2 * (120/dex) : 0.2;
-        if (!spFlg && Math.random() < (0.02 * Math.min(1, 50/dex))) {
+        if (!spFlg && rand("contest.sp") < (0.02 * Math.min(1, 50/dex))) {
             life = 15;
-            if (Math.random() < dex/60) spFlg = true;
+            if (rand("contest.sp") < dex/60) spFlg = true;
         }
 	} else {
 		life -= 1;
 	}
   }
 
-	const score = (dex < 120 ? (40 + dex *(2/3)) / 4 : dex / 4) * plus * (0.97 + (Math.random() * 0.06));
+	const score = (dex < 120 ? (40 + dex *(2/3)) / 4 : dex / 4) * plus * (0.97 + (rand("contest.score") * 0.06));
 	const roundedScore = Math.round(score * 10) / 10;
 
 	totalDmg = Math.round((100 - 100 * Math.pow(1/2, score/50)) * 10) / 10;
@@ -3978,18 +4002,18 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy) {
 
 		// レベルアップ処理
 		data.lv = (data.lv ?? 1) + 1;
-		let atkUp = (2 + Math.floor(Math.random() * 4));
+		let atkUp = (2 + Math.floor(rand("levelUp") * 4));
 		let totalUp = 7;
-		while (Math.random() < 0.335) {
+		while (rand("levelUp") < 0.335) {
 			totalUp += 1;
-			if (Math.random() < 0.5) atkUp += 1;
+			if (rand("levelUp") < 0.5) atkUp += 1;
 		}
 
 		if (totalUp > (data.maxStatusUp ?? 7)) data.maxStatusUp = totalUp;
 
 		while (data.lv >= 3 && data.atk + data.def + totalUp < (data.lv - 1) * 7) {
 			totalUp += 1;
-			if (Math.random() < 0.5) atkUp += 1;
+			if (rand("levelUp") < 0.5) atkUp += 1;
 		}
 
 		data.atk = (data.atk ?? 0) + atkUp;

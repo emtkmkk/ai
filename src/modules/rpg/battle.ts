@@ -314,10 +314,11 @@ export function calculateStats(data, msg, skillEffects, color, maxBonus = 100, k
  * @param _atk 元の攻撃力
  * @param _def 元の防御力
  * @param effect 効果レベル（0 の場合は 1 として扱う）
+ * @param rnd 乱数（省略時は Math.random）
  * @returns { atk, def, message }
  * @internal
  */
-export function fortune(_atk, _def, effect = 0) {
+export function fortune(_atk, _def, effect = 0, rnd: () => number = Math.random) {
 
 	let atk = _atk;
 	let def = _def;
@@ -325,8 +326,6 @@ export function fortune(_atk, _def, effect = 0) {
 	const zeroEffect = effect === 0;
 
 	if (zeroEffect) effect = 1;
-
-	const rnd = Math.random;
 
 	if (effect % 1 !== 0) {
 		atk = Math.floor(atk * (1 + ((effect % 1) * 0.1)));
@@ -418,10 +417,11 @@ export function fortune(_atk, _def, effect = 0) {
  *
  * @param data RPGモジュールのデータ（stockRandomCount が更新される）
  * @param skillEffects スキル効果（破壊的に更新される）
+ * @param rnd 乱数（省略時は Math.random）
  * @returns { activate, activateStr, skillEffects }
  * @internal
  */
-export function stockRandom(data, skillEffects) {
+export function stockRandom(data, skillEffects, rnd: () => number = Math.random) {
 
 	let activate = false;
 	let activateStr = "";
@@ -430,7 +430,7 @@ export function stockRandom(data, skillEffects) {
 
 		const probability = Math.min(data.stockRandomCount * 0.012, 0.12);
 
-		if (Math.random() < probability) {
+		if (rnd() < probability) {
 			activate = true;
 			let effectPoint = data.stockRandomCount > 5 ? 20 + (data.stockRandomCount - 5) * 2 : data.stockRandomCount * 4;
 			activateStr = effectPoint > 20 ? "！".repeat(Math.floor((effectPoint - 11) / 10)) : "！";
@@ -572,7 +572,7 @@ export function stockRandom(data, skillEffects) {
 			]
 			while (effectPoint > 0) {
 				const filterEffects = effects.filter((x) => x.limit);
-				filterEffects[Math.floor(Math.random() * filterEffects.length)].effect();
+				filterEffects[Math.floor(rnd() * filterEffects.length)].effect();
 			}
 		} else {
 			data.stockRandomCount = (data.stockRandomCount ?? 0) + 1;

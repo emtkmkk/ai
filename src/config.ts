@@ -96,6 +96,14 @@ type Config = {
 	kazutoriWinDiffReverseEnabled?: boolean;
 	/** 数取りに参加できないユーザーのID一覧 */
 	kazutoriBanUsers?: string[];
+	/**
+	 * RPGレイドの乱数のシードに混ぜる秘密の値
+	 *
+	 * @remarks
+	 * 未設定の場合はアクセストークンから作ったハッシュを使う。
+	 * 変更すると、過去のレイドの戦闘を同じ乱数で再現できなくなる。
+	 */
+	rpgSeedSalt?: string;
 
 };
 
