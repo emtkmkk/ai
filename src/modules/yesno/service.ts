@@ -185,6 +185,28 @@ export function parseJudgement(raw: unknown): YesNoJudgement | null {
 	};
 }
 
+/**
+ * 規格外の応答をログ用の文字列にする（デバッグ用）
+ *
+ * @remarks
+ * 型と中身を出す。長すぎる場合は先頭 500 文字で切る。
+ */
+export function describeRaw(raw: unknown, maxLength = 500): string {
+	let body: string;
+	if (raw === undefined) body = 'undefined';
+	else if (typeof raw === 'string') body = raw;
+	else {
+		try {
+			body = JSON.stringify(raw) ?? String(raw);
+		} catch {
+			body = String(raw);
+		}
+	}
+	const type = raw === null ? 'null' : Array.isArray(raw) ? 'array' : typeof raw;
+	const trimmed = body.length > maxLength ? `${body.slice(0, maxLength)}…(${body.length}文字)` : body;
+	return `[${type}] ${trimmed}`;
+}
+
 /** 今日の日付を `YYYY-MM-DD`（ローカル時刻）で返す */
 export function todayKey(now: Date = new Date()): string {
 	const y = now.getFullYear();
@@ -294,7 +316,7 @@ export class YesNoService {
 				const raw = await client.judge(question);
 				const judgement = parseJudgement(raw);
 				if (judgement != null) return judgement;
-				this.log(`Claude の応答が規格外でした (${attempt}回目)`);
+				this.log(`Claude の応答が規格外でした (${attempt}回目): ${describeRaw(raw)}`);
 			} catch (e) {
 				this.log(`Claude への問い合わせに失敗しました (${attempt}回目): ${e instanceof Error ? e.message : String(e)}`);
 			}

@@ -118,25 +118,65 @@ export class ClaudeYesNoClient implements YesNoClient {
 	/**
 	 * 判定を問い合わせる
 	 *
-	 * @returns パース済みの JSON（未検証）。応答が途中で止まった・拒否された場合は `null`
+	 * @remarks
+	 * 規格外の応答を出さないための工夫:
+	 * - 構造化出力（JSON Schema）で形を API 側に保証させる
+	 * - `max_tokens` は思考トークン込みで数えられるので、短い JSON でも余裕を持たせる
+	 * - 質問本文が長すぎる場合は先頭だけ送る
+	 * - 途中で切れた・拒否された場合は、理由を含む例外にして再試行に回す
+	 *
+	 * @returns パース済みの JSON（未検証）
+	 * @throws 応答が完了しなかった（max_tokens・refusal など）場合
 	 */
 	public async judge(question: string): Promise<unknown> {
 		const response = await this.client.messages.parse({
 			model: this.opts.model,
-			max_tokens: 256,
+			max_tokens: MAX_TOKENS,
 			system: [{ type: 'text', text: this.systemPrompt, cache_control: { type: 'ephemeral' } }],
-			messages: [{ role: 'user', content: question }],
+			messages: [{ role: 'user', content: truncateQuestion(question) }],
 			output_config: {
 				effort: 'low',
 				format: { type: 'json_schema', schema: JUDGEMENT_SCHEMA },
 			},
 		});
 
-		if (response.stop_reason !== 'end_turn') return null;
-		if (response.parsed_output != null) return response.parsed_output;
-
-		// NOTE: parsed_output が無い場合はテキストブロックを返す（検証は service 側）
-		const text = response.content.find((block): block is Anthropic.TextBlock => block.type === 'text');
-		return text?.text ?? null;
+		return extractPayload(response);
 	}
+}
+
+/** 1回の応答の上限トークン数。思考トークンも含まれるため JSON 本体よりかなり多めに取る */
+const MAX_TOKENS = 2048;
+
+/** Claude に送る質問本文の最大文字数 */
+const MAX_QUESTION_LENGTH = 2000;
+
+/**
+ * 質問本文が長すぎる場合に先頭だけ残す
+ */
+export function truncateQuestion(question: string, maxLength = MAX_QUESTION_LENGTH): string {
+	return question.length > maxLength ? question.slice(0, maxLength) : question;
+}
+
+/**
+ * API の応答から判定の元になる値を取り出す
+ *
+ * @remarks
+ * `stop_reason` が `end_turn` 以外（途中で切れた・拒否された）なら理由を含む例外にする。
+ * `parsed_output` があればそれを、無ければテキストブロックの文字列を返す（検証は service 側）。
+ */
+export function extractPayload(response: {
+	stop_reason: string | null;
+	stop_details?: { category?: string | null; explanation?: string | null } | null;
+	parsed_output?: unknown;
+	content: ReadonlyArray<{ type: string; text?: string }>;
+}): unknown {
+	if (response.stop_reason !== 'end_turn') {
+		const detail = response.stop_reason === 'refusal' && response.stop_details
+			? ` (${response.stop_details.category ?? '-'}: ${response.stop_details.explanation ?? '-'})`
+			: '';
+		throw new Error(`応答が完了しませんでした stop_reason=${response.stop_reason ?? 'null'}${detail}`);
+	}
+	if (response.parsed_output != null) return response.parsed_output;
+	const text = response.content.find((block): block is Anthropic.TextBlock => block.type === 'text');
+	return text?.text ?? null;
 }

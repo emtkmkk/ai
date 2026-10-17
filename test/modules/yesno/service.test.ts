@@ -10,11 +10,12 @@ import {
 	parseJudgement,
 	looksLikeQuestion,
 	normalizeQuestion,
+	describeRaw,
 	createLokiMemory,
 	createLokiUsage,
 } from '@/modules/yesno/service';
 import { replyVisibilityFor } from '@/modules/yesno';
-import { buildSystemPrompt } from '@/modules/yesno/claude-client';
+import { buildSystemPrompt, extractPayload, truncateQuestion } from '@/modules/yesno/claude-client';
 
 class FakeClient implements YesNoClient {
 	public calls: string[] = [];
@@ -68,6 +69,29 @@ describe('parseJudgement', () => {
 		expect(parseJudgement({ isYesNoQuestion: true, answer: 'YES' })).toBeNull();
 		expect(parseJudgement({ isYesNoQuestion: true })).toBeNull();
 		expect(parseJudgement([{ isYesNoQuestion: true, answer: 'yes' }])).toBeNull();
+	});
+});
+
+describe('describeRaw', () => {
+	test('型と中身を出し、長いものは切る', () => {
+		expect(describeRaw('はい！')).toBe('[string] はい！');
+		expect(describeRaw({ answer: 'YES' })).toBe('[object] {"answer":"YES"}');
+		expect(describeRaw(null)).toBe('[null] null');
+		expect(describeRaw(undefined)).toBe('[undefined] undefined');
+		expect(describeRaw([1, 2])).toBe('[array] [1,2]');
+		const long = describeRaw('あ'.repeat(600));
+		expect(long.length).toBeLessThan(600);
+		expect(long).toContain('…(600文字)');
+	});
+});
+
+describe('規格外応答のログ', () => {
+	test('規格外の応答の中身がログに出る', async () => {
+		const logs: string[] = [];
+		const client = new FakeClient(['はい！', { isYesNoQuestion: true, answer: 'yes' }]);
+		const service = new YesNoService({ client, memory: new MapMemory(), usage: unlimited, log: m => logs.push(m) });
+		await service.answer('水は液体ですか？');
+		expect(logs.some(l => l.includes('規格外') && l.includes('[string] はい！'))).toBe(true);
 	});
 });
 
@@ -289,5 +313,30 @@ describe('buildSystemPrompt', () => {
 	test('性格設定が無い場合はその旨を書く', () => {
 		expect(buildSystemPrompt(null)).toContain('性格設定は与えられていません');
 		expect(buildSystemPrompt('   ')).toContain('性格設定は与えられていません');
+	});
+});
+
+describe('extractPayload', () => {
+	test('parsed_output があればそれを返す', () => {
+		expect(extractPayload({ stop_reason: 'end_turn', parsed_output: { isYesNoQuestion: true, answer: 'yes' }, content: [] }))
+			.toEqual({ isYesNoQuestion: true, answer: 'yes' });
+	});
+
+	test('parsed_output が無ければテキストブロックを返す', () => {
+		expect(extractPayload({ stop_reason: 'end_turn', content: [{ type: 'text', text: '{"a":1}' }] })).toBe('{"a":1}');
+		expect(extractPayload({ stop_reason: 'end_turn', content: [] })).toBeNull();
+	});
+
+	test('途中で切れた・拒否された応答は理由付きの例外になる', () => {
+		expect(() => extractPayload({ stop_reason: 'max_tokens', content: [] })).toThrow('stop_reason=max_tokens');
+		expect(() => extractPayload({ stop_reason: 'refusal', stop_details: { category: 'cyber', explanation: 'x' }, content: [] }))
+			.toThrow('stop_reason=refusal (cyber: x)');
+	});
+});
+
+describe('truncateQuestion', () => {
+	test('長すぎる質問は先頭だけ残す', () => {
+		expect(truncateQuestion('短い')).toBe('短い');
+		expect(truncateQuestion('あ'.repeat(3000)).length).toBe(2000);
 	});
 });
