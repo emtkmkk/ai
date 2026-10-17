@@ -12,8 +12,9 @@
  *
  * Claude の応答は {@link parseJudgement} で規格どおりか検証し、
  * 固定の5択に変換してからしか使わない。生のテキストが返信に流れることはない。
- * 「質問かどうか」は Claude の1回目の判定で確定し、質問なら回答を2回判定させて一致したときだけ使う。
- * 一致しなければ「分からない」として乱数に落とす（答えが変わる質問だと分かったため）。
+ * 「質問かどうか」は Claude の1回目の判定で確定し、質問なら回答を2回判定させて突き合わせる。
+ * 一致すればその回答。方向が同じ（yes/maybe_yes、no/maybe_no）なら maybe 側、どちらかが不定なら不定、
+ * それ以外の不一致は「分からない」として乱数に落とす（答えが変わる質問だと分かったため）。
  * 規格外の応答や通信失敗は合計2回まで再問い合わせし、有効な判定が取れなければ乱数に落とす。
  * Claude が「分からない」と判定した場合も乱数で答える。
  * Claude が「答えは不定」と明確に判定した場合は返信せず、リアクションだけにする。
@@ -218,12 +219,19 @@ export function describeRaw(raw: unknown, maxLength = 500): string {
  * 質問かどうかは1回目の判定を採用する。
  * - 1回目が質問でない → そのまま
  * - 回答が一致 → その回答
- * - 回答が異なる（2回目が質問でないと言った場合を含む） → 「分からない」（`unknown`）。
+ * - どちらかが不定（`undetermined`） → 不定
+ * - yes と maybe_yes、または no と maybe_no の組み合わせ → maybe 側（方向は一致しているので弱めて答える）
+ * - それ以外の不一致（2回目が質問でないと言った場合を含む） → 「分からない」（`unknown`）。
  *   もう一度聞くと答えが変わる質問だと分かったため
  */
 export function mergeJudgements(first: YesNoJudgement, second: YesNoJudgement): YesNoJudgement {
 	if (!first.isYesNoQuestion) return first;
-	if (second.isYesNoQuestion && first.answer === second.answer) return first;
+	if (!second.isYesNoQuestion) return { isYesNoQuestion: true, answer: 'unknown' };
+	if (first.answer === second.answer) return first;
+	if (first.answer === 'undetermined' || second.answer === 'undetermined') return { isYesNoQuestion: true, answer: 'undetermined' };
+	const pair = new Set<ClaudeAnswer>([first.answer, second.answer]);
+	if (pair.has('yes') && pair.has('maybe_yes')) return { isYesNoQuestion: true, answer: 'maybe_yes' };
+	if (pair.has('no') && pair.has('maybe_no')) return { isYesNoQuestion: true, answer: 'maybe_no' };
 	return { isYesNoQuestion: true, answer: 'unknown' };
 }
 
@@ -369,7 +377,7 @@ export class YesNoService {
 
 		const merged = mergeJudgements(first, second);
 		if (!sameJudgement(merged, first)) {
-			this.log(`2回の回答が一致しなかったため分からない扱いにします: ${formatJudgement(first)} / ${formatJudgement(second)}`);
+			this.log(`2回の回答が一致しませんでした: ${formatJudgement(first)} / ${formatJudgement(second)} → ${formatJudgement(merged)}`);
 		}
 		return merged;
 	}

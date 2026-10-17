@@ -92,9 +92,24 @@ describe('mergeJudgements', () => {
 		expect(mergeJudgements(j('undetermined'), j('undetermined'))).toEqual(j('undetermined'));
 	});
 
-	test('回答が異なれば分からない（unknown）', () => {
-		expect(mergeJudgements(j('yes'), j('maybe_yes'))).toEqual(j('unknown'));
-		expect(mergeJudgements(j('undetermined'), j('no'))).toEqual(j('unknown'));
+	test('方向が同じなら maybe 側に寄せる', () => {
+		expect(mergeJudgements(j('yes'), j('maybe_yes'))).toEqual(j('maybe_yes'));
+		expect(mergeJudgements(j('maybe_yes'), j('yes'))).toEqual(j('maybe_yes'));
+		expect(mergeJudgements(j('no'), j('maybe_no'))).toEqual(j('maybe_no'));
+		expect(mergeJudgements(j('maybe_no'), j('no'))).toEqual(j('maybe_no'));
+	});
+
+	test('どちらかが不定なら不定', () => {
+		expect(mergeJudgements(j('undetermined'), j('no'))).toEqual(j('undetermined'));
+		expect(mergeJudgements(j('yes'), j('undetermined'))).toEqual(j('undetermined'));
+		expect(mergeJudgements(j('unknown'), j('undetermined'))).toEqual(j('undetermined'));
+	});
+
+	test('それ以外の不一致は分からない（unknown）', () => {
+		expect(mergeJudgements(j('yes'), j('no'))).toEqual(j('unknown'));
+		expect(mergeJudgements(j('yes'), j('maybe_no'))).toEqual(j('unknown'));
+		expect(mergeJudgements(j('maybe_yes'), j('maybe_no'))).toEqual(j('unknown'));
+		expect(mergeJudgements(j('yes'), j('unknown'))).toEqual(j('unknown'));
 		expect(mergeJudgements(j('yes'), j('unknown', false))).toEqual(j('unknown'));
 	});
 
@@ -166,7 +181,20 @@ describe('YesNoService#answer（語尾一致）', () => {
 		const result = await build(client, memory, unlimited, m => logs.push(m)).answer(q);
 		expect(result).toEqual(random(q));
 		expect(memory.map.get(q)).toMatchObject({ isYesNoQuestion: true, answer: 'unknown' });
-		expect(logs.some(l => l.includes('一致しなかった') && l.includes('yes / maybe_no'))).toBe(true);
+		expect(logs.some(l => l.includes('一致しません') && l.includes('yes / maybe_no → unknown'))).toBe(true);
+	});
+
+	test('yes と maybe_yes に割れたら maybe_yes で答える', async () => {
+		const client = new FakeClient([j('yes'), j('maybe_yes')]);
+		const memory = new MapMemory();
+		const result = await build(client, memory).answer('りんごは甘いですか？');
+		expect(result).toEqual({ kind: 'answer', answer: 'maybe_yes', text: '多分はい、部分的にはい', source: 'claude' });
+		expect(memory.map.get('りんごは甘いですか？')).toMatchObject({ answer: 'maybe_yes' });
+	});
+
+	test('片方が不定なら不定として扱う', async () => {
+		const client = new FakeClient([j('no'), j('undetermined')]);
+		expect(await build(client).answer('本来のもこチキは喋りますか？')).toEqual({ kind: 'undetermined', source: 'claude' });
 	});
 
 	test('2回目はメモリーから返し、Claude を呼ばない', async () => {
@@ -288,7 +316,12 @@ describe('YesNoService#answerIfQuestion（語尾不一致のフォールバッ�
 
 	test('質問だが回答が食い違ったら分からない扱いで乱数', async () => {
 		const q = 'ねぎまって美味しい？';
-		expect(await build(new FakeClient([j('no'), j('maybe_no')])).answerIfQuestion(q)).toEqual(random(q));
+		expect(await build(new FakeClient([j('yes'), j('no')])).answerIfQuestion(q)).toEqual(random(q));
+	});
+
+	test('no と maybe_no に割れたら maybe_no で答える', async () => {
+		expect(await build(new FakeClient([j('no'), j('maybe_no')])).answerIfQuestion('ねぎまって美味しい？'))
+			.toEqual({ kind: 'answer', answer: 'maybe_no', text: '多分いいえ、部分的にいいえ', source: 'claude' });
 	});
 
 	test('質問だが undetermined なら不定として返す（返信せずリアクションのみ）', async () => {
