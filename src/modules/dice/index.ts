@@ -8,7 +8,7 @@
  * @remarks
  * 機能一覧:
  * 1. **YES/NO 質問**: 「ですか？」「ますか？」「ですよね？」で終わる質問に回答
- *    （テキストのハッシュで決定的な答えを返す）
+ *    （yesno モジュールのサービスで Claude に問い合わせ、使えなければテキストをシードにした乱数で答える）
  * 2. **ファクトチェック**: 返信先の投稿に対して正しい/嘘を判定
  *    （リモートユーザーの投稿は非フォロー関係では不可）
  * 3. **サイコロ**: `NdM` 形式（例: `2d6`）でサイコロを振る
@@ -22,6 +22,8 @@ import Message from '@/message';
 import serifs from '@/serifs';
 import * as seedrandom from 'seedrandom';
 import includes from '@/utils/includes';
+import { getYesNoService } from '@/modules/yesno';
+import { UNDETERMINED_REACTION } from '@/modules/yesno/service';
 
 export default class extends Module {
 	public readonly name = 'dice';
@@ -60,23 +62,17 @@ export default class extends Module {
 
 		// --- YES/NO 質問 ---
 		if (msg.extractedText.endsWith("ですか？") || msg.extractedText.endsWith("ますか？") || msg.extractedText.endsWith("ですよね？")) {
-			// テキストをシードにして決定的な回答を生成
-			const rng = seedrandom(msg.extractedText.trim() + ":q");
-			const v = rng();
-			if (v < 0.5) {
-				if (v < 0.25) {
-					msg.reply("多分はい、部分的にはい", { visibility: 'public' });
-				} else {
-					msg.reply("はい", { visibility: 'public' });
-				}
-
-			} else {
-				if (v > 0.75) {
-					msg.reply("多分いいえ、部分的にいいえ", { visibility: 'public' });
-				} else {
-					msg.reply("いいえ", { visibility: 'public' });
-				}
+			// Claude（使えなければテキストをシードにした乱数）で回答を決める
+			const result = await getYesNoService(this.ai).answer(msg.extractedText);
+			if (result.kind === 'undetermined') {
+				// 答えが不定と明確に判定された → 返信せずリアクションだけ
+				this.log(`YES/NO 回答: 不定 (${result.source})`);
+				return {
+					reaction: UNDETERMINED_REACTION
+				};
 			}
+			this.log(`YES/NO 回答: ${result.answer} (${result.source})`);
+			msg.reply(result.text, { visibility: 'public' });
 			return {
 				reaction: 'love'
 			};

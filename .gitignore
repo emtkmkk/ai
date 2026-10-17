@@ -7,3 +7,4 @@ docs/api
 memory.sqlite*
 test.memory.*
 backups/
+yesno-character.md

@@ -104,6 +104,28 @@ type Config = {
 	 * 変更すると、過去のレイドの戦闘を同じ乱数で再現できなくなる。
 	 */
 	rpgSeedSalt?: string;
+	/**
+	 * Claude API のキー（はい/いいえ判定で使用）
+	 *
+	 * @remarks
+	 * 未設定の場合は環境変数 `ANTHROPIC_API_KEY` を使う。
+	 * どちらも無い場合、はい/いいえ判定は Claude を使わず既存の乱数のみで動く。
+	 */
+	anthropicApiKey?: string;
+	/** はい/いいえ判定で Claude を使うかどうか（既定: `true`。キーが無ければ自動的に無効） */
+	yesNoClaudeEnabled: boolean;
+	/** はい/いいえ判定に使う Claude のモデル ID（既定: `claude-haiku-5-5`） */
+	yesNoModel: string;
+	/**
+	 * はい/いいえ判定の性格設定ファイル（Markdown）のパス
+	 *
+	 * @remarks
+	 * 既定は `memoryDir` 配下の `yesno-character.md`。git 管理外に置くこと。
+	 * ファイルが無い場合は性格設定なしで判定する。
+	 */
+	yesNoCharacterFile: string;
+	/** はい/いいえ判定の Claude 呼び出し回数の1日あたり上限（既定: 300。0 以下で無制限） */
+	yesNoDailyLimit: number;
 
 };
 
@@ -138,5 +160,9 @@ if (config.rpgReplyRequired !== false) config.rpgReplyRequired = true;
 if (!config.forceRemoteChartPostCount) config.forceRemoteChartPostCount = false;
 if (config.kazutoriWinDiffReverseEnabled !== true) config.kazutoriWinDiffReverseEnabled = false;
 if (!Array.isArray(config.kazutoriBanUsers)) config.kazutoriBanUsers = [];
+if (config.yesNoClaudeEnabled !== false) config.yesNoClaudeEnabled = true;
+if (!config.yesNoModel) config.yesNoModel = 'claude-haiku-5-5';
+if (!config.yesNoCharacterFile) config.yesNoCharacterFile = `${config.memoryDir || '.'}/yesno-character.md`;
+if (typeof config.yesNoDailyLimit !== 'number') config.yesNoDailyLimit = 300;
 
 export default config as Config;

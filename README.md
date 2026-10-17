@@ -123,6 +123,18 @@ npm start
 | `kazutoriWinDiffReverseEnabled` | boolean | 数取りで勝利数差による反転判定を有効化 |
 | `kazutoriBanUsers` | string[] | 数取りに参加できないユーザのIDリスト |
 
+#### はい/いいえ判定（Claude API）設定
+
+| キー | 型 | デフォルト | 説明 |
+| --- | --- | --- | --- |
+| `anthropicApiKey` | string | — | Claude API のキー。無ければ環境変数 `ANTHROPIC_API_KEY` を使う。どちらも無ければ従来どおり乱数のみで回答 |
+| `yesNoClaudeEnabled` | boolean | `true` | はい/いいえ判定で Claude を使うかどうか |
+| `yesNoModel` | string | `claude-haiku-5-5` | 使うモデル |
+| `yesNoCharacterFile` | string | `<memoryDir>/yesno-character.md` | 性格設定ファイル（Markdown）。git 管理外に置く |
+| `yesNoDailyLimit` | number | `300` | 1日あたりの Claude 呼び出し上限。0 以下で無制限 |
+
+詳細は [yesno モジュール](src/modules/yesno/README.md) を参照。
+
 #### 設定例
 
 ```json
@@ -397,6 +409,7 @@ flowchart TD
 | [GuessingGame](src/modules/guessing-game/README.md) | 数当てゲーム | メンション |
 | [Maze](src/modules/maze/README.md) | 迷路生成（難易度調整可） | メンション |
 | [Dice](src/modules/dice/README.md) | サイコロ / YES・NO質問 / ファクトチェック | メンション |
+| [YesNo](src/modules/yesno/README.md) | Claude API による YES・NO質問の判定と回答（他モジュール非反応時のフォールバック） | メンション |
 
 ### エンターテイメント
 

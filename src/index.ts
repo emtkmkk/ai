@@ -49,6 +49,7 @@ import PollModule from './modules/poll';
 import ReminderModule from './modules/reminder';
 import YoruhoModule from './modules/yoruho';
 import RpgModule from './modules/rpg';
+import YesNoModule from './modules/yesno';
 
 console.log('   __    ____  _____  ___ ');
 console.log('  /__\\  (_  _)(  _  )/ __)');
@@ -112,6 +113,8 @@ promiseRetry(retry => {
 		new PollModule(),
 		new ReminderModule(),
 		new YoruhoModule(),
+		// NOTE: 他のどのモジュールも反応しなかったメンションを拾うため、必ず最後に置く
+		new YesNoModule(),
 	]);
 }).catch(e => {
 	log(chalk.red('Failed to fetch the account'));

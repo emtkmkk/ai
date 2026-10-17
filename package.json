@@ -9,6 +9,7 @@
 		"docs:api:watch": "typedoc --watch"
 	},
 	"dependencies": {
+		"@anthropic-ai/sdk": "0.135.0",
 		"@types/chalk": "2.2.4",
 		"@types/lokijs": "1.5.14",
 		"@types/node": "16.18.126",
