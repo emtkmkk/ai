@@ -12,7 +12,10 @@
  *
  * Claude の応答は {@link parseJudgement} で規格どおりか検証し、
  * 固定の5択に変換してからしか使わない。生のテキストが返信に流れることはない。
- * 規格外の応答や通信失敗は1回だけ再問い合わせし、それでも駄目なら乱数に落とす。
+ * 「質問かどうか」は Claude の1回目の判定で確定し、質問なら回答を2回判定させて一致したときだけ使う。
+ * 一致しなければ「分からない」として乱数に落とす（答えが変わる質問だと分かったため）。
+ * 規格外の応答や通信失敗は合計2回まで再問い合わせし、有効な判定が取れなければ乱数に落とす。
+ * Claude が「分からない」と判定した場合も乱数で答える。
  * Claude が「答えは不定」と明確に判定した場合は返信せず、リアクションだけにする。
  *
  * dice モジュール（語尾一致）と yesno モジュール（他モジュール非反応時のフォールバック）の
@@ -26,19 +29,20 @@ import * as seedrandom from 'seedrandom';
 export type YesNoAnswer = 'yes' | 'maybe_yes' | 'maybe_no' | 'no';
 
 /**
- * Claude が返す回答。4択に「不定」を加えたもの
+ * Claude が返す回答。4択に「分からない」と「不定」を加えたもの
  *
  * @remarks
- * `undetermined` は「分からない」ではなく、答えが一つに定まらないことを明確に示す特別な返答。
- * 返信はせず、専用のリアクションで応える。
+ * - `unknown`: 分からない。確実に判断できず、もう一度聞かれたら答えが変わりうる。従来どおり乱数で4択から決める
+ * - `undetermined`: 不定。もう一度聞かれても変わらず不定・決まっていない。
+ *   「分からない」とは別の特別な返答で、返信はせず専用のリアクションで応える
  */
-export type ClaudeAnswer = YesNoAnswer | 'undetermined';
+export type ClaudeAnswer = YesNoAnswer | 'unknown' | 'undetermined';
 
 /** 返信可能な回答の一覧 */
 export const YESNO_ANSWERS: readonly YesNoAnswer[] = ['yes', 'maybe_yes', 'maybe_no', 'no'];
 
 /** Claude の回答として受け付ける値の一覧 */
-export const CLAUDE_ANSWERS: readonly ClaudeAnswer[] = [...YESNO_ANSWERS, 'undetermined'];
+export const CLAUDE_ANSWERS: readonly ClaudeAnswer[] = [...YESNO_ANSWERS, 'unknown', 'undetermined'];
 
 /** 回答から返信文言への変換表（従来の文言をそのまま使う） */
 export const ANSWER_TEXT: Readonly<Record<YesNoAnswer, string>> = {
@@ -52,7 +56,7 @@ export const ANSWER_TEXT: Readonly<Record<YesNoAnswer, string>> = {
 export type YesNoJudgement = {
 	/** はい/いいえで意味のある返答ができる質問か */
 	isYesNoQuestion: boolean;
-	/** 回答。質問でない場合は `undetermined` */
+	/** 回答。質問でない場合は `unknown` */
 	answer: ClaudeAnswer;
 };
 
@@ -181,7 +185,7 @@ export function parseJudgement(raw: unknown): YesNoJudgement | null {
 	return {
 		isYesNoQuestion,
 		// NOTE: 質問でないのに回答が付いていても、回答は使わない
-		answer: isYesNoQuestion ? (answer as ClaudeAnswer) : 'undetermined',
+		answer: isYesNoQuestion ? (answer as ClaudeAnswer) : 'unknown',
 	};
 }
 
@@ -205,6 +209,32 @@ export function describeRaw(raw: unknown, maxLength = 500): string {
 	const type = raw === null ? 'null' : Array.isArray(raw) ? 'array' : typeof raw;
 	const trimmed = body.length > maxLength ? `${body.slice(0, maxLength)}…(${body.length}文字)` : body;
 	return `[${type}] ${trimmed}`;
+}
+
+/**
+ * 1回目の判定と2回目の判定を突き合わせる
+ *
+ * @remarks
+ * 質問かどうかは1回目の判定を採用する。
+ * - 1回目が質問でない → そのまま
+ * - 回答が一致 → その回答
+ * - 回答が異なる（2回目が質問でないと言った場合を含む） → 「分からない」（`unknown`）。
+ *   もう一度聞くと答えが変わる質問だと分かったため
+ */
+export function mergeJudgements(first: YesNoJudgement, second: YesNoJudgement): YesNoJudgement {
+	if (!first.isYesNoQuestion) return first;
+	if (second.isYesNoQuestion && first.answer === second.answer) return first;
+	return { isYesNoQuestion: true, answer: 'unknown' };
+}
+
+/** 2つの判定が同じか */
+export function sameJudgement(a: YesNoJudgement, b: YesNoJudgement): boolean {
+	return a.isYesNoQuestion === b.isYesNoQuestion && a.answer === b.answer;
+}
+
+/** 判定をログ用の短い文字列にする */
+export function formatJudgement(j: YesNoJudgement): string {
+	return j.isYesNoQuestion ? j.answer : `not-question(${j.answer})`;
 }
 
 /** 今日の日付を `YYYY-MM-DD`（ローカル時刻）で返す */
@@ -235,7 +265,7 @@ export class YesNoService {
 	 * 語尾条件を満たした質問に回答する（必ず回答を返す）
 	 *
 	 * @remarks
-	 * Claude が使えない・応答が得られない場合は乱数で決める。
+	 * Claude が使えない・応答が得られない・「分からない」と判定した場合は乱数で決める。
 	 * Claude が答えは不定と明確に判定した場合は `undetermined` を返す。
 	 */
 	public async answer(question: string): Promise<YesNoResult> {
@@ -269,32 +299,28 @@ export class YesNoService {
 
 		const stored = this.deps.memory.get(key);
 		if (stored != null) {
-			return this.fromJudgement(stored, matchedPattern, 'memory');
+			return this.fromJudgement(stored, question, matchedPattern, 'memory');
 		}
 
 		if (this.deps.client == null) return fallback();
 
-		if (!this.deps.usage.tryConsume(todayKey(this.deps.now?.()))) {
-			this.log('Claude の1日あたりの呼び出し上限に達したため乱数で回答します');
-			return fallback();
-		}
-
-		const judgement = await this.judgeWithRetry(question);
+		const judgement = await this.judgeConsistently(question);
 		if (judgement == null) return fallback();
 
 		this.deps.memory.set(key, { ...judgement, createdAt: (this.deps.now?.() ?? new Date()).getTime() });
-		return this.fromJudgement(judgement, matchedPattern, 'claude');
+		return this.fromJudgement(judgement, question, matchedPattern, 'claude');
 	}
 
 	/**
 	 * 判定から結果を組み立てる
 	 *
 	 * @remarks
-	 * 語尾条件に一致した質問は、Claude が「質問でない」と判定しても不定として扱う。
+	 * 「分からない」（質問でないと判定された語尾一致の質問を含む）は乱数で答える。
 	 */
-	private fromJudgement(judgement: YesNoJudgement, matchedPattern: boolean, source: 'memory' | 'claude'): YesNoResult | null {
+	private fromJudgement(judgement: YesNoJudgement, question: string, matchedPattern: boolean, source: 'memory' | 'claude'): YesNoResult | null {
 		if (!matchedPattern && !judgement.isYesNoQuestion) return null;
 		if (judgement.answer === 'undetermined') return { kind: 'undetermined', source };
+		if (judgement.answer === 'unknown') return this.random(question);
 		return {
 			kind: 'answer',
 			answer: judgement.answer,
@@ -304,22 +330,65 @@ export class YesNoService {
 	}
 
 	/**
-	 * Claude に問い合わせ、規格外・失敗なら1回だけ再試行する
+	 * Claude に判定させ、回答は2回一致したときだけ使う
 	 *
-	 * @returns 2回とも駄目なら `null`
+	 * @remarks
+	 * - 「はい/いいえで答えられる質問か」は1回目の判定で確定する。質問でなければ2回目は呼ばない
+	 * - 質問なら2回目を判定させ、回答が一致すればその回答。一致しなければ「分からない」（`unknown`）扱い
+	 * - 規格外・通信失敗は合計2回まで許容する（最大4回問い合わせ）
+	 * - 2回目が取れなかった場合は1回目の判定をそのまま使う
+	 * - 1日の呼び出し上限は問い合わせ1回ごとに消費する
+	 *
+	 * @returns 有効な判定が1つも取れなければ `null`
 	 */
-	private async judgeWithRetry(question: string): Promise<YesNoJudgement | null> {
+	private async judgeConsistently(question: string): Promise<YesNoJudgement | null> {
+		let failures = 0;
+		const judgeWithBudget = async (): Promise<YesNoJudgement | null> => {
+			while (failures < 2) {
+				if (!this.deps.usage.tryConsume(todayKey(this.deps.now?.()))) {
+					this.log('Claude の1日あたりの呼び出し上限に達しました');
+					return null;
+				}
+				const judgement = await this.judgeOnce(question, failures + 1);
+				if (judgement != null) return judgement;
+				failures++;
+			}
+			return null;
+		};
+
+		const first = await judgeWithBudget();
+		if (first == null) return null;
+		// NOTE: 質問かどうかは1回で確定。質問でなければ回答の一致確認は不要
+		if (!first.isYesNoQuestion) return first;
+
+		const second = await judgeWithBudget();
+		if (second == null) {
+			this.log('2回目の判定が取れなかったため、1回目の判定を使います');
+			return first;
+		}
+
+		const merged = mergeJudgements(first, second);
+		if (!sameJudgement(merged, first)) {
+			this.log(`2回の回答が一致しなかったため分からない扱いにします: ${formatJudgement(first)} / ${formatJudgement(second)}`);
+		}
+		return merged;
+	}
+
+	/**
+	 * Claude に1回問い合わせて検証する
+	 *
+	 * @returns 規格外・失敗なら `null`（内容はログに出す）
+	 */
+	private async judgeOnce(question: string, attempt: number): Promise<YesNoJudgement | null> {
 		const client = this.deps.client;
 		if (client == null) return null;
-		for (let attempt = 1; attempt <= 2; attempt++) {
-			try {
-				const raw = await client.judge(question);
-				const judgement = parseJudgement(raw);
-				if (judgement != null) return judgement;
-				this.log(`Claude の応答が規格外でした (${attempt}回目): ${describeRaw(raw)}`);
-			} catch (e) {
-				this.log(`Claude への問い合わせに失敗しました (${attempt}回目): ${e instanceof Error ? e.message : String(e)}`);
-			}
+		try {
+			const raw = await client.judge(question);
+			const judgement = parseJudgement(raw);
+			if (judgement != null) return judgement;
+			this.log(`Claude の応答が規格外でした (${attempt}回目): ${describeRaw(raw)}`);
+		} catch (e) {
+			this.log(`Claude への問い合わせに失敗しました (${attempt}回目): ${e instanceof Error ? e.message : String(e)}`);
 		}
 		return null;
 	}

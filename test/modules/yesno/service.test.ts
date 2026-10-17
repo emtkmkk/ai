@@ -5,12 +5,14 @@ import {
 	YesNoMemory,
 	YesNoUsage,
 	StoredJudgement,
+	YesNoJudgement,
 	ANSWER_TEXT,
 	seededAnswer,
 	parseJudgement,
 	looksLikeQuestion,
 	normalizeQuestion,
 	describeRaw,
+	mergeJudgements,
 	createLokiMemory,
 	createLokiUsage,
 } from '@/modules/yesno/service';
@@ -22,6 +24,7 @@ class FakeClient implements YesNoClient {
 	constructor(private responses: Array<unknown | Error>) {}
 	async judge(question: string): Promise<unknown> {
 		this.calls.push(question);
+		if (this.responses.length === 0) throw new Error('no more responses');
 		const next = this.responses.shift();
 		if (next instanceof Error) throw next;
 		return next;
@@ -36,9 +39,15 @@ class MapMemory implements YesNoMemory {
 
 const unlimited: YesNoUsage = { tryConsume: () => true };
 const exhausted: YesNoUsage = { tryConsume: () => false };
+const limited = (n: number): YesNoUsage => ({ tryConsume: () => n-- > 0 });
 
-const build = (client: YesNoClient | null, memory = new MapMemory(), usage = unlimited) =>
-	new YesNoService({ client, memory, usage, now: () => new Date('2026-10-17T12:00:00') });
+const j = (answer: YesNoJudgement['answer'], isYesNoQuestion = true): YesNoJudgement => ({ isYesNoQuestion, answer });
+const twice = (answer: YesNoJudgement['answer']) => [j(answer), j(answer)];
+const notQuestion = () => [j('unknown', false)];
+const random = (q: string) => ({ kind: 'answer', answer: seededAnswer(q), text: ANSWER_TEXT[seededAnswer(q)], source: 'random' });
+
+const build = (client: YesNoClient | null, memory = new MapMemory(), usage = unlimited, log?: (m: string) => void) =>
+	new YesNoService({ client, memory, usage, log, now: () => new Date('2026-10-17T12:00:00') });
 
 describe('seededAnswer', () => {
 	test('同じ質問には同じ回答を返し、4択のいずれかになる', () => {
@@ -58,8 +67,13 @@ describe('parseJudgement', () => {
 		expect(parseJudgement('{"isYesNoQuestion":true,"answer":"maybe_no"}')).toEqual({ isYesNoQuestion: true, answer: 'maybe_no' });
 	});
 
-	test('質問でない場合は回答を undetermined に丸める', () => {
-		expect(parseJudgement({ isYesNoQuestion: false, answer: 'yes' })).toEqual({ isYesNoQuestion: false, answer: 'undetermined' });
+	test('unknown と undetermined をどちらも受け付ける', () => {
+		expect(parseJudgement({ isYesNoQuestion: true, answer: 'unknown' })).toEqual({ isYesNoQuestion: true, answer: 'unknown' });
+		expect(parseJudgement({ isYesNoQuestion: true, answer: 'undetermined' })).toEqual({ isYesNoQuestion: true, answer: 'undetermined' });
+	});
+
+	test('質問でない場合は回答を unknown に丸める', () => {
+		expect(parseJudgement({ isYesNoQuestion: false, answer: 'yes' })).toEqual({ isYesNoQuestion: false, answer: 'unknown' });
 	});
 
 	test('規格外の応答は null', () => {
@@ -69,6 +83,23 @@ describe('parseJudgement', () => {
 		expect(parseJudgement({ isYesNoQuestion: true, answer: 'YES' })).toBeNull();
 		expect(parseJudgement({ isYesNoQuestion: true })).toBeNull();
 		expect(parseJudgement([{ isYesNoQuestion: true, answer: 'yes' }])).toBeNull();
+	});
+});
+
+describe('mergeJudgements', () => {
+	test('回答が一致すれば1回目の判定', () => {
+		expect(mergeJudgements(j('yes'), j('yes'))).toEqual(j('yes'));
+		expect(mergeJudgements(j('undetermined'), j('undetermined'))).toEqual(j('undetermined'));
+	});
+
+	test('回答が異なれば分からない（unknown）', () => {
+		expect(mergeJudgements(j('yes'), j('maybe_yes'))).toEqual(j('unknown'));
+		expect(mergeJudgements(j('undetermined'), j('no'))).toEqual(j('unknown'));
+		expect(mergeJudgements(j('yes'), j('unknown', false))).toEqual(j('unknown'));
+	});
+
+	test('質問かどうかは1回目を採用する', () => {
+		expect(mergeJudgements(j('unknown', false), j('yes'))).toEqual(j('unknown', false));
 	});
 });
 
@@ -82,16 +113,6 @@ describe('describeRaw', () => {
 		const long = describeRaw('あ'.repeat(600));
 		expect(long.length).toBeLessThan(600);
 		expect(long).toContain('…(600文字)');
-	});
-});
-
-describe('規格外応答のログ', () => {
-	test('規格外の応答の中身がログに出る', async () => {
-		const logs: string[] = [];
-		const client = new FakeClient(['はい！', { isYesNoQuestion: true, answer: 'yes' }]);
-		const service = new YesNoService({ client, memory: new MapMemory(), usage: unlimited, log: m => logs.push(m) });
-		await service.answer('水は液体ですか？');
-		expect(logs.some(l => l.includes('規格外') && l.includes('[string] はい！'))).toBe(true);
 	});
 });
 
@@ -128,116 +149,170 @@ describe('normalizeQuestion', () => {
 });
 
 describe('YesNoService#answer（語尾一致）', () => {
-	test('Claude の判定を固定文言に変換して返し、メモリーに保存する', async () => {
-		const client = new FakeClient([{ isYesNoQuestion: true, answer: 'maybe_yes' }]);
+	test('回答が2回一致したらその回答を固定文言で返し、メモリーに保存する', async () => {
+		const client = new FakeClient(twice('maybe_yes'));
 		const memory = new MapMemory();
-		const service = build(client, memory);
-
-		const result = await service.answer('りんごは赤いですか？');
+		const result = await build(client, memory).answer('りんごは赤いですか？');
 		expect(result).toEqual({ kind: 'answer', answer: 'maybe_yes', text: '多分はい、部分的にはい', source: 'claude' });
+		expect(client.calls).toHaveLength(2);
 		expect(memory.map.get('りんごは赤いですか？')).toMatchObject({ isYesNoQuestion: true, answer: 'maybe_yes' });
 	});
 
-	test('2回目はメモリーから返し、Claude を呼ばない', async () => {
-		const client = new FakeClient([{ isYesNoQuestion: true, answer: 'no' }]);
-		const service = build(client);
+	test('回答が異なれば分からない扱いで乱数、メモリーには unknown を保存', async () => {
+		const q = '猫は犬より賢いですか？';
+		const logs: string[] = [];
+		const client = new FakeClient([j('yes'), j('maybe_no')]);
+		const memory = new MapMemory();
+		const result = await build(client, memory, unlimited, m => logs.push(m)).answer(q);
+		expect(result).toEqual(random(q));
+		expect(memory.map.get(q)).toMatchObject({ isYesNoQuestion: true, answer: 'unknown' });
+		expect(logs.some(l => l.includes('一致しなかった') && l.includes('yes / maybe_no'))).toBe(true);
+	});
 
+	test('2回目はメモリーから返し、Claude を呼ばない', async () => {
+		const client = new FakeClient(twice('no'));
+		const service = build(client);
 		await service.answer('空は緑ですか？');
 		const second = await service.answer(' 空は緑ですか？ ');
 		expect(second).toEqual({ kind: 'answer', answer: 'no', text: 'いいえ', source: 'memory' });
-		expect(client.calls).toHaveLength(1);
+		expect(client.calls).toHaveLength(2);
 	});
 
-	test('規格外の応答は1回だけ再試行する', async () => {
-		const client = new FakeClient(['はい！', { isYesNoQuestion: true, answer: 'yes' }]);
+	test('規格外の応答は再試行して有効な判定を集める', async () => {
+		const client = new FakeClient(['はい！', j('yes'), j('yes')]);
 		const result = await build(client).answer('水は液体ですか？');
 		expect(result).toEqual({ kind: 'answer', answer: 'yes', text: 'はい', source: 'claude' });
-		expect(client.calls).toHaveLength(2);
+		expect(client.calls).toHaveLength(3);
 	});
 
-	test('通信失敗も1回だけ再試行する', async () => {
-		const client = new FakeClient([new Error('timeout'), { isYesNoQuestion: true, answer: 'maybe_no' }]);
+	test('通信失敗も再試行する', async () => {
+		const client = new FakeClient([new Error('timeout'), j('maybe_no'), j('maybe_no')]);
 		const result = await build(client).answer('火は冷たいですか？');
 		expect(result).toMatchObject({ kind: 'answer', answer: 'maybe_no' });
-		expect(client.calls).toHaveLength(2);
+		expect(client.calls).toHaveLength(3);
 	});
 
-	test('2回とも駄目なら乱数に落とし、メモリーには保存しない', async () => {
+	test('2回失敗したら乱数に落とし、メモリーには保存しない', async () => {
 		const q = '猫は犬ですか？';
 		const client = new FakeClient(['???', new Error('500')]);
 		const memory = new MapMemory();
-		const result = await build(client, memory).answer(q);
-		expect(result).toEqual({ kind: 'answer', answer: seededAnswer(q), text: ANSWER_TEXT[seededAnswer(q)], source: 'random' });
+		expect(await build(client, memory).answer(q)).toEqual(random(q));
 		expect(client.calls).toHaveLength(2);
 		expect(memory.map.size).toBe(0);
 	});
 
-	test('undetermined は不定として返し（返信しない）、判定はメモリーに保存して次回は Claude を呼ばない', async () => {
-		const q = '明日は雨ですか？';
-		const client = new FakeClient([{ isYesNoQuestion: true, answer: 'undetermined' }]);
+	test('2回目の判定が取れなければ1回目を使う', async () => {
+		const client = new FakeClient([j('yes'), 'x', new Error('500')]);
+		const result = await build(client).answer('水は液体ですか？');
+		expect(result).toMatchObject({ kind: 'answer', answer: 'yes', source: 'claude' });
+		expect(client.calls).toHaveLength(3);
+	});
+
+	test('unknown（分からない）は乱数で答え、判定はメモリーに保存して次回は Claude を呼ばない', async () => {
+		const q = '今日は晴れですか？';
+		const client = new FakeClient(twice('unknown'));
 		const service = build(client);
 		const first = await service.answer(q);
 		const second = await service.answer(q);
-		expect(first).toEqual({ kind: 'undetermined', source: 'claude' });
-		expect(second).toEqual({ kind: 'undetermined', source: 'memory' });
-		expect(client.calls).toHaveLength(1);
+		expect(first).toEqual(random(q));
+		expect(second).toEqual(first);
+		expect(client.calls).toHaveLength(2);
 	});
 
-	test('Claude が質問でないと判定した語尾一致の質問は不定として扱う', async () => {
+	test('undetermined は不定として返し（返信しない）、判定はメモリーに保存して次回は Claude を呼ばない', async () => {
+		const q = '本来のもこチキは喋りますか？';
+		const client = new FakeClient(twice('undetermined'));
+		const service = build(client);
+		expect(await service.answer(q)).toEqual({ kind: 'undetermined', source: 'claude' });
+		expect(await service.answer(q)).toEqual({ kind: 'undetermined', source: 'memory' });
+		expect(client.calls).toHaveLength(2);
+	});
+
+	test('質問でないと判定した語尾一致の質問は1回で確定し乱数で答える', async () => {
 		const q = 'おはようございますか？';
-		const client = new FakeClient([{ isYesNoQuestion: false, answer: 'undetermined' }]);
-		const result = await build(client).answer(q);
-		expect(result).toEqual({ kind: 'undetermined', source: 'claude' });
+		const client = new FakeClient(notQuestion());
+		expect(await build(client).answer(q)).toEqual(random(q));
+		expect(client.calls).toHaveLength(1);
 	});
 
 	test('Claude が無ければ乱数で答える', async () => {
 		const q = '塩は甘いですか？';
-		const result = await build(null).answer(q);
-		expect(result).toEqual({ kind: 'answer', answer: seededAnswer(q), text: ANSWER_TEXT[seededAnswer(q)], source: 'random' });
+		expect(await build(null).answer(q)).toEqual(random(q));
 	});
 
 	test('1日の上限に達していれば Claude を呼ばず乱数で答える', async () => {
-		const client = new FakeClient([{ isYesNoQuestion: true, answer: 'yes' }]);
-		const result = await build(client, new MapMemory(), exhausted).answer('海は広いですか？');
-		expect(result.source).toBe('random');
+		const client = new FakeClient(twice('yes'));
+		expect(await build(client, new MapMemory(), exhausted).answer('海は広いですか？')).toEqual(random('海は広いですか？'));
 		expect(client.calls).toHaveLength(0);
+	});
+
+	test('上限が1回目の後で尽きたら、1回目の判定を使う', async () => {
+		const client = new FakeClient(twice('no'));
+		const result = await build(client, new MapMemory(), limited(1)).answer('海は狭いですか？');
+		expect(result).toMatchObject({ kind: 'answer', answer: 'no', source: 'claude' });
+		expect(client.calls).toHaveLength(1);
 	});
 });
 
 describe('YesNoService#answerIfQuestion（語尾不一致のフォールバック）', () => {
 	test('疑問文らしくなければ Claude を呼ばず null', async () => {
-		const client = new FakeClient([{ isYesNoQuestion: true, answer: 'yes' }]);
+		const client = new FakeClient(twice('yes'));
 		expect(await build(client).answerIfQuestion('おはよう')).toBeNull();
 		expect(client.calls).toHaveLength(0);
 	});
 
-	test('質問でないと判定されたら null を返し、判定を保存して次回も Claude を呼ばない', async () => {
-		const client = new FakeClient([{ isYesNoQuestion: false, answer: 'undetermined' }]);
+	test('質問でないと判定されたら1回で確定して null、判定を保存して次回も Claude を呼ばない', async () => {
+		const client = new FakeClient(notQuestion());
 		const service = build(client);
 		expect(await service.answerIfQuestion('今日何食べた？')).toBeNull();
 		expect(await service.answerIfQuestion('今日何食べた？')).toBeNull();
 		expect(client.calls).toHaveLength(1);
 	});
 
+	test('1回目が質問・2回目が質問でないなら、回答不一致として分からない扱いで乱数', async () => {
+		const q = 'もこチキって鳥？';
+		const client = new FakeClient([j('yes'), j('unknown', false)]);
+		expect(await build(client).answerIfQuestion(q)).toEqual(random(q));
+		expect(client.calls).toHaveLength(2);
+	});
+
 	test('はい/いいえ質問と判定されたら回答する', async () => {
-		const client = new FakeClient([{ isYesNoQuestion: true, answer: 'yes' }]);
+		const client = new FakeClient(twice('yes'));
 		expect(await build(client).answerIfQuestion('もこチキって鳥？')).toEqual({ kind: 'answer', answer: 'yes', text: 'はい', source: 'claude' });
 	});
 
-	test('質問だが undetermined なら不定として返す（返信せずリアクションのみ）', async () => {
+	test('質問だが unknown なら乱数で答える', async () => {
 		const q = '明日は晴れる？';
-		const client = new FakeClient([{ isYesNoQuestion: true, answer: 'undetermined' }]);
-		expect(await build(client).answerIfQuestion(q)).toEqual({ kind: 'undetermined', source: 'claude' });
+		expect(await build(new FakeClient(twice('unknown'))).answerIfQuestion(q)).toEqual(random(q));
+	});
+
+	test('質問だが回答が食い違ったら分からない扱いで乱数', async () => {
+		const q = 'ねぎまって美味しい？';
+		expect(await build(new FakeClient([j('no'), j('maybe_no')])).answerIfQuestion(q)).toEqual(random(q));
+	});
+
+	test('質問だが undetermined なら不定として返す（返信せずリアクションのみ）', async () => {
+		const q = 'もこチキって卵産む？';
+		expect(await build(new FakeClient(twice('undetermined'))).answerIfQuestion(q)).toEqual({ kind: 'undetermined', source: 'claude' });
 	});
 
 	test('Claude が無い・上限超過・2回失敗なら null（返信しない）', async () => {
 		expect(await build(null).answerIfQuestion('これって本当？')).toBeNull();
-		const client1 = new FakeClient([{ isYesNoQuestion: true, answer: 'yes' }]);
+		const client1 = new FakeClient(twice('yes'));
 		expect(await build(client1, new MapMemory(), exhausted).answerIfQuestion('これって本当？')).toBeNull();
 		expect(client1.calls).toHaveLength(0);
 		const client2 = new FakeClient(['x', 'y']);
 		expect(await build(client2).answerIfQuestion('これって本当？')).toBeNull();
 		expect(client2.calls).toHaveLength(2);
+	});
+});
+
+describe('規格外応答のログ', () => {
+	test('規格外の応答の中身がログに出る', async () => {
+		const logs: string[] = [];
+		const client = new FakeClient(['はい！', j('yes'), j('yes')]);
+		await build(client, new MapMemory(), unlimited, m => logs.push(m)).answer('水は液体ですか？');
+		expect(logs.some(l => l.includes('規格外') && l.includes('[string] はい！'))).toBe(true);
 	});
 });
 
@@ -251,10 +326,10 @@ describe('createLokiMemory', () => {
 		memory.set('b', { isYesNoQuestion: true, answer: 'no', createdAt: 2 });
 		expect(memory.get('a')).toEqual({ isYesNoQuestion: true, answer: 'yes', createdAt: 1 });
 
-		memory.set('c', { isYesNoQuestion: false, answer: 'undetermined', createdAt: 3 });
+		memory.set('c', { isYesNoQuestion: false, answer: 'unknown', createdAt: 3 });
 		expect(memory.get('a')).toBeNull();
 		expect(memory.get('b')).not.toBeNull();
-		expect(memory.get('c')).toEqual({ isYesNoQuestion: false, answer: 'undetermined', createdAt: 3 });
+		expect(memory.get('c')).toEqual({ isYesNoQuestion: false, answer: 'unknown', createdAt: 3 });
 		expect(collection.count()).toBe(2);
 	});
 
