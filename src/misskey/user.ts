@@ -42,4 +42,19 @@ export type User = {
         notesCount?: number;
         /** このユーザーの別名アカウント情報（引っ越し機能用） */
 	alsoKnownAs?: any;
+        /**
+         * サーバがこのユーザーの投稿を追跡（配送を受信）している状態かどうか
+         *
+         * @remarks
+         * もこきー独自の拡張フィールド。サーバ内の誰かがフォローしていれば `true`。
+         * ローカルユーザーは常に `true`。
+         */
+        isTracked?: boolean | null;
+        /**
+         * 現在の追跡が途切れずに続いている開始日時（ISO 8601）
+         *
+         * @remarks
+         * もこきー独自の拡張フィールド。ローカルユーザーはアカウント作成日時。
+         */
+        trackedSince?: string | null;
 };

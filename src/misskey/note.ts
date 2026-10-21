@@ -24,6 +24,8 @@ import { User } from './user';
 export type Note = {
 	/** ノートの一意なID */
 	id: string;
+	/** 投稿日時（ISO 8601） */
+	createdAt?: string;
 	/** ノート本文（CWのみの場合は null） */
 	text: string | null;
 	/** Content Warning テキスト（未設定の場合は null） */

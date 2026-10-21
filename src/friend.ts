@@ -75,6 +75,8 @@ export type FriendDoc = {
 	todayReactCount?: number;
 	/** 最後にリアクションした日付 */
 	lastReactAt?: string;
+	/** ホームTLで最後に観測したこのユーザーの投稿日時（ISO 8601、久しぶり判定用） */
+	lastNoteAt?: string;
 	/** モジュールごとの永続データ（モジュール名をキーとするオブジェクト） */
 	perModulesData?: any;
 	/** 藍と結婚しているかどうか */

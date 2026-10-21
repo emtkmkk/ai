@@ -15,6 +15,11 @@
  * - NOTE: 1日に同じユーザーへのリアクション数が3を超えると、確率的にスキップされる。
  * - NOTE: `activeFactor` が低い場合はキーワード判定前にスキップされることがある。
  * - NOTE: 長い文章ほどスキップ率が上がる（30文字超で5%〜、51文字以降は+2%/文字）。
+ * - NOTE: 前回の投稿から14日以上空いたユーザーの投稿には、キーワード判定とは別に
+ *       `:ohisasiburidesu:` をリアクションする（friend に最終投稿日時を記録し、
+ *       必要なときだけ `users/notes` で直前の投稿を確認する）。
+ *       直前の投稿がサーバの追跡期間中のものかは `users/show` の
+ *       `isTracked` / `trackedSince`（もこきー拡張）で確認する。
  *
  * @public
  */
@@ -30,6 +35,7 @@ import config from '@/config';
 import { mecab } from '@/modules/keyword/mecab';
 import { hankakuToZenkaku, katakanaToHiragana } from '@/utils/japanese';
 import getDate from '@/utils/get-date';
+import { needsOhisasiburiCheck, shouldReactOhisasiburi, TrackingInfo } from '@/utils/ohisasiburi';
 
 /**
  * 自動絵文字リアクションモジュールクラス
@@ -89,12 +95,65 @@ export default class extends Module {
 	}
 
 	/**
+	 * 久しぶりの投稿かどうかを判定し、該当すれば `:ohisasiburidesu:` をリアクションする
+	 *
+	 * @remarks
+	 * - friend の `lastNoteAt`（ホームTLで最後に観測した投稿日時）を更新する。
+	 * - 記録が14日未満なら API を呼ばずに終了する。
+	 * - 記録がない、または14日以上前なら `users/notes` で今回より前の投稿を1件取得し、
+	 *   その投稿日時が14日以上前なら久しぶりと判定する（ホームTLに流れなかった投稿も考慮できる）。
+	 * - 直前の投稿が「サーバがこのユーザーの投稿を取り込んでいた期間」のものである保証は、
+	 *   `users/show` が返す追跡情報（`isTracked` / `trackedSince`）で行う
+	 *   （{@link shouldReactOhisasiburi}）。追跡開始より前の投稿（フォロー前に
+	 *   誰かのリノートなどで取り込まれたもの）は除外される。
+	 *   サーバ側の情報なので friend に記録がないユーザーでも初回から判定できる。
+	 *
+	 * @param note - 受信ノート
+	 * @internal
+	 */
+	@autobind
+	private async checkOhisasiburi(note: Note) {
+		if (!note.createdAt || !note.user?.id) return;
+		const friend = this.ai.lookupFriend(note.user.id);
+		if (!friend) return;
+
+		const recorded = friend.doc.lastNoteAt;
+		// 今回の投稿日時を記録（古い投稿が後から流れてきた場合は上書きしない）
+		if (!recorded || new Date(recorded).getTime() < new Date(note.createdAt).getTime()) {
+			friend.doc.lastNoteAt = note.createdAt;
+			friend.save();
+		}
+
+		if (!needsOhisasiburiCheck(recorded, note.createdAt)) return;
+
+		const previous = await this.ai.api('users/notes', {
+			userId: note.user.id,
+			untilId: note.id,
+			limit: 1,
+			includeReplies: true,
+			includeMyRenotes: true,
+		}) as { id?: string; createdAt?: string }[] | null;
+		if (!previous?.[0]?.createdAt) return;
+
+		const tracking = await this.ai.api('users/show', { userId: note.user.id }) as TrackingInfo | null;
+		if (!shouldReactOhisasiburi(previous[0], tracking, note.createdAt)) return;
+
+		this.log(`Ohisasiburi - @${note.user.username} (last: ${previous[0].createdAt}, trackedSince: ${tracking?.trackedSince})`);
+		await delay(3000 + Math.round(Math.random() * 2000));
+		this.ai.api('notes/reactions/create', {
+			noteId: note.id,
+			reaction: ':ohisasiburidesu:',
+		});
+	}
+
+	/**
 	 * ノート受信時のハンドラ
 	 *
 	 * @remarks
 	 * ホームTLの各ノートに対し、以下の順序で判定を行う:
 	 *
 	 * 1. **前段フィルタ**: Bot・メンション付き・他者への返信・CW・公開範囲のチェック
+	 *    （久しぶり判定は本文なし・CW付きでも行い、公開範囲フィルタより前に実行する）
 	 * 2. **即座判定のキーワード**: 退勤、おはよう、おやすみ、こんにちは、こんばんは
 	 * 3. **短文特殊判定** (9文字以内): 暇、眠い（時刻表示付きリアクション）
 	 * 4. **activeFactor チェック**: 低活動度の場合はここでスキップ
@@ -112,10 +171,14 @@ export default class extends Module {
 		if (note.user.isBot) return;
 		// リプライ先が自分じゃない場合はスルー
 		if (note.reply != null && note.reply.user?.id !== note.user?.id) return;
+		// (自分または他人問わず)メンションっぽかったらスルー
+		if (note.text?.includes('@')) return;
+
+		// 久しぶりの投稿なら :ohisasiburidesu: を付ける（通常のキーワード判定は続行）
+		this.checkOhisasiburi(note).catch((e) => this.log(`ohisasiburi check failed: ${e}`));
+
 		// 中身がなければスルー
 		if (note.text == null) return;
-		// (自分または他人問わず)メンションっぽかったらスルー
-		if (note.text.includes('@')) return;
 
 		// 公開範囲フォロワーでcw付きは深刻な物が多い為開かない
 		if (note.visibility === 'followers' && note.cw != null) return;
