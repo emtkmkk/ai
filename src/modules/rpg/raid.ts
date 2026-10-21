@@ -886,6 +886,15 @@ export async function raidContextHook(key: string, msg: Message, data: unknown) 
         const PARALLEL_DIMENSION_CAP = 10;
         const parallelCount = Math.min(PARALLEL_DIMENSION_CAP, Math.max(0, _data.parallelDimension ?? 0));
 
+        // 平行次元では投稿数を先に1度だけ取得し、全次元で同じ値を使う
+        // NOTE: 投稿数の取得は連携アカウント側にも「このレイドで使用済み」の印を付ける。
+        //       次元ごとに取得し直すと、2次元目以降は連携アカウントの投稿数が 0 になってしまう。
+        //       投稿数を使うのは通常戦闘（pattern 1）で、投稿数が固定されていない敵だけ。
+        const usesPostCount = !(enemy.pattern && enemy.pattern > 1) && !enemy.forcePostCount;
+        const parallelPostCount = parallelCount > 0 && usesPostCount
+                ? await getPostCount(ai, module_, _data, msg, 0, { type: 'raid', key: raid.postId })
+                : undefined;
+
         // 敵の pattern に応じたダメージ計算ディスパッチ
         // 乱数はレイドの投稿ID + ユーザーID + 平行次元の番号から決める（同じ条件なら戦闘を再現できる）
         const runRaidDamage = async (enemyForRun: RaidEnemy, dimension = 0) => {
@@ -899,7 +908,7 @@ export async function raidContextHook(key: string, msg: Message, data: unknown) 
                                         return await getTotalDmg2(msg, enemyForRun, { rng });
                         }
                 }
-                return await getTotalDmg(msg, enemyForRun, raid.postId, { rng });
+                return await getTotalDmg(msg, enemyForRun, raid.postId, { rng, postCount: parallelPostCount });
         };
 
         let result;
