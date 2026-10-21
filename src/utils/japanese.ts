@@ -43,6 +43,20 @@ const kanaMap: string[][] = [
 ];
 
 /**
+ * {@link zenkakuToHankaku} / {@link hankakuToZenkaku} 用の正規表現と逆引き表
+ *
+ * @remarks
+ * 呼び出しのたびに組み立てると重いため、モジュール読み込み時に一度だけ作る。
+ * 正規表現は選択肢の順序が {@link kanaMap} と同じなので、濁音の結合文字列が1文字より優先される。
+ *
+ * @internal
+ */
+const zenkakuRegExp = new RegExp('(' + kanaMap.map(x => x[0]).join('|') + ')', 'g');
+const hankakuRegExp = new RegExp('(' + kanaMap.map(x => x[1]).join('|') + ')', 'g');
+const zenkakuToHankakuMap = new Map(kanaMap.map(([zen, han]) => [zen, han]));
+const hankakuToZenkakuMap = new Map(kanaMap.map(([zen, han]) => [han, zen]));
+
+/**
  * カタカナをひらがなに変換する
  *
  * @remarks
@@ -88,12 +102,8 @@ export function hiraganaToKatagana(str: string): string {
  * @public
  */
 export function zenkakuToHankaku(str: string): string {
-	const reg = new RegExp('(' + kanaMap.map(x => x[0]).join('|') + ')', 'g');
-
 	return str
-		.replace(reg, match =>
-			kanaMap.find(x => x[0] == match)![1]
-		)
+		.replace(zenkakuRegExp, match => zenkakuToHankakuMap.get(match)!)
 		.replace(/゛/g, 'ﾞ')
 		.replace(/゜/g, 'ﾟ');
 };
@@ -110,12 +120,8 @@ export function zenkakuToHankaku(str: string): string {
  * @public
  */
 export function hankakuToZenkaku(str: string): string {
-	const reg = new RegExp('(' + kanaMap.map(x => x[1]).join('|') + ')', 'g');
-
 	return str
-		.replace(reg, match =>
-			kanaMap.find(x => x[1] == match)![0]
-		)
+		.replace(hankakuRegExp, match => hankakuToZenkakuMap.get(match)!)
 		.replace(/ﾞ/g, '゛')
 		.replace(/ﾟ/g, '゜');
 };
