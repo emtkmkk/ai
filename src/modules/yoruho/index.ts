@@ -51,7 +51,7 @@ export default class extends Module {
 	 * @remarks
 	 * setTimeout の精度限界を考慮し、0時の直前ではなく23:57に一度起き、
 	 * そこから精密な `schedulePost` に引き継ぐ。
-	 * 待機時間が1分以下の場合は再帰的に自身を呼び出す。
+	 * 待機時間が1分以下の場合は、そのまま `schedulePost` に引き継ぐ。
 	 *
 	 * @internal
 	 */
@@ -80,8 +80,10 @@ export default class extends Module {
 				this.schedulePost();
 			}, timeUntilPost);
 		} else {
+			// 23:57 まで1分を切っている場合は、粗い待機を挟まずに精密な待機へ引き継ぐ
+			// NOTE: ここで自身を呼び直すと、23:57 になるまで同期的に再帰し続けてスタックが溢れる
 			this.log("wait NG (<= 60000)");
-			this.preSchedulePost();
+			this.schedulePost();
 		}
 	}
 
