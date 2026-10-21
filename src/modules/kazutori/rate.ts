@@ -199,6 +199,10 @@ export function ensureKazutoriData<T extends KazutoriDataContainer>(target: T): 
                 }
 
                 if (typeof data.rateChanged !== 'boolean') {
+                        // 未定義のままレートが初期値の場合は何も変わらないので、更新扱いにしない
+                        // （更新扱いにすると、レートが初期値の全員が呼び出しのたびに保存し直される）
+                        const hadRateChanged = 'rateChanged' in data;
+
                         if (typeof data.rateChanged === 'string') {
                                 const lowered = data.rateChanged.toLowerCase();
                                 if (lowered === 'true') {
@@ -222,7 +226,9 @@ export function ensureKazutoriData<T extends KazutoriDataContainer>(target: T): 
                                 }
                         }
 
-                        updated = true;
+                        if (hadRateChanged || 'rateChanged' in data) {
+                                updated = true;
+                        }
                 }
 
                 if (data.lastRateChange != null && (typeof data.lastRateChange !== 'number' || Number.isNaN(data.lastRateChange))) {
