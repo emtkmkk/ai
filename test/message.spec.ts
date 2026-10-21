@@ -2,9 +2,10 @@ import Message from '@/message';
 
 const createMessage = (note: Record<string, any>) => {
 	const friends = new Map<string, any>();
+	const user = { id: 'user-id', username: 'user', host: null, ...note.user };
 	const ai = {
 		account: { username: 'ai' },
-		api: jest.fn().mockResolvedValue(note.user),
+		api: jest.fn().mockResolvedValue(user),
 		friends: {
 			findOne: ({ userId }: { userId: string }) => friends.get(userId) ?? null,
 			insertOne: (doc: any) => {
@@ -19,7 +20,7 @@ const createMessage = (note: Record<string, any>) => {
 		id: 'note-id',
 		text: '@ai RPG',
 		userId: 'user-id',
-		user: { id: 'user-id', username: 'user', host: null },
+		user,
 		visibility: 'home',
 		localOnly: false,
 		...note,
