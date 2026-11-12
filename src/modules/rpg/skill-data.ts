@@ -293,7 +293,7 @@ export const skills: Skill[] = [
 	{ name: `道具大好き`, short: "道", desc: `道具の使用率が上がります`, info: `アイテム装備率+50%`, effect: { itemEquip: 0.5 } },
 	{ name: `道具大好き＋`, short: "**道**", desc: `道具の使用率が大きく上がります`, info: `アイテム装備率+90%`, effect: { itemEquip: 0.9 }, notLearn: true, skillOnly: true },
 	{ name: `道具の扱いが上手い`, short: "扱", desc: `道具の効果量が上がります`, info: `アイテム効果量+40% アイテム悪効果軽減+40%`, effect: { itemBoost: 0.4 } },
-	{ name: `継戦融合武装`, short: "継", desc: `武器を装備した時に前の武器を捨てずに次の武器に融合して使用します`, info: `ターン2以降の開始時、前のターンに装備したアイテムのパワー上昇の55%分をその戦闘中は永続的に獲得します`, effect: { itemAtkStock: 0.55 }, unique: "itemAtkStock", rare: 2 },
+	{ name: `継戦融合武装`, short: "継", desc: `武器を装備した時に前の武器を捨てずに次の武器に融合して使用します`, info: `ターン2以降の開始時、前のターンに装備した武器のパワー上昇の55%分をその戦闘中は永続的に獲得します（物理戦闘で武器を装備したときのみ。気合や食べ物による上昇は対象外）`, effect: { itemAtkStock: 0.55 }, unique: "itemAtkStock", rare: 2 },
 	{ name: `シールドバッシュ`, short: "シ", desc: `防具を装備した際にパワーも上がるようになります`, info: `防具を装備した際に、その防具による防御増加量の50%分パワーも一緒に増加する さらに防具効果量+50%`, effect: { armorBoost: 0.5, shieldBash: 1 } },
 	{ name: `武器が大好き`, short: "武", desc: `武器のみを装備するようになり、武器の効果量が上がります`, info: `防具・食べ物を使用しない 武器効果量+70% 種類大好き系と重複しない`, effect: { weaponSelect: 2, weaponBoost: 0.7 }, unique: "itemSelect" },
 	{ name: `防具が大好き`, short: "防", desc: `防具のみを装備するようになり、防具の効果量が上がります`, info: `武器・食べ物を使用しない 防具効果量+70% ${serifs.rpg.status.atk}+4% 種類大好き系と重複しない`, effect: { atkUpBonus: 1, armorSelect: 2, armorBoost: 0.7 }, unique: "itemSelect" },

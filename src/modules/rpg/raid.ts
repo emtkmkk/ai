@@ -1801,6 +1801,8 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string, op
 	let item2;
 	/** アイテムによって増加したステータス */
 	let itemBonus = { atk: 0, def: 0 };
+	/** 継戦融合武装で次ターンへ持ち越す元になる、物理戦闘で武器を装備したときのパワー上昇（固定値） */
+	let fusedWeaponAtk = 0;
 	let enemyAtkX = 1;
 	let itemBoost = 0;
 	let itemMinEffect = 0;
@@ -2145,6 +2147,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string, op
 		enemyAtk = _enemyAtk;
 		enemyDef = _enemyDef;
 		itemBonus = { atk: 0, def: 0 };
+		fusedWeaponAtk = 0;
 		enemyTurnFinished = false;
 		enemyAtkX = 1;
 		itemBoost = 0;
@@ -2485,6 +2488,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 					} else {
 						itemBonus.atk = (lv * 4) * (item.effect * 0.007);
 						atk = atk + itemBonus.atk;
+						fusedWeaponAtk = itemBonus.atk;
 						if (item.effect >= 100) {
 							message += `${config.rpgHeroName}のパワーが特大アップ！\n`;
 						} else if (item.effect >= 70) {
@@ -2635,8 +2639,11 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 				}
 			}
 		}
+		// 継戦融合武装: 融合するのは物理戦闘で装備した武器の固定値の上昇だけ。
+		// 気合（mind）や食べ物の過剰回復による上昇はその時点のパワーに比例するため、
+		// 持ち越すと「累積 → パワー増 → 比例ボーナス増 → 累積増」の循環で指数的に膨らむ
 		if (skillEffects.itemAtkStock) {
-			const itemAtkGain = Math.max(Math.floor(itemBonus.atk ?? 0), 0);
+			const itemAtkGain = Math.max(Math.floor(fusedWeaponAtk), 0);
 			if (itemAtkGain > 0) {
 				itemAtkStockNext = Math.floor(itemAtkGain * (skillEffects.itemAtkStock ?? 0));
 				if (verboseLog) {

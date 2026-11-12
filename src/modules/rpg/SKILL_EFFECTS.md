@@ -139,7 +139,7 @@ ultimateEffect                  ─┘    （skillX はスキル効果がX倍に
 | poisonAvoid / poisonResist / mindMinusAvoid | ✅ | ✅ |
 | firstTurnItem / firstTurnMindMinusAvoid | T1 確定装備・悪アイテム回避 ✅ | ✅ |
 | firstTurnItemChoice / firstTurnDoubleItem | － | T1 最低効果量、二刀流 |
-| itemAtkStock | 装備で上がったパワーの x を次ターン以降に累積（data に永続）| 同左（戦闘内の変数）✅ |
+| itemAtkStock | 物理戦闘で武器を装備して上がったパワー（固定値）の x を次ターン以降に累積（data に永続）。気合・食べ物の過剰回復などパワー比例の上昇は対象外 | 同左（戦闘内の変数）✅ |
 | shieldBash | 防具の防御上昇の (1-0.5^x) をパワーにも ✅ | ✅ |
 | greed | － | 前の装備を劣化させつつ使い回す（係数 2/3 直書き ❌#7）|
 
