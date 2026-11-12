@@ -10,7 +10,7 @@
 import * as loki from "lokijs";
 import { raidInstall, recalculateRaidResult, parseRaidRecalcArgs, recalculateItemAtkStockBests, isItemAtkStockBugTarget } from "@/modules/rpg/raid";
 import { raidEnemys } from "@/modules/rpg/enemys";
-import { skills } from "@/modules/rpg/skills";
+import { skills, skillCalculate } from "@/modules/rpg/skills";
 
 jest.mock("@/modules/rpg/utils", () => ({ ...jest.requireActual("@/modules/rpg/utils"), getPostCount: async () => 40 }));
 
@@ -162,6 +162,8 @@ describe("recalculateItemAtkStockBests（継戦融合武装の不具合で膨ら
 			getCollection: () => ({ chain() { return this; }, find() { return this; }, where() { return { data: () => [] }; } }),
 		};
 		raidInstall(ai, { name: "rpg", log: () => {} } as any, raids as any);
+		// 合成お守りの価格計算（スキルの人気度）で参照される ai を設定しておく
+		skillCalculate(ai, true);
 		const attacker = (id: string, dmg: number, skillsStr: any = TARGET) => ({ user: { id, username: id, host: null }, dmg, me: ":mk_hero:", lv: 300, count: 7, mark: ":blank:", skillsStr });
 		const insert = (postId: string, attackers: any[], startedAt = Date.now()) => raids.insert({ postId, enemy, isEnded: true, startedAt, finishedAt: 0, attackers, replyKey: [] });
 		const dmgOf = (postId: string, i = 0) => raids.findOne({ postId }).attackers[i];
@@ -243,6 +245,85 @@ describe("recalculateItemAtkStockBests（継戦融合武装の不具合で膨ら
 		expect(dmgOf("raid-1").dmg).toBe(1);
 		expect(dmgOf("raid-1").recalculatedAt).toBeUndefined();
 		expect(rpgData.raidScore[enemy.name]).toBe(1);
+	});
+
+	describe("お守りの返金", () => {
+		const AMULET_SKILLS = ["土属性剣攻撃", "バーサク"];
+		/** 参加時と同じお守り（表示は "[土バ]"） */
+		const amulet = (extra: any = {}) => ({ name: AMULET_SKILLS.join("&") + "のお守り", type: "amulet", durability: 50, skillName: AMULET_SKILLS, price: 300, ...extra });
+		const withAmulet = { skills: "[食整継整整]", amulet: "[土バ]" };
+
+		test("下がった記録の参加時と同じお守りを持っていれば、お守りは持たせたまま購入額を返金し、累計の買い物額も減らす", async () => {
+			const { rpgData, attacker, insert } = setup();
+			insert("raid-1", [attacker("user-a", BUGGY_DMG, withAmulet)]);
+			rpgData.raidScore[enemy.name] = BUGGY_DMG;
+			rpgData.items = [amulet()];
+			rpgData.shopExp = 1000;
+
+			const changes = await recalculateItemAtkStockBests(true);
+
+			expect(changes[0].refund).toEqual({ amuletName: amulet().name, amount: 300, currency: "coin" });
+			expect(rpgData.coin).toBe(50 + 300);
+			expect(rpgData.shopExp).toBe(700);
+			expect(rpgData.items).toHaveLength(1);
+			expect(rpgData.itemAtkStockRefundedAt).toEqual(expect.any(Number));
+		});
+
+		test("ドライランでは返金の予定を返すだけで、コインは増えない", async () => {
+			const { rpgData, attacker, insert } = setup();
+			insert("raid-1", [attacker("user-a", BUGGY_DMG, withAmulet)]);
+			rpgData.raidScore[enemy.name] = BUGGY_DMG;
+			rpgData.items = [amulet()];
+
+			const changes = await recalculateItemAtkStockBests(false);
+
+			expect(changes[0].refund).toMatchObject({ amount: 300 });
+			expect(rpgData.coin).toBe(50);
+			expect(rpgData.itemAtkStockRefundedAt).toBeUndefined();
+		});
+
+		test("複数のボスで記録が下がっても、返金は1ユーザーにつき1回", async () => {
+			const { rpgData, attacker, insert, raids } = setup();
+			const enemy2 = raidEnemys.find((x) => (x.pattern ?? 1) === 1 && !x.skillX && x.name !== enemy.name)!;
+			insert("raid-1", [attacker("user-a", BUGGY_DMG, withAmulet)]);
+			raids.insert({ postId: "raid-2", enemy: enemy2, isEnded: true, startedAt: Date.now(), finishedAt: 0, attackers: [attacker("user-a", BUGGY_DMG, withAmulet)], replyKey: [] });
+			rpgData.raidScore[enemy.name] = BUGGY_DMG;
+			rpgData.raidScore[enemy2.name] = BUGGY_DMG;
+			rpgData.items = [amulet()];
+
+			const changes = await recalculateItemAtkStockBests(true);
+
+			expect(changes).toHaveLength(2);
+			expect(changes.filter((c) => c.refund)).toHaveLength(1);
+			expect(rpgData.coin).toBe(50 + 300);
+		});
+
+		test("今のお守りが参加時のものと違えば返金しない", async () => {
+			const { rpgData, attacker, insert } = setup();
+			insert("raid-1", [attacker("user-a", BUGGY_DMG, { ...withAmulet, amulet: "[土道]" })]);
+			rpgData.raidScore[enemy.name] = BUGGY_DMG;
+			rpgData.items = [amulet()];
+
+			const changes = await recalculateItemAtkStockBests(true);
+
+			expect(changes[0].refund).toBeUndefined();
+			expect(rpgData.coin).toBe(50);
+		});
+
+		test("オーブで買ったお守りはオーブで返し、累計の買い物額は減らさない", async () => {
+			const { rpgData, attacker, insert } = setup();
+			insert("raid-1", [attacker("user-a", BUGGY_DMG, withAmulet)]);
+			rpgData.raidScore[enemy.name] = BUGGY_DMG;
+			rpgData.items = [amulet({ orb: true, price: 5 })];
+			rpgData.rerollOrb = 1;
+			rpgData.shopExp = 1000;
+
+			await recalculateItemAtkStockBests(true);
+
+			expect(rpgData.rerollOrb).toBe(6);
+			expect(rpgData.coin).toBe(50);
+			expect(rpgData.shopExp).toBe(1000);
+		});
 	});
 
 	test("自己ベストが対象外の構成の記録から来ていれば触れない", async () => {

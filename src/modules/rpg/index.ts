@@ -869,7 +869,8 @@ export default class extends Module {
 				const lines = changes.slice(0, MAX_LINES).map((c) => [
 					`${c.username} ${c.enemyName}: 自己ベスト ${c.pbBefore.toLocaleString()} → ${c.pbAfter.toLocaleString()}`,
 					...c.raids.map((r) => `  ${r.postId}: ${r.oldDmg.toLocaleString()} → ${r.newDmg.toLocaleString()}`),
-				].join("\n"));
+					c.refund ? `  返金: ${c.refund.amount.toLocaleString()}${c.refund.currency === "orb" ? "オーブ" : "コイン"}（${c.refund.amuletName}）` : "",
+				].filter(Boolean).join("\n"));
 				if (changes.length > MAX_LINES) lines.push(`ほか ${changes.length - MAX_LINES} 件`);
 				msg.reply([
 					`継戦融合武装の再計算${apply ? "（反映済み）" : "（ドライラン: apply を付けると反映します）"}: ${changes.length} 件`,

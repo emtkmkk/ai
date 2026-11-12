@@ -1402,7 +1402,29 @@ export type ItemAtkStockRecalcChange = {
 	pbAfter: number;
 	/** 下がった参加記録 */
 	raids: { postId: string; oldDmg: number; newDmg: number }[];
+	/** お守りの購入額の返金（1ユーザーにつき1回。返金しない場合は undefined） */
+	refund?: { amuletName: string; amount: number; currency: "coin" | "orb" };
 };
+
+/**
+ * 継戦融合武装の不具合の補償として、お守りの購入額を返金できるか調べる
+ *
+ * 下がった参加記録のうち、参加時のお守りの表示が今持っているお守りと一致するものがあれば、そのお守りの購入額を返す。
+ * お守りは取り上げない。コインで買ったお守りは、購入時に増えた累計の買い物額（shopExp）も返金分だけ減らす。
+ *
+ * @param liveData 現在のプレイヤーデータ
+ * @param amuletStrs 下がった参加記録の、参加時のお守りの表示（例: "[土道選遂扱毒急バ]"）
+ * @returns 返金の内容（返金しない場合は undefined）
+ * @internal
+ */
+function itemAtkStockRefund(liveData: any, amuletStrs: (string | undefined)[]): ItemAtkStockRecalcChange["refund"] {
+	if (liveData.itemAtkStockRefundedAt) return undefined;
+	const amulet = (liveData.items ?? []).find((x) => x.type === "amulet");
+	if (!amulet || typeof amulet.price !== "number" || amulet.price <= 0) return undefined;
+	const current = getSkillsShortName(liveData).amulet;
+	if (!current || !amuletStrs.includes(current)) return undefined;
+	return { amuletName: amulet.name, amount: amulet.price, currency: amulet.orb ? "orb" : "coin" };
+}
 
 /**
  * 参加記録が、継戦融合武装の不具合の影響を受けうる構成か
@@ -1434,6 +1456,8 @@ export function isItemAtkStockBugTarget(attacker: Raid["attackers"][number]): bo
  * - 書き換えるのは {@link recalculateRaidResult} と同じく、参加記録・自己ベスト・終了済みレイドのボスごとの全体記録。
  *   配布済みのコイン・王冠・結果投稿はそのまま
  * - 一度見た参加記録には itemAtkStockFixedAt を付け、次に実行したときは再計算しない
+ * - 記録が下がったユーザーのうち、下がった記録の参加時と同じお守りを今も持っている人には、そのお守りの購入額を返金する
+ *   （1ユーザーにつき1回。お守りは取り上げない。コインの返金では累計の買い物額も減らす。{@link itemAtkStockRefund}）
  *
  * @param apply true のときだけ書き込む（false ならドライランで、変更の一覧を返すだけ）
  * @returns 変更の一覧
@@ -1458,6 +1482,8 @@ export async function recalculateItemAtkStockBests(apply: boolean): Promise<Item
 	}
 
 	const changes: ItemAtkStockRecalcChange[] = [];
+	/** この実行で返金した（ドライランなら返金する予定の）ユーザー */
+	const refunded = new Set<string>();
 	for (const { userId, enemyName } of pairs.values()) {
 		const friend = ai.lookupFriend(userId);
 		const liveData = friend?.getPerModulesData(module_);
@@ -1497,6 +1523,9 @@ export async function recalculateItemAtkStockBests(apply: boolean): Promise<Item
 			}
 		}
 		const pbAfter = Math.min(pbBefore, best);
+		// 参加記録を差し替えると参加時のお守りの表示も今のものに変わるため、先に控えておく
+		const refund = lowered.length && !refunded.has(userId) ? itemAtkStockRefund(liveData, lowered.map((x) => x.attacker.skillsStr?.amulet)) : undefined;
+		if (refund) refunded.add(userId);
 
 		if (lowered.length || pbAfter !== pbBefore) {
 			changes.push({
@@ -1506,6 +1535,7 @@ export async function recalculateItemAtkStockBests(apply: boolean): Promise<Item
 				pbBefore,
 				pbAfter,
 				raids: lowered.map((x) => ({ postId: x.raid.postId, oldDmg: x.attacker.dmg, newDmg: x.run.totalDmg })),
+				refund,
 			});
 		}
 
@@ -1523,10 +1553,19 @@ export async function recalculateItemAtkStockBests(apply: boolean): Promise<Item
 				raids.update(x.raid);
 			}
 		}
-		if (pbAfter !== pbBefore) {
-			liveData.raidScore[enemyName] = pbAfter;
-			friend.setPerModulesData(module_, liveData);
+		if (pbAfter !== pbBefore) liveData.raidScore[enemyName] = pbAfter;
+		if (refund) {
+			if (refund.currency === "orb") {
+				liveData.rerollOrb = (liveData.rerollOrb ?? 0) + refund.amount;
+			} else {
+				// 購入時と逆の処理（コインで買ったときだけ累計の買い物額が増えている）
+				liveData.coin = (liveData.coin ?? 0) + refund.amount;
+				liveData.shopExp = Math.max(0, (liveData.shopExp ?? 0) - refund.amount);
+			}
+			liveData.itemAtkStockRefundedAt = now;
+			module_.log(`itemAtkStock refund ${userId}: ${refund.amount} ${refund.currency} (${refund.amuletName})`);
 		}
+		if (pbAfter !== pbBefore || refund) friend.setPerModulesData(module_, liveData);
 	}
 	return changes;
 }
