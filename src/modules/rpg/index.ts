@@ -22,7 +22,7 @@ import { aggregateTokensEffects, shopContextHook, shopReply } from './shop';
 import { shopCustomReply, shopCustomContextHook, shopCustomConfirmContextHook } from './shop-custom';
 import { shop2Reply } from './shop2';
 import { skills, Skill, SkillEffect, getSkill, skillReply, skillCalculate, aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, countDuplicateSkillNames, skillBorders, canLearnSkillNow } from './skills';
-import { start, raidInstall, raidContextHook, raidTimeoutCallback, recalculateRaidResult, parseRaidRecalcArgs } from './raid';
+import { start, raidInstall, raidContextHook, raidTimeoutCallback, recalculateRaidResult, parseRaidRecalcArgs, recalculateItemAtkStockBests } from './raid';
 import type { Raid } from './raid';
 import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatus, getPostCount, getPostX, getVal, random, preLevelUpProcess, deepClone, accumulateVitality } from './utils';
 import { applyKazutoriMasterHiddenBonus, applyKazutoriMasterPostCountFloor, applyWeakAtkReduction, calculateArpen, calculateStats, applySoftCapPow2, ensureKazutoriMasterHistory, getKazutoriMasterMessage } from './battle';
@@ -858,6 +858,25 @@ export default class extends Module {
 		if (msg.includes(["startRaid"])) {
 			start(undefined, msg.includes(["recent"]) ? "r" : msg.includes(["hato"]) ? "h" : "");
 			return { reaction: "love" };
+		}
+		// 継戦融合武装の不具合で膨らんだ自己ベストの再計算: RPG admin stockRecalc [apply]
+		// apply を付けない場合はドライラン（変更の一覧を返すだけで書き込まない）
+		if (msg.includes(["stockRecalc"])) {
+			const apply = msg.includes(["apply"]);
+			return (async () => {
+				const changes = await recalculateItemAtkStockBests(apply);
+				const MAX_LINES = 30;
+				const lines = changes.slice(0, MAX_LINES).map((c) => [
+					`${c.username} ${c.enemyName}: 自己ベスト ${c.pbBefore.toLocaleString()} → ${c.pbAfter.toLocaleString()}`,
+					...c.raids.map((r) => `  ${r.postId}: ${r.oldDmg.toLocaleString()} → ${r.newDmg.toLocaleString()}`),
+				].join("\n"));
+				if (changes.length > MAX_LINES) lines.push(`ほか ${changes.length - MAX_LINES} 件`);
+				msg.reply([
+					`継戦融合武装の再計算${apply ? "（反映済み）" : "（ドライラン: apply を付けると反映します）"}: ${changes.length} 件`,
+					...lines,
+				].join("\n"), { visibility: "specified" });
+				return { reaction: "love" };
+			})();
 		}
 		// レイド結果の再計算: RPG admin raidRecalc <レイド投稿ID> <ユーザーID> [<ユーザーID> ...]
 		if (msg.includes(["raidRecalc"])) {

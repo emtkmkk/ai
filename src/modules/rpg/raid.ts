@@ -96,6 +96,8 @@ export type Raid = {
 		recalculatedAt?: number;
 		/** 最初の再計算前のダメージ（再計算の監査用） */
 		originalDmg?: number;
+		/** 継戦融合武装の不具合の再計算（{@link recalculateItemAtkStockBests}）で確認した日時（タイムスタンプ） */
+		itemAtkStockFixedAt?: number;
 	}[];
 	/** レイドの敵 */
 	enemy: RaidEnemy;
@@ -1242,7 +1244,53 @@ export function parseRaidRecalcArgs(text: string): { raidPostId: string | undefi
  * @internal
  */
 export async function recalculateRaidResult(raidPostId: string, userId: string): Promise<RaidRecalcResult> {
-	const raid = raids.findOne({ postId: raidPostId });
+	const target = resolveRecalcTarget(raids.findOne({ postId: raidPostId }), userId);
+	if (!target.ok) return target;
+	const { raid, attacker, friend, liveData } = target;
+
+	const best = await simulateRecalc(target);
+	if (!best) return { ok: false, reason: "再計算に失敗しました" };
+
+	const oldDmg = attacker.dmg;
+	const newDmg = best.totalDmg;
+	const oldTotal = applyRecalcRun(raid, attacker, best);
+
+	// 自己ベスト: この回が自己ベストだった場合は、他のレイドの記録と新しい結果から付け直す
+	const enemyName = raid.enemy.name;
+	const otherBest = raids.find({}).reduce((max, r) => {
+		if (r.postId === raid.postId || r.enemy?.name !== enemyName) return max;
+		const a = (r.attackers ?? []).find((x) => x.user.id === userId);
+		return a && a.dmg > max ? a.dmg : max;
+	}, 0);
+	if (!liveData.raidScore) liveData.raidScore = {};
+	const pbBefore = liveData.raidScore[enemyName];
+	liveData.raidScore[enemyName] = pbBefore === oldDmg ? Math.max(newDmg, otherBest) : Math.max(pbBefore ?? 0, newDmg);
+	friend.setPerModulesData(module_, liveData);
+
+	const globalRecord = fixGlobalRecord(raid, oldTotal);
+
+	module_.log(`raid recalculated ${raid.postId} ${userId}: ${oldDmg} -> ${newDmg}`);
+	return { ok: true, oldDmg, newDmg, isEnded: raid.isEnded, personalBest: { before: pbBefore, after: liveData.raidScore[enemyName] }, globalRecord };
+}
+
+/** 再計算の対象（レイド・参加記録・ユーザー・ボス定義・現在のプレイヤーデータ） */
+type RecalcTarget = {
+	raid: Raid;
+	attacker: Raid["attackers"][number];
+	friend: any;
+	enemy: RaidEnemy;
+	liveData: any;
+};
+
+/**
+ * 再計算の対象を引き当てる
+ *
+ * @param raid 対象のレイド（見つからなかった場合は null）
+ * @param userId 対象ユーザーのID
+ * @returns 再計算の対象、または再計算できない理由
+ * @internal
+ */
+function resolveRecalcTarget(raid: Raid | null | undefined, userId: string): ({ ok: true } & RecalcTarget) | { ok: false; reason: string } {
 	if (!raid) return { ok: false, reason: "レイドが見つかりません" };
 
 	// 終了処理と同じく、同一ユーザーの最初の参加記録を対象にする
@@ -1259,18 +1307,38 @@ export async function recalculateRaidResult(raidPostId: string, userId: string):
 	const liveData = friend.getPerModulesData(module_);
 	if (!liveData?.lv) return { ok: false, reason: "RPGのデータがありません" };
 
-	// 平行次元のお札を持っている場合は、参加時と同じく所持数+1回試算して最良の結果を採用する
-	// 参加時と同じシードを使うので、計算式が変わっていなければ同じ展開になる
-	const parallelCount = Math.min(10, Math.max(0, liveData.parallelDimension ?? 0));
-	const runs = await simulateRaidBattle(playerFromFriend(friend, attacker.user), enemy, { runs: parallelCount + 1, seedPostId: raid.postId });
-	const best = bestRaidRun(runs);
-	if (!best) return { ok: false, reason: "再計算に失敗しました" };
+	return { ok: true, raid, attacker, friend, enemy, liveData };
+}
 
+/**
+ * 現在の計算式と現在のプレイヤーデータで、参加時と同じシードを使ってレイドを試算し直す
+ *
+ * 平行次元のお札を持っている場合は、参加時と同じく所持数+1回試算して最良の結果を採用する。
+ * 参加時と同じシードを使うので、計算式もプレイヤーデータも変わっていなければ同じ展開になる。
+ *
+ * @param target 再計算の対象
+ * @returns 最良の試算結果（失敗した場合は undefined）
+ * @internal
+ */
+async function simulateRecalc(target: RecalcTarget): Promise<RaidSimulationRun | undefined> {
+	const parallelCount = Math.min(10, Math.max(0, target.liveData.parallelDimension ?? 0));
+	const runs = await simulateRaidBattle(playerFromFriend(target.friend, target.attacker.user), target.enemy, { runs: parallelCount + 1, seedPostId: target.raid.postId });
+	return bestRaidRun(runs);
+}
+
+/**
+ * 参加記録を再計算の結果で差し替えて保存する
+ *
+ * @param raid 対象のレイド
+ * @param attacker 対象の参加記録
+ * @param best 再計算の結果
+ * @returns 差し替え前のレイドの合計ダメージ（全体記録の付け直しに使う）
+ * @internal
+ */
+function applyRecalcRun(raid: Raid, attacker: Raid["attackers"][number], best: RaidSimulationRun): number {
 	const oldDmg = attacker.dmg;
-	const newDmg = best.totalDmg;
 	const oldTotal = raidTotalDmg(raid);
-
-	attacker.dmg = newDmg;
+	attacker.dmg = best.totalDmg;
 	attacker.count = best.count ?? attacker.count;
 	attacker.me = best.me ?? attacker.me;
 	attacker.lv = best.lv ?? attacker.lv;
@@ -1280,51 +1348,187 @@ export async function recalculateRaidResult(raidPostId: string, userId: string):
 	attacker.recalculatedAt = Date.now();
 	if (attacker.originalDmg === undefined) attacker.originalDmg = oldDmg;
 	raids.update(raid);
+	return oldTotal;
+}
 
-	// 自己ベスト: この回が自己ベストだった場合は、他のレイドの記録と新しい結果から付け直す
-	const enemyName = raid.enemy.name;
-	const otherBest = raids.find({}).reduce((max, r) => {
-		if (r.postId === raid.postId || r.enemy?.name !== enemyName) return max;
-		const a = (r.attackers ?? []).find((x) => x.user.id === userId);
-		return a && a.dmg > max ? a.dmg : max;
-	}, 0);
-	if (!liveData.raidScore) liveData.raidScore = {};
-	const pbBefore = liveData.raidScore[enemyName];
-	liveData.raidScore[enemyName] = pbBefore === oldDmg ? Math.max(newDmg, otherBest) : Math.max(pbBefore ?? 0, newDmg);
-	friend.setPerModulesData(module_, liveData);
-
-	// 終了済みのレイド: ボスごとの全体記録（合計ダメージ）を直す
-	let globalRecord: { before: number | undefined; after: number } | undefined;
+/**
+ * 終了済みのレイドの結果を差し替えた後、ボスごとの全体記録（合計ダメージ）を直す
+ *
+ * @param raid 対象のレイド
+ * @param oldTotal 差し替え前のレイドの合計ダメージ
+ * @returns 全体記録の変化（開催中のレイドなら undefined）
+ * @internal
+ */
+function fixGlobalRecord(raid: Raid, oldTotal: number): { before: number | undefined; after: number } | undefined {
 	const rpgData = ai.moduleData.findOne({ type: 'rpg' });
-	if (raid.isEnded && rpgData) {
-		if (!rpgData.raidScore) rpgData.raidScore = {};
-		if (!rpgData.raidScoreDate) rpgData.raidScoreDate = {};
-		const newTotal = raidTotalDmg(raid);
-		const before = rpgData.raidScore[enemyName];
-		if (before === oldTotal) {
-			// この回が全体記録だった場合は、他の終了済みレイドと比べて付け直す
-			let recTotal = newTotal;
-			let recDate = formatRaidDate(raid);
-			for (const r of raids.find({ isEnded: true })) {
-				if (r.postId === raid.postId || r.enemy?.name !== enemyName) continue;
-				const t = raidTotalDmg(r);
-				if (t > recTotal) {
-					recTotal = t;
-					recDate = formatRaidDate(r);
-				}
+	if (!raid.isEnded || !rpgData) return undefined;
+	const enemyName = raid.enemy.name;
+	if (!rpgData.raidScore) rpgData.raidScore = {};
+	if (!rpgData.raidScoreDate) rpgData.raidScoreDate = {};
+	const newTotal = raidTotalDmg(raid);
+	const before = rpgData.raidScore[enemyName];
+	if (before === oldTotal) {
+		// この回が全体記録だった場合は、他の終了済みレイドと比べて付け直す
+		let recTotal = newTotal;
+		let recDate = formatRaidDate(raid);
+		for (const r of raids.find({ isEnded: true })) {
+			if (r.postId === raid.postId || r.enemy?.name !== enemyName) continue;
+			const t = raidTotalDmg(r);
+			if (t > recTotal) {
+				recTotal = t;
+				recDate = formatRaidDate(r);
 			}
-			rpgData.raidScore[enemyName] = recTotal;
-			rpgData.raidScoreDate[enemyName] = recDate;
-		} else if (before === undefined || newTotal > before) {
-			rpgData.raidScore[enemyName] = newTotal;
-			rpgData.raidScoreDate[enemyName] = formatRaidDate(raid);
 		}
-		ai.moduleData.update(rpgData);
-		globalRecord = { before, after: rpgData.raidScore[enemyName] };
+		rpgData.raidScore[enemyName] = recTotal;
+		rpgData.raidScoreDate[enemyName] = recDate;
+	} else if (before === undefined || newTotal > before) {
+		rpgData.raidScore[enemyName] = newTotal;
+		rpgData.raidScoreDate[enemyName] = formatRaidDate(raid);
+	}
+	ai.moduleData.update(rpgData);
+	return { before, after: rpgData.raidScore[enemyName] };
+}
+
+// -------- 継戦融合武装の不具合で膨らんだ記録の再計算 --------
+
+/** {@link recalculateItemAtkStockBests} で見つかった、ユーザー×ボスごとの変更 */
+export type ItemAtkStockRecalcChange = {
+	userId: string;
+	username: string;
+	enemyName: string;
+	/** 再計算前の自己ベスト */
+	pbBefore: number;
+	/** 再計算後の自己ベスト */
+	pbAfter: number;
+	/** 下がった参加記録 */
+	raids: { postId: string; oldDmg: number; newDmg: number }[];
+};
+
+/**
+ * 参加記録が、継戦融合武装の不具合の影響を受けうる構成か
+ *
+ * 継戦融合武装（継）と食いしんぼう（食）を同時に持っていた場合を対象にする。
+ * 食いしんぼうは武器を使わないため、継戦融合武装の持ち越しは全て食べ物の過剰回復（パワー比例）から来ていた。
+ *
+ * @param attacker 参加記録
+ * @returns 対象なら true
+ * @internal
+ */
+export function isItemAtkStockBugTarget(attacker: Raid["attackers"][number]): boolean {
+	const str = [attacker.skillsStr?.skills, attacker.skillsStr?.amulet].filter(Boolean).join("");
+	return str.includes("継") && str.includes("食");
+}
+
+/**
+ * 継戦融合武装の不具合で膨らんだ自己ベストを、全ユーザー×全ボスについて再計算する
+ *
+ * 継戦融合武装が食べ物の過剰回復（その時点のパワーに比例する上昇）まで持ち越していたため、
+ * 「累積 → パワー増 → 比例ボーナス増 → 累積増」の循環で与ダメージが膨らんでいた。
+ *
+ * @remarks
+ * - 対象は通常戦闘型（pattern 1）のボスで、自己ベストが「継と食を同時に持っていた参加記録」から来ているユーザー×ボス
+ * - 参加記録をダメージの大きい順に見て、対象の構成のものは再計算する（{@link recalculateRaidResult} と同じく、
+ *   現在の計算式と現在のプレイヤーデータで、参加時と同じシードを使う）。自己ベストを上回れない記録まで来たら止める
+ *   （2番目の記録も膨らんでいる場合に備えて、自己ベストになりうる記録だけを順に見る）
+ * - 再計算の結果は元の記録より下がる場合だけ採用する（救済で記録が上がることはない）
+ * - 書き換えるのは {@link recalculateRaidResult} と同じく、参加記録・自己ベスト・終了済みレイドのボスごとの全体記録。
+ *   配布済みのコイン・王冠・結果投稿はそのまま
+ * - 一度見た参加記録には itemAtkStockFixedAt を付け、次に実行したときは再計算しない
+ *
+ * @param apply true のときだけ書き込む（false ならドライランで、変更の一覧を返すだけ）
+ * @returns 変更の一覧
+ * @internal
+ */
+export async function recalculateItemAtkStockBests(apply: boolean): Promise<ItemAtkStockRecalcChange[]> {
+	const allRaids = raids.find({});
+	const isNormalBattle = (name: string | undefined) => (raidEnemys.find((x) => x.name === name)?.pattern ?? 1) === 1;
+	const firstAttacker = (raid: Raid, userId: string) => (raid.attackers ?? []).find((x) => x.user.id === userId);
+	const needsRecalc = (attacker: Raid["attackers"][number]) => isItemAtkStockBugTarget(attacker) && !attacker.itemAtkStockFixedAt;
+
+	// 対象の構成で参加したことのあるユーザー×ボスを集める
+	const pairs = new Map<string, { userId: string; enemyName: string }>();
+	for (const raid of allRaids) {
+		if (!isNormalBattle(raid.enemy?.name)) continue;
+		const seen = new Set<string>();
+		for (const attacker of raid.attackers ?? []) {
+			if (seen.has(attacker.user.id)) continue;
+			seen.add(attacker.user.id);
+			if (needsRecalc(attacker)) pairs.set(`${attacker.user.id}\n${raid.enemy.name}`, { userId: attacker.user.id, enemyName: raid.enemy.name });
+		}
 	}
 
-	module_.log(`raid recalculated ${raid.postId} ${userId}: ${oldDmg} -> ${newDmg}`);
-	return { ok: true, oldDmg, newDmg, isEnded: raid.isEnded, personalBest: { before: pbBefore, after: liveData.raidScore[enemyName] }, globalRecord };
+	const changes: ItemAtkStockRecalcChange[] = [];
+	for (const { userId, enemyName } of pairs.values()) {
+		const friend = ai.lookupFriend(userId);
+		const liveData = friend?.getPerModulesData(module_);
+		const pbBefore: number | undefined = liveData?.raidScore?.[enemyName];
+		if (!friend || !liveData?.lv || pbBefore === undefined) continue;
+
+		// このユーザーのこのボスの参加記録を、ダメージの大きい順に
+		const records = allRaids
+			.filter((r) => r.enemy?.name === enemyName)
+			.flatMap((raid) => {
+				const attacker = firstAttacker(raid, userId);
+				return attacker && attacker.dmg >= 0 ? [{ raid: raid as Raid, attacker }] : [];
+			})
+			.sort((a, b) => b.attacker.dmg - a.attacker.dmg);
+
+		// 自己ベストが対象の構成の参加記録から来ていなければ対象外
+		if (!records.some((x) => x.attacker.dmg === pbBefore && needsRecalc(x.attacker))) continue;
+
+		let best = 0;
+		const checked: typeof records = [];
+		const lowered: { raid: Raid; attacker: Raid["attackers"][number]; run: RaidSimulationRun }[] = [];
+		for (const x of records) {
+			// これ以降の記録は、ここまでの最大値を上回れない
+			if (x.attacker.dmg <= best) break;
+			if (!needsRecalc(x.attacker)) {
+				best = Math.max(best, x.attacker.dmg);
+				continue;
+			}
+			const target = resolveRecalcTarget(x.raid, userId);
+			const run = target.ok ? await simulateRecalc(target) : undefined;
+			checked.push(x);
+			if (run && run.totalDmg < x.attacker.dmg) {
+				lowered.push({ ...x, run });
+				best = Math.max(best, run.totalDmg);
+			} else {
+				best = Math.max(best, x.attacker.dmg);
+			}
+		}
+		const pbAfter = Math.min(pbBefore, best);
+
+		if (lowered.length || pbAfter !== pbBefore) {
+			changes.push({
+				userId,
+				username: records[0].attacker.user.username,
+				enemyName,
+				pbBefore,
+				pbAfter,
+				raids: lowered.map((x) => ({ postId: x.raid.postId, oldDmg: x.attacker.dmg, newDmg: x.run.totalDmg })),
+			});
+		}
+
+		if (!apply) continue;
+		const now = Date.now();
+		for (const x of checked) {
+			const low = lowered.find((y) => y.attacker === x.attacker);
+			x.attacker.itemAtkStockFixedAt = now;
+			if (low) {
+				const oldDmg = x.attacker.dmg;
+				const oldTotal = applyRecalcRun(x.raid, x.attacker, low.run);
+				fixGlobalRecord(x.raid, oldTotal);
+				module_.log(`raid recalculated (itemAtkStock) ${x.raid.postId} ${userId}: ${oldDmg} -> ${low.run.totalDmg}`);
+			} else {
+				raids.update(x.raid);
+			}
+		}
+		if (pbAfter !== pbBefore) {
+			liveData.raidScore[enemyName] = pbAfter;
+			friend.setPerModulesData(module_, liveData);
+		}
+	}
+	return changes;
 }
 
 // -------- タイムアウト処理 --------
