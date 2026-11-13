@@ -20,7 +20,8 @@
  *       必要なときだけ `users/notes` で直前の投稿を確認する）。
  *       直前の投稿がサーバの追跡期間中のものかは `users/show` の
  *       `isTracked` / `trackedSince`（もこきー拡張）で確認する。
- *       PureRT（引用なしRenote）とダイレクト投稿はリアクション対象にも、前回投稿にも数えない。
+ *       PureRT（引用なしRenote）・ダイレクト・フォロワー限定+CW付きの投稿は
+ *       リアクション対象にも、前回投稿にも数えない。
  *
  * @public
  */
@@ -107,8 +108,8 @@ export default class extends Module {
 	 *   `users/show` が返す追跡情報（`isTracked` / `trackedSince`）で行う
 	 *   （{@link shouldReactOhisasiburi}）。追跡開始より前の投稿（フォロー前に
 	 *   誰かのリノートなどで取り込まれたもの）は除外される。
-	 *   サーバ側の情報なので friend に記録がないユーザーでも初回から判定できる。
-	 * - PureRT（引用なしRenote）とダイレクト投稿は対象外（{@link isCountableNote}）。
+	 * - friend に記録がない（もこチキくんと絡んだことがない）ユーザーは対象外。
+	 * - PureRT（引用なしRenote）・ダイレクト・フォロワー限定+CW付きの投稿は対象外（{@link isCountableNote}）。
 	 *   今回のノートがそれらなら記録もせず終了し、直前の投稿を探すときも飛ばす。
 	 *
 	 * @param note - 受信ノート
@@ -117,7 +118,7 @@ export default class extends Module {
 	@autobind
 	private async checkOhisasiburi(note: Note) {
 		if (!note.createdAt || !note.user?.id) return;
-		// PureRT・ダイレクトは投稿として数えない（リアクションも最終投稿日時の記録もしない）
+		// PureRT・ダイレクト・フォロワー限定+CW付きは投稿として数えない（リアクションも最終投稿日時の記録もしない）
 		if (!isCountableNote(note)) return;
 		const friend = this.ai.lookupFriend(note.user.id);
 		if (!friend) return;
@@ -131,7 +132,7 @@ export default class extends Module {
 
 		if (!needsOhisasiburiCheck(recorded, note.createdAt)) return;
 
-		// 直前の投稿（PureRT・ダイレクトを除く）を取得する
+		// 直前の投稿（PureRT・ダイレクト・フォロワー限定+CW付きを除く）を取得する
 		// includeMyRenotes: false でサーバ側でも PureRT を除外するが、念のためこちらでも除外する
 		const notes = await this.ai.api('users/notes', {
 			userId: note.user.id,
