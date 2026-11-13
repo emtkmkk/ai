@@ -66,10 +66,12 @@ export function isPureRenote(note: RenoteLike | null | undefined): boolean {
  * 次のノートは数えない（リアクション対象にも、前回投稿にもしない）:
  * - PureRT（{@link isPureRenote}）
  * - 公開範囲がダイレクト（`specified`）のノート
+ * - 公開範囲がフォロワー限定でCW付きのノート（深刻な内容が多いため）
  */
 export function isCountableNote(note: (RenoteLike & { visibility?: string | null }) | null | undefined): boolean {
 	if (!note) return false;
 	if (note.visibility === 'specified') return false;
+	if (note.visibility === 'followers' && note.cw != null) return false;
 	return !isPureRenote(note);
 }
 

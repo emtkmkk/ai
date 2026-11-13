@@ -129,9 +129,13 @@ describe('isCountableNote', () => {
 		expect(isCountableNote({ text: 'hi', visibility: 'public' })).toBe(true);
 		expect(isCountableNote({ text: 'hi', visibility: 'followers' })).toBe(true);
 		expect(isCountableNote({ renoteId: 'x', text: 'quote', visibility: 'home' })).toBe(true);
+		expect(isCountableNote({ text: 'hi', cw: 'cw', visibility: 'public' })).toBe(true);
+		expect(isCountableNote({ text: 'hi', cw: 'cw', visibility: 'home' })).toBe(true);
 	});
 
-	it('PureRT・ダイレクトは数えない', () => {
+	it('PureRT・ダイレクト・フォロワー限定+CW付きは数えない', () => {
+		expect(isCountableNote({ text: 'hi', cw: 'cw', visibility: 'followers' })).toBe(false);
+		expect(isCountableNote({ text: 'hi', cw: '', visibility: 'followers' })).toBe(false);
 		expect(isCountableNote({ renoteId: 'x', text: null, visibility: 'public' })).toBe(false);
 		expect(isCountableNote({ text: 'dm', visibility: 'specified' })).toBe(false);
 		expect(isCountableNote(null)).toBe(false);
