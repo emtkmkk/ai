@@ -22,7 +22,7 @@ import { aggregateTokensEffects, shopContextHook, shopReply } from './shop';
 import { shopCustomReply, shopCustomContextHook, shopCustomConfirmContextHook } from './shop-custom';
 import { shop2Reply } from './shop2';
 import { skills, Skill, SkillEffect, getSkill, skillReply, skillCalculate, aggregateSkillsEffects, calcSevenFever, amuletMinusDurability, countDuplicateSkillNames, skillBorders, canLearnSkillNow } from './skills';
-import { start, raidInstall, raidContextHook, raidTimeoutCallback, recalculateRaidResult, parseRaidRecalcArgs } from './raid';
+import { start, raidInstall, raidContextHook, raidTimeoutCallback, recalculateRaidResult, parseRaidRecalcArgs, recalculateItemAtkStockBests } from './raid';
 import type { Raid } from './raid';
 import { initializeData, getColor, getAtkDmg, getEnemyDmg, showStatus, getPostCount, getPostX, getVal, random, preLevelUpProcess, deepClone, accumulateVitality } from './utils';
 import { applyKazutoriMasterHiddenBonus, applyKazutoriMasterPostCountFloor, applyWeakAtkReduction, calculateArpen, calculateStats, applySoftCapPow2, ensureKazutoriMasterHistory, getKazutoriMasterMessage } from './battle';
@@ -858,6 +858,26 @@ export default class extends Module {
 		if (msg.includes(["startRaid"])) {
 			start(undefined, msg.includes(["recent"]) ? "r" : msg.includes(["hato"]) ? "h" : "");
 			return { reaction: "love" };
+		}
+		// 継戦融合武装の不具合で膨らんだ自己ベストの再計算: RPG admin stockRecalc [apply]
+		// apply を付けない場合はドライラン（変更の一覧を返すだけで書き込まない）
+		if (msg.includes(["stockRecalc"])) {
+			const apply = msg.includes(["apply"]);
+			return (async () => {
+				const changes = await recalculateItemAtkStockBests(apply);
+				const MAX_LINES = 30;
+				const lines = changes.slice(0, MAX_LINES).map((c) => [
+					`${c.username} ${c.enemyName}: 自己ベスト ${c.pbBefore.toLocaleString()} → ${c.pbAfter.toLocaleString()}`,
+					...c.raids.map((r) => `  ${r.postId}: ${r.oldDmg.toLocaleString()} → ${r.newDmg.toLocaleString()}`),
+					c.refund ? `  返金: ${c.refund.amount.toLocaleString()}${c.refund.currency === "orb" ? "オーブ" : "コイン"}（${c.refund.amuletName}）` : "",
+				].filter(Boolean).join("\n"));
+				if (changes.length > MAX_LINES) lines.push(`ほか ${changes.length - MAX_LINES} 件`);
+				msg.reply([
+					`継戦融合武装の再計算${apply ? "（反映済み）" : "（ドライラン: apply を付けると反映します）"}: ${changes.length} 件`,
+					...lines,
+				].join("\n"), { visibility: "specified" });
+				return { reaction: "love" };
+			})();
 		}
 		// レイド結果の再計算: RPG admin raidRecalc <レイド投稿ID> <ユーザーID> [<ユーザーID> ...]
 		if (msg.includes(["raidRecalc"])) {
@@ -1945,6 +1965,8 @@ export default class extends Module {
 		let item;
 		/** アイテムによって増加したステータス */
 		let itemBonus = { atk: 0, def: 0 };
+		/** 継戦融合武装で次ターンへ持ち越す元になる、物理戦闘で武器を装備したときのパワー上昇（固定値） */
+		let fusedWeaponAtk = 0;
 
 		/** これって戦闘？ */
 		let isBattle = data.enemy.atkmsg(0).includes("ダメージ");
@@ -2205,6 +2227,7 @@ export default class extends Module {
 					} else {
 						itemBonus.atk = (lv * 4) * (item.effect * 0.005);
 						atk = atk + itemBonus.atk;
+						fusedWeaponAtk = itemBonus.atk;
 						if (item.effect >= 100) {
 							message += `${config.rpgHeroName}のパワーが特大アップ！\n`;
 						} else if (item.effect >= 70) {
@@ -2351,8 +2374,11 @@ export default class extends Module {
 			if (typeof data.enemy.defx === "number") data.enemy.defx += 1;
 		}
 
+		// 継戦融合武装: 融合するのは物理戦闘で装備した武器の固定値の上昇だけ。
+		// 気合（mind）や食べ物の過剰回復による上昇はその時点のパワーに比例するため、
+		// 持ち越すと「累積 → パワー増 → 比例ボーナス増 → 累積増」の循環で指数的に膨らむ
 		if (skillEffects.itemAtkStock) {
-			const itemAtkGain = Math.max(Math.floor(itemBonus.atk ?? 0), 0);
+			const itemAtkGain = Math.max(Math.floor(fusedWeaponAtk), 0);
 			if (itemAtkGain > 0) {
 				data.itemAtkStockNext = Math.floor(itemAtkGain * (skillEffects.itemAtkStock ?? 0));
 				if (verboseLog) {
