@@ -1,5 +1,7 @@
 import {
+	isCountableNote,
 	isOhisasiburi,
+	isPureRenote,
 	isPostedWhileTracked,
 	needsOhisasiburiCheck,
 	OHISASIBURI_DAYS,
@@ -98,5 +100,40 @@ describe('shouldReactOhisasiburi', () => {
 		expect(shouldReactOhisasiburi(undefined, tracked, now)).toBe(false);
 		expect(shouldReactOhisasiburi(null, tracked, now)).toBe(false);
 		expect(shouldReactOhisasiburi({ createdAt: null }, tracked, now)).toBe(false);
+	});
+});
+
+describe('isPureRenote', () => {
+	it('本文などのない Renote は PureRT', () => {
+		expect(isPureRenote({ renoteId: 'x', text: null, cw: null, fileIds: [], poll: null })).toBe(true);
+		expect(isPureRenote({ renoteId: 'x' })).toBe(true);
+	});
+
+	it('Renote でなければ PureRT ではない', () => {
+		expect(isPureRenote({ renoteId: null, text: null })).toBe(false);
+		expect(isPureRenote({ text: 'hello' })).toBe(false);
+		expect(isPureRenote(null)).toBe(false);
+	});
+
+	it('引用Renote（本文・CW・ファイル・アンケート付き）は PureRT ではない', () => {
+		expect(isPureRenote({ renoteId: 'x', text: 'quote' })).toBe(false);
+		expect(isPureRenote({ renoteId: 'x', text: null, cw: 'cw' })).toBe(false);
+		expect(isPureRenote({ renoteId: 'x', text: null, fileIds: ['f'] })).toBe(false);
+		expect(isPureRenote({ renoteId: 'x', text: null, files: [{}] })).toBe(false);
+		expect(isPureRenote({ renoteId: 'x', text: null, poll: { choices: [] } })).toBe(false);
+	});
+});
+
+describe('isCountableNote', () => {
+	it('通常の投稿・引用Renoteは数える', () => {
+		expect(isCountableNote({ text: 'hi', visibility: 'public' })).toBe(true);
+		expect(isCountableNote({ text: 'hi', visibility: 'followers' })).toBe(true);
+		expect(isCountableNote({ renoteId: 'x', text: 'quote', visibility: 'home' })).toBe(true);
+	});
+
+	it('PureRT・ダイレクトは数えない', () => {
+		expect(isCountableNote({ renoteId: 'x', text: null, visibility: 'public' })).toBe(false);
+		expect(isCountableNote({ text: 'dm', visibility: 'specified' })).toBe(false);
+		expect(isCountableNote(null)).toBe(false);
 	});
 });

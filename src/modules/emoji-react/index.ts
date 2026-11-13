@@ -20,6 +20,7 @@
  *       必要なときだけ `users/notes` で直前の投稿を確認する）。
  *       直前の投稿がサーバの追跡期間中のものかは `users/show` の
  *       `isTracked` / `trackedSince`（もこきー拡張）で確認する。
+ *       PureRT（引用なしRenote）とダイレクト投稿はリアクション対象にも、前回投稿にも数えない。
  *
  * @public
  */
@@ -35,7 +36,7 @@ import config from '@/config';
 import { mecab } from '@/modules/keyword/mecab';
 import { hankakuToZenkaku, katakanaToHiragana } from '@/utils/japanese';
 import getDate from '@/utils/get-date';
-import { needsOhisasiburiCheck, shouldReactOhisasiburi, TrackingInfo } from '@/utils/ohisasiburi';
+import { isCountableNote, needsOhisasiburiCheck, shouldReactOhisasiburi, TrackingInfo } from '@/utils/ohisasiburi';
 
 /**
  * 自動絵文字リアクションモジュールクラス
@@ -107,6 +108,8 @@ export default class extends Module {
 	 *   （{@link shouldReactOhisasiburi}）。追跡開始より前の投稿（フォロー前に
 	 *   誰かのリノートなどで取り込まれたもの）は除外される。
 	 *   サーバ側の情報なので friend に記録がないユーザーでも初回から判定できる。
+	 * - PureRT（引用なしRenote）とダイレクト投稿は対象外（{@link isCountableNote}）。
+	 *   今回のノートがそれらなら記録もせず終了し、直前の投稿を探すときも飛ばす。
 	 *
 	 * @param note - 受信ノート
 	 * @internal
@@ -114,6 +117,8 @@ export default class extends Module {
 	@autobind
 	private async checkOhisasiburi(note: Note) {
 		if (!note.createdAt || !note.user?.id) return;
+		// PureRT・ダイレクトは投稿として数えない（リアクションも最終投稿日時の記録もしない）
+		if (!isCountableNote(note)) return;
 		const friend = this.ai.lookupFriend(note.user.id);
 		if (!friend) return;
 
@@ -126,19 +131,22 @@ export default class extends Module {
 
 		if (!needsOhisasiburiCheck(recorded, note.createdAt)) return;
 
-		const previous = await this.ai.api('users/notes', {
+		// 直前の投稿（PureRT・ダイレクトを除く）を取得する
+		// includeMyRenotes: false でサーバ側でも PureRT を除外するが、念のためこちらでも除外する
+		const notes = await this.ai.api('users/notes', {
 			userId: note.user.id,
 			untilId: note.id,
-			limit: 1,
+			limit: 10,
 			includeReplies: true,
-			includeMyRenotes: true,
-		}) as { id?: string; createdAt?: string }[] | null;
-		if (!previous?.[0]?.createdAt) return;
+			includeMyRenotes: false,
+		}) as ({ id?: string; createdAt?: string } & NonNullable<Parameters<typeof isCountableNote>[0]>)[] | null;
+		const previous = notes?.find((n) => isCountableNote(n));
+		if (!previous?.createdAt) return;
 
 		const tracking = await this.ai.api('users/show', { userId: note.user.id }) as TrackingInfo | null;
-		if (!shouldReactOhisasiburi(previous[0], tracking, note.createdAt)) return;
+		if (!shouldReactOhisasiburi(previous, tracking, note.createdAt)) return;
 
-		this.log(`Ohisasiburi - @${note.user.username} (last: ${previous[0].createdAt}, trackedSince: ${tracking?.trackedSince})`);
+		this.log(`Ohisasiburi - @${note.user.username} (last: ${previous.createdAt}, trackedSince: ${tracking?.trackedSince})`);
 		await delay(3000 + Math.round(Math.random() * 2000));
 		this.ai.api('notes/reactions/create', {
 			noteId: note.id,

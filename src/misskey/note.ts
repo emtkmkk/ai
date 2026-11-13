@@ -36,6 +36,10 @@ export type Note = {
 	visibility: string;
 	/** 投稿者のユーザー情報 */
 	user: any | null;
+	/** Renote 元ノートのID（Renote でない場合は null） */
+	renoteId?: string | null;
+	/** 添付ファイルのID一覧 */
+	fileIds?: string[];
 	/** Bot向けメンションとして扱われた投稿かどうか */
 	isBotMention?: boolean;
 	/**
