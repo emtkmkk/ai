@@ -32,6 +32,48 @@ export type TrackingInfo = {
 };
 
 /**
+ * 純粋なリノート（引用なしRenote）判定に必要なノートのフィールド
+ */
+export type RenoteLike = {
+	renoteId?: string | null;
+	text?: string | null;
+	cw?: string | null;
+	fileIds?: string[] | null;
+	files?: unknown[] | null;
+	poll?: unknown | null;
+};
+
+/**
+ * 純粋なリノート（本文・CW・添付ファイル・アンケートのない Renote）かどうかを判定する
+ *
+ * @remarks
+ * 久しぶり判定では PureRT は「投稿」とみなさない（リアクション対象にも、前回投稿にも数えない）。
+ * 引用Renote（本文などがあるもの）は通常の投稿として扱う。
+ */
+export function isPureRenote(note: RenoteLike | null | undefined): boolean {
+	if (!note?.renoteId) return false;
+	if (note.text != null) return false;
+	if (note.cw != null) return false;
+	if ((note.fileIds?.length ?? 0) > 0 || (note.files?.length ?? 0) > 0) return false;
+	if (note.poll != null) return false;
+	return true;
+}
+
+/**
+ * 久しぶり判定で「投稿」として数えるノートかどうかを判定する
+ *
+ * @remarks
+ * 次のノートは数えない（リアクション対象にも、前回投稿にもしない）:
+ * - PureRT（{@link isPureRenote}）
+ * - 公開範囲がダイレクト（`specified`）のノート
+ */
+export function isCountableNote(note: (RenoteLike & { visibility?: string | null }) | null | undefined): boolean {
+	if (!note) return false;
+	if (note.visibility === 'specified') return false;
+	return !isPureRenote(note);
+}
+
+/**
  * 前回投稿日時と今回投稿日時から、久しぶりの投稿かどうかを判定する
  *
  * @param previousNoteAt - 前回の投稿日時（ISO文字列・Date・epoch ms）。不明なら null/undefined
