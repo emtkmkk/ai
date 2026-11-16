@@ -2011,6 +2011,24 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string, op
 		}
 	}
 
+	// 遂・土：本来の効果が出ない敵なら、パワーに還元される
+	// 発動条件は戦闘中に変わらないので、風と同じくターンのループの前に1回だけ掛ける
+	// （ターンごとに掛けると、ターン中に足される継戦融合武装・攻めの守勢の分にも掛かってしまう）
+	if (!enemy.abort && skillEffects.abortDown) {
+		atk = atk * (1 + skillEffects.abortDown * (1 / 3));
+		if (verboseLog) {
+			buff += 1;
+			message += `遂スキル効果: A${displayDifference(1 + skillEffects.abortDown * (1 / 3))} (${formatNumber(atk)})\n`;
+		}
+	}
+	if (skillEffects.dart && !(isBattle && isPhysical && enemy.maxdmg)) {
+		atk = atk * (1 + skillEffects.dart * 0.5);
+		if (verboseLog) {
+			buff += 1;
+			message += `土スキル効果: A${displayDifference(1 + skillEffects.dart * 0.5)} (${formatNumber(atk)})\n`;
+		}
+	}
+
 	// 非戦闘なら非戦闘時スキルが発動
 	if (!isBattle) {
 		atk = atk * (1 + (skillEffects.notBattleBonusAtk ?? 0));
@@ -2250,27 +2268,9 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 			}
 		}
 
-		if (!enemy.abort && skillEffects.abortDown) {
-			// 効果がない場合は、パワーに還元される
-			atk = atk * (1 + skillEffects.abortDown * (1 / 3));
-			if (verboseLog) {
-				buff += 1;
-				message += `遂スキル効果: A${displayDifference(1 + skillEffects.abortDown * (1 / 3))} (${formatNumber(atk)})\n`;
-			}
-		}
-
-	// 敵に最大ダメージ制限がある場合、ここで計算
-	/** 1ターンに与えられる最大ダメージ量 */
-	let maxdmg = enemy.maxdmg ? enemyMaxHp * enemy.maxdmg : undefined;
-
-	if (skillEffects.dart && !(isBattle && isPhysical && maxdmg)) {
-			// 効果がない場合非戦闘時は、パワーに還元される
-			atk = atk * (1 + skillEffects.dart * 0.5);
-			if (verboseLog) {
-				buff += 1;
-				message += `土スキル効果: A${displayDifference(1 + skillEffects.dart * 0.5)} (${formatNumber(atk)})\n`;
-			}
-		}
+		// 敵に最大ダメージ制限がある場合、ここで計算
+		/** 1ターンに与えられる最大ダメージ量 */
+		let maxdmg = enemy.maxdmg ? enemyMaxHp * enemy.maxdmg : undefined;
 
 		let dmgUp = 1;
 		let critUp = 0;
