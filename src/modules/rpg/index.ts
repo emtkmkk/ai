@@ -2821,6 +2821,9 @@ export default class extends Module {
 			else if (Math.random() < (diff < 0 ? totalrate - rate : rate)) atkUp = 0;
 		}
 
+		// 7 を崩さない補正：旅の最高ステージ 100 以上で、パワー・防御に 7 があるとき、7 の多いほうは伸ばさず少ないほうに全部振る
+		// NOTE: 勝ち・負けで決着すると、ここより前で data.enemy が消える。そのため旅ではない敵との戦闘でも、決着したプレイでは補正が掛かる。
+		//       本来は旅だけの想定だったが、プレイヤーにとって不便になるだけなので、この動きのまま残す（2026-11-16 決定）。
 		if ((data.maxEndress ?? -1) >= 99 && calcSevenFever([data.atk, data.def]) > 0 && (!data?.enemy?.name || data.enemy.name === endressEnemy(data).name)) {
 			if (calcSevenFever([data.atk]) > calcSevenFever([data.def])) atkUp = 0;
 			if (calcSevenFever([data.atk]) < calcSevenFever([data.def])) atkUp = totalUp;

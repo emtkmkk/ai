@@ -357,8 +357,9 @@ describe("レベルアップで 7 を崩さない補正（旅の最高ステー�
 		expect(growth.some((g) => g.atk > 0)).toBe(true);
 	});
 
-	test("旅ではない敵に勝ったプレイでも、敵が消えたあとなので補正が掛かる（今の動き）", async () => {
-		// 勝つと敵が消されてからレベルアップするので、「敵がいない」として補正が掛かる
+	test("旅ではない敵に勝ったプレイでも、敵が消えたあとなので補正が掛かる（意図した仕様ではないが残すと決めた動き）", async () => {
+		// 勝つと敵が消されてからレベルアップするので、「敵がいない」として補正が掛かる。
+		// 本来は旅だけの想定だったが、プレイヤーにとって不便になるだけなので、この動きのまま残す（2026-11-16 決定）。
 		const played = await playNormal(sevenBuild({ lv: 600, atk: 7777, def: 5000, maxEndress: 199 }), 1, 4, { command: "RPG", beforePlay: fixStatus(600, 7777, 5000) });
 		const wins = played.filter((p) => p.record.after.enemy === null && !/旅の途中|旅に出たい/.test(p.text));
 		expect(wins.length).toBeGreaterThan(0);
