@@ -135,6 +135,29 @@ describe("７フィーバー！の 7 の固定処理（レイド）", () => {
 	});
 });
 
+describe("倍率を掛けるだけのスキル効果（stat-modifiers.ts）", () => {
+	beforeEach(() => jest.setSystemTime(WEDNESDAY));
+
+	// STAT_MODIFIERS の効果を通る構成（代表 8 構成では、お守りの強化を通らない）。全ボスで固定する。
+	// NOTE: 非戦闘時パワー（notBattleBonusAtk）は、レイドボスが全員「戦闘する敵」なので、レイドでは発動しない。
+	const build: Build = {
+		skills: ["テキパキこなす", "敵のクリティカル性能減少", "疲れにくい", "高速RPG", "連続攻撃完遂率上昇"],
+		amulet: "苦労のお守り",
+		love: 300,
+	};
+
+	test("全ボス（詳細ログあり）", async () => {
+		const results: Record<string, unknown> = {};
+		for (const enemy of raidEnemys) {
+			for (const seed of [1, 2]) {
+				const r = await simulate(build, enemy, seed, true);
+				results[`${enemy.name} #${seed}`] = r ? { summary: summary(r), ...nonEmpty(extractRaidDamages(r.log)) } : "失敗";
+			}
+		}
+		expect(results).toMatchSnapshot();
+	});
+});
+
 describe("負けそうなら逃げる（体力が 0 付近になったら 1 ターン飛ばして回復する）", () => {
 	beforeEach(() => jest.setSystemTime(WEDNESDAY));
 
