@@ -18,7 +18,8 @@ import serifs from "@/serifs";
 import 藍 from '@/ai';
 import { aggregateTokensEffects, shopItems, mergeSkillAmulet } from './shop';
 import type { AmuletItem, ShopItem } from './shop';
-import { SkillEffect, Skill, skills, skillBorders, ultimateAmulet, isKazutoriMasterDisabled } from './skill-data';
+import { SkillEffect, Skill, skills, skillBorders, ultimateAmulet, isKazutoriMasterDisabled, LEGACY_STAT_UP_KEYS, STAT_UP_GROUPS } from './skill-data';
+import type { StatUpKind } from './skill-data';
 import { deepClone, getColor } from './utils';
 import { renderEffectDisplay } from './effect-display';
 import { ensureKazutoriMasterHistory, getKazutoriMasterBonus } from './battle';
@@ -334,6 +335,29 @@ export const skillPower = (ai: 藍, skillName: Skill["name"]) => {
  * @returns 集計されたSkillEffect。
  */
 /**
+ * ステータス上昇の倍率を、グループごとに掛け合わせて返す
+ *
+ * @remarks
+ * `(1 + 共通のグループ) × (1 + グループ legend) × (1 + グループ endure) × …`。
+ * グループの順番は {@link STAT_UP_GROUPS} の順（小数の計算の最後の桁を変えないため固定）。そこにないグループは、そのあとに名前順で掛ける。
+ * 同じグループの中の足し算は、効果を集計する時点（キーごとの合計）で済んでいる。
+ *
+ * @param e 効果を集計したもの（キーごとに合計済み）
+ * @param kind ステータスの種類
+ * @returns 倍率（1 が「上昇なし」）
+ * @internal
+ */
+function statUpRate(e: SkillEffect, kind: StatUpKind): number {
+	const prefix = `${kind}:`;
+	const groups = Object.keys(e).filter((key) => key.startsWith(prefix)).map((key) => key.slice(prefix.length));
+	const known: readonly string[] = STAT_UP_GROUPS;
+	const ordered = [...known.filter((g) => groups.includes(g)), ...groups.filter((g) => !known.includes(g)).sort()];
+	let rate = 1 + (e[kind] ?? 0);
+	for (const group of ordered) rate = rate * (1 + (e[`${kind}:${group}`] ?? 0));
+	return rate;
+}
+
+/**
  * 所持スキル・お守りの効果を集計する
  *
  * 戦闘・レイド・木人モード等で参照され、atkUp / defUp / spdUp 等の倍率を返す。
@@ -396,7 +420,9 @@ export function aggregateSkillsEffects(data: any, skillX = 1): SkillEffect {
 			}
 		}
 		if (skill.effect) {
-			Object.entries(skill.effect).forEach(([key, value]) => {
+			Object.entries(skill.effect as Record<string, number>).forEach(([_key, value]) => {
+				// 古い保存データの番号付きのグループ（atkUp2 など）は、グループ名入りのキーに読み替える
+				const key = LEGACY_STAT_UP_KEYS[_key] ?? _key;
 				if (aggregatedEffect[key] !== undefined) {
 					aggregatedEffect[key] += value;
 				} else {
@@ -410,10 +436,11 @@ export function aggregateSkillsEffects(data: any, skillX = 1): SkillEffect {
 
 	const day = new Date().getDay();
 
-	aggregatedEffect.atkUp = (1 + (aggregatedEffect.atkUp ?? 0)) * (1 + (aggregatedEffect.atkUp2 ?? 0)) * (1 + (aggregatedEffect.atkUp3 ?? 0)) * (1 + (aggregatedEffect.atkUp4 ?? 0)) * (1 + (aggregatedEffect.atkUp5 ?? 0)) * (1 + (aggregatedEffect.atkUp6 ?? 0)) * (1.04 ** (aggregatedEffect.atkUpBonus ?? 0)) * uniqueX;
-	aggregatedEffect.defUp = (1 + (aggregatedEffect.defUp ?? 0)) * (1 + (aggregatedEffect.defUp2 ?? 0)) * (1 + (aggregatedEffect.defUp3 ?? 0)) * (1 + (aggregatedEffect.defUp4 ?? 0)) * (1 + (aggregatedEffect.defUp5 ?? 0)) * uniqueX;
-	aggregatedEffect.atkDmgUp = ((1 + (aggregatedEffect.atkDmgUp ?? 0)) * (1 + (aggregatedEffect.atkDmgUp2 ?? 0))) - 1;
-	aggregatedEffect.defDmgUp = ((1 + (aggregatedEffect.defDmgUp ?? 0)) * (1 + (aggregatedEffect.defDmgUp2 ?? 0))) - 1;
+	// ステータス上昇: 同じグループの中は足し算（ここまでで済んでいる）、違うグループどうしは掛け算
+	aggregatedEffect.atkUp = statUpRate(aggregatedEffect, 'atkUp') * (1.04 ** (aggregatedEffect.atkUpBonus ?? 0)) * uniqueX;
+	aggregatedEffect.defUp = statUpRate(aggregatedEffect, 'defUp') * uniqueX;
+	aggregatedEffect.atkDmgUp = statUpRate(aggregatedEffect, 'atkDmgUp') - 1;
+	aggregatedEffect.defDmgUp = statUpRate(aggregatedEffect, 'defDmgUp') - 1;
 
 	if (data.itemMedal) {
 		aggregatedEffect.itemEquip = (aggregatedEffect.itemEquip ?? 0) + data.itemMedal * 0.01;

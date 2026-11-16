@@ -60,10 +60,12 @@ ultimateEffect                  ─┘    （skillX はスキル効果がX倍に
 
 | キー | 主な付与元 | 処理 |
 |---|---|---|
-| atkUp〜atkUp6, atkUpBonus | パワーアップ、伝説 他 | グループごとに `(1+x)` を**乗算**、atkUpBonus は `1.04^n`。`calculateStats` で適用 ✅ |
-| defUp〜defUp5 | 防御アップ 他 | 同上 ✅ |
-| atkDmgUp, atkDmgUp2 | 脳筋、慎重、決死 | `(1+a)(1+b)-1` に合成。適用方法はモードで違う（#1, #11）|
-| defDmgUp, defDmgUp2 | 脳筋、慎重 | 同上。被ダメ倍率 `defDmgX` に入る ✅ |
+| atkUp・`"atkUp:グループ名"`, atkUpBonus | パワーアップ（共通）、伝説（legend）他 | 同じグループは足し算、グループごとに `(1+x)` を**乗算**（`statUpRate`）、atkUpBonus は `1.04^n`。`calculateStats` で適用 ✅ |
+| defUp・`"defUp:グループ名"` | 防御アップ（共通）他 | 同上 ✅ |
+| atkDmgUp・`"atkDmgUp:グループ名"` | 脳筋・慎重（共通）、すぐ決死（desperate） | グループごとに `(1+x)` を乗算して `-1`。適用方法はモードで違う（#1, #11）|
+| defDmgUp・`"defDmgUp:グループ名"` | 脳筋、慎重（共通） | 同上。被ダメ倍率 `defDmgX` に入る ✅ |
+
+グループ（skill-data.ts の `STAT_UP_GROUPS`）: legend（伝説・連続・毎日ボーナス強化）、endure（気合で頑張る）、unluckyCharge（不運チャージ）、temper（気性が荒い・穏やか）、acrobat（かるわざ）、desperate（すぐ決死の覚悟をする）。以前の番号付きのキー（atkUp2〜6・defUp2〜5・atkDmgUp2）は `LEGACY_STAT_UP_KEYS` で読み替える。
 | noAmuletAtkUp | かるわざ | お守り未装備時にパワー加算（calculateStats）✅ |
 | beginner | わかばのお守り | 集計時: スキル数が5未満の分 atk/def ×(1+n)^不足数、レイドかつ非常時覚醒なら ×1.15。レイドのみ: ターン4まで被ダメカット |
 | rainbow | お守り | 集計時: 全属性に曜日ボーナス、>1 なら atk/def +5%/段 |

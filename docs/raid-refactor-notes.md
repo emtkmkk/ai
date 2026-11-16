@@ -62,7 +62,7 @@
 - 覚醒変更の札（朱・青・黄・緑）の補正: raid.ts・rpg/index.ts（2 か所）・skills.ts の `getTotalEffectString` の 4 か所。
 - コンテスト型の器用さ・仕上げ: `getTotalDmg3`（raid.ts）と `getHatogurumaEffectString`（skills.ts、「RPG スキル バフ 鳩車」）の 2 か所。式は同じで、見出しの言葉だけ違う（例: 戦闘ログは「気性穏やか」、確認表示は「非戦闘時パワー」）。
 
-### ステータス上昇の重なり方が、番号付きのキー（atkUp〜atkUp6）で決まっている
+### ステータス上昇の重なり方が、番号付きのキー（atkUp〜atkUp6）で決まっている（1-6 で対応済み。グループ名入りのキーに変えた）
 
 - `aggregateSkillsEffects`（skills.ts）は、同じキーの値を足し、最後に `(1+atkUp)×(1+atkUp2)×…×(1+atkUp6)×1.04^atkUpBonus` で掛け合わせる。
   - つまり「同じキー = 足し算」「違うキー = 掛け算」。

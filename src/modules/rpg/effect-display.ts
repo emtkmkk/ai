@@ -87,11 +87,6 @@ export const effectDisplay: Record<keyof SkillEffect, EffectDisplay> = {
 			atkLow: (v, ctx) => 1 + atkUpTotal(v, ctx),
 		},
 	},
-	atkUp2: { merged: "atkUp" },
-	atkUp3: { merged: "atkUp" },
-	atkUp4: { merged: "atkUp" },
-	atkUp5: { merged: "atkUp" },
-	atkUp6: { merged: "atkUp" },
 	atkUpBonus: { merged: "atkUp" },
 	defUp: {
 		// 数取りの達人の現在の効果は、戦闘時と同じく防御アップに足し算する
@@ -100,10 +95,6 @@ export const effectDisplay: Record<keyof SkillEffect, EffectDisplay> = {
 			defLow: (v, { kazutoriBonus }) => 1 + v + (kazutoriBonus?.def ?? 0),
 		},
 	},
-	defUp2: { merged: "defUp" },
-	defUp3: { merged: "defUp" },
-	defUp4: { merged: "defUp" },
-	defUp5: { merged: "defUp" },
 	fire: {
 		lines: [
 			...line(35, (v, { data }) => "非戦闘時パワー: +" + showNum(data.lv * 3.75 * v)),
@@ -151,9 +142,7 @@ export const effectDisplay: Record<keyof SkillEffect, EffectDisplay> = {
 		stats: statModifierDisplayStats("plusActionX"),
 	},
 	atkDmgUp: { partOf: "与ダメージ" },
-	atkDmgUp2: { merged: "atkDmgUp" },
 	defDmgUp: { partOf: "被ダメージ" },
-	defDmgUp2: { merged: "defDmgUp" },
 	continuousBonusUp: { notShown: "表示不要（連続・毎日ボーナスの増加量）" },
 	escape: { lines: line(610, (v) => `負けそうな時逃げる${times(v)}`) },
 	endureUp: { lines: line(120, (v) => `気合: +${pct(v)}%`) },

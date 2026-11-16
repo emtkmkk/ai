@@ -59,6 +59,31 @@ describe("集計したステータスの倍率", () => {
 	});
 });
 
+describe("グループの仕組み", () => {
+	const aggregate = (skillList: any[]) => aggregateSkillsEffects({ lv: 100, skills: skillList, items: [] });
+
+	test("古い保存データの番号付きのキー（atkUp2 など）は、グループ名入りのキーと同じに扱う", () => {
+		// 今のスキル一覧にないスキルは、保存されている効果がそのまま使われる
+		const legacy = aggregate([{ name: "削除済みのスキル", effect: { atkUp2: 0.08, defUp2: 0.08 } }]);
+		const current = aggregate([{ name: "削除済みのスキル", effect: { "atkUp:legend": 0.08, "defUp:legend": 0.08 } }]);
+		expect(legacy.atkUp).toBe(current.atkUp);
+		expect(legacy.defUp).toBe(current.defUp);
+		// 伝説と同じグループなので足し算になる
+		const withLegend = aggregate([{ name: "削除済みのスキル", effect: { atkUp2: 0.05 } }, { ...skills.find((s) => s.name === "伝説") }]);
+		expect(withLegend.atkUp).toBeCloseTo(1 + 0.08 + 0.05 - 1);
+	});
+
+	test("新しいグループ名のキーを書くだけで、ほかのグループと掛け算になる", () => {
+		const e = aggregate([{ name: "新しいスキル", effect: { "atkUp:newGroup": 0.1 } }, { ...skills.find((s) => s.name === "パワーアップ") }]);
+		expect(e.atkUp).toBeCloseTo(1.11 * 1.1 - 1);
+	});
+
+	test("同じグループ名なら、別のスキルでも足し算になる", () => {
+		const e = aggregate([{ name: "スキルA", effect: { "atkUp:newGroup": 0.1 } }, { name: "スキルB", effect: { "atkUp:newGroup": 0.2 } }]);
+		expect(e.atkUp).toBeCloseTo(0.3);
+	});
+});
+
 describe("確認表示（RPG スキル バフ）", () => {
 	test.each(cases)("%s", (_name, build) => {
 		expect({ "1倍": getTotalEffectString(buildData(build, ai)), "3倍": getTotalEffectString(buildData(build, ai), 3) }).toMatchSnapshot();
