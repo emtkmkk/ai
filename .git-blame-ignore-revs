@@ -1,0 +1,5 @@
+# git blame で無視するコミット（空白だけの変更）
+# 使い方: git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# 改行コードを LF に、インデントをタブにそろえる
+6d2b10e6e6379b62fed6138fa10375b70c84420d
