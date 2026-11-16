@@ -1391,8 +1391,6 @@ export default class extends Module {
 		const skillEffects = aggregateSkillsEffects(data);
 		ensureKazutoriMasterHistory(this.ai, msg, skillEffects);
 		applyKazutoriMasterHiddenBonus(msg, skillEffects);
-		const verboseLog = msg.includes(['-v']);
-		const formatDebug = (value: number): string => Number.isFinite(value) ? value.toFixed(3) : String(value);
 
 		let color = getColor(data);
 

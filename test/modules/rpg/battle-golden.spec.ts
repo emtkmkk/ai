@@ -117,7 +117,7 @@ const playNormal = async (build: Build, seed: number, plays = 4) => {
 };
 
 /** 木人を、Lv を 1 ずつ上げながら続けてプレイする（同じ Lv では 1 回しかできないため） */
-const playTrial = async (build: Build, seed: number, plays = 2, command = "RPG 木人") => {
+const playTrial = async (build: Build, seed: number, plays = 2) => {
 	const ai = createAi();
 	const rpg: any = new Rpg();
 	rpg.ai = ai;
@@ -128,7 +128,7 @@ const playTrial = async (build: Build, seed: number, plays = 2, command = "RPG �
 		for (let i = 0; i < plays; i++) {
 			player.data().lv += i === 0 ? 0 : 1;
 			const before = player.replies.length;
-			const res = await rpg.handleTrialCommands(player.message(command));
+			const res = await rpg.handleTrialCommands(player.message("RPG 木人"));
 			const text = player.replies.slice(before).join("\n---\n");
 			results.push(`${i + 1}回目: ${hash(text)} best=${player.data().bestScore ?? null} reaction=${res?.reaction ?? null}`);
 		}
@@ -165,13 +165,6 @@ describe("木人の結果（ゴールデン）", () => {
 	test.each(builds)("%s", async (_name, build) => {
 		const results: Record<string, string[]> = {};
 		for (const seed of [1, 2, 3]) results[`seed ${seed}`] = await playTrial(build, seed);
-		expect(results).toMatchSnapshot();
-	});
-
-	// 詳細ログ（-v）でしか通らない分岐があるので、ログのハッシュで固定する
-	test.each(builds)("詳細ログ: %s", async (_name, build) => {
-		const results: Record<string, string[]> = {};
-		for (const seed of [1, 2, 3]) results[`seed ${seed}`] = await playTrial(build, seed, 1, "RPG 木人 -v");
 		expect(results).toMatchSnapshot();
 	});
 });
