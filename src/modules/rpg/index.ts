@@ -1425,8 +1425,7 @@ export default class extends Module {
 		if (isSuper) {
 			if (!aggregateTokensEffects(data).notSuperSpeedUp) spd += 2;
 			const superColorMode = getSuperColorMode(aggregateTokensEffects(data));
-			// NOTE: 木人だけ朱覚醒のクリティカルダメージの下限が 0.4（ほかは 0.35）
-			applySuperColorModeEffects(skillEffects, superColorMode, { redCritDmgFloor: 0.4 });
+			applySuperColorModeEffects(skillEffects, superColorMode);
 			if (superColorMode === 'yellow') spd += 1;
 		}
 

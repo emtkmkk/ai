@@ -71,16 +71,16 @@ exports[`木人の結果（ゴールデン） 天国か地獄か・不運チャ�
 exports[`木人の結果（ゴールデン） 武器型 + 超越（覚醒変更 朱） 1`] = `
 {
   "seed 1": [
-    "1回目: ca2c3d148fd7 best=6923 reaction=:mk_hero_9p:",
-    "2回目: ca61069eeb10 best=6923 reaction=:mk_hero_9p:",
+    "1回目: 162b8fb28552 best=6890 reaction=:mk_hero_9p:",
+    "2回目: ffc352eacd37 best=6890 reaction=:mk_hero_9p:",
   ],
   "seed 2": [
-    "1回目: ca2c3d148fd7 best=6923 reaction=:mk_hero_9p:",
-    "2回目: ca61069eeb10 best=6923 reaction=:mk_hero_9p:",
+    "1回目: 162b8fb28552 best=6890 reaction=:mk_hero_9p:",
+    "2回目: ffc352eacd37 best=6890 reaction=:mk_hero_9p:",
   ],
   "seed 3": [
-    "1回目: ca2c3d148fd7 best=6923 reaction=:mk_hero_9p:",
-    "2回目: ca61069eeb10 best=6923 reaction=:mk_hero_9p:",
+    "1回目: 162b8fb28552 best=6890 reaction=:mk_hero_9p:",
+    "2回目: ffc352eacd37 best=6890 reaction=:mk_hero_9p:",
   ],
 }
 `;
@@ -161,13 +161,13 @@ exports[`木人の結果（ゴールデン） 詳細ログ: 天国か地獄か�
 exports[`木人の結果（ゴールデン） 詳細ログ: 武器型 + 超越（覚醒変更 朱） 1`] = `
 {
   "seed 1": [
-    "1回目: ca2c3d148fd7 best=6923 reaction=:mk_hero_9p:",
+    "1回目: 162b8fb28552 best=6890 reaction=:mk_hero_9p:",
   ],
   "seed 2": [
-    "1回目: ca2c3d148fd7 best=6923 reaction=:mk_hero_9p:",
+    "1回目: 162b8fb28552 best=6890 reaction=:mk_hero_9p:",
   ],
   "seed 3": [
-    "1回目: ca2c3d148fd7 best=6923 reaction=:mk_hero_9p:",
+    "1回目: 162b8fb28552 best=6890 reaction=:mk_hero_9p:",
   ],
 }
 `;
