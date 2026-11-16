@@ -23,6 +23,17 @@ import config from './config';
 import log from '@/utils/log';
 
 /**
+ * ストリームの接続状態
+ *
+ * @remarks
+ * `initializing` → `connected` → `reconnecting`（切断・無通信検知）→ `connected` ...
+ * `connected` 以外のときに送られたメッセージはバッファされ、次の `connected` で送信される。
+ *
+ * @internal
+ */
+type StreamState = 'initializing' | 'connected' | 'reconnecting';
+
+/**
  * Misskey WebSocket ストリーム接続クラス
  *
  * @remarks
@@ -49,7 +60,7 @@ export default class Stream extends EventEmitter {
 	 *
 	 * @internal
 	 */
-	private state: string;
+	private state: StreamState;
 	/**
 	 * 未接続時にメッセージを保持するバッファ
 	 *

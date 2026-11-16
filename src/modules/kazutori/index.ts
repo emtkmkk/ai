@@ -851,7 +851,9 @@ export default class extends Module {
                         return;
                 }
 
-                recentGame.isEnded = false;
+                // isEnded は true のまま再集計する。一時的にでも false に戻すと、
+                // 再集計中に crawleGameEnd が同じゲームを通常の finish() に渡して二重集計したり、
+                // contextHook が終了済みゲームへの投票を受け付けたりしてしまう。
                 recentGame.reaggregatedAt = Date.now();
                 this.games.update(recentGame);
 
