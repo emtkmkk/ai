@@ -71,3 +71,61 @@ export const buildData = (b: Build, ai: any) => {
 
 /** 文字列を短いハッシュにする */
 export const hash = (text: string) => crypto.createHash("sha1").update(text).digest("hex").slice(0, 12);
+
+/** 戦闘ログから取り出すダメージの種類 */
+export type DamageKind = "dealt" | "taken" | "final" | "warrior";
+
+/** 戦闘ログから取り出したダメージ（ログに出た順） */
+export type Damages = Record<DamageKind, number[]>;
+
+/** メッセージを作る関数（数値を 1 つ受け取る） */
+type MessageTemplate = (value: number) => string;
+
+const SENTINEL = 918273645;
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * 戦闘ログからダメージを取り出す関数を作る
+ *
+ * @remarks
+ * メッセージを作る関数（敵の `atkmsg`・`defmsg`、全力の一撃など）に目印の数値を渡して正規表現を作り、
+ * ログの中からその形の行を探して数値を取り出す。クリティカルの `**` で囲まれていても拾える。
+ *
+ * @param templates 種類ごとのメッセージを作る関数
+ */
+export const makeDamageExtractor = (templates: { kind: DamageKind; make: MessageTemplate }[]) => {
+	const patterns = new Map<string, { kind: DamageKind; re: RegExp }>();
+	for (const { kind, make } of templates) {
+		let text: string;
+		try {
+			text = make(SENTINEL);
+		} catch {
+			continue;
+		}
+		if (typeof text !== "string" || !text.includes(String(SENTINEL))) continue;
+		const source = escapeRegExp(text).replace(String(SENTINEL), "(-?\\d+(?:\\.\\d+)?)");
+		if (!patterns.has(source)) patterns.set(source, { kind, re: new RegExp(source, "g") });
+	}
+	return (log: string): Damages => {
+		// 同じ位置に複数の形が当たった場合は、長く一致したほうを採る
+		const found = new Map<number, { kind: DamageKind; value: number; length: number }>();
+		for (const { kind, re } of patterns.values()) {
+			re.lastIndex = 0;
+			for (const m of log.matchAll(re)) {
+				const end = (m.index ?? 0) + m[0].length;
+				const prev = found.get(end);
+				if (!prev || prev.length < m[0].length) found.set(end, { kind, value: Number(m[1]), length: m[0].length });
+			}
+		}
+		const result: Damages = { dealt: [], taken: [], final: [], warrior: [] };
+		for (const [, d] of [...found.entries()].sort((a, b) => a[0] - b[0])) result[d.kind].push(d.value);
+		return result;
+	};
+};
+
+/** 敵のメッセージから、与ダメージ・被ダメージの形を作る */
+export const enemyDamageTemplates = (enemies: { atkmsg: MessageTemplate; defmsg: MessageTemplate }[]) =>
+	enemies.flatMap((e) => [
+		{ kind: "dealt" as const, make: e.atkmsg },
+		{ kind: "taken" as const, make: e.defmsg },
+	]);
