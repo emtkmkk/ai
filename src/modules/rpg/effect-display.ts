@@ -19,6 +19,7 @@
  * @internal
  */
 import type { SkillEffect } from "./skill-data";
+import { statModifierDisplayStats } from "./stat-modifiers";
 
 /** 表示処理に渡す情報 */
 export type EffectDisplayContext = {
@@ -117,7 +118,7 @@ export const effectDisplay: Record<keyof SkillEffect, EffectDisplay> = {
 	spdUp: { stats: { bSpd: (v) => 1 + v, nbAtk: (v) => 1 + v } },
 	dart: {
 		lines: line(530, (v) => "ターン内最大ダメージ: +" + pct(v) + "%"),
-		stats: { atk: (v) => 1 + v * 0.5 },
+		stats: statModifierDisplayStats("dart"),
 	},
 	light: {
 		lines: line(560, (v) => "戦闘時被ダメージ半減率: " + pct(v) + "%"),
@@ -135,8 +136,8 @@ export const effectDisplay: Record<keyof SkillEffect, EffectDisplay> = {
 		},
 	},
 	water: { notShown: "表示不要（炎属性の敵への与ダメージアップ・炎ダメージのカット）" },
-	notBattleBonusAtk: { stats: { nbAtk: (v) => 1 + v } },
-	notBattleBonusDef: { stats: { nbDef: (v) => 1 + v } },
+	notBattleBonusAtk: { stats: statModifierDisplayStats("notBattleBonusAtk") },
+	notBattleBonusDef: { stats: statModifierDisplayStats("notBattleBonusDef") },
 	firstTurnResist: {
 		lines: line(250, (v) => (v > 1 ? ["ターン1ダメージ無効", "ターン2ダメージ軽減: " + pct(v - 1) + "%"] : ["ターン1ダメージ軽減: " + pct(v) + "%"])),
 	},
@@ -147,7 +148,7 @@ export const effectDisplay: Record<keyof SkillEffect, EffectDisplay> = {
 	},
 	plusActionX: {
 		lines: line(660, (v) => "通常時RPG進行数: ×" + (showNum(v) + 1)),
-		stats: { atk: (v) => 1 + v / 10 },
+		stats: statModifierDisplayStats("plusActionX"),
 	},
 	atkDmgUp: { partOf: "与ダメージ" },
 	atkDmgUp2: { merged: "atkDmgUp" },
@@ -199,7 +200,7 @@ export const effectDisplay: Record<keyof SkillEffect, EffectDisplay> = {
 	statusBonus: { notShown: "付与元のスキル・お守りがない" },
 	abortDown: {
 		lines: line(540, (v) => "連続攻撃中断回避率: +" + pct(v) + "%"),
-		stats: { atk: (v) => 1 + v * (1 / 3) },
+		stats: statModifierDisplayStats("abortDown"),
 	},
 	critUp: { lines: line(280, (v) => "クリティカル率（割合）: +" + pct(v) + "%") },
 	critUpFixed: { lines: line(300, (v) => "クリティカル率（固定）: +" + pct(v) + "%") },
@@ -207,7 +208,7 @@ export const effectDisplay: Record<keyof SkillEffect, EffectDisplay> = {
 	enemyCritDown: { lines: line(320, (v) => "敵クリティカル率: -" + pct(v) + "%") },
 	enemyCritDmgDown: {
 		lines: line(330, (v) => "敵クリティカルダメージ: -" + pct(v) + "%"),
-		stats: { def: (v) => 1 + v / 4 },
+		stats: statModifierDisplayStats("enemyCritDmgDown"),
 	},
 	loseBonus: { notShown: "付与元のスキル・お守りがない（廃止スキルの名残）" },
 	sevenFever: {
@@ -216,7 +217,7 @@ export const effectDisplay: Record<keyof SkillEffect, EffectDisplay> = {
 	},
 	charge: { lines: line(620, (v) => `不運チャージ${times(v)}`) },
 	transcendence: { notShown: "表示不要（超越のお守り）" },
-	enemyBuff: { stats: { atk: (v) => 1 + v / 20, def: (v) => 1 + v / 20 } },
+	enemyBuff: { stats: statModifierDisplayStats("enemyBuff") },
 	allForOne: {
 		partOf: "行動回数圧縮",
 		stats: { atk: (v) => 1 + v * 0.1, atkLow: (v) => 1 + v * 0.1 },

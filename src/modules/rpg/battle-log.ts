@@ -18,6 +18,42 @@
  *
  * @internal
  */
+/** 詳細ログ用に数値を短く整える（0.05 未満は小数第 2 位、1000 未満は小数第 1 位、1 万以上は k / m 表記） */
+export const formatNumber = (num: number): string => {
+	if (num > 0 && num < 0.05) {
+		const rounded = Math.round(num * 100) / 100;
+		return rounded.toString();
+	} else if (num < 1000) {
+		const rounded = Math.round(num * 10) / 10;
+		return rounded.toString();
+	} else if (num < 10000) {
+		const rounded = Math.round(num);
+		return rounded.toString();
+	}  if (num < 10_000_000) {
+		const result = num / 1000;
+		return result < 100 ? (Math.round(result * 100) / 100).toString() + 'k' : result < 1000 ? (Math.round(result * 10) / 10).toString() + 'k' : Math.round(result).toString() + 'k';
+	} else {
+		const result = num / 1_000_000;
+		return result < 100 ? (Math.round(result * 100) / 100).toString() + 'm' : result < 1000 ? (Math.round(result * 10) / 10).toString() + 'm' : Math.round(result).toString() + 'm';
+	}
+};
+
+/** 詳細ログ用に倍率を増減のパーセントで表す（例: 1.09 → "+9%"、ほぼ 1 なら "0%"） */
+export const displayDifference = (num: number): string => {
+	// 0.999より大きく1.001より小さい場合は0%
+	if (num > 0.999 && num < 1.001) {
+		return "0%";
+	}
+
+	// 1との差をパーセント表示 (四捨五入して小数点第1位まで)
+	const diff = (num - 1) * 100;
+	const roundedDiff = Math.round(diff * 10) / 10; // 小数第1位までの四捨五入
+
+	// 正の場合は先頭に+記号を付ける
+	const sign = roundedDiff > 0 ? '+' : '';
+	return `${sign}${Math.round(roundedDiff * 10) / 10}%`;
+};
+
 export class BattleLog {
 	/** 本文（scope で作ったログと共有する） */
 	private readonly body: { text: string };

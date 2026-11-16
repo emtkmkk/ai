@@ -35,7 +35,8 @@ import { createRaidRandom, RaidRandom } from './raid-random';
 import type { SkillEffect } from './skill-data';
 import { applyHyperModeEffects, applySuperColorModeEffects, getSuperColorMode } from './super-mode';
 import { computeContestStats } from './contest';
-import { BattleLog } from './battle-log';
+import { BattleLog, displayDifference, formatNumber } from './battle-log';
+import { applyStatModifiers } from './stat-modifiers';
 
 type RaidAdditionalStatus = {
 	icon: string;
@@ -1530,42 +1531,6 @@ type RaidBattle = {
 	resultMark: string;
 };
 
-/** 詳細ログ用に数値を短く整える（0.05 未満は小数第 2 位、1000 未満は小数第 1 位、1 万以上は k / m 表記） */
-const formatNumber = (num: number): string => {
-	if (num > 0 && num < 0.05) {
-		const rounded = Math.round(num * 100) / 100;
-		return rounded.toString();
-	} else if (num < 1000) {
-		const rounded = Math.round(num * 10) / 10;
-		return rounded.toString();
-	} else if (num < 10000) {
-		const rounded = Math.round(num);
-		return rounded.toString();
-	}  if (num < 10_000_000) {
-		const result = num / 1000;
-		return result < 100 ? (Math.round(result * 100) / 100).toString() + 'k' : result < 1000 ? (Math.round(result * 10) / 10).toString() + 'k' : Math.round(result).toString() + 'k';
-	} else {
-		const result = num / 1_000_000;
-		return result < 100 ? (Math.round(result * 100) / 100).toString() + 'm' : result < 1000 ? (Math.round(result * 10) / 10).toString() + 'm' : Math.round(result).toString() + 'm';
-	}
-};
-
-/** 詳細ログ用に倍率を増減のパーセントで表す（例: 1.09 → "+9%"、ほぼ 1 なら "0%"） */
-const displayDifference = (num: number): string => {
-	// 0.999より大きく1.001より小さい場合は0%
-	if (num > 0.999 && num < 1.001) {
-		return "0%";
-	}
-
-	// 1との差をパーセント表示 (四捨五入して小数点第1位まで)
-	const diff = (num - 1) * 100;
-	const roundedDiff = Math.round(diff * 10) / 10; // 小数第1位までの四捨五入
-
-	// 正の場合は先頭に+記号を付ける
-	const sign = roundedDiff > 0 ? '+' : '';
-	return `${sign}${Math.round(roundedDiff * 10) / 10}%`;
-};
-
 /**
  * レイド（通常型）の段階1: データの読み込み・お守りの付与・覚醒の判定・投稿数とステータス倍率・開始メッセージ
  *
@@ -2168,31 +2133,10 @@ function applyRaidSkillModifiers(b: RaidBattle, pre: RaidPreBattle) {
 		b.log.verbose(() => `風非戦闘: A${displayDifference(1 + (b.skillEffects.spdUp ?? 0))} (${formatNumber(b.atk)})\n`);
 	}
 
-	// 遂・土：本来の効果が出ない敵なら、パワーに還元される
-	// 発動条件は戦闘中に変わらないので、風と同じくターンのループの前に1回だけ掛ける
+	// 遂・土（本来の効果が出ない敵ではパワーに還元）・非戦闘時パワー・疲れにくい（stat-modifiers.ts）
+	// 遂・土は、発動条件が戦闘中に変わらないので、風と同じくターンのループの前に1回だけ掛ける
 	// （ターンごとに掛けると、ターン中に足される継戦融合武装・攻めの守勢の分にも掛かってしまう）
-	if (!b.enemy.abort && b.skillEffects.abortDown) {
-		b.atk = b.atk * (1 + b.skillEffects.abortDown * (1 / 3));
-		b.log.verbose(() => `遂スキル効果: A${displayDifference(1 + b.skillEffects.abortDown! * (1 / 3))} (${formatNumber(b.atk)})\n`);
-	}
-	if (b.skillEffects.dart && !(b.isBattle && b.isPhysical && b.enemy.maxdmg)) {
-		b.atk = b.atk * (1 + b.skillEffects.dart * 0.5);
-		b.log.verbose(() => `土スキル効果: A${displayDifference(1 + b.skillEffects.dart! * 0.5)} (${formatNumber(b.atk)})\n`);
-	}
-
-	// 非戦闘なら非戦闘時スキルが発動
-	if (!b.isBattle) {
-		b.atk = b.atk * (1 + (b.skillEffects.notBattleBonusAtk ?? 0));
-		if (b.verboseLog && b.skillEffects.notBattleBonusAtk) {
-			b.log.buff(`非戦闘: A${displayDifference(1 + (b.skillEffects.notBattleBonusAtk ?? 0))} (${formatNumber(b.atk)})\n`);
-		}
-	}
-	if (b.isTired) {
-		b.def = b.def * (1 + (b.skillEffects.notBattleBonusDef ?? 0));
-		if (b.verboseLog && b.skillEffects.notBattleBonusDef) {
-			b.log.buff(`疲スキル効果: D${displayDifference(1 + (b.skillEffects.notBattleBonusDef ?? 0))} (${formatNumber(b.def)})\n`);
-		}
-	}
+	applyStatModifiers('preBattle', b);
 
 	if (b.skillEffects.enemyStatusBonus) {
 		const enemyStrongs = Math.min((b.enemyAtk / (b.lv * 3.5)) * (getVal(b.enemy.atkx, [3]) ?? 3) + (b.enemyDef / (b.lv * 3.5)) * (getVal(b.enemy.defx, [3]) ?? 3), 40);
@@ -2221,20 +2165,8 @@ function applyRaidSkillModifiers(b: RaidBattle, pre: RaidPreBattle) {
 	// バフが1つでも付与された場合、改行を追加する
 	b.log.endBuffs();
 
-	if (b.skillEffects.plusActionX) {
-		b.atk = b.atk * (1 + (b.skillEffects.plusActionX ?? 0) / 10);
-		b.log.verbose(() => `速スキル効果: A${displayDifference((1 + (b.skillEffects.plusActionX ?? 0) / 10))} (${formatNumber(b.atk)})\n`);
-	}
-
-	if (b.skillEffects.enemyCritDmgDown) {
-		b.def = b.def * (1 + (b.skillEffects.enemyCritDmgDown ?? 0) / 4);
-		b.log.verbose(() => `守スキル効果: D${displayDifference((1 + (b.skillEffects.enemyCritDmgDown ?? 0) / 4))} (${formatNumber(b.def)})\n`);
-	}
-	if (b.skillEffects.enemyBuff) {
-		b.atk = b.atk * (1 + (b.skillEffects.enemyBuff ?? 0) / 20);
-		b.def = b.def * (1 + (b.skillEffects.enemyBuff ?? 0) / 20);
-		b.log.verbose(() => `お守り効果: AD${displayDifference((1 + (b.skillEffects.enemyBuff ?? 0) / 20))} (${formatNumber(b.atk)} / ${formatNumber(b.def)})\n`);
-	}
+	// 高速RPG・敵のクリティカル性能減少・お守りの強化（stat-modifiers.ts）
+	applyStatModifiers('preBattleLate', b);
 
 	b.baseAtk = b.atk;
 	b.baseDef = b.def;
