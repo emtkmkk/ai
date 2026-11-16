@@ -396,4 +396,4 @@ const ultimateEffect: SkillEffect = {
 	"haisuiCritUp": 0.018,
 }
 
-export const ultimateAmulet = { name: `究極のお守り`, limit: (data) => enhanceCount(data) >= 9, price: 18, desc: `${config.rpgHeroName}RPGを極めたあなたに……`, type: "amulet", effect: ultimateEffect, durability: 6, short: "究極", isUsed: (data) => true, always: true } as AmuletItem;
+export const ultimateAmulet = { name: `究極のお守り`, limit: (data) => enhanceCount(data) >= 9, price: 18, desc: `${config.rpgHeroName}RPGを極めたあなたに……`, type: "amulet", effect: ultimateEffect, durability: 6, short: "究極", isUsed: (data) => true, always: true } as AmuletItem;

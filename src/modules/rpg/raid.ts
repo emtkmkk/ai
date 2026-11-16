@@ -524,12 +524,12 @@ function finish(raid: Raid) {
 		if (sortAttackers?.[0].mark === ":blank:") {
 			sortAttackers[0].mark = "👑";
 		}
-		  const friend = ai.lookupFriend(sortAttackers[0].user.id);
-		  if (friend) {
-		    const data = friend.getPerModulesData(module_);
-		    data.coin = (data.coin ?? 0) + 1;
-		    friend.setPerModulesData(module_, data);
-		  }
+		const friend = ai.lookupFriend(sortAttackers[0].user.id);
+		if (friend) {
+			const data = friend.getPerModulesData(module_);
+			data.coin = (data.coin ?? 0) + 1;
+			friend.setPerModulesData(module_, data);
+		}
 	}
 
 	let references: string[] = [];
@@ -838,27 +838,27 @@ export async function raidContextHook(key: string, msg: Message, data: unknown) 
 	}
 
 	/** 現在進行中のレイド */
-        const raid = raids.findOne({
-                isEnded: false,
-                postId: key.split(":")[0],
-        });
+	const raid = raids.findOne({
+		isEnded: false,
+		postId: key.split(":")[0],
+	});
 
-        if (raid === null || raid === undefined) return { reaction: 'confused' };
+	if (raid === null || raid === undefined) return { reaction: 'confused' };
 
-        let needUpdate = false;
-        if (!raid.attackers) {
-                raid.attackers = [];
-                needUpdate = true;
-        }
+	let needUpdate = false;
+	if (!raid.attackers) {
+		raid.attackers = [];
+		needUpdate = true;
+	}
 
-        if (!raid.replyKey) {
-                raid.replyKey = [];
-                needUpdate = true;
-        }
+	if (!raid.replyKey) {
+		raid.replyKey = [];
+		needUpdate = true;
+	}
 
 	if (needUpdate) {
-                raids.update(raid);
-        }
+		raids.update(raid);
+	}
 
 	// 既に参加済み（dmg > 0 の同一 userId）なら拒否
 	if (raid.attackers.some(x => x.dmg > 0 && x.user.id === msg.userId)) {
@@ -881,65 +881,65 @@ export async function raidContextHook(key: string, msg: Message, data: unknown) 
 
 	accumulateRaidVitality(_data, msg.userId);
 
-        // 敵の pattern でダメージ計算を分岐：1=通常戦闘、2=じゃんけん型、3=コンテスト型
-        // NOTE: 平行次元のお札を所持している場合、副作用を隔離した状態でシミュレーションを複数回実行し、
-        //       最良ダメージの結果だけを正史として採用する。購入上限10枚 + 正史 = 最大11次元。
-        //       壊れたデータ対策として最終防衛の安全上限 10 を raid 側でも保持する。
-        const PARALLEL_DIMENSION_CAP = 10;
-        const parallelCount = Math.min(PARALLEL_DIMENSION_CAP, Math.max(0, _data.parallelDimension ?? 0));
+	// 敵の pattern でダメージ計算を分岐：1=通常戦闘、2=じゃんけん型、3=コンテスト型
+	// NOTE: 平行次元のお札を所持している場合、副作用を隔離した状態でシミュレーションを複数回実行し、
+	//       最良ダメージの結果だけを正史として採用する。購入上限10枚 + 正史 = 最大11次元。
+	//       壊れたデータ対策として最終防衛の安全上限 10 を raid 側でも保持する。
+	const PARALLEL_DIMENSION_CAP = 10;
+	const parallelCount = Math.min(PARALLEL_DIMENSION_CAP, Math.max(0, _data.parallelDimension ?? 0));
 
-        // 平行次元では投稿数を先に1度だけ取得し、全次元で同じ値を使う
-        // NOTE: 投稿数の取得は連携アカウント側にも「このレイドで使用済み」の印を付ける。
-        //       次元ごとに取得し直すと、2次元目以降は連携アカウントの投稿数が 0 になってしまう。
-        //       投稿数を使うのは通常戦闘（pattern 1）で、投稿数が固定されていない敵だけ。
-        const usesPostCount = !(enemy.pattern && enemy.pattern > 1) && !enemy.forcePostCount;
-        const parallelPostCount = parallelCount > 0 && usesPostCount
-                ? await getPostCount(ai, module_, _data, msg, 0, { type: 'raid', key: raid.postId })
-                : undefined;
+	// 平行次元では投稿数を先に1度だけ取得し、全次元で同じ値を使う
+	// NOTE: 投稿数の取得は連携アカウント側にも「このレイドで使用済み」の印を付ける。
+	//       次元ごとに取得し直すと、2次元目以降は連携アカウントの投稿数が 0 になってしまう。
+	//       投稿数を使うのは通常戦闘（pattern 1）で、投稿数が固定されていない敵だけ。
+	const usesPostCount = !(enemy.pattern && enemy.pattern > 1) && !enemy.forcePostCount;
+	const parallelPostCount = parallelCount > 0 && usesPostCount
+		? await getPostCount(ai, module_, _data, msg, 0, { type: 'raid', key: raid.postId })
+		: undefined;
 
-        // 敵の pattern に応じたダメージ計算ディスパッチ
-        // 乱数はレイドの投稿ID + ユーザーID + 平行次元の番号から決める（同じ条件なら戦闘を再現できる）
-        const runRaidDamage = async (enemyForRun: RaidEnemy, dimension = 0) => {
-                const rng = createRaidRandom({ postId: raid.postId, userId: msg.userId, dimension });
-                if (enemyForRun.pattern && enemyForRun.pattern > 1) {
-                        switch (enemyForRun.pattern) {
-                                case 3:
-                                        return await getTotalDmg3(msg, enemyForRun, { rng });
-                                case 2:
-                                default:
-                                        return await getTotalDmg2(msg, enemyForRun, { rng });
-                        }
-                }
-                return await getTotalDmg(msg, enemyForRun, raid.postId, { rng, postCount: parallelPostCount });
-        };
+	// 敵の pattern に応じたダメージ計算ディスパッチ
+	// 乱数はレイドの投稿ID + ユーザーID + 平行次元の番号から決める（同じ条件なら戦闘を再現できる）
+	const runRaidDamage = async (enemyForRun: RaidEnemy, dimension = 0) => {
+		const rng = createRaidRandom({ postId: raid.postId, userId: msg.userId, dimension });
+		if (enemyForRun.pattern && enemyForRun.pattern > 1) {
+			switch (enemyForRun.pattern) {
+				case 3:
+					return await getTotalDmg3(msg, enemyForRun, { rng });
+				case 2:
+				default:
+					return await getTotalDmg2(msg, enemyForRun, { rng });
+			}
+		}
+		return await getTotalDmg(msg, enemyForRun, raid.postId, { rng, postCount: parallelPostCount });
+	};
 
-        let result;
-        if (parallelCount <= 0) {
-                // 通常レイド: 既存挙動
-                try {
-                        result = await runRaidDamage(enemy);
-                } catch (err) {
-                        module_.log(`レイド参加処理中にエラーが発生しました: ${err instanceof Error ? err.stack ?? err.message : err}`);
-                        return {
-                                reaction: 'confused'
-                        };
-                }
-        } else {
-                // 平行次元のお札: 並列ハーネスへ委譲
-                result = await runParallelDimensionRaid(
-                        msg,
-                        enemy,
-                        module_,
-                        runRaidDamage,
-                        parallelCount,
-                        (text) => module_.log(text),
-                );
-                if (!result) {
-                        return {
-                                reaction: 'confused'
-                        };
-                }
-        }
+	let result;
+	if (parallelCount <= 0) {
+		// 通常レイド: 既存挙動
+		try {
+			result = await runRaidDamage(enemy);
+		} catch (err) {
+			module_.log(`レイド参加処理中にエラーが発生しました: ${err instanceof Error ? err.stack ?? err.message : err}`);
+			return {
+				reaction: 'confused'
+			};
+		}
+	} else {
+		// 平行次元のお札: 並列ハーネスへ委譲
+		result = await runParallelDimensionRaid(
+			msg,
+			enemy,
+			module_,
+			runRaidDamage,
+			parallelCount,
+			(text) => module_.log(text),
+		);
+		if (!result) {
+			return {
+				reaction: 'confused'
+			};
+		}
+	}
 
 	// ダメージ計算中の競合：他処理で既に参加済みなら二重参加を防ぐ
 	if (raid.attackers.some(x => x.dmg > 0 && x.user.id === msg.userId)) {
@@ -1454,10 +1454,10 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string, op
 		rawTp = getPostX(postCount);
 		// 固定投稿数には覚醒ボーナスが加算されていないため、superBonusPost は差し引かない
 		tp = rawTp * (1 + ((skillEffects.postXUp ?? 0) * Math.min(postCount / 20, 10)));
-        } else {
-                postCount = options.postCount ?? await getPostCount(ai, module_, data, msg, 0, raidPostId ? { type: 'raid', key: raidPostId } : undefined, options.readonly);
-                postCount = applyKazutoriMasterPostCountFloor(postCount, msg, skillEffects);
-                postCount += superBonusPost;
+	} else {
+		postCount = options.postCount ?? await getPostCount(ai, module_, data, msg, 0, raidPostId ? { type: 'raid', key: raidPostId } : undefined, options.readonly);
+		postCount = applyKazutoriMasterPostCountFloor(postCount, msg, skillEffects);
+		postCount += superBonusPost;
 
 		// 連続ボーナス：postCount/2 を 10〜25 にクランプ
 		continuousBonusNum = (Math.min(Math.max(10, postCount / 2), 25));
@@ -2289,10 +2289,10 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 
 		if (enemy.fire && skillEffects.water) {
 			dmgUp *= (1 + (skillEffects.water ?? 0));
-				if (verboseLog) {
-					buff += 1;
-					message += `水スキル効果: 与ダメージ${displayDifference((1 + (skillEffects.water ?? 0)))}\n`;
-				}
+			if (verboseLog) {
+				buff += 1;
+				message += `水スキル効果: 与ダメージ${displayDifference((1 + (skillEffects.water ?? 0)))}\n`;
+			}
 		}
 
 		const itemEquip = (0.4 + ((1 - playerHpPercent) * 0.6) + itemBoost) * (slothFlg ? 0 : 1);
@@ -2343,7 +2343,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 					if (rand("item.lowHpFood", count) < skillEffects.lowHpFood * playerHpPercent) types = ["medicine"];
 				}
 				if (types.includes("poison") && rand("item.poisonAvoid", count) < (skillEffects.poisonAvoid ?? 0)) {
-         			types = types.filter((x) => x!== "poison");
+					types = types.filter((x) => x!== "poison");
 				}
 				const type = types[Math.floor(rand("item.type", count) * types.length)];
 				const mEffect = Math.max((count !== 1 ? 0 : skillEffects.firstTurnItemChoice!), itemMinEffect);
@@ -2361,11 +2361,11 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 					data.stockItem.mind = Math.ceil(data.stockItem.mind * (2/3));
 					const match = data.stockItem.name.match(/-(\d+)$/);
 					if (match && match.index !== undefined) {
-					  const number = parseInt(match[1], 10);
-					  const newNumber = number + 1;
-					  data.stockItem.name = data.stockItem.name.slice(0, match.index) + '-' + newNumber;
+						const number = parseInt(match[1], 10);
+						const newNumber = number + 1;
+						data.stockItem.name = data.stockItem.name.slice(0, match.index) + '-' + newNumber;
 					} else {
-					  data.stockItem.name = data.stockItem.name + '-1';
+						data.stockItem.name = data.stockItem.name + '-1';
 					}
 					if ((type === "weapon" && !(isBattle && isPhysical)) || (type === "armor" && isTired) || enemy.pLToR) {
 						if (item.mind <= data.stockItem.mind) {
@@ -2407,11 +2407,11 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 				data.stockItem.mind = Math.ceil(data.stockItem.mind * (2/3));
 				const match = data.stockItem.name.match(/-(\d+)$/);
 				if (match && match.index !== undefined) {
-				  const number = parseInt(match[1], 10);
-				  const newNumber = number + 1;
-				  data.stockItem.name = data.stockItem.name.slice(0, match.index) + '-' + newNumber;
+					const number = parseInt(match[1], 10);
+					const newNumber = number + 1;
+					data.stockItem.name = data.stockItem.name.slice(0, match.index) + '-' + newNumber;
 				} else {
-				  data.stockItem.name = data.stockItem.name + '-1';
+					data.stockItem.name = data.stockItem.name + '-1';
 				}
 				item = { ...data.stockItem };
 			}
@@ -3194,16 +3194,16 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
 		message += "\n" + serifs.rpg.warrior.totalDmg(warriorTotalDmg);
 	}
 
-        if (!data.raidScore) data.raidScore = {};
-        if (!data.raidScore[enemy.name] || data.raidScore[enemy.name] < totalDmg) {
-                if (data.raidScore[enemy.name]) {
-                        message += "\n" + serifs.rpg.hiScore(data.raidScore[enemy.name], totalDmg);
-                        if (mark === ":blank:") mark = "🆙";
-                }
-                data.raidScore[enemy.name] = totalDmg;
-        } else if (data.raidScore[enemy.name]) {
-                message += `\n（これまでのベスト: ${data.raidScore[enemy.name].toLocaleString()}）`;
-        }
+	if (!data.raidScore) data.raidScore = {};
+	if (!data.raidScore[enemy.name] || data.raidScore[enemy.name] < totalDmg) {
+		if (data.raidScore[enemy.name]) {
+			message += "\n" + serifs.rpg.hiScore(data.raidScore[enemy.name], totalDmg);
+			if (mark === ":blank:") mark = "🆙";
+		}
+		data.raidScore[enemy.name] = totalDmg;
+	} else if (data.raidScore[enemy.name]) {
+		message += `\n（これまでのベスト: ${data.raidScore[enemy.name].toLocaleString()}）`;
+	}
 	if (!data.clearRaid) data.clearRaid = [];
 	if (count === 7 && !data.clearRaid.includes(enemy.name)) {
 		data.clearRaid.push(enemy.name);
@@ -3510,16 +3510,16 @@ export async function getTotalDmg2(msg, enemy: RaidEnemy, options: RaidDamageOpt
 
 	message += "\n\n" + serifs.rpg.totalDmg(totalDmg);
 
-        if (!data.raidScore) data.raidScore = {};
-        if (!data.raidScore[enemy.name] || data.raidScore[enemy.name] < totalDmg) {
-                if (data.raidScore[enemy.name]) {
-                        message += "\n" + serifs.rpg.hiScore(data.raidScore[enemy.name], totalDmg);
-                        if (mark === ":blank:") mark = "🆙";
-                }
-                data.raidScore[enemy.name] = totalDmg;
-        } else if (data.raidScore[enemy.name]) {
-                message += `\n（これまでのベスト: ${data.raidScore[enemy.name].toLocaleString()}）`;
-        }
+	if (!data.raidScore) data.raidScore = {};
+	if (!data.raidScore[enemy.name] || data.raidScore[enemy.name] < totalDmg) {
+		if (data.raidScore[enemy.name]) {
+			message += "\n" + serifs.rpg.hiScore(data.raidScore[enemy.name], totalDmg);
+			if (mark === ":blank:") mark = "🆙";
+		}
+		data.raidScore[enemy.name] = totalDmg;
+	} else if (data.raidScore[enemy.name]) {
+		message += `\n（これまでのベスト: ${data.raidScore[enemy.name].toLocaleString()}）`;
+	}
 	if (!data.clearRaid) data.clearRaid = [];
 	if (count === 7 && !data.clearRaid.includes(enemy.name)) {
 		data.clearRaid.push(enemy.name);
@@ -3883,30 +3883,30 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy, options: RaidDamageOpt
 		message += `器用さ: ${Math.round(dex)} 仕上げ: ${Math.round(fix * 100)}\n\n`;
 	}
 
-  if (dex > 250) {
-	const rndNum = rand("contest.dexCap");
-	if (rndNum < 0.1) {
-		dex = 250
-	} else if (rndNum < 0.9) {
-		dex = 250 + (dex - 250) * ((rndNum - 0.1) / 0.8)
+	if (dex > 250) {
+		const rndNum = rand("contest.dexCap");
+		if (rndNum < 0.1) {
+			dex = 250
+		} else if (rndNum < 0.9) {
+			dex = 250 + (dex - 250) * ((rndNum - 0.1) / 0.8)
+		}
 	}
-  }
 
-  let plus = 0.1;
-  let life = dex < 120 ? Math.ceil(15 / (120/dex)) : 15;
-  let spFlg = false;
+	let plus = 0.1;
+	let life = dex < 120 ? Math.ceil(15 / (120/dex)) : 15;
+	let spFlg = false;
 
-  while (life > 0) {
-	if (rand("contest.step") < 0.5) {
-		plus += dex < 120 ? 0.2 * (120/dex) : 0.2;
-        if (!spFlg && rand("contest.sp") < (0.02 * Math.min(1, 50/dex))) {
-            life = 15;
-            if (rand("contest.sp") < dex/60) spFlg = true;
-        }
-	} else {
-		life -= 1;
+	while (life > 0) {
+		if (rand("contest.step") < 0.5) {
+			plus += dex < 120 ? 0.2 * (120/dex) : 0.2;
+			if (!spFlg && rand("contest.sp") < (0.02 * Math.min(1, 50/dex))) {
+				life = 15;
+				if (rand("contest.sp") < dex/60) spFlg = true;
+			}
+		} else {
+			life -= 1;
+		}
 	}
-  }
 
 	const score = (dex < 120 ? (40 + dex *(2/3)) / 4 : dex / 4) * plus * (0.97 + (rand("contest.score") * 0.06));
 	const roundedScore = Math.round(score * 10) / 10;
@@ -3947,14 +3947,14 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy, options: RaidDamageOpt
 	data.hatogurumaExp = (data.hatogurumaExp ?? 0) + ((100 - totalDmg) / 100)
 	data.hatogurumaMaxScore = Math.max(data.hatogurumaMaxScore ?? 0, roundedScore);
 
-        if (!data.raidScore) data.raidScore = {};
-        if (!data.raidScore[enemy.name] || data.raidScore[enemy.name] < totalDmg) {
-                if (data.raidScore[enemy.name] && Math.floor(data.raidScore[enemy.name]) !== Math.floor(totalDmg)) {
-                        message += "過去最高の手応えだ！" + `\n\n`;
-                        if (mark === ":blank:") mark = "🆙";
-                }
-                data.raidScore[enemy.name] = totalDmg;
-        }
+	if (!data.raidScore) data.raidScore = {};
+	if (!data.raidScore[enemy.name] || data.raidScore[enemy.name] < totalDmg) {
+		if (data.raidScore[enemy.name] && Math.floor(data.raidScore[enemy.name]) !== Math.floor(totalDmg)) {
+			message += "過去最高の手応えだ！" + `\n\n`;
+			if (mark === ":blank:") mark = "🆙";
+		}
+		data.raidScore[enemy.name] = totalDmg;
+	}
 	if (!data.clearRaid) data.clearRaid = [];
 	if (totalDmg >= 100 && !data.clearRaid.includes(enemy.name)) {
 		data.clearRaid.push(enemy.name);

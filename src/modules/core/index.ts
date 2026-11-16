@@ -10,11 +10,11 @@ import { genItem, itemPrefixes } from '@/vocabulary';
 import Friend, { FriendDoc } from '@/friend';
 import config from '@/config';
 import {
-        ensureKazutoriData,
-        findRateRank,
-        createDefaultKazutoriData,
-        hasKazutoriRateHistory,
-        formatKazutoriRateForDisplay,
+	ensureKazutoriData,
+	findRateRank,
+	createDefaultKazutoriData,
+	hasKazutoriRateHistory,
+	formatKazutoriRateForDisplay,
 } from '@/modules/kazutori/rate';
 import type { EnsuredKazutoriData } from '@/modules/kazutori/rate';
 import { accumulateVitality } from '@/modules/rpg/utils';
@@ -159,16 +159,16 @@ export default class extends Module {
 	}
 
 
-        @autobind
-        private async linkAccount(msg: Message) {
-                if (!msg.text) return false;
-                if (msg.includes(['リンク解除', 'unlink'])) {
-                        return this.unlinkAccount(msg);
-                }
-                if (!msg.includes(['リンク', 'link'])) return false;
+	@autobind
+	private async linkAccount(msg: Message) {
+		if (!msg.text) return false;
+		if (msg.includes(['リンク解除', 'unlink'])) {
+			return this.unlinkAccount(msg);
+		}
+		if (!msg.includes(['リンク', 'link'])) return false;
 
-                const exp = /@(\w+)@?([\w.-]+)?/.exec(msg.extractedText.replace("リンク", ""));
-                if (!exp?.[1]) {
+		const exp = /@(\w+)@?([\w.-]+)?/.exec(msg.extractedText.replace("リンク", ""));
+		if (!exp?.[1]) {
 			if (!msg.friend.doc.linkedAccounts) {
 				msg.reply("リンクしているアカウントがありません！\n新しくアカウントをリンクさせたい場合は、リンクの後にあなたのサブアカウントへのメンションを入れてください！");
 				return { reaction: ":mk_hotchicken:" };
@@ -315,72 +315,72 @@ export default class extends Module {
 				msg.reply(`アカウントを登録しました！\nリンク先のアカウントからも同じ操作を実行してください！`);
 			}
 
-                        return true;
-                };
-        }
+			return true;
+		};
+	}
 
-        @autobind
-        private async unlinkAccount(msg: Message) {
-                if (!msg.friend.doc.linkedAccounts?.length) {
-                        msg.reply("リンクしているアカウントがありません！\n新しくアカウントをリンクさせたい場合は、リンクの後にあなたのサブアカウントへのメンションを入れてください！");
-                        return { reaction: ":mk_hotchicken:" };
-                }
+	@autobind
+	private async unlinkAccount(msg: Message) {
+		if (!msg.friend.doc.linkedAccounts?.length) {
+			msg.reply("リンクしているアカウントがありません！\n新しくアカウントをリンクさせたい場合は、リンクの後にあなたのサブアカウントへのメンションを入れてください！");
+			return { reaction: ":mk_hotchicken:" };
+		}
 
-                const exp = /@(\w+)@?([\w.-]+)?/.exec(msg.extractedText.replace(/リンク解除|unlink/gi, ''));
+		const exp = /@(\w+)@?([\w.-]+)?/.exec(msg.extractedText.replace(/リンク解除|unlink/gi, ''));
 
-                if (!exp?.[1]) {
-                        msg.reply("リンク解除の後に解除したいアカウントへのメンションを入力してください！");
-                        return { reaction: ":mk_hotchicken:" };
-                }
+		if (!exp?.[1]) {
+			msg.reply("リンク解除の後に解除したいアカウントへのメンションを入力してください！");
+			return { reaction: ":mk_hotchicken:" };
+		}
 
-                const doc = this.ai.friends.find({
-                        'user.username': exp[1],
-                        ...(exp?.[2] ? { 'user.host': exp[2] } : {})
-                } as any) as any;
-                let filteredDoc = exp?.[2] ? doc : doc.filter((x) => x.user.host == null);
+		const doc = this.ai.friends.find({
+			'user.username': exp[1],
+			...(exp?.[2] ? { 'user.host': exp[2] } : {})
+		} as any) as any;
+		let filteredDoc = exp?.[2] ? doc : doc.filter((x) => x.user.host == null);
 
-                if (filteredDoc.length === 0) {
-                        const doc = this.ai.friends.find({
-                                'user.username': exp[1],
-                        } as any) as any;
-                        filteredDoc = doc.filter((x) => x.user.host == null);
-                }
+		if (filteredDoc.length === 0) {
+			const doc = this.ai.friends.find({
+				'user.username': exp[1],
+			} as any) as any;
+			filteredDoc = doc.filter((x) => x.user.host == null);
+		}
 
-                if (filteredDoc.length !== 1 || (filteredDoc[0].userId === msg.userId && (exp?.[2] && exp?.[2] !== "mkkey.net"))) {
-                        msg.reply(`そのユーザは私が知らないユーザの様です！\n@${exp[1]}@${exp[2]} から \`@mkck@mkkey.net リンク ${acct(msg.user, true)}\`と送信していただけると上手く行く可能性があります！`);
-                        return { reaction: ":mk_hotchicken:" };
-                }
+		if (filteredDoc.length !== 1 || (filteredDoc[0].userId === msg.userId && (exp?.[2] && exp?.[2] !== "mkkey.net"))) {
+			msg.reply(`そのユーザは私が知らないユーザの様です！\n@${exp[1]}@${exp[2]} から \`@mkck@mkkey.net リンク ${acct(msg.user, true)}\`と送信していただけると上手く行く可能性があります！`);
+			return { reaction: ":mk_hotchicken:" };
+		}
 
-                const target = filteredDoc[0];
+		const target = filteredDoc[0];
 
-                if (!msg.friend.doc.linkedAccounts?.includes(target.userId)) {
-                        msg.reply("そのアカウントとはリンクされていません！");
-                        return { reaction: ":mk_hotchicken:" };
-                }
+		if (!msg.friend.doc.linkedAccounts?.includes(target.userId)) {
+			msg.reply("そのアカウントとはリンクされていません！");
+			return { reaction: ":mk_hotchicken:" };
+		}
 
-                const updatedLinkedAccounts = (msg.friend.doc.linkedAccounts ?? []).filter((id) => id !== target.userId);
-                msg.friend.doc.linkedAccounts = updatedLinkedAccounts;
-                msg.friend.save();
+		const updatedLinkedAccounts = (msg.friend.doc.linkedAccounts ?? []).filter((id) => id !== target.userId);
+		msg.friend.doc.linkedAccounts = updatedLinkedAccounts;
+		msg.friend.save();
 
-                const targetFriend = this.ai.lookupFriend(target.userId);
-                if (targetFriend?.doc?.linkedAccounts?.includes(msg.friend.userId)) {
-                        const targetLinkedAccounts = (targetFriend.doc.linkedAccounts ?? []).filter((id) => id !== msg.friend.userId);
-                        targetFriend.doc.linkedAccounts = targetLinkedAccounts;
-                        targetFriend.save();
-                }
+		const targetFriend = this.ai.lookupFriend(target.userId);
+		if (targetFriend?.doc?.linkedAccounts?.includes(msg.friend.userId)) {
+			const targetLinkedAccounts = (targetFriend.doc.linkedAccounts ?? []).filter((id) => id !== msg.friend.userId);
+			targetFriend.doc.linkedAccounts = targetLinkedAccounts;
+			targetFriend.save();
+		}
 
-                await this.linkAccountListAdd();
+		await this.linkAccountListAdd();
 
-                msg.reply(`アカウントのリンクを解除しました！\nまたリンクしたくなったら \`リンク ${acct(target.user, true)}\` と話しかけてください！`);
+		msg.reply(`アカウントのリンクを解除しました！\nまたリンクしたくなったら \`リンク ${acct(target.user, true)}\` と話しかけてください！`);
 
-                return true;
-        }
+		return true;
+	}
 
-        @autobind
-        private async findData(msg: Message) {
-                if (msg.user.host || msg.user.username !== config.master) return false;
-                if (!msg.text) return false;
-                if (!msg.includes(['データ照会'])) return false;
+	@autobind
+	private async findData(msg: Message) {
+		if (msg.user.host || msg.user.username !== config.master) return false;
+		if (!msg.text) return false;
+		if (!msg.includes(['データ照会'])) return false;
 
 		const doc = this.ai.friends.find({
 			'user.username': { '$regex': new RegExp(msg.extractedText.replace("データ照会 ", ""), "i") }
@@ -522,8 +522,8 @@ export default class extends Module {
 		doc1.doc.love = 0;
 		doc2.doc.married = doc1.married || doc2.married;
 		doc2.doc.perModulesData = this.mergeAndSum(doc1.doc.perModulesData, doc2.doc.perModulesData);
-                doc2.doc.kazutoriData = this.mergeAndSum(doc1.doc.kazutoriData, doc2.doc.kazutoriData);
-                doc1.doc.kazutoriData = createDefaultKazutoriData();
+		doc2.doc.kazutoriData = this.mergeAndSum(doc1.doc.kazutoriData, doc2.doc.kazutoriData);
+		doc1.doc.kazutoriData = createDefaultKazutoriData();
 		if (doc2.doc.kazutoriData == null) doc2.doc.kazutoriData = createDefaultKazutoriData();
 		doc2.doc.kazutoriData.rate = doc1KazutoriRate ?? doc2.doc.kazutoriData.rate;
 		doc1.doc.kazutoriData.rate = doc2KazutoriRate ?? doc1.doc.kazutoriData.rate;
@@ -587,8 +587,8 @@ export default class extends Module {
 
 		msg.reply(
 			`レートを入れ替えました！\n` +
-				`${acct(doc1.doc.user)} : ${formatKazutoriRateForDisplay(beforeRate1)} → ${formatKazutoriRateForDisplay(data1.rate)}\n` +
-				`${acct(doc2.doc.user)} : ${formatKazutoriRateForDisplay(beforeRate2)} → ${formatKazutoriRateForDisplay(data2.rate)}`,
+			`${acct(doc1.doc.user)} : ${formatKazutoriRateForDisplay(beforeRate1)} → ${formatKazutoriRateForDisplay(data1.rate)}\n` +
+			`${acct(doc2.doc.user)} : ${formatKazutoriRateForDisplay(beforeRate2)} → ${formatKazutoriRateForDisplay(data2.rate)}`,
 			{ visibility: 'specified' }
 		);
 
@@ -735,10 +735,10 @@ export default class extends Module {
 		if (!msg.text) return false;
 		if (!msg.text.includes('好感度') && !msg.text.includes('懐き度') && !msg.text.includes('なつき度')) return false;
 
-                const { data: kazutoriData, updated: kazutoriUpdated } = ensureKazutoriData(msg.friend.doc);
-                if (kazutoriUpdated) msg.friend.save();
+		const { data: kazutoriData, updated: kazutoriUpdated } = ensureKazutoriData(msg.friend.doc);
+		if (kazutoriUpdated) msg.friend.save();
 
-                const lovep = msg.friend.love || 0;
+		const lovep = msg.friend.love || 0;
 		let love = "";
 		let over = Math.floor(lovep / (100 / 7)) - 7;
 		let point = (lovep / (100 / 7)).toFixed(2);
@@ -757,18 +757,18 @@ export default class extends Module {
 	}
 
 	@autobind
-        private getStatus(msg: Message): boolean {
-                if (!msg.text) return false;
-                if (!msg.text.includes('ステータス') && !msg.includes(["status"])) return false;
+	private getStatus(msg: Message): boolean {
+		if (!msg.text) return false;
+		if (!msg.text.includes('ステータス') && !msg.includes(["status"])) return false;
 
-                const { data: kazutoriData, updated: kazutoriUpdated } = ensureKazutoriData(msg.friend.doc);
-                if (kazutoriUpdated) msg.friend.save();
+		const { data: kazutoriData, updated: kazutoriUpdated } = ensureKazutoriData(msg.friend.doc);
+		if (kazutoriUpdated) msg.friend.save();
 
-                const lovep = msg.friend.love || 0;
-                let love = "";
-                let over = Math.floor(lovep / (100 / 7)) - 7;
-                love += lovep >= -29 ? "★" : "☆";
-                love += lovep >= -10 ? "★" : "☆";
+		const lovep = msg.friend.love || 0;
+		let love = "";
+		let over = Math.floor(lovep / (100 / 7)) - 7;
+		love += lovep >= -29 ? "★" : "☆";
+		love += lovep >= -10 ? "★" : "☆";
 		love += lovep >= 0 ? "★" : "☆";
 		love += lovep >= 5 ? "★" : "☆";
 		love += lovep >= 20 ? "★" : "☆";
@@ -780,14 +780,14 @@ export default class extends Module {
 
 		const lovemsg = `懐き度 : ${love}`;
 
-                const rateInfo = this.getKazutoriRateInfo(msg.friend.userId);
-                const rankText = rateInfo?.rank != null
-                        ? `${rateInfo.rank}位`
-                        : undefined;
-                const rateText = rateInfo?.rate != null
-                        ? `\nレート : ${formatKazutoriRateForDisplay(rateInfo.rate)}${rankText ? ` / ${rankText}` : ''}`
-                        : '';
-                const kazutori = `数取り : ${kazutoriData.winCount ?? 0} / ${kazutoriData.playCount ?? 0}${rateText}${kazutoriData.medal ? "\nトロフィー : " + kazutoriData.medal : ""}`;
+		const rateInfo = this.getKazutoriRateInfo(msg.friend.userId);
+		const rankText = rateInfo?.rank != null
+			? `${rateInfo.rank}位`
+			: undefined;
+		const rateText = rateInfo?.rate != null
+			? `\nレート : ${formatKazutoriRateForDisplay(rateInfo.rate)}${rankText ? ` / ${rankText}` : ''}`
+			: '';
+		const kazutori = `数取り : ${kazutoriData.winCount ?? 0} / ${kazutoriData.playCount ?? 0}${rateText}${kazutoriData.medal ? "\nトロフィー : " + kazutoriData.medal : ""}`;
 
 		const bonus = msg.friend.doc.perModulesData?.rpg ? (((Math.floor((msg.friend.doc.kazutoriData?.winCount ?? 0) / 3)) + (msg.friend.doc.kazutoriData?.medal ?? 0)) + ((Math.floor((msg.friend.doc.kazutoriData?.playCount ?? 0) / 7)) + (msg.friend.doc.kazutoriData?.medal ?? 0))) / 2 : 0;
 		if (msg.friend.doc.perModulesData?.rpg) {
@@ -811,177 +811,177 @@ export default class extends Module {
 			].filter(Boolean).join("\n")
 			: "";
 
-                msg.reply(serifs.core.getStatus([name, lovemsg, kazutori, rpg].filter(Boolean).join("\n")));
+		msg.reply(serifs.core.getStatus([name, lovemsg, kazutori, rpg].filter(Boolean).join("\n")));
 
-                return true;
-        }
+		return true;
+	}
 
-        @autobind
-        private getKazutoriRateReport(msg: Message): boolean {
-                if (!msg.text) return false;
-                const rateKeywords = ['レート'];
-                if (!msg.includes(rateKeywords)) return false;
+	@autobind
+	private getKazutoriRateReport(msg: Message): boolean {
+		if (!msg.text) return false;
+		const rateKeywords = ['レート'];
+		if (!msg.includes(rateKeywords)) return false;
 
-                const { data: kazutoriData, updated: kazutoriUpdated } = ensureKazutoriData(msg.friend.doc);
-                if (kazutoriUpdated) msg.friend.save();
+		const { data: kazutoriData, updated: kazutoriUpdated } = ensureKazutoriData(msg.friend.doc);
+		if (kazutoriUpdated) msg.friend.save();
 
-                const rateInfo = this.getKazutoriRateInfo(msg.friend.userId);
-                const lastGameId = this.getLatestKazutoriGameId();
-                const shouldOverrideResult =
-                        lastGameId != null && kazutoriData.lastRateChangeGameId !== lastGameId;
-                const changeValue = shouldOverrideResult ? undefined : kazutoriData.lastRateChange;
-                const formatDelta = (value?: number) => {
-                        if (typeof value !== 'number' || Number.isNaN(value)) return '→';
-                        if (value > 0) return `↑${value}`;
-                        if (value < 0) return `↓${Math.abs(value)}`;
-                        return '→';
-                };
-                const rateText = rateInfo?.rate != null ? formatKazutoriRateForDisplay(rateInfo.rate) : '--';
-                const rateDeltaText = formatDelta(changeValue);
-                const rankText = rateInfo?.rank != null ? `${rateInfo.rank}位` : '--位';
-                const adjustmentValue = kazutoriData.lastRateLossAdjustmentPercent;
-                const lossAdjustmentText = (() => {
-                        if (typeof adjustmentValue !== 'number' || Number.isNaN(adjustmentValue)) return undefined;
-                        if (adjustmentValue >= 100) return undefined;
-                        const reductionPercent = Math.max(0, Math.round(100 - adjustmentValue));
-                        return `軽減: ${reductionPercent}%`;
-                })();
+		const rateInfo = this.getKazutoriRateInfo(msg.friend.userId);
+		const lastGameId = this.getLatestKazutoriGameId();
+		const shouldOverrideResult =
+			lastGameId != null && kazutoriData.lastRateChangeGameId !== lastGameId;
+		const changeValue = shouldOverrideResult ? undefined : kazutoriData.lastRateChange;
+		const formatDelta = (value?: number) => {
+			if (typeof value !== 'number' || Number.isNaN(value)) return '→';
+			if (value > 0) return `↑${value}`;
+			if (value < 0) return `↓${Math.abs(value)}`;
+			return '→';
+		};
+		const rateText = rateInfo?.rate != null ? formatKazutoriRateForDisplay(rateInfo.rate) : '--';
+		const rateDeltaText = formatDelta(changeValue);
+		const rankText = rateInfo?.rank != null ? `${rateInfo.rank}位` : '--位';
+		const adjustmentValue = kazutoriData.lastRateLossAdjustmentPercent;
+		const lossAdjustmentText = (() => {
+			if (typeof adjustmentValue !== 'number' || Number.isNaN(adjustmentValue)) return undefined;
+			if (adjustmentValue >= 100) return undefined;
+			const reductionPercent = Math.max(0, Math.round(100 - adjustmentValue));
+			return `軽減: ${reductionPercent}%`;
+		})();
 
-                const gameResultLabel = (() => {
-                        if (shouldOverrideResult) {
-                                return '不参加';
-                        }
-                        switch (kazutoriData.lastGameResult) {
-                                case 'win':
-                                        return '勝ち';
-                                case 'lose':
-                                        return lossAdjustmentText ? `負け (${lossAdjustmentText})` : '負け';
-                                case 'no-winner':
-                                        return '勝者なし';
-                                case 'absent':
-                                        return '不参加';
-                                default:
-                                        return '--';
-                        }
-                })();
+		const gameResultLabel = (() => {
+			if (shouldOverrideResult) {
+				return '不参加';
+			}
+			switch (kazutoriData.lastGameResult) {
+				case 'win':
+					return '勝ち';
+				case 'lose':
+					return lossAdjustmentText ? `負け (${lossAdjustmentText})` : '負け';
+				case 'no-winner':
+					return '勝者なし';
+				case 'absent':
+					return '不参加';
+				default:
+					return '--';
+			}
+		})();
 
-                const ranking = this.getKazutoriRateRankingSnapshot();
-                const topRates = ranking.slice(0, 5).map((entry, index) => {
-                        const hasEntryChange =
-                                lastGameId == null || entry.lastRateChangeGameId === lastGameId;
-                        const deltaText = hasEntryChange ? formatDelta(entry.lastRateChange) : '→';
-                        return `${index + 1}位 ${formatKazutoriRateForDisplay(entry.rate)} (${deltaText})`;
-                });
+		const ranking = this.getKazutoriRateRankingSnapshot();
+		const topRates = ranking.slice(0, 5).map((entry, index) => {
+			const hasEntryChange =
+				lastGameId == null || entry.lastRateChangeGameId === lastGameId;
+			const deltaText = hasEntryChange ? formatDelta(entry.lastRateChange) : '→';
+			return `${index + 1}位 ${formatKazutoriRateForDisplay(entry.rate)} (${deltaText})`;
+		});
 
-                const topText = topRates.length > 0 ? topRates.join('\n') : 'データがありません';
+		const topText = topRates.length > 0 ? topRates.join('\n') : 'データがありません';
 
-                msg.reply(
-                        `数取りレート情報\n` +
-                                `-----------\n` +
-                                `現在のレート: ${rateText} (${rateDeltaText})\n` +
-                                `前回の数取り: ${gameResultLabel}\n` +
-                                `-----------\n` +
-                                `現在の順位: ${rankText}\n` +
-                                `ランキングTOP5:\n` +
-                                `${topText}`,
-                        { visibility: 'home' }
-                );
+		msg.reply(
+			`数取りレート情報\n` +
+			`-----------\n` +
+			`現在のレート: ${rateText} (${rateDeltaText})\n` +
+			`前回の数取り: ${gameResultLabel}\n` +
+			`-----------\n` +
+			`現在の順位: ${rankText}\n` +
+			`ランキングTOP5:\n` +
+			`${topText}`,
+			{ visibility: 'home' }
+		);
 
-                return true;
-        }
+		return true;
+	}
 
-        private getKazutoriRateRankingSnapshot(): {
-                userId: string;
-                rate: number;
-                lastRateChange?: number;
-                lastRateChangeGameId?: string;
-        }[] {
-                const friendDocs = this.ai.friends.find({}) as FriendDoc[];
-                const ranking: {
-                        userId: string;
-                        rate: number;
-                        lastRateChange?: number;
-                        lastRateChangeGameId?: string;
-                }[] = [];
-                const updatedDocs: FriendDoc[] = [];
+	private getKazutoriRateRankingSnapshot(): {
+		userId: string;
+		rate: number;
+		lastRateChange?: number;
+		lastRateChangeGameId?: string;
+	}[] {
+		const friendDocs = this.ai.friends.find({}) as FriendDoc[];
+		const ranking: {
+			userId: string;
+			rate: number;
+			lastRateChange?: number;
+			lastRateChangeGameId?: string;
+		}[] = [];
+		const updatedDocs: FriendDoc[] = [];
 
-                for (const doc of friendDocs) {
-                        const { data, updated } = ensureKazutoriData(doc);
-                        if (updated) updatedDocs.push(doc);
-                        if (hasKazutoriRateHistory(data)) {
-                                ranking.push({
-                                        userId: doc.userId,
-                                        rate: data.rate,
-                                        lastRateChange: data.lastRateChange,
-                                        lastRateChangeGameId: data.lastRateChangeGameId,
-                                });
-                        }
-                }
+		for (const doc of friendDocs) {
+			const { data, updated } = ensureKazutoriData(doc);
+			if (updated) updatedDocs.push(doc);
+			if (hasKazutoriRateHistory(data)) {
+				ranking.push({
+					userId: doc.userId,
+					rate: data.rate,
+					lastRateChange: data.lastRateChange,
+					lastRateChangeGameId: data.lastRateChangeGameId,
+				});
+			}
+		}
 
-                for (const doc of updatedDocs) {
-                        this.ai.friends.update(doc);
-                }
+		for (const doc of updatedDocs) {
+			this.ai.friends.update(doc);
+		}
 
-                ranking.sort((a, b) => (b.rate === a.rate ? a.userId.localeCompare(b.userId) : b.rate - a.rate));
-                return ranking;
-        }
+		ranking.sort((a, b) => (b.rate === a.rate ? a.userId.localeCompare(b.userId) : b.rate - a.rate));
+		return ranking;
+	}
 
-        private getLatestKazutoriGameId(): string | null {
-                const games = this.ai.getCollection('kazutori');
-                if (!games) return null;
-                const list = games.find({ isEnded: true }) as Array<{ finishedAt?: number; postId?: string }>;
-                if (!list?.length) return null;
-                let latest: { finishedAt?: number; postId?: string } | null = null;
-                for (const game of list) {
-                        if (!game?.postId) continue;
-                        if (!latest) {
-                                latest = game;
-                                continue;
-                        }
-                        const latestTime = latest.finishedAt ?? 0;
-                        const currentTime = game.finishedAt ?? 0;
-                        if (currentTime >= latestTime) {
-                                latest = game;
-                        }
-                }
-                return latest?.postId ?? null;
-        }
+	private getLatestKazutoriGameId(): string | null {
+		const games = this.ai.getCollection('kazutori');
+		if (!games) return null;
+		const list = games.find({ isEnded: true }) as Array<{ finishedAt?: number; postId?: string }>;
+		if (!list?.length) return null;
+		let latest: { finishedAt?: number; postId?: string } | null = null;
+		for (const game of list) {
+			if (!game?.postId) continue;
+			if (!latest) {
+				latest = game;
+				continue;
+			}
+			const latestTime = latest.finishedAt ?? 0;
+			const currentTime = game.finishedAt ?? 0;
+			if (currentTime >= latestTime) {
+				latest = game;
+			}
+		}
+		return latest?.postId ?? null;
+	}
 
-        private getKazutoriRateInfo(userId: string): { rate?: number; rank?: number; total: number; } {
-                const friendDocs = this.ai.friends.find({}) as FriendDoc[];
-                const ranking: { userId: string; rate: number; }[] = [];
-                const updatedDocs: FriendDoc[] = [];
-                let selfData: EnsuredKazutoriData | undefined;
+	private getKazutoriRateInfo(userId: string): { rate?: number; rank?: number; total: number; } {
+		const friendDocs = this.ai.friends.find({}) as FriendDoc[];
+		const ranking: { userId: string; rate: number; }[] = [];
+		const updatedDocs: FriendDoc[] = [];
+		let selfData: EnsuredKazutoriData | undefined;
 
-                for (const doc of friendDocs) {
-                        const { data, updated } = ensureKazutoriData(doc);
-                        if (updated) updatedDocs.push(doc);
-                        if (doc.userId === userId) {
-                                selfData = data;
-                        }
-                        if (hasKazutoriRateHistory(data)) {
-                                ranking.push({ userId: doc.userId, rate: data.rate });
-                        }
-                }
+		for (const doc of friendDocs) {
+			const { data, updated } = ensureKazutoriData(doc);
+			if (updated) updatedDocs.push(doc);
+			if (doc.userId === userId) {
+				selfData = data;
+			}
+			if (hasKazutoriRateHistory(data)) {
+				ranking.push({ userId: doc.userId, rate: data.rate });
+			}
+		}
 
-                for (const doc of updatedDocs) {
-                        this.ai.friends.update(doc);
-                }
+		for (const doc of updatedDocs) {
+			this.ai.friends.update(doc);
+		}
 
-                ranking.sort((a, b) => (b.rate === a.rate ? a.userId.localeCompare(b.userId) : b.rate - a.rate));
-                const rank = findRateRank(ranking, userId);
+		ranking.sort((a, b) => (b.rate === a.rate ? a.userId.localeCompare(b.userId) : b.rate - a.rate));
+		const rank = findRateRank(ranking, userId);
 
-                return {
-                        rate: selfData?.rate,
-                        rank,
-                        total: ranking.length,
-                };
-        }
+		return {
+			rate: selfData?.rate,
+			rank,
+			total: ranking.length,
+		};
+	}
 
-        @autobind
-        private getInventory(msg: Message): boolean {
-                if (!msg.text) return false;
-                if (!msg.friend.doc.kazutoriData?.inventory?.length) return false;
+	@autobind
+	private getInventory(msg: Message): boolean {
+		if (!msg.text) return false;
+		if (!msg.friend.doc.kazutoriData?.inventory?.length) return false;
 		if (!(msg.includes(['貰った', 'もらった', 'くれた']) && msg.includes(['もの', '物']))) return false;
 
 		const inventory = [...msg.friend.doc.kazutoriData?.inventory].reverse();

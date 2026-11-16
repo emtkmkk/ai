@@ -69,32 +69,32 @@ export default class Stream extends EventEmitter {
 	 *
 	 * @internal
 	 */
-        private buffer: any[];
+	private buffer: any[];
 	/**
 	 * 共有コネクションプールの一覧
 	 * @internal
 	 */
-        private sharedConnectionPools: Pool[] = [];
+	private sharedConnectionPools: Pool[] = [];
 	/**
 	 * アクティブな共有コネクションの一覧
 	 * @internal
 	 */
-        private sharedConnections: SharedConnection[] = [];
+	private sharedConnections: SharedConnection[] = [];
 	/**
 	 * アクティブな専用コネクションの一覧
 	 * @internal
 	 */
-        private nonSharedConnections: NonSharedConnection[] = [];
+	private nonSharedConnections: NonSharedConnection[] = [];
 	/**
 	 * 最後にメッセージを受信した時刻（`Date.now()` のミリ秒値）
 	 * @internal
 	 */
-        private lastActivityAt: number;
+	private lastActivityAt: number;
 	/**
 	 * 非アクティビティ監視タイマーのID
 	 * @internal
 	 */
-        private inactivityCheckTimer: any;
+	private inactivityCheckTimer: any;
 
 	/**
 	 * Stream インスタンスを生成する
@@ -104,16 +104,16 @@ export default class Stream extends EventEmitter {
 	 *
 	 * @internal
 	 */
-        constructor() {
-                super();
+	constructor() {
+		super();
 
-                this.state = 'initializing';
-                log(`stream : ` + this.state);
-                this.buffer = [];
+		this.state = 'initializing';
+		log(`stream : ` + this.state);
+		this.buffer = [];
 
-                this.initializeStream();
-                this.startInactivityWatcher();
-        }
+		this.initializeStream();
+		this.startInactivityWatcher();
+	}
 
 	/**
 	 * 共有コネクションを取得または作成する
@@ -126,9 +126,9 @@ export default class Stream extends EventEmitter {
 	 * @returns 共有コネクション
 	 * @internal
 	 */
-        @autobind
-        public useSharedConnection(channel: string): SharedConnection {
-                let pool = this.sharedConnectionPools.find(p => p.channel === channel);
+	@autobind
+	public useSharedConnection(channel: string): SharedConnection {
+		let pool = this.sharedConnectionPools.find(p => p.channel === channel);
 
 		if (pool == null) {
 			pool = new Pool(this, channel);
@@ -181,7 +181,7 @@ export default class Stream extends EventEmitter {
 	@autobind
 	public disconnectToChannel(connection: NonSharedConnection) {
 		this.nonSharedConnections = this.nonSharedConnections.filter(c => c !== connection);
-        }
+	}
 
 	/**
 	 * WebSocket 接続確立時のコールバック
@@ -193,12 +193,12 @@ export default class Stream extends EventEmitter {
 	 * @returns なし
 	 * @internal
 	 */
-        @autobind
-        private onOpen() {
-                const isReconnect = this.state == 'reconnecting';
+	@autobind
+	private onOpen() {
+		const isReconnect = this.state == 'reconnecting';
 
-                this.state = 'connected';
-                log(`stream : ` + this.state);
+		this.state = 'connected';
+		log(`stream : ` + this.state);
 		this.emit('_connected_');
 
 		// バッファーを処理
@@ -246,10 +246,10 @@ export default class Stream extends EventEmitter {
 	 * @returns なし
 	 * @internal
 	 */
-        @autobind
-        private onMessage(message) {
-                this.lastActivityAt = Date.now();
-                const { type, body } = JSON.parse(message.data);
+	@autobind
+	private onMessage(message) {
+		this.lastActivityAt = Date.now();
+		const { type, body } = JSON.parse(message.data);
 
 		if (type == 'channel') {
 			const id = body.id;
@@ -312,16 +312,16 @@ export default class Stream extends EventEmitter {
 	 * @returns なし
 	 * @internal
 	 */
-        @autobind
-        public close() {
-                this.stream.removeEventListener('open', this.onOpen);
-                this.stream.removeEventListener('message', this.onMessage);
-                this.stream.removeEventListener('close', this.onClose);
-                if (this.inactivityCheckTimer) {
-                        clearInterval(this.inactivityCheckTimer);
-                        this.inactivityCheckTimer = null;
-                }
-        }
+	@autobind
+	public close() {
+		this.stream.removeEventListener('open', this.onOpen);
+		this.stream.removeEventListener('message', this.onMessage);
+		this.stream.removeEventListener('close', this.onClose);
+		if (this.inactivityCheckTimer) {
+			clearInterval(this.inactivityCheckTimer);
+			this.inactivityCheckTimer = null;
+		}
+	}
 
 	/**
 	 * WebSocket ストリームを初期化する
@@ -332,17 +332,17 @@ export default class Stream extends EventEmitter {
 	 * @returns なし
 	 * @internal
 	 */
-        @autobind
-        private initializeStream() {
-                this.lastActivityAt = Date.now();
-                this.stream = new ReconnectingWebsocket(`${config.wsUrl}/streaming?i=${config.i}`, [], {
-                        WebSocket: WebSocket
-                });
-                log(`streamURL : ` + `${config.wsUrl}/streaming?i=${config.i}`);
-                this.stream.addEventListener('open', this.onOpen);
-                this.stream.addEventListener('close', this.onClose);
-                this.stream.addEventListener('message', this.onMessage);
-        }
+	@autobind
+	private initializeStream() {
+		this.lastActivityAt = Date.now();
+		this.stream = new ReconnectingWebsocket(`${config.wsUrl}/streaming?i=${config.i}`, [], {
+			WebSocket: WebSocket
+		});
+		log(`streamURL : ` + `${config.wsUrl}/streaming?i=${config.i}`);
+		this.stream.addEventListener('open', this.onOpen);
+		this.stream.addEventListener('close', this.onClose);
+		this.stream.addEventListener('message', this.onMessage);
+	}
 
 	/**
 	 * 非アクティビティ監視を開始する
@@ -354,21 +354,21 @@ export default class Stream extends EventEmitter {
 	 * @returns なし
 	 * @internal
 	 */
-        @autobind
-        private startInactivityWatcher() {
-                const RECONNECT_INTERVAL = 2 * 60 * 1000;
-                const CHECK_INTERVAL = 60 * 1000;
+	@autobind
+	private startInactivityWatcher() {
+		const RECONNECT_INTERVAL = 2 * 60 * 1000;
+		const CHECK_INTERVAL = 60 * 1000;
 
-                this.inactivityCheckTimer = setInterval(() => {
-                        const now = Date.now();
-                        if (now - this.lastActivityAt >= RECONNECT_INTERVAL) {
-                                const lastActivityAt = this.lastActivityAt;
-                                log(`streamInactivityDetected : reconnecting stream after ${Math.round((now - lastActivityAt) / 1000)}s of silence`);
-                                this.emit('inactivityReconnect', { lastActivityAt });
-                                this.forceReconnect();
-                        }
-                }, CHECK_INTERVAL);
-        }
+		this.inactivityCheckTimer = setInterval(() => {
+			const now = Date.now();
+			if (now - this.lastActivityAt >= RECONNECT_INTERVAL) {
+				const lastActivityAt = this.lastActivityAt;
+				log(`streamInactivityDetected : reconnecting stream after ${Math.round((now - lastActivityAt) / 1000)}s of silence`);
+				this.emit('inactivityReconnect', { lastActivityAt });
+				this.forceReconnect();
+			}
+		}, CHECK_INTERVAL);
+	}
 
 	/**
 	 * 強制的にストリームを再接続する
@@ -379,15 +379,15 @@ export default class Stream extends EventEmitter {
 	 * @returns なし
 	 * @internal
 	 */
-        @autobind
-        private forceReconnect() {
-                this.state = 'reconnecting';
-                this.stream.removeEventListener('open', this.onOpen);
-                this.stream.removeEventListener('close', this.onClose);
-                this.stream.removeEventListener('message', this.onMessage);
-                this.stream.close();
-                this.initializeStream();
-        }
+	@autobind
+	private forceReconnect() {
+		this.state = 'reconnecting';
+		this.stream.removeEventListener('open', this.onOpen);
+		this.stream.removeEventListener('close', this.onClose);
+		this.stream.removeEventListener('message', this.onMessage);
+		this.stream.close();
+		this.initializeStream();
+	}
 }
 
 /**

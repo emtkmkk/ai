@@ -212,27 +212,27 @@ export default class 藍 {
 	 * インストールされたモジュールの一覧（先頭ほど高優先度）
 	 * @internal
 	 */
-        public modules: Module[] = [];
+	public modules: Module[] = [];
 	/**
 	 * 各モジュールが登録したメンションフックの一覧
 	 * @internal
 	 */
-        private mentionHooks: MentionHook[] = [];
+	private mentionHooks: MentionHook[] = [];
 	/**
 	 * モジュール名をキーとしたコンテキストフックのマップ
 	 * @internal
 	 */
-        private contextHooks: { [moduleName: string]: ContextHook; } = {};
+	private contextHooks: { [moduleName: string]: ContextHook; } = {};
 	/**
 	 * モジュール名をキーとしたタイムアウトコールバックのマップ
 	 * @internal
 	 */
-        private timeoutCallbacks: { [moduleName: string]: TimeoutCallback; } = {};
+	private timeoutCallbacks: { [moduleName: string]: TimeoutCallback; } = {};
 	/**
 	 * LokiJS データベースインスタンス
 	 * @internal
 	 */
-        public db: loki;
+	public db: loki;
 	/**
 	 * データの永続化先（SQLite）
 	 * @internal
@@ -242,12 +242,12 @@ export default class 藍 {
 	 * 最後にスリープした時刻（ミリ秒タイムスタンプ）
 	 * @internal
 	 */
-        public lastSleepedAt: number;
+	public lastSleepedAt: number;
 	/**
 	 * 活動係数（反応率に影響する。1.0 が基準値）
 	 * @internal
 	 */
-        public activeFactor: number;
+	public activeFactor: number;
 	/**
 	 * ハング検出が既にトリガーされたかどうか
 	 *
@@ -256,7 +256,7 @@ export default class 藍 {
 	 *
 	 * @internal
 	 */
-        private hangDetectionTriggered = false;
+	private hangDetectionTriggered = false;
 
 	/**
 	 * メンション取りこぼし復元が実行中かどうか
@@ -483,13 +483,13 @@ export default class 藍 {
 
 		const meta = this.getMeta();
 		this.lastSleepedAt = meta.lastWakingAt;
-                this.activeFactor = meta.activeFactor || 1;
+		this.activeFactor = meta.activeFactor || 1;
 
-                // Init stream
-                this.connection = new Stream();
-                this.connection.on('inactivityReconnect', ({ lastActivityAt }) => {
-                        this.recoverMissedMentions(lastActivityAt);
-                });
+		// Init stream
+		this.connection = new Stream();
+		this.connection.on('inactivityReconnect', ({ lastActivityAt }) => {
+			this.recoverMissedMentions(lastActivityAt);
+		});
 
 		//#region Main stream
 		const mainStream = this.connection.useSharedConnection('main');
@@ -571,17 +571,17 @@ export default class 藍 {
 
 		// タイマー監視
 		this.crawleTimer();
-                setInterval(this.crawleTimer, 1000);
+		setInterval(this.crawleTimer, 1000);
 
-                setInterval(this.logWaking, 10000);
+		setInterval(this.logWaking, 10000);
 
-                this.startHangDetection();
+		this.startHangDetection();
 
-                void this.recoverMissedMentionsFromMentionsTimeline('startup');
-                setInterval(() => void this.recoverMissedMentionsFromMentionsTimeline('scheduled'), 1000 * 60 * 60);
+		void this.recoverMissedMentionsFromMentionsTimeline('startup');
+		setInterval(() => void this.recoverMissedMentionsFromMentionsTimeline('scheduled'), 1000 * 60 * 60);
 
-                this.log(chalk.green.bold('Ai am now running!'));
-        }
+		this.log(chalk.green.bold('Ai am now running!'));
+	}
 
 	/**
 	 * イベントループのハング（長時間停止）を検出する監視を開始する
@@ -593,25 +593,25 @@ export default class 藍 {
 	 * @returns なし
 	 * @internal
 	 */
-        @autobind
-        private startHangDetection() {
-                const interval = 10000;
-                const hangThreshold = 60000;
-                const probe = new EventLoopProbe();
+	@autobind
+	private startHangDetection() {
+		const interval = 10000;
+		const hangThreshold = 60000;
+		const probe = new EventLoopProbe();
 
-                const tick = async () => {
-                        const sample = probe.sample(interval);
+		const tick = async () => {
+			const sample = probe.sample(interval);
 
-                        if (sample.delayMs >= hangThreshold) {
-                                await this.onHangDetected(sample.delayMs, sample);
-                                return;
-                        }
+			if (sample.delayMs >= hangThreshold) {
+				await this.onHangDetected(sample.delayMs, sample);
+				return;
+			}
 
-                        setTimeout(tick, interval);
-                };
+			setTimeout(tick, interval);
+		};
 
-                setTimeout(tick, interval);
-        }
+		setTimeout(tick, interval);
+	}
 
 	/**
 	 * ハング検出時の処理
@@ -624,28 +624,28 @@ export default class 藍 {
 	 * @returns なし
 	 * @internal
 	 */
-        @autobind
-        private async onHangDetected(delay: number, sample?: EventLoopSample) {
-                if (this.hangDetectionTriggered) return;
-                this.hangDetectionTriggered = true;
+	@autobind
+	private async onHangDetected(delay: number, sample?: EventLoopSample) {
+		if (this.hangDetectionTriggered) return;
+		this.hangDetectionTriggered = true;
 
-                this.log(`Hang detected: event loop delayed by ${Math.round(delay)}ms. Restarting...`);
+		this.log(`Hang detected: event loop delayed by ${Math.round(delay)}ms. Restarting...`);
 		const report = this.buildHangReport(delay, sample);
 		this.log(`Hang diagnostics: ${JSON.stringify(report)}`);
 
-                try {
-                        await this.post({
-                                text: this.formatHangReport(report),
-                                visibility: "specified",
-							// NOTE: 管理者のユーザーIDにDMで通知する
-                                visibleUserIds: ["9d5ts6in38"],
-                        });
-                } catch (error) {
-                        this.log(`Failed to notify hang detection: ${error}`);
-                }
+		try {
+			await this.post({
+				text: this.formatHangReport(report),
+				visibility: "specified",
+				// NOTE: 管理者のユーザーIDにDMで通知する
+				visibleUserIds: ["9d5ts6in38"],
+			});
+		} catch (error) {
+			this.log(`Failed to notify hang detection: ${error}`);
+		}
 
-                setTimeout(() => process.exit(1), 3000);
-        }
+		setTimeout(() => process.exit(1), 3000);
+	}
 
 	@autobind
 	private buildHangReport(delay: number, sample?: EventLoopSample): HangReport {
@@ -728,32 +728,32 @@ export default class 藍 {
 	 * @internal
 	 */
 	@autobind
-        private async handlerTimeout<T>(handler: () => Promise<T> | T, obj?: any, description = 'ハンドラー'): Promise<boolean | T> {
-                const HANDLER_TIMEOUT_MS = 3 * 60 * 1000;
-                return new Promise<boolean | T>((resolve, reject) => {
-                        const timeoutId = setTimeout(() => {
-                                console.log(`${description} Timeout!`);
-                                if (obj) console.dir(obj);
-                                // 管理者にDM
-                                this.post({
-                                        text: `${description}の処理が3分以内に完了しませんでした。\nログをご確認ください。`,
-                                        visibility: "specified",
-									// NOTE: 管理者のユーザーIDにDMで通知する
-                                        visibleUserIds: ["9d5ts6in38"],
-                                });
-                                resolve(false); // resolveでfalseを返す
-                        }, HANDLER_TIMEOUT_MS);
+	private async handlerTimeout<T>(handler: () => Promise<T> | T, obj?: any, description = 'ハンドラー'): Promise<boolean | T> {
+		const HANDLER_TIMEOUT_MS = 3 * 60 * 1000;
+		return new Promise<boolean | T>((resolve, reject) => {
+			const timeoutId = setTimeout(() => {
+				console.log(`${description} Timeout!`);
+				if (obj) console.dir(obj);
+				// 管理者にDM
+				this.post({
+					text: `${description}の処理が3分以内に完了しませんでした。\nログをご確認ください。`,
+					visibility: "specified",
+					// NOTE: 管理者のユーザーIDにDMで通知する
+					visibleUserIds: ["9d5ts6in38"],
+				});
+				resolve(false); // resolveでfalseを返す
+			}, HANDLER_TIMEOUT_MS);
 
-                        Promise.resolve()
-                                .then(handler)
-                                .then(result => {
-                                        clearTimeout(timeoutId);
-                                        resolve(result);
-                                }).catch(error => {
-                                        clearTimeout(timeoutId);
-                                        reject(error);
-                                });
-                });
+			Promise.resolve()
+				.then(handler)
+				.then(result => {
+					clearTimeout(timeoutId);
+					resolve(result);
+				}).catch(error => {
+					clearTimeout(timeoutId);
+					reject(error);
+				});
+		});
 	}
 
 	/**
@@ -798,9 +798,9 @@ export default class 藍 {
 			let res: boolean | HandlerResult | null = null;
 
 			for (const handler of this.mentionHooks) {
-                                res = await this.handlerTimeout(() => handler(msg), msg, 'メンションハンドラー');
-                                if (res === true || typeof res === 'object') break;
-                        }
+				res = await this.handlerTimeout(() => handler(msg), msg, 'メンションハンドラー');
+				if (res === true || typeof res === 'object') break;
+			}
 
 			if (res != null && typeof res === 'object') {
 				if (res.reaction != null) reaction = res.reaction;
@@ -811,8 +811,8 @@ export default class 藍 {
 		// コンテキストがあればコンテキストフック呼び出し
 		// なければそれぞれのモジュールについてフックが引っかかるまで呼び出し
 		if (context != null) {
-                        const handler = this.contextHooks[context.module];
-                        const res = await this.handlerTimeout(() => handler(context.key, msg, context.data), { key: context.key, msg, data: context.data }, 'コンテキストハンドラー');
+			const handler = this.contextHooks[context.module];
+			const res = await this.handlerTimeout(() => handler(context.key, msg, context.data), { key: context.key, msg, data: context.data }, 'コンテキストハンドラー');
 
 			if (res != null && typeof res === 'object') {
 				if (res.reaction != null) reaction = res.reaction;
@@ -833,24 +833,24 @@ export default class 藍 {
 
 		// NOTE: モジュールから返される論理的なリアクション名を、
 		//       インスタンス固有のカスタム絵文字に変換する
-                if (reaction === "love") reaction = ":mk_hi:";
-                if (reaction === "like") reaction = ":mk_yurayurachicken:";
-                if (reaction === "hmm") reaction = ":mk_fly_sliver:";
-                if (reaction === "confused") reaction = ":mk_ultrawidechicken:";
+		if (reaction === "love") reaction = ":mk_hi:";
+		if (reaction === "like") reaction = ":mk_yurayurachicken:";
+		if (reaction === "hmm") reaction = ":mk_fly_sliver:";
+		if (reaction === "confused") reaction = ":mk_ultrawidechicken:";
 
 		// リアクション文字列から `:emoji_name:` 形式の部分だけを抽出する
 		// （前後に余計な文字が付いている場合に対応）
-                if (reaction != null) {
-                        const firstColonIndex = reaction.indexOf(":");
+		if (reaction != null) {
+			const firstColonIndex = reaction.indexOf(":");
 
-                        if (firstColonIndex !== -1) {
-                                const secondColonIndex = reaction.indexOf(":", firstColonIndex + 1);
+			if (firstColonIndex !== -1) {
+				const secondColonIndex = reaction.indexOf(":", firstColonIndex + 1);
 
-                                if (secondColonIndex !== -1) {
-                                        reaction = reaction.slice(firstColonIndex, secondColonIndex + 1);
-                                }
-                        }
-                }
+				if (secondColonIndex !== -1) {
+					reaction = reaction.slice(firstColonIndex, secondColonIndex + 1);
+				}
+			}
+		}
 
 		const friend = new Friend(this, { user: msg.user });
 
@@ -858,7 +858,7 @@ export default class 藍 {
 		//       デフォルトリアクションでない＝正しくモジュールが応答した場合は親愛度を上げる。
 		const defaultReactions = [":mk_widechicken:", ":mk_fly_sliver:", ":mk_ultrawidechicken:", ":mk_moyochicken:"];
 		if (!defaultReactions.includes(reaction) && !(defaultReaction === reaction)) {
-		// モジュールが正しく応答した → 親愛度を少量増加
+			// モジュールが正しく応答した → 親愛度を少量増加
 			friend.incLove(0.1, reaction);
 		} else if (reaction === ":mk_widechicken:") {
 			// どのモジュールも反応しなかった → 活動係数を微減
@@ -887,11 +887,11 @@ export default class 藍 {
 	 * @internal
 	 */
 	@autobind
-        private onNotification(notification: any) {
-                switch (notification.type) {
-					// リアクション・引用・投票されたら親愛度を少し上げる
-                        // TODO: リアクション取り消しをよしなにハンドリングする
-                        case 'quote':
+	private onNotification(notification: any) {
+		switch (notification.type) {
+			// リアクション・引用・投票されたら親愛度を少し上げる
+			// TODO: リアクション取り消しをよしなにハンドリングする
+			case 'quote':
 			case 'pollVote':
 			case 'reaction': {
 				const friend = new Friend(this, { user: notification.user });
@@ -899,10 +899,10 @@ export default class 藍 {
 				break;
 			}
 
-                        default:
-                                break;
-                }
-        }
+			default:
+				break;
+		}
+	}
 
 	/**
 	 * 指定ノートに Bot 自身の返信が存在するかを判定する
@@ -1068,51 +1068,51 @@ export default class 藍 {
 	 * @returns なし
 	 * @internal
 	 */
-        @autobind
-        private async recoverMissedMentions(lastActivityAt: number) {
-                try {
-                        const notifications = await this.api('i/notifications', {
-                                limit: 100,
-                                includeTypes: ['mention'],
-                                sinceDate: lastActivityAt,
-                        });
+	@autobind
+	private async recoverMissedMentions(lastActivityAt: number) {
+		try {
+			const notifications = await this.api('i/notifications', {
+				limit: 100,
+				includeTypes: ['mention'],
+				sinceDate: lastActivityAt,
+			});
 
-                        if (!Array.isArray(notifications)) return;
+			if (!Array.isArray(notifications)) return;
 
-                        const missedMentions = notifications.filter(notification => {
-                                if (notification?.type !== 'mention' || notification.note == null) return false;
-                                if (notification.createdAt == null) return true;
-                                return new Date(notification.createdAt).getTime() >= lastActivityAt;
-                        });
+			const missedMentions = notifications.filter(notification => {
+				if (notification?.type !== 'mention' || notification.note == null) return false;
+				if (notification.createdAt == null) return true;
+				return new Date(notification.createdAt).getTime() >= lastActivityAt;
+			});
 
-                        for (const notification of missedMentions) {
-                                const note = notification.note;
-                                if (!note || note.userId === this.account.id) continue;
+			for (const notification of missedMentions) {
+				const note = notification.note;
+				if (!note || note.userId === this.account.id) continue;
 
-                                if (note.myReaction != null) continue;
+				if (note.myReaction != null) continue;
 
-                                let resolvedNote = note;
-                                if (resolvedNote.text == null) {
-                                        resolvedNote = await this.api('notes/show', { noteId: note.id });
-                                }
+				let resolvedNote = note;
+				if (resolvedNote.text == null) {
+					resolvedNote = await this.api('notes/show', { noteId: note.id });
+				}
 
-                                const host = new URL(config.host).host;
-                                if (!hasMentionToMe(resolvedNote, this.account, host)) continue;
+				const host = new URL(config.host).host;
+				if (!hasMentionToMe(resolvedNote, this.account, host)) continue;
 
-                                if (!mentionsOnlyMe(resolvedNote, this.account, host) && !isAccountLinkMentionCommand(resolvedNote, this.account, host)) {
-                                        await this.api('notes/reactions/create', {
-                                                noteId: resolvedNote.id,
-                                                reaction: ':mk_ultrawidechicken:'
-                                        });
-                                        continue;
-                                }
+				if (!mentionsOnlyMe(resolvedNote, this.account, host) && !isAccountLinkMentionCommand(resolvedNote, this.account, host)) {
+					await this.api('notes/reactions/create', {
+						noteId: resolvedNote.id,
+						reaction: ':mk_ultrawidechicken:'
+					});
+					continue;
+				}
 
-                                await this.onReceiveMessage(new Message(this, resolvedNote));
-                        }
-                } catch (error) {
-                        this.log(`Failed to recover missed mentions: ${error}`);
-                }
-        }
+				await this.onReceiveMessage(new Message(this, resolvedNote));
+			}
+		} catch (error) {
+			this.log(`Failed to recover missed mentions: ${error}`);
+		}
+	}
 
 	/**
 	 * 永続タイマーを巡回し、期限切れのタイマーがあればコールバックを実行する
@@ -1124,22 +1124,22 @@ export default class 藍 {
 	 * @returns なし
 	 * @internal
 	 */
-        @autobind
-        private async crawleTimer() {
-                const timers = this.timers.find();
-                for (const timer of timers) {
-                        // タイマーが時間切れかどうか
-                        if (Date.now() - (timer.insertedAt + timer.delay) >= 0) {
-                                this.log(`Timer expired: ${timer.module} ${timer.id}`);
-                                this.timers.remove(timer);
-                                try {
-                                        await this.handlerTimeout(() => this.timeoutCallbacks[timer.module](timer.data), { timer }, 'タイムアウトコールバック');
-                                } catch (error) {
-                                        this.log(`Timer callback error: ${error}`);
-                                }
-                        }
-                }
-        }
+	@autobind
+	private async crawleTimer() {
+		const timers = this.timers.find();
+		for (const timer of timers) {
+			// タイマーが時間切れかどうか
+			if (Date.now() - (timer.insertedAt + timer.delay) >= 0) {
+				this.log(`Timer expired: ${timer.module} ${timer.id}`);
+				this.timers.remove(timer);
+				try {
+					await this.handlerTimeout(() => this.timeoutCallbacks[timer.module](timer.data), { timer }, 'タイムアウトコールバック');
+				} catch (error) {
+					this.log(`Timer callback error: ${error}`);
+				}
+			}
+		}
+	}
 
 	/**
 	 * 起動中であることをメタ情報に記録する

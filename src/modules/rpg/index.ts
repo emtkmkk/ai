@@ -34,10 +34,10 @@ import { applyHyperModeEffects, applySuperColorModeEffects, getSuperColorMode } 
 import type { SuperColorMode } from './super-mode';
 
 type List = {
-        id: string;
-        createdAt: any;
-        name: string;
-        userIds: string[];
+	id: string;
+	createdAt: any;
+	name: string;
+	userIds: string[];
 };
 
 type LokiDoc<T> = T & { $loki: number; meta?: unknown };
@@ -225,21 +225,21 @@ export default class extends Module {
 				return shop2Reply(this, this.ai, msg);
 			}
 		}
-    if (msg.includes(Array.isArray(serifs.rpg.command.shop) ? serifs.rpg.command.shop : [serifs.rpg.command.shop]) && msg.includes(Array.isArray(serifs.rpg.command.shopCustom) ? serifs.rpg.command.shopCustom : [serifs.rpg.command.shopCustom])) {
-            const data = initializeData(this, msg);
-            if ((!msg.user.host && msg.user.username === config.master) || data.items.filter((x) => x.name === "カスタムショップ入場の札").length) {
-                    // カスタムショップモード
-                    return shopCustomReply(this, this.ai, msg);
-            }
-    }
-    if (msg.includes(Array.isArray(serifs.rpg.command.shop) ? serifs.rpg.command.shop : [serifs.rpg.command.shop])) {
-            // ショップモード
-            return shopReply(this, this.ai, msg);
-    }
-    if (msg.includes(Array.isArray(serifs.rpg.command.skill) ? serifs.rpg.command.skill : [serifs.rpg.command.skill])) {
-            // スキルモード
-            return skillReply(this, this.ai, msg);
-    }
+		if (msg.includes(Array.isArray(serifs.rpg.command.shop) ? serifs.rpg.command.shop : [serifs.rpg.command.shop]) && msg.includes(Array.isArray(serifs.rpg.command.shopCustom) ? serifs.rpg.command.shopCustom : [serifs.rpg.command.shopCustom])) {
+			const data = initializeData(this, msg);
+			if ((!msg.user.host && msg.user.username === config.master) || data.items.filter((x) => x.name === "カスタムショップ入場の札").length) {
+				// カスタムショップモード
+				return shopCustomReply(this, this.ai, msg);
+			}
+		}
+		if (msg.includes(Array.isArray(serifs.rpg.command.shop) ? serifs.rpg.command.shop : [serifs.rpg.command.shop])) {
+			// ショップモード
+			return shopReply(this, this.ai, msg);
+		}
+		if (msg.includes(Array.isArray(serifs.rpg.command.skill) ? serifs.rpg.command.skill : [serifs.rpg.command.skill])) {
+			// スキルモード
+			return skillReply(this, this.ai, msg);
+		}
 		if (msg.includes([serifs.rpg.command.rpg]) && msg.includes(Array.isArray(serifs.rpg.command.trial) ? serifs.rpg.command.trial : [serifs.rpg.command.trial])) {
 			// 木人モード
 			return this.handleTrialCommands(msg);
@@ -273,22 +273,22 @@ export default class extends Module {
 	 */
 	@autobind
 	private async contextHook(key: string, msg: Message, data: unknown) {
-          if (typeof key === "string" && key.startsWith("replayOkawari:")) {
-            return this.replayOkawariHook(key, msg, data);
-          }
-          if (typeof key === "string" && key.startsWith("shopBuy:")) {
-                  return shopContextHook(this, key, msg, data);
-          }
-          if (typeof key === "string" && key.startsWith("shopCustomConfirm:")) {
-                  return shopCustomConfirmContextHook(this, this.ai, key, msg, data);
-          }
-          if (typeof key === "string" && key.startsWith("shopCustom:")) {
-                  return shopCustomContextHook(this, this.ai, key, msg, data);
-          }
-          if (typeof key === "string" && key.startsWith("selectSkill:")) {
-                  return this.selectSkillHook(key, msg, data);
-          }
-          return raidContextHook(key, msg, data);
+		if (typeof key === "string" && key.startsWith("replayOkawari:")) {
+			return this.replayOkawariHook(key, msg, data);
+		}
+		if (typeof key === "string" && key.startsWith("shopBuy:")) {
+			return shopContextHook(this, key, msg, data);
+		}
+		if (typeof key === "string" && key.startsWith("shopCustomConfirm:")) {
+			return shopCustomConfirmContextHook(this, this.ai, key, msg, data);
+		}
+		if (typeof key === "string" && key.startsWith("shopCustom:")) {
+			return shopCustomContextHook(this, this.ai, key, msg, data);
+		}
+		if (typeof key === "string" && key.startsWith("selectSkill:")) {
+			return this.selectSkillHook(key, msg, data);
+		}
+		return raidContextHook(key, msg, data);
 	}
 
 	/**
@@ -542,35 +542,35 @@ export default class extends Module {
 		const isAdmin = !msg.user.host && msg.user.username === config.master;
 
 		let message: string[] = [];
-                const allData = this.ai.friends.find() as FriendDocWithMeta[];
+		const allData = this.ai.friends.find() as FriendDocWithMeta[];
 
-                const createRankMessage = (
-                        score: number | null,
-                        label: string,
-                        dataKey: string | ((friend: FriendDocWithMeta) => number | undefined),
-                        options?: { prefix?: string; suffix?: string; addValue?: number; format?: (value: number) => string; firstPlaceAppend?: (friend: FriendDocWithMeta | undefined, score?: number) => string | undefined; }
-                ) => {
-                        const fmt = options?.format ?? ((value: number) => value.toLocaleString());
-                        const entries = allData
-                                .map(friend => {
-                                        let value;
-                                        if (typeof dataKey === "function") {
-                                                value = dataKey(friend);
-                                        } else if (dataKey.includes(".")) {
-                                                // 動的にプロパティにアクセスするための処理
-                                                const keys = dataKey.replace(/\[(\w+)\]/g, '.$1').split('.');
-                                                value = keys.reduce((acc, key) => acc?.[key], friend.perModulesData?.rpg);
-                                        } else {
-                                                // 既存の単純なキーでのプロパティアクセス
-                                                value = friend.perModulesData?.rpg?.[dataKey];
-                                        }
-                                        return { friend, value };
-                                })
-                                .filter(entry => entry.value !== undefined);
+		const createRankMessage = (
+			score: number | null,
+			label: string,
+			dataKey: string | ((friend: FriendDocWithMeta) => number | undefined),
+			options?: { prefix?: string; suffix?: string; addValue?: number; format?: (value: number) => string; firstPlaceAppend?: (friend: FriendDocWithMeta | undefined, score?: number) => string | undefined; }
+		) => {
+			const fmt = options?.format ?? ((value: number) => value.toLocaleString());
+			const entries = allData
+				.map(friend => {
+					let value;
+					if (typeof dataKey === "function") {
+						value = dataKey(friend);
+					} else if (dataKey.includes(".")) {
+						// 動的にプロパティにアクセスするための処理
+						const keys = dataKey.replace(/\[(\w+)\]/g, '.$1').split('.');
+						value = keys.reduce((acc, key) => acc?.[key], friend.perModulesData?.rpg);
+					} else {
+						// 既存の単純なキーでのプロパティアクセス
+						value = friend.perModulesData?.rpg?.[dataKey];
+					}
+					return { friend, value };
+				})
+				.filter(entry => entry.value !== undefined);
 
-                        const sortedEntries = entries.sort((a, b) => (b.value as number) - (a.value as number)); // 降順でソート
-                        const values = sortedEntries.map(entry => entry.value as number);
-                        const firstPlaceAppend = options?.firstPlaceAppend?.(sortedEntries[0]?.friend, sortedEntries[0]?.value as number | undefined);
+			const sortedEntries = entries.sort((a, b) => (b.value as number) - (a.value as number)); // 降順でソート
+			const values = sortedEntries.map(entry => entry.value as number);
+			const firstPlaceAppend = options?.firstPlaceAppend?.(sortedEntries[0]?.friend, sortedEntries[0]?.value as number | undefined);
 
 			if (score !== null && score !== undefined) {
 				// 同順位の人数を計算
@@ -615,8 +615,8 @@ export default class extends Module {
 				// 表示するスコアにだけaddValueを適用
 				const finalScoreDisplay = `${options?.prefix || ''}${fmt(score + (options?.addValue || 0))}${options?.suffix || ''}`;
 
-                                return `${label}\n${finalScoreDisplay} ${rankmsg}`;
-                        } else {
+				return `${label}\n${finalScoreDisplay} ${rankmsg}`;
+			} else {
 				// 同順位の人数を計算
 				const sameRankCount = values.filter(v => v === values?.[0]).length;
 				const sameRankCount2 = values.filter(v => v === values?.[9]).length;
@@ -631,52 +631,52 @@ export default class extends Module {
 					rankmsg2 += `（同順位：${sameRankCount2 - 1}人）`;
 				}
 
-                                return `${label}\n1位：${fmt(values?.[0] + (options?.addValue || 0))} ${rankmsg}${firstPlaceAppend ? `\n${firstPlaceAppend}` : ""}${sameRankCount < 9 && values.length >= 10 ? `\n10位：${fmt(values?.[9] + (options?.addValue || 0))} ${rankmsg2}` : ""}`;
-                        }
-                };
+				return `${label}\n1位：${fmt(values?.[0] + (options?.addValue || 0))} ${rankmsg}${firstPlaceAppend ? `\n${firstPlaceAppend}` : ""}${sameRankCount < 9 && values.length >= 10 ? `\n10位：${fmt(values?.[9] + (options?.addValue || 0))} ${rankmsg2}` : ""}`;
+			}
+		};
 
-                const createFirstPlaceRaidSkillMessage = (enemyName: string) => (friend: FriendDocWithMeta | undefined, score: number | undefined) => {
-                        if (!friend || score === null || score === undefined) return undefined;
+		const createFirstPlaceRaidSkillMessage = (enemyName: string) => (friend: FriendDocWithMeta | undefined, score: number | undefined) => {
+			if (!friend || score === null || score === undefined) return undefined;
 
-                        type RaidWithMeta = LokiDoc<Raid>;
-                        type AttackerWithSkills = Raid['attackers'][number] & {
-                                skillsStr: NonNullable<Raid['attackers'][number]['skillsStr']>;
-                        };
+			type RaidWithMeta = LokiDoc<Raid>;
+			type AttackerWithSkills = Raid['attackers'][number] & {
+				skillsStr: NonNullable<Raid['attackers'][number]['skillsStr']>;
+			};
 
-                        const raidHistory = (this.raids
-                                ?.find({
-                                        isEnded: true,
-                                }) as RaidWithMeta[] | undefined)
-                                ?.filter((raid) => raid.enemy?.name === enemyName);
+			const raidHistory = (this.raids
+				?.find({
+					isEnded: true,
+				}) as RaidWithMeta[] | undefined)
+				?.filter((raid) => raid.enemy?.name === enemyName);
 
-                        const latestMatched = raidHistory
-                                ?.map((raid) => ({
-                                        raid,
-                                        attacker: raid.attackers?.find((attacker) => attacker.user?.id === friend.userId && attacker.dmg === score),
-                                }))
-                                .filter((entry): entry is { raid: RaidWithMeta; attacker: Raid['attackers'][number] } => Boolean(entry.attacker))
-                                .filter((entry): entry is { raid: RaidWithMeta; attacker: AttackerWithSkills } => {
-                                        const skillsStr = entry.attacker.skillsStr;
-                                        return Boolean(skillsStr && (skillsStr.skills || skillsStr.amulet));
-                                })
-                                .reduce<{ raid: RaidWithMeta; attacker: AttackerWithSkills } | undefined>((latest, current) => {
-                                        if (!latest) return current;
-                                        const latestFinishedAt = latest.raid.finishedAt ?? latest.raid.startedAt;
-                                        const currentFinishedAt = current.raid.finishedAt ?? current.raid.startedAt;
-                                        return (currentFinishedAt ?? 0) > (latestFinishedAt ?? 0) ? current : latest;
-                                }, undefined);
+			const latestMatched = raidHistory
+				?.map((raid) => ({
+					raid,
+					attacker: raid.attackers?.find((attacker) => attacker.user?.id === friend.userId && attacker.dmg === score),
+				}))
+				.filter((entry): entry is { raid: RaidWithMeta; attacker: Raid['attackers'][number] } => Boolean(entry.attacker))
+				.filter((entry): entry is { raid: RaidWithMeta; attacker: AttackerWithSkills } => {
+					const skillsStr = entry.attacker.skillsStr;
+					return Boolean(skillsStr && (skillsStr.skills || skillsStr.amulet));
+				})
+				.reduce<{ raid: RaidWithMeta; attacker: AttackerWithSkills } | undefined>((latest, current) => {
+					if (!latest) return current;
+					const latestFinishedAt = latest.raid.finishedAt ?? latest.raid.startedAt;
+					const currentFinishedAt = current.raid.finishedAt ?? current.raid.startedAt;
+					return (currentFinishedAt ?? 0) > (latestFinishedAt ?? 0) ? current : latest;
+				}, undefined);
 
-                        if (!latestMatched) return undefined;
+			if (!latestMatched) return undefined;
 
-                        const skillsStr = latestMatched.attacker.skillsStr;
-                        const skills = skillsStr?.skills;
-                        const amulet = skillsStr?.amulet ? `お守り ${skillsStr.amulet}` : undefined;
-                        const parts = [skills, amulet].filter(Boolean);
+			const skillsStr = latestMatched.attacker.skillsStr;
+			const skills = skillsStr?.skills;
+			const amulet = skillsStr?.amulet ? `お守り ${skillsStr.amulet}` : undefined;
+			const parts = [skills, amulet].filter(Boolean);
 
-                        if (!parts.length) return undefined;
+			if (!parts.length) return undefined;
 
-                        return `<small>${parts.join(" ")}</small>`;
-                };
+			return `<small>${parts.join(" ")}</small>`;
+		};
 
 		// レイドボス名 → power の索引（全員分の評価値計算で線形検索を繰り返さないため）
 		const raidEnemyPowerMap = new Map(raidEnemys.filter((x) => x.power).map((x) => [x.name, x.power as number]));
@@ -713,14 +713,14 @@ export default class extends Module {
 			message.push(createRankMessage(null, "耐えたダメージ", "superMuscle", { suffix: "ダメージ" }));
 			message.push(createRankMessage(null, "運の良さ", "maxStatusUp", { suffix: "pts" }));
 			message.push(createRankMessage(null, "壺購入数", "jar", { suffix: "個" }));
-                        if (data.raidScore) {
-                                for (const [key, value] of Object.entries(data.raidScore)) {
-                                        if (value && typeof value === "number") {
-                                                const enemy = raidEnemys.find((x) => x.name === key);
-                                                message.push(`${createRankMessage(null, key + ` 最大${enemy?.scoreMsg ?? "ダメージ"}`, `raidScore.${key}`, { suffix: data.clearRaid?.includes(key) ? `${enemy?.scoreMsg2 ?? "ダメージ"} ⭐️` : `${enemy?.scoreMsg2 ?? "ダメージ"}`, firstPlaceAppend: createFirstPlaceRaidSkillMessage(key) })}`);
-                                        }
-                                }
-                        }
+			if (data.raidScore) {
+				for (const [key, value] of Object.entries(data.raidScore)) {
+					if (value && typeof value === "number") {
+						const enemy = raidEnemys.find((x) => x.name === key);
+						message.push(`${createRankMessage(null, key + ` 最大${enemy?.scoreMsg ?? "ダメージ"}`, `raidScore.${key}`, { suffix: data.clearRaid?.includes(key) ? `${enemy?.scoreMsg2 ?? "ダメージ"} ⭐️` : `${enemy?.scoreMsg2 ?? "ダメージ"}`, firstPlaceAppend: createFirstPlaceRaidSkillMessage(key) })}`);
+					}
+				}
+			}
 			if (canShowHatogurumaScore) {
 				message.push(createRankMessage(null, ":hatoguruma: マスタースコア", "hatogurumaMaxScore", { suffix: "pts" }));
 			}
@@ -1388,11 +1388,11 @@ export default class extends Module {
 		data.lastPlayedLv = data.lv;
 
 		// 所持しているスキル効果を読み込み
-                const skillEffects = aggregateSkillsEffects(data);
-                ensureKazutoriMasterHistory(this.ai, msg, skillEffects);
-                applyKazutoriMasterHiddenBonus(msg, skillEffects);
-                const verboseLog = msg.includes(['-v']);
-                const formatDebug = (value: number): string => Number.isFinite(value) ? value.toFixed(3) : String(value);
+		const skillEffects = aggregateSkillsEffects(data);
+		ensureKazutoriMasterHistory(this.ai, msg, skillEffects);
+		applyKazutoriMasterHiddenBonus(msg, skillEffects);
+		const verboseLog = msg.includes(['-v']);
+		const formatDebug = (value: number): string => Number.isFinite(value) ? value.toFixed(3) : String(value);
 
 		let color = getColor(data);
 
@@ -1544,17 +1544,17 @@ export default class extends Module {
 	private async handleNormalCommands(msg: Message) {
 		// ---- データ初期化・スキル読み込み ----
 		// データを読み込み
-                const data = initializeData(this, msg);
-                const colorData = colors.map((x) => x.unlock(data));
-                // 所持しているスキル効果を読み込み
-                const skillEffects = aggregateSkillsEffects(data);
-                ensureKazutoriMasterHistory(this.ai, msg, skillEffects);
-                applyKazutoriMasterHiddenBonus(msg, skillEffects);
-                const onemoreKeywords = Array.isArray(serifs.rpg.command.onemore)
-                        ? serifs.rpg.command.onemore
-                        : [serifs.rpg.command.onemore];
-                let isOkawariPlay = false;
-                let vitalityUsed = 0;
+		const data = initializeData(this, msg);
+		const colorData = colors.map((x) => x.unlock(data));
+		// 所持しているスキル効果を読み込み
+		const skillEffects = aggregateSkillsEffects(data);
+		ensureKazutoriMasterHistory(this.ai, msg, skillEffects);
+		applyKazutoriMasterHiddenBonus(msg, skillEffects);
+		const onemoreKeywords = Array.isArray(serifs.rpg.command.onemore)
+			? serifs.rpg.command.onemore
+			: [serifs.rpg.command.onemore];
+		let isOkawariPlay = false;
+		let vitalityUsed = 0;
 
 		// ---- プレイ可否判定・おかわり ----
 
@@ -1583,9 +1583,9 @@ export default class extends Module {
 		//if ((rpgData.maxLv - data.lv) >= 50) needCoin -= 2;
 
 		// プレイ済でないかのチェック（lastPlayedAt が現在枠 or 次枠なら既プレイ）
-                if (data.lastPlayedAt === nowTimeStr || data.lastPlayedAt === nextTimeStr) {
-                        // おかわりキーワードあり → 追加プレイを試行
-                        if (msg.includes(onemoreKeywords)) {
+		if (data.lastPlayedAt === nowTimeStr || data.lastPlayedAt === nextTimeStr) {
+			// おかわりキーワードあり → 追加プレイを試行
+			if (msg.includes(onemoreKeywords)) {
 				// 今日すでにおかわり済みなら、コインで追加購入を試みる
 				if (data.lastOnemorePlayedAt === getDate()) {
 					if (needCoin <= (data.coin ?? 0)) {
@@ -1621,19 +1621,19 @@ export default class extends Module {
 						};
 					}
 				}
-                                // おかわり初回（今日未使用）：最大Lvなら拒否、そうでなければ無料で許可
-                                if (isMaxLevel) {
-                                        if (rpgData.maxLv >= 255) {
-                                                msg.reply(serifs.rpg.oneMore.maxLv2);
-                                        } else {
-                                                msg.reply(serifs.rpg.oneMore.maxLv);
-                                        }
-                                        return {
-                                                reaction: 'confused'
-                                        };
-                                }
-                                isOkawariPlay = true;
-                                data.lastOnemorePlayedAt = getDate();
+				// おかわり初回（今日未使用）：最大Lvなら拒否、そうでなければ無料で許可
+				if (isMaxLevel) {
+					if (rpgData.maxLv >= 255) {
+						msg.reply(serifs.rpg.oneMore.maxLv2);
+					} else {
+						msg.reply(serifs.rpg.oneMore.maxLv);
+					}
+					return {
+						reaction: 'confused'
+					};
+				}
+				isOkawariPlay = true;
+				data.lastOnemorePlayedAt = getDate();
 			} else {
 				// おかわりキーワードなし → 疲れたメッセージで終了
 				msg.reply(serifs.rpg.tired(new Date(), data.lv < rpgData.maxLv && data.lastOnemorePlayedAt !== getDate(), data.lv >= 7));
@@ -1643,7 +1643,7 @@ export default class extends Module {
 			}
 		} else {
 			// 未プレイの状態でおかわりキーワードのみ指定 → エラー（本来は不要な入力）
-                        if (msg.includes(onemoreKeywords)) {
+			if (msg.includes(onemoreKeywords)) {
 				if (data.lastOnemorePlayedAt === getDate()) {
 					const rpgData = this.ai.moduleData.findOne({ type: 'rpg' });
 					msg.reply(serifs.rpg.oneMore.tired(!isMaxLevel));
@@ -1738,21 +1738,21 @@ export default class extends Module {
 		vitalityUsed = Math.min(data.vitality ?? 0, 20);
 		if (vitalityUsed > 0) data.vitality -= vitalityUsed;
 
-                /** 投稿数（今日と明日の多い方）。覚醒加算より前に数取りの達人の隠し下限を適用する */
-                let postCount = await getPostCount(this.ai, this, data, msg, 0, { type: 'normal', key: nowTimeStr });
-                postCount = applyKazutoriMasterPostCountFloor(postCount, msg, skillEffects);
-                postCount += superBonusPost;
-                const basePostCount = Math.max(postCount - superBonusPost, 0);
+		/** 投稿数（今日と明日の多い方）。覚醒加算より前に数取りの達人の隠し下限を適用する */
+		let postCount = await getPostCount(this.ai, this, data, msg, 0, { type: 'normal', key: nowTimeStr });
+		postCount = applyKazutoriMasterPostCountFloor(postCount, msg, skillEffects);
+		postCount += superBonusPost;
+		const basePostCount = Math.max(postCount - superBonusPost, 0);
 
-                // おかわり時は通常プレイ時の投稿数を再利用（同じ枠なので二重取得を防ぐ）
-                if (isOkawariPlay) {
-                        if (data.lastNormalPostCountKey === nowTimeStr && typeof data.lastNormalPostCount === 'number') {
-                                postCount = data.lastNormalPostCount + superBonusPost;
-                        }
-                } else {
-                        data.lastNormalPostCount = basePostCount;
-                        data.lastNormalPostCountKey = nowTimeStr;
-                }
+		// おかわり時は通常プレイ時の投稿数を再利用（同じ枠なので二重取得を防ぐ）
+		if (isOkawariPlay) {
+			if (data.lastNormalPostCountKey === nowTimeStr && typeof data.lastNormalPostCount === 'number') {
+				postCount = data.lastNormalPostCount + superBonusPost;
+			}
+		} else {
+			data.lastNormalPostCount = basePostCount;
+			data.lastNormalPostCountKey = nowTimeStr;
+		}
 
 		postCount += vitalityUsed * 15;
 
@@ -1782,7 +1782,7 @@ export default class extends Module {
 		}
 
 		const verboseLog = msg.includes(['-v']);
-    const formatDebug = (value: number): string => {
+		const formatDebug = (value: number): string => {
 			if (!Number.isFinite(value)) return String(value);
 			const absValue = Math.abs(value);
 			if (absValue >= 10000000) return Math.trunc(value / 10000) + "万";
@@ -2538,38 +2538,38 @@ export default class extends Module {
 			// ---- プレイヤー攻撃ループ（spd回） ----
 			// 自身攻撃の処理
 			// spdの回数分、以下の処理を繰り返す
-                        for (let i = 0; i < spd; i++) {
-                                const rng = (atkMinRnd + random(data, startCharge, skillEffects, false) * atkMaxRnd);
-                                if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`;
-                                let dmgBonus = (1 + (skillEffects.atkDmgUp ?? 0)) * dmgUp * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1);
-                                /** クリティカルかどうか */
-                                let crit = Math.random() < Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0) + critUp), 0) + (skillEffects.critUpFixed ?? 0);
-                                const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
-                                if (skillEffects.noCrit) {
-                                        crit = false;
-                                        dmgBonus *= 1 + (Math.min(Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0) + critUp), 0) + (skillEffects.critUpFixed ?? 0), 1) * ((2 * critDmg) - 1))
-                                }
-                                if (verboseLog) {
-                                        const debugLines: string[] = [];
-                                        debugLines.push(`---ダメージ計算${i + 1}回目---`);
-                                        debugLines.push(`攻撃力: ${formatDebug(atk)}`);
-                                        debugLines.push(`TP倍率: ${formatDebug(tp)}`);
-                                        debugLines.push(`ターン数: ${count}`);
-                                        debugLines.push(`行動回数: ${spd}`);
-                                        debugLines.push(`敵防御力: ${formatDebug(enemyDef * (getVal(data.enemy.defx, [tp]) ?? 3))}`);
-                                        debugLines.push(`乱数: ${formatDebug(rng)}`);
-                                        if(dmgBonus !== 1) debugLines.push(`追加ダメージ: ${formatDebug(dmgBonus)}`);
-                                        if(trueDmg !== 0) debugLines.push(`確定ダメージ: ${formatDebug(trueDmg)}`);
-                                        if(dmgUp !== 1) debugLines.push(`ダメージ倍率: ${formatDebug(dmgUp)}`);
-                                        if(critUp !== 0) debugLines.push(`会心率補正: ${formatDebug(critUp)}`);
-                                        if(crit) debugLines.push(`クリティカル倍率:${formatDebug(critDmg)}`);
-                                        if (itemBonus?.atk) {
-                                                debugLines.push(`アイテム攻撃補正: ${formatDebug(itemBonus.atk)}`);
-																				}
-                                        message += debugLines.join('\n') + '\n';
-                                }
-                                /** ダメージ */
-                                let dmg = getAtkDmg(data, atk, tp, count, crit ? critDmg : false, enemyDef, enemyMaxHp, rng * dmgBonus) + trueDmg;
+			for (let i = 0; i < spd; i++) {
+				const rng = (atkMinRnd + random(data, startCharge, skillEffects, false) * atkMaxRnd);
+				if (aggregateTokensEffects(data).showRandom) message += `⚂ ${Math.floor(rng * 100)}%\n`;
+				let dmgBonus = (1 + (skillEffects.atkDmgUp ?? 0)) * dmgUp * (skillEffects.thunder ? 1 + (skillEffects.thunder * ((i + 1) / spd) / (spd === 1 ? 2 : spd === 2 ? 1.5 : 1)) : 1);
+				/** クリティカルかどうか */
+				let crit = Math.random() < Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0) + critUp), 0) + (skillEffects.critUpFixed ?? 0);
+				const critDmg = 1 + ((skillEffects.critDmgUp ?? 0));
+				if (skillEffects.noCrit) {
+					crit = false;
+					dmgBonus *= 1 + (Math.min(Math.max((enemyHpPercent - playerHpPercent) * (1 + (skillEffects.critUp ?? 0) + critUp), 0) + (skillEffects.critUpFixed ?? 0), 1) * ((2 * critDmg) - 1))
+				}
+				if (verboseLog) {
+					const debugLines: string[] = [];
+					debugLines.push(`---ダメージ計算${i + 1}回目---`);
+					debugLines.push(`攻撃力: ${formatDebug(atk)}`);
+					debugLines.push(`TP倍率: ${formatDebug(tp)}`);
+					debugLines.push(`ターン数: ${count}`);
+					debugLines.push(`行動回数: ${spd}`);
+					debugLines.push(`敵防御力: ${formatDebug(enemyDef * (getVal(data.enemy.defx, [tp]) ?? 3))}`);
+					debugLines.push(`乱数: ${formatDebug(rng)}`);
+					if(dmgBonus !== 1) debugLines.push(`追加ダメージ: ${formatDebug(dmgBonus)}`);
+					if(trueDmg !== 0) debugLines.push(`確定ダメージ: ${formatDebug(trueDmg)}`);
+					if(dmgUp !== 1) debugLines.push(`ダメージ倍率: ${formatDebug(dmgUp)}`);
+					if(critUp !== 0) debugLines.push(`会心率補正: ${formatDebug(critUp)}`);
+					if(crit) debugLines.push(`クリティカル倍率:${formatDebug(critDmg)}`);
+					if (itemBonus?.atk) {
+						debugLines.push(`アイテム攻撃補正: ${formatDebug(itemBonus.atk)}`);
+					}
+					message += debugLines.join('\n') + '\n';
+				}
+				/** ダメージ */
+				let dmg = getAtkDmg(data, atk, tp, count, crit ? critDmg : false, enemyDef, enemyMaxHp, rng * dmgBonus) + trueDmg;
 				const noItemDmg = getAtkDmg(data, atk - itemBonus.atk, tp, count, crit, enemyDef, enemyMaxHp, rng * dmgBonus) + trueDmg;
 				// 最大ダメージ制限処理
 				if (maxdmg && maxdmg > 0 && dmg > Math.round(maxdmg * (1 / ((abort || spd) - i)))) {
@@ -2800,7 +2800,7 @@ export default class extends Module {
 		if (bonus) {
 			atkUp += Math.round(bonus);
 			totalUp += Math.round(bonus * 2);
-      bonus = 0;
+			bonus = 0;
 		}
 
 		if (skillEffects.statusBonus && skillEffects.statusBonus > 0 && data.lv % Math.max(2 / skillEffects.statusBonus, 1) === 0) {
@@ -2928,7 +2928,7 @@ export default class extends Module {
 	 * @internal
 	 */
 	@autobind
-        private replayOkawariHook(key: string, msg: Message, data: unknown) {
+	private replayOkawariHook(key: string, msg: Message, data: unknown) {
 		this.log("replayOkawari");
 		if (key.replace("replayOkawari:", "") !== msg.userId) {
 			this.log(msg.userId + " : " + key.replace("replayOkawari:", ""));
@@ -2955,8 +2955,8 @@ export default class extends Module {
 				this.log(`おかわり確認メッセージ送信エラー: ${err instanceof Error ? err.stack ?? err.message : err}`);
 			});
 			return { reaction: 'hmm' };
-                }
-        }
+		}
+	}
 
 	/**
 	 * スキル選択の返信を処理する
@@ -2969,53 +2969,53 @@ export default class extends Module {
 	 * @returns リアクションオブジェクト、または false
 	 * @internal
 	 */
-        @autobind
-        private selectSkillHook(key: string, msg: Message, data: unknown) {
-                if (key.replace("selectSkill:", "") !== msg.userId) {
-                        return { reaction: 'hmm' };
-                }
-				if (msg.extractedText.length >= 3) return false;
+	@autobind
+	private selectSkillHook(key: string, msg: Message, data: unknown) {
+		if (key.replace("selectSkill:", "") !== msg.userId) {
+			return { reaction: 'hmm' };
+		}
+		if (msg.extractedText.length >= 3) return false;
 
-                const rpgData = msg.friend.getPerModulesData(this);
-                if (!rpgData) return { reaction: 'hmm' };
+		const rpgData = msg.friend.getPerModulesData(this);
+		if (!rpgData) return { reaction: 'hmm' };
 
-				const selectData = data as { index: number; options: string[]; oldSkillName: string } | undefined;
-				if (!selectData?.options) return { reaction: 'hmm' };
+		const selectData = data as { index: number; options: string[]; oldSkillName: string } | undefined;
+		if (!selectData?.options) return { reaction: 'hmm' };
 
-				const match = msg.extractedText.replace(/[０-９]/g, m => '０１２３４５６７８９'.indexOf(m).toString()).match(/[0-9]+/);
-				if (match === null || match === undefined) {
-					return {
-						reaction: 'hmm',
-					};
-				}
-				const num = parseInt(match[0]);
-               if (!num || num > selectData.options.length) {
-                       return { reaction: 'hmm' };
-               }
+		const match = msg.extractedText.replace(/[０-９]/g, m => '０１２３４５６７８９'.indexOf(m).toString()).match(/[0-9]+/);
+		if (match === null || match === undefined) {
+			return {
+				reaction: 'hmm',
+			};
+		}
+		const num = parseInt(match[0]);
+		if (!num || num > selectData.options.length) {
+			return { reaction: 'hmm' };
+		}
 
-                this.unsubscribeReply(key);
+		this.unsubscribeReply(key);
 
-                if (num === 0) {
-                        return { reaction: ':mk_muscleok:' };
-                }
+		if (num === 0) {
+			return { reaction: ':mk_muscleok:' };
+		}
 
-               const index = selectData.index;
-               const skillName = selectData.options[num - 1];
-               const skill = skills.find(x => x.name === skillName);
-               if (!skill || !canLearnSkillNow(rpgData, skill)) {
-                       msg.reply('そのスキルは習得できません！', { visibility: 'specified' });
-                       return { reaction: 'hmm' };
-               }
+		const index = selectData.index;
+		const skillName = selectData.options[num - 1];
+		const skill = skills.find(x => x.name === skillName);
+		if (!skill || !canLearnSkillNow(rpgData, skill)) {
+			msg.reply('そのスキルは習得できません！', { visibility: 'specified' });
+			return { reaction: 'hmm' };
+		}
 
-               rpgData.skills[index] = skill;
-               if (num === 4) {
-                       rpgData.nextSkill = null;
-               }
-               msg.reply(`\n` + serifs.rpg.moveToSkill(selectData.oldSkillName, skill.name) + `\n効果: ${skill.desc}` + (aggregateTokensEffects(rpgData).showSkillBonus && skill.info ? `\n詳細効果: ${skill.info}` : ''), { visibility: 'specified' });
-               msg.friend.setPerModulesData(this, rpgData);
-               skillCalculate(this.ai, true);
-               return { reaction: 'love' };
-        }
+		rpgData.skills[index] = skill;
+		if (num === 4) {
+			rpgData.nextSkill = null;
+		}
+		msg.reply(`\n` + serifs.rpg.moveToSkill(selectData.oldSkillName, skill.name) + `\n効果: ${skill.desc}` + (aggregateTokensEffects(rpgData).showSkillBonus && skill.info ? `\n詳細効果: ${skill.info}` : ''), { visibility: 'specified' });
+		msg.friend.setPerModulesData(this, rpgData);
+		skillCalculate(this.ai, true);
+		return { reaction: 'love' };
+	}
 
 	// -------- アカウント一覧管理 --------
 
@@ -3050,15 +3050,15 @@ export default class extends Module {
 
 			newRpgPlayersUserIds.forEach(async (x) => {
 				if (this.rpgPlayerList?.id) await this.ai.api("users/lists/push", { listId: this.rpgPlayerList.id, userId: x }).then(async (res) => {
-						if (typeof x === "string" && res?.response?.body?.error?.code === "YOU_HAVE_BEEN_BLOCKED") {
-								const doc = this.ai.lookupFriend(x)
-								if (doc) {
-									const data = doc.getPerModulesData(this)
-									data.isBlocked = true;
-									doc.setPerModulesData(this, data);
-									console.log("blocked: " + x);
-								}
+					if (typeof x === "string" && res?.response?.body?.error?.code === "YOU_HAVE_BEEN_BLOCKED") {
+						const doc = this.ai.lookupFriend(x)
+						if (doc) {
+							const data = doc.getPerModulesData(this)
+							data.isBlocked = true;
+							doc.setPerModulesData(this, data);
+							console.log("blocked: " + x);
 						}
+					}
 				});
 				console.log("rpgPlayers Account List Push: " + x);
 			});

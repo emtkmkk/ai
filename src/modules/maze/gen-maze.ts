@@ -117,9 +117,9 @@ function hasRouteToGoal(maze: CellType[][]): boolean {
 		for (const dir of dirs) {
 			const next =
 				dir === 'top' ? [x, y - 1] :
-				dir === 'bottom' ? [x, y + 1] :
-				dir === 'left' ? [x - 1, y] :
-				[x + 1, y];
+					dir === 'bottom' ? [x, y + 1] :
+						dir === 'left' ? [x - 1, y] :
+							[x + 1, y];
 			const nx = next[0];
 			const ny = next[1];
 			if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
@@ -200,10 +200,10 @@ export function genMaze(seed, complexity?, retry = 0) {
 
 		const newPos =
 			dir === 'top'    ? { x: x, y: y - 1 } :
-			dir === 'bottom' ? { x: x, y: y + 1 } :
-			dir === 'left'   ? { x: x - 1, y: y } :
-			dir === 'right'  ? { x: x + 1, y: y } :
-			{ x, y };
+				dir === 'bottom' ? { x: x, y: y + 1 } :
+					dir === 'left'   ? { x: x - 1, y: y } :
+						dir === 'right'  ? { x: x + 1, y: y } :
+							{ x, y };
 
 		if (newPos.x < 0 || newPos.y < 0 || newPos.x >= mazeSize || newPos.y >= mazeSize) return false;
 

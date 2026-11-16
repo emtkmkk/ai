@@ -400,11 +400,11 @@ export default {
 	/**
 	 * 数取りゲーム
 	 */
-        kazutori: {
-                alreadyStarted: '今ちょうどやってますよ～',
-                banned: '不正な行為でゲームを有利に進めようとされた可能性が高いため、あなたは参加を停止されています。',
+	kazutori: {
+		alreadyStarted: '今ちょうどやってますよ～',
+		banned: '不正な行為でゲームを有利に進めようとされた可能性が高いため、あなたは参加を停止されています。',
 
-                matakondo: (ct, time) => `\nまた今度やりましょう！\nあと${ct}分後にもう一度送ってください！\n※この時間はあなたへの懐き度が高いと短くなります。\n\n$[unixtime.countdown ${time}]`,
+		matakondo: (ct, time) => `\nまた今度やりましょう！\nあと${ct}分後にもう一度送ってください！\n※この時間はあなたへの懐き度が高いと短くなります。\n\n$[unixtime.countdown ${time}]`,
 
 		intro: (max, minutes, winRank, time) => `みなさん、数取りゲームしましょう！\n0~${max}の中で${winRank === 1 ? "最も大きい" : winRank > 1 ? "***" + winRank + "番目に***大きい" : "***中央値となる***"}数字を取った人が勝ちです。他の人と被ったらだめですよ～\n制限時間は${minutes < 5 ? `***${minutes}***` : minutes < 10 ? `**${minutes}**` : minutes}分です。数字はこの投稿にリプライで送ってくださいね！\n\n$[unixtime.countdown ${time}]`,
 
@@ -726,8 +726,8 @@ export default {
 			skills1: "[ RPG スキル ]\n私の今持っているスキルについての情報がここで確認できるみたいです！",
 			skills2: "[ RPG スキル ]\n私の今持っているスキルについての情報がここで確認できるみたいです！\n変更珠があれば、スキルの入替もここで行えるみたいです！",
 			shop: (coin: number) => `[ RPG ショップ ]\n${config.rpgCoinName}を使って、ショップでお買い物が楽しめるみたいです！\n1つしか持てないし壊れるけど効果が強いお守りや、捨てるまで効果が発動するお札など色々買えるみたいです！\n1日1回並んでいる商品が変わるらしいです！\n（${config.rpgCoinName}: ${coin.toLocaleString()}枚）`,
-            shop2: `[ RPG 裏ショップ ]\n購入した裏ショップ入場の札を使って、裏ショップに入ります！\n${config.rpgCoinName}とスキル変更珠を使って、珍しいアイテムを買えるみたいです！\n1日1回並んでいる商品が変わるらしいです！`,
-            shopCustom: `[ RPG カスタムショップ ]\nお守りパーツを組み合わせて自分好みのお守りを作成できます！`,
+			shop2: `[ RPG 裏ショップ ]\n購入した裏ショップ入場の札を使って、裏ショップに入ります！\n${config.rpgCoinName}とスキル変更珠を使って、珍しいアイテムを買えるみたいです！\n1日1回並んでいる商品が変わるらしいです！`,
+			shopCustom: `[ RPG カスタムショップ ]\nお守りパーツを組み合わせて自分好みのお守りを作成できます！`,
 			item: "[ RPG アイテム ]\n私の今持っている全てのアイテムの一覧がここで確認できるみたいです！",
 			status: `[ ステータス ]\n今の私の強さや私のなつき度、あなたの数取りの戦績がここで確認できるみたいです！`,
 			record: `[ RPG 殿堂 ]\nRPGモードで打ち立てた記録とその全体の順位をここで確認できますよ！`,
@@ -743,8 +743,8 @@ export default {
 			onemore: ["おかわり", "+", "onemore", "もう一回"],
 			skill: ["スキル", "skill", "お守り", "amulet"],
 			shop: ["ショップ", "shop", "お店"],
-            shop2: ["裏", "ura", "2", "another"],
-            shopCustom: ["カスタム", "custom"],
+			shop2: ["裏", "ura", "2", "another"],
+			shopCustom: ["カスタム", "custom"],
 			help: ["h", "ヘルプ", "?"],
 			Record: ["殿堂", "記録", "record", "trophy", "achieve", "achievement", "rank"],
 			duplication: "複製",

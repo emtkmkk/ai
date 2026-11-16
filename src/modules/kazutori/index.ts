@@ -56,15 +56,15 @@ var Decimal = require('break_infinity.js');
  * @internal
  */
 type Vote = {
-        /** 投票者のユーザー情報 */
+	/** 投票者のユーザー情報 */
 	user: {
 		id: string;
 		username: string;
 		host: User['host'];
-                /** 数取りの累計勝利回数 */
+		/** 数取りの累計勝利回数 */
 		winCount: number;
 	};
-        /** 投票した数値（Decimal型: 巨大数対応） */
+	/** 投票した数値（Decimal型: 巨大数対応） */
 	number: typeof Decimal;
 };
 
@@ -77,34 +77,34 @@ type Vote = {
  * @internal
  */
 type Game = {
-        /** 全投票情報 */
+	/** 全投票情報 */
 	votes: Vote[];
-        /** ゲーム終了済みか */
+	/** ゲーム終了済みか */
 	isEnded: boolean;
-        /** 開始時刻（ミリ秒タイムスタンプ） */
+	/** 開始時刻（ミリ秒タイムスタンプ） */
 	startedAt: number;
-        /** 終了時刻（ミリ秒タイムスタンプ） */
+	/** 終了時刻（ミリ秒タイムスタンプ） */
 	finishedAt: number;
-        /** 勝利条件: 1=最大値, 2=2番目, -1=中央値 */
+	/** 勝利条件: 1=最大値, 2=2番目, -1=中央値 */
 	winRank: number;
-        /** 開催投稿のノートID */
+	/** 開催投稿のノートID */
 	postId: string;
-        /** 投票可能な最大数値（Decimal型） */
+	/** 投票可能な最大数値（Decimal型） */
 	maxnum: typeof Decimal;
-        /** ゲーム開催をトリガーしたユーザーのID */
+	/** ゲーム開催をトリガーしたユーザーのID */
 	triggerUserId: string | undefined;
-        /** 公開投稿のみ受付けるモードか */
+	/** 公開投稿のみ受付けるモードか */
 	publicOnly: boolean;
-        /** リプライ購読キーのリスト */
-        replyKey: string[];
-        /** 投票受付時間（分） */
-        limitMinutes: number;
-        /** 勝者のユーザーID */
-        winnerUserId?: string;
-        /** 2人目の勝者ユーザーID（中央値2人勝利モード用） */
-        winnerUserId2?: string;
-        /** 再集計実施時刻（ミリ秒タイムスタンプ） */
-        reaggregatedAt?: number;
+	/** リプライ購読キーのリスト */
+	replyKey: string[];
+	/** 投票受付時間（分） */
+	limitMinutes: number;
+	/** 勝者のユーザーID */
+	winnerUserId?: string;
+	/** 2人目の勝者ユーザーID（中央値2人勝利モード用） */
+	winnerUserId2?: string;
+	/** 再集計実施時刻（ミリ秒タイムスタンプ） */
+	reaggregatedAt?: number;
 };
 
 /**
@@ -163,339 +163,339 @@ type KazutoriRatingContext = {
  * @public
  */
 export default class extends Module {
-        public readonly name = 'kazutori';
+	public readonly name = 'kazutori';
 
-        /** ゲーム情報コレクション */
-        private games: loki.Collection<Game>;
-        /** 定時リノート重複防止用 */
-        private lastHourlyRenote: { key: string; postId: string } | null = null;
-        /** ゲーム開始時オプション pity の連続外れ回数 */
-        private pityState: KazutoriPityState = {};
-        /** HTL/LTL の活動量（直近の人数・前回の開催以降の投稿） */
-        private timeline: TimelineActivityTracker;
+	/** ゲーム情報コレクション */
+	private games: loki.Collection<Game>;
+	/** 定時リノート重複防止用 */
+	private lastHourlyRenote: { key: string; postId: string } | null = null;
+	/** ゲーム開始時オプション pity の連続外れ回数 */
+	private pityState: KazutoriPityState = {};
+	/** HTL/LTL の活動量（直近の人数・前回の開催以降の投稿） */
+	private timeline: TimelineActivityTracker;
 
 
-        /**
-         * ユーザーがBAN対象かどうかを判定する
-         *
-         * @remarks
-         * `config.kazutoriBanUsers` に設定されたユーザーID/ユーザー名/acctと比較する。
-         * 大文字小文字を区別しない。
-         *
-         * @param user - 判定対象のユーザー
-         * @returns BANされている場合 `true`
-         * @internal
-         */
-        private isBannedUser(user: User): boolean {
-                const banUsers = config.kazutoriBanUsers ?? [];
-                const identifiers = [
-                        user.id,
-                        user.username,
-                        user.host ? `${user.username}@${user.host}` : user.username,
-                        acct(user),
-                ]
-                        .filter((value): value is string => typeof value === 'string')
-                        .map((value) => value.toLowerCase());
+	/**
+	 * ユーザーがBAN対象かどうかを判定する
+	 *
+	 * @remarks
+	 * `config.kazutoriBanUsers` に設定されたユーザーID/ユーザー名/acctと比較する。
+	 * 大文字小文字を区別しない。
+	 *
+	 * @param user - 判定対象のユーザー
+	 * @returns BANされている場合 `true`
+	 * @internal
+	 */
+	private isBannedUser(user: User): boolean {
+		const banUsers = config.kazutoriBanUsers ?? [];
+		const identifiers = [
+			user.id,
+			user.username,
+			user.host ? `${user.username}@${user.host}` : user.username,
+			acct(user),
+		]
+			.filter((value): value is string => typeof value === 'string')
+			.map((value) => value.toLowerCase());
 
-                return banUsers.some((banUser) => typeof banUser === 'string' && identifiers.includes(banUser.toLowerCase()));
-        }
+		return banUsers.some((banUser) => typeof banUser === 'string' && identifiers.includes(banUser.toLowerCase()));
+	}
 
-        /**
-         * 直近のゲーム
-         *
-         * @internal
-         */
-        private findRecentGame(): Game | null {
-                const games = this.games.find({});
-                return games.length === 0 ? null : games[games.length - 1];
-        }
+	/**
+	 * 直近のゲーム
+	 *
+	 * @internal
+	 */
+	private findRecentGame(): Game | null {
+		const games = this.games.find({});
+		return games.length === 0 ? null : games[games.length - 1];
+	}
 
-        /**
-         * 18.5分ごとの自然発生の抽選
-         *
-         * @internal
-         */
-        @autobind
-        private naturalStartTick() {
-                const now = new Date();
-                const dailyCap = this.ensureDailyCap(now);
-                if (!isNaturalStartHour(now.getHours())) return;
-                const activeUsers = this.timeline.countActiveUsers(now.getTime());
-                const rnd = naturalStartProbabilityByUsers(activeUsers, this.ai.activeFactor);
-                if (Math.random() >= rnd) return;
-                const since = this.timeline.since;
-                if (!isGateOpen(now, this.findRecentGame(), since)) {
-                        this.log(`Natural kazutori skipped: gate closed (posts=${since.posts} users=${countQualifiedUsers(since)})`);
-                        return;
-                }
-                if (this.countTodayNaturalGames(now) >= dailyCap.cap) {
-                        this.log(`Natural kazutori skipped: daily cap reached (${dailyCap.cap})`);
-                        return;
-                }
-                this.log(`Natural kazutori start (activeUsers=${activeUsers} p=${rnd.toFixed(3)})`);
-                this.start();
-        }
+	/**
+	 * 18.5分ごとの自然発生の抽選
+	 *
+	 * @internal
+	 */
+	@autobind
+	private naturalStartTick() {
+		const now = new Date();
+		const dailyCap = this.ensureDailyCap(now);
+		if (!isNaturalStartHour(now.getHours())) return;
+		const activeUsers = this.timeline.countActiveUsers(now.getTime());
+		const rnd = naturalStartProbabilityByUsers(activeUsers, this.ai.activeFactor);
+		if (Math.random() >= rnd) return;
+		const since = this.timeline.since;
+		if (!isGateOpen(now, this.findRecentGame(), since)) {
+			this.log(`Natural kazutori skipped: gate closed (posts=${since.posts} users=${countQualifiedUsers(since)})`);
+			return;
+		}
+		if (this.countTodayNaturalGames(now) >= dailyCap.cap) {
+			this.log(`Natural kazutori skipped: daily cap reached (${dailyCap.cap})`);
+			return;
+		}
+		this.log(`Natural kazutori start (activeUsers=${activeUsers} p=${rnd.toFixed(3)})`);
+		this.start();
+	}
 
-        /**
-         * 保証判定: 毎日 8:00〜9:59 のランダムな時刻に、今日まだ開催がなければ開催を試みる
-         *
-         * @remarks
-         * 午前中長時間の対象になる（今日まだ開催がない）ときだけ、その日の上限/8（最大1）の確率で開催する。
-         * 1日の上限には数える。
-         *
-         * @internal
-         */
-        @autobind
-        private guaranteeTick() {
-                const now = new Date();
-                const date = dateKey(now);
-                let guarantee = this.ai.getMeta().kazutoriGuarantee;
-                if (guarantee?.date !== date) {
-                        guarantee = { date, at: pickGuaranteeTime(now), done: false };
-                        this.ai.setMeta({ kazutoriGuarantee: guarantee });
-                        this.log(`Kazutori guarantee time for ${date}: ${new Date(guarantee.at).toLocaleTimeString()}`);
-                }
-                if (guarantee.done || now.getTime() < guarantee.at) return;
-                this.ai.setMeta({ kazutoriGuarantee: { ...guarantee, done: true } });
-                if (!isMorningLongEligible(now, this.findRecentGame()?.startedAt ?? null)) return;
-                const dailyCap = this.ensureDailyCap(now);
-                const probability = guaranteeProbability(dailyCap.cap);
-                if (Math.random() >= probability) {
-                        this.log(`Kazutori guarantee skipped: roll failed (p=${probability.toFixed(3)})`);
-                        return;
-                }
-                if (this.countTodayNaturalGames(now) >= dailyCap.cap) {
-                        this.log('Kazutori guarantee skipped: daily cap reached');
-                        return;
-                }
-                this.log('Kazutori guarantee start');
-                this.start();
-        }
+	/**
+	 * 保証判定: 毎日 8:00〜9:59 のランダムな時刻に、今日まだ開催がなければ開催を試みる
+	 *
+	 * @remarks
+	 * 午前中長時間の対象になる（今日まだ開催がない）ときだけ、その日の上限/8（最大1）の確率で開催する。
+	 * 1日の上限には数える。
+	 *
+	 * @internal
+	 */
+	@autobind
+	private guaranteeTick() {
+		const now = new Date();
+		const date = dateKey(now);
+		let guarantee = this.ai.getMeta().kazutoriGuarantee;
+		if (guarantee?.date !== date) {
+			guarantee = { date, at: pickGuaranteeTime(now), done: false };
+			this.ai.setMeta({ kazutoriGuarantee: guarantee });
+			this.log(`Kazutori guarantee time for ${date}: ${new Date(guarantee.at).toLocaleTimeString()}`);
+		}
+		if (guarantee.done || now.getTime() < guarantee.at) return;
+		this.ai.setMeta({ kazutoriGuarantee: { ...guarantee, done: true } });
+		if (!isMorningLongEligible(now, this.findRecentGame()?.startedAt ?? null)) return;
+		const dailyCap = this.ensureDailyCap(now);
+		const probability = guaranteeProbability(dailyCap.cap);
+		if (Math.random() >= probability) {
+			this.log(`Kazutori guarantee skipped: roll failed (p=${probability.toFixed(3)})`);
+			return;
+		}
+		if (this.countTodayNaturalGames(now) >= dailyCap.cap) {
+			this.log('Kazutori guarantee skipped: daily cap reached');
+			return;
+		}
+		this.log('Kazutori guarantee start');
+		this.start();
+	}
 
-        /**
-         * 今日の自動開催の上限回数を取得する（未決定なら今の機嫌で決める）
-         *
-         * @remarks
-         * 日付が変わって最初の抽選時に、その時点の機嫌で1日をシミュレーションして上限を決める。
-         * 再起動しても変わらないようメタ情報に保存する。
-         *
-         * @internal
-         */
-        private ensureDailyCap(now: Date): KazutoriDailyCap {
-                const date = dateKey(now);
-                const saved = this.ai.getMeta().kazutoriDailyCap;
-                if (saved?.date === date) return saved;
-                const activeFactor = this.ai.activeFactor;
-                const dailyCap: KazutoriDailyCap = { date, cap: simulateNaturalGameCount(activeFactor), activeFactor };
-                this.ai.setMeta({ kazutoriDailyCap: dailyCap });
-                this.log(`Natural kazutori daily cap for ${date}: ${dailyCap.cap} (activeFactor=${activeFactor})`);
-                return dailyCap;
-        }
+	/**
+	 * 今日の自動開催の上限回数を取得する（未決定なら今の機嫌で決める）
+	 *
+	 * @remarks
+	 * 日付が変わって最初の抽選時に、その時点の機嫌で1日をシミュレーションして上限を決める。
+	 * 再起動しても変わらないようメタ情報に保存する。
+	 *
+	 * @internal
+	 */
+	private ensureDailyCap(now: Date): KazutoriDailyCap {
+		const date = dateKey(now);
+		const saved = this.ai.getMeta().kazutoriDailyCap;
+		if (saved?.date === date) return saved;
+		const activeFactor = this.ai.activeFactor;
+		const dailyCap: KazutoriDailyCap = { date, cap: simulateNaturalGameCount(activeFactor), activeFactor };
+		this.ai.setMeta({ kazutoriDailyCap: dailyCap });
+		this.log(`Natural kazutori daily cap for ${date}: ${dailyCap.cap} (activeFactor=${activeFactor})`);
+		return dailyCap;
+	}
 
-        /**
-         * 今日の自動開催（トリガーユーザーなし）の回数
-         *
-         * @internal
-         */
-        private countTodayNaturalGames(now: Date): number {
-                const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-                return this.games.find({ startedAt: { $gte: startOfDay } }).filter(game => !game.triggerUserId).length;
-        }
+	/**
+	 * 今日の自動開催（トリガーユーザーなし）の回数
+	 *
+	 * @internal
+	 */
+	private countTodayNaturalGames(now: Date): number {
+		const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+		return this.games.find({ startedAt: { $gte: startOfDay } }).filter(game => !game.triggerUserId).length;
+	}
 
-        /**
-         * メタ情報から pity 状態を読み込む
-         *
-         * @internal
-         */
-        private loadPityState(): void {
-                this.pityState = { ...(this.ai.getMeta().kazutoriPity ?? {}) };
-        }
+	/**
+	 * メタ情報から pity 状態を読み込む
+	 *
+	 * @internal
+	 */
+	private loadPityState(): void {
+		this.pityState = { ...(this.ai.getMeta().kazutoriPity ?? {}) };
+	}
 
-        /**
-         * pity 状態をメタ情報に保存する
-         *
-         * @internal
-         */
-        private persistPityState(): void {
-                this.ai.setMeta({ kazutoriPity: { ...this.pityState } });
-        }
+	/**
+	 * pity 状態をメタ情報に保存する
+	 *
+	 * @internal
+	 */
+	private persistPityState(): void {
+		this.ai.setMeta({ kazutoriPity: { ...this.pityState } });
+	}
 
-        /**
-         * ゲーム開始時オプションの pity 付きランダム判定
-         *
-         * @param key - 判定キー
-         * @param probability - 基準当選確率（0〜1）
-         * @returns 当選した場合 true
-         * @internal
-         */
-        private rollPity(key: KazutoriPityKey, probability: number): boolean {
-                const { hit, nextState } = rollWithPity(this.pityState, key, probability);
-                this.pityState = nextState;
-                return hit;
-        }
+	/**
+	 * ゲーム開始時オプションの pity 付きランダム判定
+	 *
+	 * @param key - 判定キー
+	 * @param probability - 基準当選確率（0〜1）
+	 * @returns 当選した場合 true
+	 * @internal
+	 */
+	private rollPity(key: KazutoriPityKey, probability: number): boolean {
+		const { hit, nextState } = rollWithPity(this.pityState, key, probability);
+		this.pityState = nextState;
+		return hit;
+	}
 
-        /**
-         * 公開投稿限定モードで、有効な投票者IDを収集する
-         *
-         * @remarks
-         * 開催投稿へのリプライ・引用を取得し、特定のリアクション
-         * (discochicken) を付けているユーザーのIDを集める。
-         * リアクションがないユーザーの投票は無効化される。
-         *
-         * @param postId - 開催投稿のノートID
-         * @returns 有効ユーザーIDのセット、またはエラー時 `null`
-         * @internal
-         */
-        private async collectPublicOnlyVoteUserIds(postId: string): Promise<Set<string> | null> {
-                /** 有効とみなすリアクション（公開投稿限定モードで投票として認めるもの） */
-                const reactionKeys = new Set([':mk_discochicken@.:', ':disco_chicken:']);
-                const expectedReactions = Array.from(reactionKeys).join(', ');
-                /** リプライまたは引用に有効リアクションを付けていたユーザーID */
-                const validUserIds = new Set<string>();
+	/**
+	 * 公開投稿限定モードで、有効な投票者IDを収集する
+	 *
+	 * @remarks
+	 * 開催投稿へのリプライ・引用を取得し、特定のリアクション
+	 * (discochicken) を付けているユーザーのIDを集める。
+	 * リアクションがないユーザーの投票は無効化される。
+	 *
+	 * @param postId - 開催投稿のノートID
+	 * @returns 有効ユーザーIDのセット、またはエラー時 `null`
+	 * @internal
+	 */
+	private async collectPublicOnlyVoteUserIds(postId: string): Promise<Set<string> | null> {
+		/** 有効とみなすリアクション（公開投稿限定モードで投票として認めるもの） */
+		const reactionKeys = new Set([':mk_discochicken@.:', ':disco_chicken:']);
+		const expectedReactions = Array.from(reactionKeys).join(', ');
+		/** リプライまたは引用に有効リアクションを付けていたユーザーID */
+		const validUserIds = new Set<string>();
 
-                /** ノート一覧から有効リアクションを付けたユーザーを validUserIds に追加する */
-                const collectFromNotes = (
-                        notes: Array<{ id?: string; user?: { id: string }; myReaction?: string }>,
-                        source: string
-                ) => {
-                        const rejectedReasons: string[] = [];
-                        let acceptedCount = 0;
+		/** ノート一覧から有効リアクションを付けたユーザーを validUserIds に追加する */
+		const collectFromNotes = (
+			notes: Array<{ id?: string; user?: { id: string }; myReaction?: string }>,
+			source: string
+		) => {
+			const rejectedReasons: string[] = [];
+			let acceptedCount = 0;
 
-                        for (const note of notes) {
-                                const noteId = note?.id ? `noteId=${note.id}` : 'noteId=unknown';
-                                if (!note?.user?.id) {
-                                        rejectedReasons.push(`${noteId}: user id missing`);
-                                        continue;
-                                }
-                                if (!note.myReaction) {
-                                        rejectedReasons.push(`${noteId}: reaction missing`);
-                                        continue;
-                                }
-                                if (!reactionKeys.has(note.myReaction)) {
-                                        rejectedReasons.push(
-                                                `${noteId}: reaction mismatch (expected: ${expectedReactions}, actual: ${note.myReaction})`
-                                        );
-                                        continue;
-                                }
-                                validUserIds.add(note.user.id);
-                                acceptedCount += 1;
-                        }
+			for (const note of notes) {
+				const noteId = note?.id ? `noteId=${note.id}` : 'noteId=unknown';
+				if (!note?.user?.id) {
+					rejectedReasons.push(`${noteId}: user id missing`);
+					continue;
+				}
+				if (!note.myReaction) {
+					rejectedReasons.push(`${noteId}: reaction missing`);
+					continue;
+				}
+				if (!reactionKeys.has(note.myReaction)) {
+					rejectedReasons.push(
+						`${noteId}: reaction mismatch (expected: ${expectedReactions}, actual: ${note.myReaction})`
+					);
+					continue;
+				}
+				validUserIds.add(note.user.id);
+				acceptedCount += 1;
+			}
 
-                        this.log(
-                                `Public-only ${source} check fetched ${notes.length} posts, accepted ${acceptedCount}, rejected ${rejectedReasons.length}`
-                        );
-                        rejectedReasons.forEach((reason) => {
-                                this.log(`Public-only ${source} rejected: ${reason}`);
-                        });
-                };
+			this.log(
+				`Public-only ${source} check fetched ${notes.length} posts, accepted ${acceptedCount}, rejected ${rejectedReasons.length}`
+			);
+			rejectedReasons.forEach((reason) => {
+				this.log(`Public-only ${source} rejected: ${reason}`);
+			});
+		};
 
-                try {
-                        const replies = await this.ai.api('notes/replies', { noteId: postId, limit: 100 });
-                        collectFromNotes(Array.isArray(replies) ? replies : [], 'reply');
-                } catch (err) {
-                        const reason = err instanceof Error ? err.message : String(err);
-                        this.log(`Failed to fetch kazutori replies: ${reason}`);
-                        return null;
-                }
+		try {
+			const replies = await this.ai.api('notes/replies', { noteId: postId, limit: 100 });
+			collectFromNotes(Array.isArray(replies) ? replies : [], 'reply');
+		} catch (err) {
+			const reason = err instanceof Error ? err.message : String(err);
+			this.log(`Failed to fetch kazutori replies: ${reason}`);
+			return null;
+		}
 
-                try {
-                        const quotes = await this.ai.api('notes/renotes', { noteId: postId, limit: 100 });
-                        collectFromNotes(Array.isArray(quotes) ? quotes : [], 'quote');
-                } catch (err) {
-                        const reason = err instanceof Error ? err.message : String(err);
-                        this.log(`Failed to fetch kazutori renotes: ${reason}`);
-                        return null;
-                }
+		try {
+			const quotes = await this.ai.api('notes/renotes', { noteId: postId, limit: 100 });
+			collectFromNotes(Array.isArray(quotes) ? quotes : [], 'quote');
+		} catch (err) {
+			const reason = err instanceof Error ? err.message : String(err);
+			this.log(`Failed to fetch kazutori renotes: ${reason}`);
+			return null;
+		}
 
-                return validUserIds;
-        }
+		return validUserIds;
+	}
 
-        /**
-         * モジュールの初期化
-         *
-         * @remarks
-         * - ゲームコレクションの初期化
-         * - 1秒間隔でゲーム終了チェック
-         * - 1秒間隔で定時リノートチェック
-         * - 18.5分間隔で自動開催判定（直近の人数と機嫌により確率変動）
-         * - 1分間隔で保証判定（毎日8:00〜9:59のランダムな時刻に1回）
-         *
-         * @returns mentionHook と contextHook を含むフック登録オブジェクト
-         * @public
-         */
-        @autobind
-        public install() {
-                this.games = this.ai.getCollection('kazutori');
-                this.loadPityState();
-                this.timeline = new TimelineActivityTracker(
-                        () => this.ai.account.id,
-                        () => this.ai.getMeta().kazutoriSinceLastGame,
-                        since => this.ai.setMeta({ kazutoriSinceLastGame: since }),
-                );
-                this.ai.connection.useSharedConnection('homeTimeline').on('note', this.timeline.onNote);
-                this.ai.connection.useSharedConnection('localTimeline').on('note', this.timeline.onNote);
+	/**
+	 * モジュールの初期化
+	 *
+	 * @remarks
+	 * - ゲームコレクションの初期化
+	 * - 1秒間隔でゲーム終了チェック
+	 * - 1秒間隔で定時リノートチェック
+	 * - 18.5分間隔で自動開催判定（直近の人数と機嫌により確率変動）
+	 * - 1分間隔で保証判定（毎日8:00〜9:59のランダムな時刻に1回）
+	 *
+	 * @returns mentionHook と contextHook を含むフック登録オブジェクト
+	 * @public
+	 */
+	@autobind
+	public install() {
+		this.games = this.ai.getCollection('kazutori');
+		this.loadPityState();
+		this.timeline = new TimelineActivityTracker(
+			() => this.ai.account.id,
+			() => this.ai.getMeta().kazutoriSinceLastGame,
+			since => this.ai.setMeta({ kazutoriSinceLastGame: since }),
+		);
+		this.ai.connection.useSharedConnection('homeTimeline').on('note', this.timeline.onNote);
+		this.ai.connection.useSharedConnection('localTimeline').on('note', this.timeline.onNote);
 
-                this.crawleGameEnd();
-                setInterval(this.crawleGameEnd, 1000);
-                setInterval(this.renoteOnSpecificHours, 1000);
-                setInterval(this.naturalStartTick, NATURAL_START_INTERVAL_MS);
-                setInterval(this.guaranteeTick, 1000 * 60);
+		this.crawleGameEnd();
+		setInterval(this.crawleGameEnd, 1000);
+		setInterval(this.renoteOnSpecificHours, 1000);
+		setInterval(this.naturalStartTick, NATURAL_START_INTERVAL_MS);
+		setInterval(this.guaranteeTick, 1000 * 60);
 
-                return {
-                        mentionHook: this.mentionHook,
-                        contextHook: this.contextHook,
-                };
-        }
+		return {
+			mentionHook: this.mentionHook,
+			contextHook: this.contextHook,
+		};
+	}
 
-        /**
-         * 定時リノート: 進行中のゲームを偶数時にリノートする
-         *
-         * @remarks
-         * 8,10,12,14,16,18,20,22時の正分にリノートする。
-         * 終了10分前以内の場合はリノートしない。
-         * 同じゲーム・同じ時間帯での重複リノートを防止する。
-         *
-         * @internal
-         */
-        @autobind
-        private async renoteOnSpecificHours() {
-                const game = this.games.findOne({
-                        isEnded: false,
-                });
+	/**
+	 * 定時リノート: 進行中のゲームを偶数時にリノートする
+	 *
+	 * @remarks
+	 * 8,10,12,14,16,18,20,22時の正分にリノートする。
+	 * 終了10分前以内の場合はリノートしない。
+	 * 同じゲーム・同じ時間帯での重複リノートを防止する。
+	 *
+	 * @internal
+	 */
+	@autobind
+	private async renoteOnSpecificHours() {
+		const game = this.games.findOne({
+			isEnded: false,
+		});
 
-                if (game == null) return;
+		if (game == null) return;
 
-                const now = new Date();
-                const hour = now.getHours();
+		const now = new Date();
+		const hour = now.getHours();
 
-                if (![8, 10, 12, 14, 16, 18, 20, 22].includes(hour)) return;
+		if (![8, 10, 12, 14, 16, 18, 20, 22].includes(hour)) return;
 
-                if (now.getMinutes() !== 0) return;
+		if (now.getMinutes() !== 0) return;
 
-                const finishedAt = game.finishedAt ?? game.startedAt + 1000 * 60 * (game.limitMinutes ?? 10);
-                const remaining = finishedAt - Date.now();
-                const threshold = (10 * 60 + 10) * 1000;
+		const finishedAt = game.finishedAt ?? game.startedAt + 1000 * 60 * (game.limitMinutes ?? 10);
+		const remaining = finishedAt - Date.now();
+		const threshold = (10 * 60 + 10) * 1000;
 
-                if (remaining < threshold) return;
+		if (remaining < threshold) return;
 
-                const key = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${hour}`;
+		const key = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${hour}`;
 
-                if (this.lastHourlyRenote && this.lastHourlyRenote.key === key && this.lastHourlyRenote.postId === game.postId) {
-                        return;
-                }
+		if (this.lastHourlyRenote && this.lastHourlyRenote.key === key && this.lastHourlyRenote.postId === game.postId) {
+			return;
+		}
 
-                this.lastHourlyRenote = { key, postId: game.postId };
+		this.lastHourlyRenote = { key, postId: game.postId };
 
-                try {
-                        await this.ai.post({
-                                renoteId: game.postId,
-                        }, { scheduled: true });
-                } catch (err) {
-                        const reason = err instanceof Error ? err.message : String(err);
-                        this.log(`Failed to renote kazutori post on specific hour: ${reason}`);
-                        this.lastHourlyRenote = null;
-                }
-        }
+		try {
+			await this.ai.post({
+				renoteId: game.postId,
+			}, { scheduled: true });
+		} catch (err) {
+			const reason = err instanceof Error ? err.message : String(err);
+			this.log(`Failed to renote kazutori post on specific hour: ${reason}`);
+			this.lastHourlyRenote = null;
+		}
+	}
 
 	/**
 	 * ゲーム開始可能かどうかを判定する
@@ -555,8 +555,8 @@ export default class extends Module {
 		const winRankProbability = maxnum.equals(Decimal.MAX_VALUE) ? 0.3 : 0.15;
 		let winRank =
 			(recentGame?.winRank ?? 1) <= 1 &&
-			this.ai.activeFactor >= 0.5 &&
-			this.rollPity('winRank2nd', winRankProbability)
+				this.ai.activeFactor >= 0.5 &&
+				this.rollPity('winRank2nd', winRankProbability)
 				? 2
 				: 1;
 		if (isMarch) {
@@ -631,16 +631,16 @@ export default class extends Module {
 		return { visibility, publicOnly };
 	}
 
-        /**
-         * ゲームを開始する
-         *
-         * @remarks
-         * 最大値・勝利条件・制限時間・公開範囲を決定し、開催投稿を行う。
-         *
-         * @param triggerUserId - トリガーしたユーザーのID（自動開催時はundefined）
-         * @param flg - 管理者フラグ（'inf'=無限, 'med'=中央値, 'lng'=長時間, '2nd'=2番目, 'pub'=公開限定）
-         * @internal
-         */
+	/**
+	 * ゲームを開始する
+	 *
+	 * @remarks
+	 * 最大値・勝利条件・制限時間・公開範囲を決定し、開催投稿を行う。
+	 *
+	 * @param triggerUserId - トリガーしたユーザーのID（自動開催時はundefined）
+	 * @param flg - 管理者フラグ（'inf'=無限, 'med'=中央値, 'lng'=長時間, '2nd'=2番目, 'pub'=公開限定）
+	 * @internal
+	 */
 	@autobind
 	private async start(triggerUserId?: string, flg?: string) {
 		this.ai.decActiveFactor();
@@ -713,40 +713,40 @@ export default class extends Module {
 		this.persistPityState();
 	}
 
-        /**
-         * メンション受信時のフック: ゲーム開催リクエスト・再集計
-         *
-         * @remarks
-         * 「数取り」を含むメンションでゲーム開催をリクエストする。
-         * 管理者は「再集計」で最新ゲームの結果を再集計できる。
-         * クールタイムは親愛度に応じて短縮される（最大8倍→1.2倍）。
-         *
-         * @param msg - 受信メッセージ
-         * @returns HandlerResult または `false`
-         * @internal
-         */
-        @autobind
+	/**
+	 * メンション受信時のフック: ゲーム開催リクエスト・再集計
+	 *
+	 * @remarks
+	 * 「数取り」を含むメンションでゲーム開催をリクエストする。
+	 * 管理者は「再集計」で最新ゲームの結果を再集計できる。
+	 * クールタイムは親愛度に応じて短縮される（最大8倍→1.2倍）。
+	 *
+	 * @param msg - 受信メッセージ
+	 * @returns HandlerResult または `false`
+	 * @internal
+	 */
+	@autobind
 	private async mentionHook(msg: Message) {
-                if (msg.includes(['レート'])) {
-                        return false;
-                }
-                if (!msg.includes(['数取り'])) return false;
+		if (msg.includes(['レート'])) {
+			return false;
+		}
+		if (!msg.includes(['数取り'])) return false;
 
-                if (this.isBannedUser(msg.user)) {
-                        msg.reply(serifs.kazutori.banned, { visibility: 'specified' });
-                        return {
-                                reaction: 'confused',
-                        };
-                }
+		if (this.isBannedUser(msg.user)) {
+			msg.reply(serifs.kazutori.banned, { visibility: 'specified' });
+			return {
+				reaction: 'confused',
+			};
+		}
 
-                if (!msg.user.host && msg.user.username === config.master && msg.includes(['再集計', '集計やり直し', '集計やりなおし'])) {
-                        await this.redoLastAggregation(msg);
-                        return {
-                                reaction: 'love',
-                        };
-                }
+		if (!msg.user.host && msg.user.username === config.master && msg.includes(['再集計', '集計やり直し', '集計やりなおし'])) {
+			await this.redoLastAggregation(msg);
+			return {
+				reaction: 'love',
+			};
+		}
 
-                const games = this.games.find({});
+		const games = this.games.find({});
 
 		const recentGame = games.length == 0 ? null : games[games.length - 1];
 
@@ -778,31 +778,31 @@ export default class extends Module {
 			const cooldownMultiplier = Math.max((msg.friend.love >= 200 ? 1.2 : msg.friend.love >= 100 ? 1.5 : msg.friend.love >= 20 ? 2 : msg.friend.love >= 5 ? 4 : 8) * (["public", "home"].includes(msg.visibility) ? 1 : 1.5), 1);
 			const cooldownBaseAt = recentGame.finishedAt ?? recentGame.startedAt;
 
-                        // トリガー者が管理人でない かつ クールタイムが開けていない場合
-                        if ((msg.user.host || msg.user.username !== config.master) && Date.now() - cooldownBaseAt < 1000 * 60 * 30 * cooldownMultiplier) {
-                                const cooldownMs = 1000 * 60 * 30 * cooldownMultiplier;
-                                const elapsedMs = Date.now() - cooldownBaseAt;
-                                const remainingMinutes = Math.max(Math.ceil((cooldownMs - elapsedMs) / (1000 * 60)), 0);
-                                const retryAt = Math.ceil((cooldownBaseAt + cooldownMs) / 1000);
+			// トリガー者が管理人でない かつ クールタイムが開けていない場合
+			if ((msg.user.host || msg.user.username !== config.master) && Date.now() - cooldownBaseAt < 1000 * 60 * 30 * cooldownMultiplier) {
+				const cooldownMs = 1000 * 60 * 30 * cooldownMultiplier;
+				const elapsedMs = Date.now() - cooldownBaseAt;
+				const remainingMinutes = Math.max(Math.ceil((cooldownMs - elapsedMs) / (1000 * 60)), 0);
+				const retryAt = Math.ceil((cooldownBaseAt + cooldownMs) / 1000);
 
-                                try {
-                                        await msg.reply(serifs.kazutori.matakondo(remainingMinutes, retryAt));
-                                } catch (err) {
-                                        const reason = err instanceof Error ? err.message : String(err);
-                                        this.log(`Failed to reply cooldown message: ${reason}`);
-                                }
+				try {
+					await msg.reply(serifs.kazutori.matakondo(remainingMinutes, retryAt));
+				} catch (err) {
+					const reason = err instanceof Error ? err.message : String(err);
+					this.log(`Failed to reply cooldown message: ${reason}`);
+				}
 
-                                return {
-                                        reaction: 'hmm'
-                                };
-                        }
+				return {
+					reaction: 'hmm'
+				};
+			}
 
-                        if (!msg.user.host && msg.user.username === config.master && msg.includes(['inf'])) flg = "inf";
-                        if (!msg.user.host && msg.user.username === config.master && msg.includes(['med'])) flg += " med";
-                        if (!msg.user.host && msg.user.username === config.master && msg.includes(['lng'])) flg += " lng";
-                        if (!msg.user.host && msg.user.username === config.master && msg.includes(['2nd'])) flg += " 2nd";
-                        if (!msg.user.host && msg.user.username === config.master && msg.includes(['pub'])) flg += " pub";
-                }
+			if (!msg.user.host && msg.user.username === config.master && msg.includes(['inf'])) flg = "inf";
+			if (!msg.user.host && msg.user.username === config.master && msg.includes(['med'])) flg += " med";
+			if (!msg.user.host && msg.user.username === config.master && msg.includes(['lng'])) flg += " lng";
+			if (!msg.user.host && msg.user.username === config.master && msg.includes(['2nd'])) flg += " 2nd";
+			if (!msg.user.host && msg.user.username === config.master && msg.includes(['pub'])) flg += " pub";
+		}
 
 		//TODO : このへんのセリフをserifに移行する
 		msg.reply("\n分かりました！数取りを開催します！\nあなたは開催1分後から数取りへの投票を行うことができます！\n（ダイレクトなら今すぐでも大丈夫です！）", { visibility: 'specified' }).then(reply => {
@@ -816,109 +816,109 @@ export default class extends Module {
 		};
 	}
 
-        /**
-         * 最新ゲームの結果を再集計する（管理者コマンド）
-         *
-         * @remarks
-         * 最新の終了済みゲームに対して finish() を再実行する。
-         * 既に再集計済みの場合は拒否する。
-         *
-         * @param msg - メンションメッセージ（返信先）
-         * @internal
-         */
-        @autobind
-        private async redoLastAggregation(msg: Message) {
-                const games = this.games.find({});
-                const recentGame = games.length === 0 ? null : games[games.length - 1];
-
-                if (!recentGame) {
-                        await msg.reply('再集計できるゲームが見つかりませんでした。', { visibility: 'specified' });
-                        return;
-                }
-
-                if (!recentGame.isEnded) {
-                        await msg.reply('前回の数取りはまだ終了していないため、再集計できません。', { visibility: 'specified' });
-                        return;
-                }
-
-                if (recentGame.reaggregatedAt) {
-                        await msg.reply('前回の集計はすでに再集計済みです。', { visibility: 'specified' });
-                        return;
-                }
-
-                if (!recentGame.votes || recentGame.votes.length === 0) {
-                        await msg.reply('再集計できる投票情報がありませんでした。', { visibility: 'specified' });
-                        return;
-                }
-
-                // isEnded は true のまま再集計する。一時的にでも false に戻すと、
-                // 再集計中に crawleGameEnd が同じゲームを通常の finish() に渡して二重集計したり、
-                // contextHook が終了済みゲームへの投票を受け付けたりしてしまう。
-                recentGame.reaggregatedAt = Date.now();
-                this.games.update(recentGame);
-
-                await msg.reply('前回の集計をやり直します。結果の投稿まで少しお待ちください。', { visibility: 'specified' });
-                await this.finish(recentGame, { isReaggregate: true });
-        }
-
-        /**
-         * コンテキストフック: 投票の受付処理
-         *
-         * @remarks
-         * 開催投稿へのリプライを投票として処理する。
-         * 各種バリデーション（BAN・重複・範囲・トリガー者の1分制限など）を行い、
-         * 有効な投票をゲームに記録する。
-         * 21桁以上の数字はDecimal型に変換し、丸め処理を行う。
-         *
-         * @param key - コンテキストキー
-         * @param msg - 受信メッセージ
-         * @returns HandlerResult
-         * @internal
-         */
+	/**
+	 * 最新ゲームの結果を再集計する（管理者コマンド）
+	 *
+	 * @remarks
+	 * 最新の終了済みゲームに対して finish() を再実行する。
+	 * 既に再集計済みの場合は拒否する。
+	 *
+	 * @param msg - メンションメッセージ（返信先）
+	 * @internal
+	 */
 	@autobind
-        private async contextHook(key: any, msg: Message) {
-                if (msg.text == null) {
-                        return { reaction: 'hmm' };
-                }
+	private async redoLastAggregation(msg: Message) {
+		const games = this.games.find({});
+		const recentGame = games.length === 0 ? null : games[games.length - 1];
 
-                // BAN ユーザーは投票不可
-                if (this.isBannedUser(msg.user)) {
-                        msg.reply(serifs.kazutori.banned, { visibility: 'specified' });
-                        return { reaction: 'confused' };
-                }
+		if (!recentGame) {
+			await msg.reply('再集計できるゲームが見つかりませんでした。', { visibility: 'specified' });
+			return;
+		}
 
-                const game = this.games.findOne({ isEnded: false });
-                if (game == null) return;
+		if (!recentGame.isEnded) {
+			await msg.reply('前回の数取りはまだ終了していないため、再集計できません。', { visibility: 'specified' });
+			return;
+		}
 
-                // トリガー1分制限・公開限定・重複のチェック
-                const validation = await this.validateVoteSubmission(game, msg);
-                if (!validation.valid) {
-                        return { reaction: validation.reaction };
-                }
+		if (recentGame.reaggregatedAt) {
+			await msg.reply('前回の集計はすでに再集計済みです。', { visibility: 'specified' });
+			return;
+		}
 
-                const parsed = this.parseVoteNumber(msg.extractedText);
-                if ('error' in parsed) {
-                        await new Promise<void>((resolve) => {
-                                msg.reply(parsed.error).then((reply) => {
-                                        game.replyKey.push(msg.userId);
-                                        this.games.update(game);
-                                        this.subscribeReply(msg.userId, reply.id);
-                                        resolve();
-                                });
-                        });
-                        return { reaction: parsed.reaction };
-                }
+		if (!recentGame.votes || recentGame.votes.length === 0) {
+			await msg.reply('再集計できる投票情報がありませんでした。', { visibility: 'specified' });
+			return;
+		}
 
-                // 0〜maxnum の範囲内かチェック
-                if (!(await this.ensureVoteInRange(game, parsed.num, msg))) {
-                        return { reaction: 'confused' };
-                }
+		// isEnded は true のまま再集計する。一時的にでも false に戻すと、
+		// 再集計中に crawleGameEnd が同じゲームを通常の finish() に渡して二重集計したり、
+		// contextHook が終了済みゲームへの投票を受け付けたりしてしまう。
+		recentGame.reaggregatedAt = Date.now();
+		this.games.update(recentGame);
 
-                this.log(`Voted ${parsed.num.toString()} by ${msg.user.id}`);
-                this.recordVote(game, msg, parsed.num);
+		await msg.reply('前回の集計をやり直します。結果の投稿まで少しお待ちください。', { visibility: 'specified' });
+		await this.finish(recentGame, { isReaggregate: true });
+	}
 
-                return { reaction: ':mk_discochicken:' };
-        }
+	/**
+	 * コンテキストフック: 投票の受付処理
+	 *
+	 * @remarks
+	 * 開催投稿へのリプライを投票として処理する。
+	 * 各種バリデーション（BAN・重複・範囲・トリガー者の1分制限など）を行い、
+	 * 有効な投票をゲームに記録する。
+	 * 21桁以上の数字はDecimal型に変換し、丸め処理を行う。
+	 *
+	 * @param key - コンテキストキー
+	 * @param msg - 受信メッセージ
+	 * @returns HandlerResult
+	 * @internal
+	 */
+	@autobind
+	private async contextHook(key: any, msg: Message) {
+		if (msg.text == null) {
+			return { reaction: 'hmm' };
+		}
+
+		// BAN ユーザーは投票不可
+		if (this.isBannedUser(msg.user)) {
+			msg.reply(serifs.kazutori.banned, { visibility: 'specified' });
+			return { reaction: 'confused' };
+		}
+
+		const game = this.games.findOne({ isEnded: false });
+		if (game == null) return;
+
+		// トリガー1分制限・公開限定・重複のチェック
+		const validation = await this.validateVoteSubmission(game, msg);
+		if (!validation.valid) {
+			return { reaction: validation.reaction };
+		}
+
+		const parsed = this.parseVoteNumber(msg.extractedText);
+		if ('error' in parsed) {
+			await new Promise<void>((resolve) => {
+				msg.reply(parsed.error).then((reply) => {
+					game.replyKey.push(msg.userId);
+					this.games.update(game);
+					this.subscribeReply(msg.userId, reply.id);
+					resolve();
+				});
+			});
+			return { reaction: parsed.reaction };
+		}
+
+		// 0〜maxnum の範囲内かチェック
+		if (!(await this.ensureVoteInRange(game, parsed.num, msg))) {
+			return { reaction: 'confused' };
+		}
+
+		this.log(`Voted ${parsed.num.toString()} by ${msg.user.id}`);
+		this.recordVote(game, msg, parsed.num);
+
+		return { reaction: ':mk_discochicken:' };
+	}
 
 	/**
 	 * 投票前のバリデーション（トリガー1分制限・公開限定・重複）を行い、無効なら reply と reaction を返す
@@ -947,8 +947,8 @@ export default class extends Module {
 		if (game.publicOnly && ((msg.visibility !== 'public' && msg.visibility !== 'home') || msg.localOnly)) {
 			const visibility =
 				msg.visibility === 'followers' ? 'フォロワー限定' :
-				msg.visibility === 'specified' ? 'ダイレクト' :
-				msg.user.host == null ? 'ローカル＆フォロワー' : '';
+					msg.visibility === 'specified' ? 'ダイレクト' :
+						msg.user.host == null ? 'ローカル＆フォロワー' : '';
 			await new Promise<void>((resolve) => {
 				msg.reply(`\n公開投稿限定です！\n参加するには${visibility ? '「' + visibility + '」ではなく、' : ''}「公開」または「ホーム」の公開範囲にてリプライしてくださいね～`).then((reply) => {
 					game.replyKey.push(msg.userId);
@@ -1414,34 +1414,34 @@ export default class extends Module {
 			}
 		} else {
 			for (let i = 0; i < useNumbers.length; i++) {
-			const n = useNumbers[i];
-			const strn = this.formatNumberForResult(n);
-			const users = game.votes.filter((x) => x.number.equals(n)).map((x) => x.user);
+				const n = useNumbers[i];
+				const strn = this.formatNumberForResult(n);
+				const users = game.votes.filter((x) => x.number.equals(n)).map((x) => x.user);
 
-			if (users.length === 1) {
-				if (winner == null) {
-					if (winRank === -1) {
-						if (medianValue !== -1 && medianValue !== undefined && n.equals(medianValue)) {
+				if (users.length === 1) {
+					if (winner == null) {
+						if (winRank === -1) {
+							if (medianValue !== -1 && medianValue !== undefined && n.equals(medianValue)) {
+								winner = users[0];
+								const icon = n.equals(100) ? '💯' : n.equals(0) ? '0️⃣' : '🎉';
+								results.push(`${icon} **${strn}**: $[jelly ${acct(users[0])}]`);
+							} else {
+								results.push(`➖ ${strn}: ${acct(users[0])}`);
+							}
+						} else if (winRank > 1) {
+							winRank -= 1;
+							results.push(`➖ ${strn}: ${acct(users[0])}`);
+						} else {
 							winner = users[0];
 							const icon = n.equals(100) ? '💯' : n.equals(0) ? '0️⃣' : '🎉';
 							results.push(`${icon} **${strn}**: $[jelly ${acct(users[0])}]`);
-						} else {
-							results.push(`➖ ${strn}: ${acct(users[0])}`);
 						}
-					} else if (winRank > 1) {
-						winRank -= 1;
-						results.push(`➖ ${strn}: ${acct(users[0])}`);
 					} else {
-						winner = users[0];
-						const icon = n.equals(100) ? '💯' : n.equals(0) ? '0️⃣' : '🎉';
-						results.push(`${icon} **${strn}**: $[jelly ${acct(users[0])}]`);
+						results.push(`➖ ${strn}: ${acct(users[0])}`);
 					}
-				} else {
-					results.push(`➖ ${strn}: ${acct(users[0])}`);
+				} else if (users.length > 1) {
+					results.push(`❌ ${strn}: ${users.map((u) => acct(u)).join(' ')}`);
 				}
-			} else if (users.length > 1) {
-				results.push(`❌ ${strn}: ${users.map((u) => acct(u)).join(' ')}`);
-			}
 			}
 		}
 
@@ -2081,8 +2081,8 @@ export default class extends Module {
 					normalWinnerIndex != null
 						? sortedDesc[normalWinnerIndex].number
 						: normalPlacements.length > 0
-						? normalPlacements[0].number
-						: null;
+							? normalPlacements[0].number
+							: null;
 
 				const sortedAsc = [...uniqueVotes].sort((a, b) => this.compareDecimalAsc(a.number, b.number));
 				const reverseWinnerIndex =
@@ -2094,8 +2094,8 @@ export default class extends Module {
 					reverseWinnerIndex != null
 						? sortedAsc[reverseWinnerIndex].number
 						: reversePlacements.length > 0
-						? reversePlacements[0].number
-						: null;
+							? reversePlacements[0].number
+							: null;
 			}
 		}
 
@@ -2323,18 +2323,18 @@ export default class extends Module {
 	 * @internal
 	 */
 	@autobind
-        private crawleGameEnd() {
-                const game = this.games.findOne({
-                        isEnded: false,
-                });
+	private crawleGameEnd() {
+		const game = this.games.findOne({
+			isEnded: false,
+		});
 
-                if (game == null) return;
+		if (game == null) return;
 
-                // 制限時間が経過していたら
-                if (Date.now() - (game.finishedAt ?? game.startedAt + 1000 * 60 * 10) >= 0) {
-                        void this.finish(game);
-                }
-        }
+		// 制限時間が経過していたら
+		if (Date.now() - (game.finishedAt ?? game.startedAt + 1000 * 60 * 10) >= 0) {
+			void this.finish(game);
+		}
+	}
 
 	/**
 	 * ゲームの終了処理: 結果集計・レーティング更新・結果発表
@@ -2357,124 +2357,124 @@ export default class extends Module {
 	 * @internal
 	 */
 	@autobind
-        private async finish(game: Game, options?: { isReaggregate?: boolean }) {
-                // ======== finish() 処理ステップ一覧 ========
-                // 1. filterValidVotesForFinish  — 有効投票のフィルタ（公開限定・ブロック・親愛度）
-                // 2. handleOnagareIfNeeded      — お流れ判定（無効試合なら早期リターン）
-                // 3. 投票数値・maxnum の型正規化（Decimal への変換）
-                // 4. computeWinnerAndResults    — 勝者・結果リスト・反転の計算
-                // 5. buildRatingContext         — レート準備（セクション4〜6: 参加者・敗者ランク・フレンドマップ）
-                // 6. applyNonParticipantPenalties — 不参加者ペナルティの適用
-                // 7. applyWinnerAndLoserRates   — 勝者ボーナス・敗者減算・勝者ステータス更新
-                // 8. distributeBonusWhenNoWinner — 勝者なし時のボーナス配分
-                // 9. updateRateChangeMetadata   — レート変動メタデータの反映
-                // 10. publishGameResult         — 結果投稿・リプライ購読解除
-                // ============================================
+	private async finish(game: Game, options?: { isReaggregate?: boolean }) {
+		// ======== finish() 処理ステップ一覧 ========
+		// 1. filterValidVotesForFinish  — 有効投票のフィルタ（公開限定・ブロック・親愛度）
+		// 2. handleOnagareIfNeeded      — お流れ判定（無効試合なら早期リターン）
+		// 3. 投票数値・maxnum の型正規化（Decimal への変換）
+		// 4. computeWinnerAndResults    — 勝者・結果リスト・反転の計算
+		// 5. buildRatingContext         — レート準備（セクション4〜6: 参加者・敗者ランク・フレンドマップ）
+		// 6. applyNonParticipantPenalties — 不参加者ペナルティの適用
+		// 7. applyWinnerAndLoserRates   — 勝者ボーナス・敗者減算・勝者ステータス更新
+		// 8. distributeBonusWhenNoWinner — 勝者なし時のボーナス配分
+		// 9. updateRateChangeMetadata   — レート変動メタデータの反映
+		// 10. publishGameResult         — 結果投稿・リプライ購読解除
+		// ============================================
 
-                game.isEnded = true;
-                this.games.update(game);
+		game.isEnded = true;
+		this.games.update(game);
 
-                if (options?.isReaggregate) {
-                        this.log('Kazutori game reaggregation started');
-                }
+		if (options?.isReaggregate) {
+			this.log('Kazutori game reaggregation started');
+		}
 
-                this.log('Kazutori game finished');
+		this.log('Kazutori game finished');
 
-                // --- 1. 有効投票のフィルタ（公開限定・ブロック・親愛度） ---
-                game.votes = await this.filterValidVotesForFinish(game);
-                this.games.update(game);
+		// --- 1. 有効投票のフィルタ（公開限定・ブロック・親愛度） ---
+		game.votes = await this.filterValidVotesForFinish(game);
+		this.games.update(game);
 
-                const item = genItem();
-                if (await this.handleOnagareIfNeeded(game, item)) {
-                        return;
-                }
+		const item = genItem();
+		if (await this.handleOnagareIfNeeded(game, item)) {
+			return;
+		}
 
-                // --- 2. 投票数値・maxnum の型正規化 ---
-                game.votes.forEach((x) => {
-                        if (typeof x.number === 'string') {
-                                x.number = new Decimal(x.number);
-                        }
-                });
-                this.normalizeGameMaxnum(game);
+		// --- 2. 投票数値・maxnum の型正規化 ---
+		game.votes.forEach((x) => {
+			if (typeof x.number === 'string') {
+				x.number = new Decimal(x.number);
+			}
+		});
+		this.normalizeGameMaxnum(game);
 
-                // --- 3. 勝者・結果リスト・反転の計算 ---
-				const { results, winner, winner2, reverse, perfect, medianValue } = this.computeWinnerAndResults(game);
+		// --- 3. 勝者・結果リスト・反転の計算 ---
+		const { results, winner, winner2, reverse, perfect, medianValue } = this.computeWinnerAndResults(game);
 
-				game.winnerUserId = winner?.id;
-				game.winnerUserId2 = winner2?.id;
-				this.games.update(game);
+		game.winnerUserId = winner?.id;
+		game.winnerUserId2 = winner2?.id;
+		this.games.update(game);
 
-                // --- 4〜6. レート計算の準備・敗者ランク構築・フレンドマップ構築 ---
-                const ctx = this.buildRatingContext(game, winner, medianValue);
+		// --- 4〜6. レート計算の準備・敗者ランク構築・フレンドマップ構築 ---
+		const ctx = this.buildRatingContext(game, winner, medianValue);
 
-				const winnerFriend2 = winner2?.id ? this.ai.lookupFriend(winner2.id) : null;
-				const winnerUserIds = new Set<string>();
-				if (ctx.winnerFriend?.userId) winnerUserIds.add(ctx.winnerFriend.userId);
-				if (winnerFriend2?.userId) winnerUserIds.add(winnerFriend2.userId);
+		const winnerFriend2 = winner2?.id ? this.ai.lookupFriend(winner2.id) : null;
+		const winnerUserIds = new Set<string>();
+		if (ctx.winnerFriend?.userId) winnerUserIds.add(ctx.winnerFriend.userId);
+		if (winnerFriend2?.userId) winnerUserIds.add(winnerFriend2.userId);
 
-				// --- 7. 不参加者ペナルティの適用 ---
-				const { totalBonusFromNonParticipants, nonParticipantPenalties } = this.applyNonParticipantPenalties(
-						ctx.friendDocs,
-						ctx.participants,
-						winnerUserIds,
-						ctx.cappedLimitMinutes,
-						ctx.penaltyPoint,
-						ctx.recordRateChange
-				);
+		// --- 7. 不参加者ペナルティの適用 ---
+		const { totalBonusFromNonParticipants, nonParticipantPenalties } = this.applyNonParticipantPenalties(
+			ctx.friendDocs,
+			ctx.participants,
+			winnerUserIds,
+			ctx.cappedLimitMinutes,
+			ctx.penaltyPoint,
+			ctx.recordRateChange
+		);
 
-                const medal = this.isMedalMatch(game);
-                // --- 8. 勝者ボーナス・敗者減算・勝者ステータス更新 ---
-				const ratingInfo = this.applyWinnerAndLoserRates(
-						game,
-						winner,
-						winner2,
-						ctx.winnerFriend,
-						winnerFriend2,
-						ctx.friendDocMap,
-                        ctx.loserRankMap,
-                        ctx.totalParticipants,
-                        ctx.shouldAdjustByRank,
-                        ctx.sortedBefore,
-                        ctx.friendDocs,
-                        ctx.cappedLimitMinutes,
-                        totalBonusFromNonParticipants,
-                        ctx.recordRateChange,
-                        item,
-                        medal
-                );
+		const medal = this.isMedalMatch(game);
+		// --- 8. 勝者ボーナス・敗者減算・勝者ステータス更新 ---
+		const ratingInfo = this.applyWinnerAndLoserRates(
+			game,
+			winner,
+			winner2,
+			ctx.winnerFriend,
+			winnerFriend2,
+			ctx.friendDocMap,
+			ctx.loserRankMap,
+			ctx.totalParticipants,
+			ctx.shouldAdjustByRank,
+			ctx.sortedBefore,
+			ctx.friendDocs,
+			ctx.cappedLimitMinutes,
+			totalBonusFromNonParticipants,
+			ctx.recordRateChange,
+			item,
+			medal
+		);
 
-                // --- 9. 勝者なし時は不参加者ペナルティ分を参加者に配分 ---
-                if (!ratingInfo && totalBonusFromNonParticipants > 0) {
-                        this.distributeBonusWhenNoWinner(
-                                ctx.participants,
-                                nonParticipantPenalties,
-                                ctx.friendDocMap,
-                                totalBonusFromNonParticipants,
-                                ctx.recordRateChange
-                        );
-                }
+		// --- 9. 勝者なし時は不参加者ペナルティ分を参加者に配分 ---
+		if (!ratingInfo && totalBonusFromNonParticipants > 0) {
+			this.distributeBonusWhenNoWinner(
+				ctx.participants,
+				nonParticipantPenalties,
+				ctx.friendDocMap,
+				totalBonusFromNonParticipants,
+				ctx.recordRateChange
+			);
+		}
 
-                for (const penalty of nonParticipantPenalties) {
-                        this.ai.friends.update(penalty.doc);
-                }
+		for (const penalty of nonParticipantPenalties) {
+			this.ai.friends.update(penalty.doc);
+		}
 
-                // --- 10. レート変動メタデータの反映と結果投稿 ---
-				const winnerUserIdsForMetadata = new Set<string>();
-				if (ctx.winnerFriend?.userId) winnerUserIdsForMetadata.add(ctx.winnerFriend.userId);
-				if (winnerFriend2?.userId) winnerUserIdsForMetadata.add(winnerFriend2.userId);
-				for (const userId of ctx.participants) {
-						ctx.touchedUserIds.add(userId);
-				}
+		// --- 10. レート変動メタデータの反映と結果投稿 ---
+		const winnerUserIdsForMetadata = new Set<string>();
+		if (ctx.winnerFriend?.userId) winnerUserIdsForMetadata.add(ctx.winnerFriend.userId);
+		if (winnerFriend2?.userId) winnerUserIdsForMetadata.add(winnerFriend2.userId);
+		for (const userId of ctx.participants) {
+			ctx.touchedUserIds.add(userId);
+		}
 
-				this.updateRateChangeMetadata(
-						ctx.touchedUserIds,
-						ctx.participants,
-						winnerUserIdsForMetadata,
-						ctx.rateChangeAggregates,
-						ctx.friendDocMap,
-						ctx.rateUpdateGameId
-				);
+		this.updateRateChangeMetadata(
+			ctx.touchedUserIds,
+			ctx.participants,
+			winnerUserIdsForMetadata,
+			ctx.rateChangeAggregates,
+			ctx.friendDocMap,
+			ctx.rateUpdateGameId
+		);
 
-				this.publishGameResult(game, results, winner, winner2, ctx.name ?? null, winnerFriend2?.name ?? null, item, reverse, perfect, ratingInfo, medianValue, medal);
-        }
+		this.publishGameResult(game, results, winner, winner2, ctx.name ?? null, winnerFriend2?.name ?? null, item, reverse, perfect, ratingInfo, medianValue, medal);
+	}
 }

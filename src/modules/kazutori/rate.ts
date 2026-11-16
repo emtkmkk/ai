@@ -34,35 +34,35 @@ export const KAZUTORI_RATING_VERSION = 1;
  * @public
  */
 export type KazutoriDataContainer = {
-        kazutoriData?: {
-                /** 累計勝利回数 */
-                winCount?: number;
-                /** 累計プレイ回数 */
-                playCount?: number;
-                /** 現在のレート（初期値1000） */
-                rate?: number;
-                /** 獲得アイテムのリスト（最大50個） */
-                inventory?: string[];
-                /** メダル獲得数 */
-                medal?: number;
-                /** 最終プレイ日時（ミリ秒タイムスタンプ） */
-                lastPlayedAt?: number;
-                /** 最終勝利日時（ミリ秒タイムスタンプ） */
-                lastWinAt?: number;
-                /** レーティングバージョン */
-                ratingVersion?: number;
-                /** レートが変更されたことがあるか */
-                rateChanged?: boolean | string | number;
-                /** 直近のレート変動量 */
-                lastRateChange?: number;
-                /** 直近の敗北時レート減少調整率（%） */
-                lastRateLossAdjustmentPercent?: number;
-                /** 直近のレート変動があったゲームID */
-                lastRateChangeGameId?: string;
-                /** 直近のゲーム結果 */
-                lastGameResult?: 'win' | 'lose' | 'no-winner' | 'absent';
-                [key: string]: any;
-        };
+	kazutoriData?: {
+		/** 累計勝利回数 */
+		winCount?: number;
+		/** 累計プレイ回数 */
+		playCount?: number;
+		/** 現在のレート（初期値1000） */
+		rate?: number;
+		/** 獲得アイテムのリスト（最大50個） */
+		inventory?: string[];
+		/** メダル獲得数 */
+		medal?: number;
+		/** 最終プレイ日時（ミリ秒タイムスタンプ） */
+		lastPlayedAt?: number;
+		/** 最終勝利日時（ミリ秒タイムスタンプ） */
+		lastWinAt?: number;
+		/** レーティングバージョン */
+		ratingVersion?: number;
+		/** レートが変更されたことがあるか */
+		rateChanged?: boolean | string | number;
+		/** 直近のレート変動量 */
+		lastRateChange?: number;
+		/** 直近の敗北時レート減少調整率（%） */
+		lastRateLossAdjustmentPercent?: number;
+		/** 直近のレート変動があったゲームID */
+		lastRateChangeGameId?: string;
+		/** 直近のゲーム結果 */
+		lastGameResult?: 'win' | 'lose' | 'no-winner' | 'absent';
+		[key: string]: any;
+	};
 };
 
 /**
@@ -75,33 +75,33 @@ export type KazutoriDataContainer = {
  * @public
  */
 export type EnsuredKazutoriData = {
-        /** 累計勝利回数 */
-        winCount: number;
-        /** 累計プレイ回数 */
-        playCount: number;
-        /** 現在のレート（初期値1000） */
-        rate: number;
-        /** 獲得アイテムのリスト（最大50個） */
-        inventory: string[];
-        /** レーティングバージョン */
-        ratingVersion: number;
-        /** レートが変更されたことがあるか */
-        rateChanged?: boolean;
-        /** 直近のレート変動量 */
-        lastRateChange?: number;
-        /** 直近の敗北時レート減少調整率（%） */
-        lastRateLossAdjustmentPercent?: number;
-        /** 直近のレート変動があったゲームID */
-        lastRateChangeGameId?: string;
-        /** 直近のゲーム結果 */
-        lastGameResult?: 'win' | 'lose' | 'no-winner' | 'absent';
-        /** メダル獲得数 */
-        medal?: number;
-        /** 最終プレイ日時（ミリ秒タイムスタンプ） */
-        lastPlayedAt?: number;
-        /** 最終勝利日時（ミリ秒タイムスタンプ） */
-        lastWinAt?: number;
-        [key: string]: any;
+	/** 累計勝利回数 */
+	winCount: number;
+	/** 累計プレイ回数 */
+	playCount: number;
+	/** 現在のレート（初期値1000） */
+	rate: number;
+	/** 獲得アイテムのリスト（最大50個） */
+	inventory: string[];
+	/** レーティングバージョン */
+	ratingVersion: number;
+	/** レートが変更されたことがあるか */
+	rateChanged?: boolean;
+	/** 直近のレート変動量 */
+	lastRateChange?: number;
+	/** 直近の敗北時レート減少調整率（%） */
+	lastRateLossAdjustmentPercent?: number;
+	/** 直近のレート変動があったゲームID */
+	lastRateChangeGameId?: string;
+	/** 直近のゲーム結果 */
+	lastGameResult?: 'win' | 'lose' | 'no-winner' | 'absent';
+	/** メダル獲得数 */
+	medal?: number;
+	/** 最終プレイ日時（ミリ秒タイムスタンプ） */
+	lastPlayedAt?: number;
+	/** 最終勝利日時（ミリ秒タイムスタンプ） */
+	lastWinAt?: number;
+	[key: string]: any;
 };
 
 /**
@@ -117,25 +117,25 @@ export type EnsuredKazutoriData = {
  * @public
  */
 export function hasKazutoriRateHistory(data: { rate: number; rateChanged?: boolean }): boolean {
-        if (data.rateChanged === true) {
-                return true;
-        }
+	if (data.rateChanged === true) {
+		return true;
+	}
 
-        if (data.rateChanged === false) {
-                return false;
-        }
+	if (data.rateChanged === false) {
+		return false;
+	}
 
-        return data.rate !== undefined && typeof data.rate === "number" && data.rate !== 1000;
+	return data.rate !== undefined && typeof data.rate === "number" && data.rate !== 1000;
 }
 
 export function createDefaultKazutoriData(): EnsuredKazutoriData {
-        return {
-                winCount: 0,
-                playCount: 0,
-                rate: 1000,
-                inventory: [],
-                ratingVersion: KAZUTORI_RATING_VERSION,
-        };
+	return {
+		winCount: 0,
+		playCount: 0,
+		rate: 1000,
+		inventory: [],
+		ratingVersion: KAZUTORI_RATING_VERSION,
+	};
 }
 
 /**
@@ -158,135 +158,135 @@ export function createDefaultKazutoriData(): EnsuredKazutoriData {
  * @public
  */
 export function ensureKazutoriData<T extends KazutoriDataContainer>(target: T): {
-        data: EnsuredKazutoriData;
-        updated: boolean;
+	data: EnsuredKazutoriData;
+	updated: boolean;
 } {
-        let updated = false;
+	let updated = false;
 
-        if (target.kazutoriData == null) {
-                target.kazutoriData = createDefaultKazutoriData();
-                updated = true;
-        } else {
-                const data = target.kazutoriData;
+	if (target.kazutoriData == null) {
+		target.kazutoriData = createDefaultKazutoriData();
+		updated = true;
+	} else {
+		const data = target.kazutoriData;
 
-                if (data.ratingVersion == null) {
-                        data.ratingVersion = KAZUTORI_RATING_VERSION;
-                        updated = true;
-                } else if (data.ratingVersion !== KAZUTORI_RATING_VERSION) {
-                        data.rate = 1000;
-                        data.ratingVersion = KAZUTORI_RATING_VERSION;
-                        delete data.rateChanged;
-                        updated = true;
-                }
+		if (data.ratingVersion == null) {
+			data.ratingVersion = KAZUTORI_RATING_VERSION;
+			updated = true;
+		} else if (data.ratingVersion !== KAZUTORI_RATING_VERSION) {
+			data.rate = 1000;
+			data.ratingVersion = KAZUTORI_RATING_VERSION;
+			delete data.rateChanged;
+			updated = true;
+		}
 
-                if (typeof data.rate !== 'number' || Number.isNaN(data.rate)) {
-                        data.rate = 1000;
-                        delete data.rateChanged;
-                        updated = true;
-                } else if (!Number.isInteger(data.rate)) {
-                        data.rate = Math.round(data.rate);
-                        updated = true;
-                }
+		if (typeof data.rate !== 'number' || Number.isNaN(data.rate)) {
+			data.rate = 1000;
+			delete data.rateChanged;
+			updated = true;
+		} else if (!Number.isInteger(data.rate)) {
+			data.rate = Math.round(data.rate);
+			updated = true;
+		}
 
-                if (typeof data.winCount !== 'number' || Number.isNaN(data.winCount)) {
-                        data.winCount = 0;
-                        updated = true;
-                }
+		if (typeof data.winCount !== 'number' || Number.isNaN(data.winCount)) {
+			data.winCount = 0;
+			updated = true;
+		}
 
-                if (typeof data.playCount !== 'number' || Number.isNaN(data.playCount)) {
-                        data.playCount = 0;
-                        updated = true;
-                }
+		if (typeof data.playCount !== 'number' || Number.isNaN(data.playCount)) {
+			data.playCount = 0;
+			updated = true;
+		}
 
-                if (typeof data.rateChanged !== 'boolean') {
-                        // 未定義のままレートが初期値の場合は何も変わらないので、更新扱いにしない
-                        // （更新扱いにすると、レートが初期値の全員が呼び出しのたびに保存し直される）
-                        const hadRateChanged = 'rateChanged' in data;
+		if (typeof data.rateChanged !== 'boolean') {
+			// 未定義のままレートが初期値の場合は何も変わらないので、更新扱いにしない
+			// （更新扱いにすると、レートが初期値の全員が呼び出しのたびに保存し直される）
+			const hadRateChanged = 'rateChanged' in data;
 
-                        if (typeof data.rateChanged === 'string') {
-                                const lowered = data.rateChanged.toLowerCase();
-                                if (lowered === 'true') {
-                                        data.rateChanged = true;
-                                } else if (lowered === 'false') {
-                                        data.rateChanged = false;
-                                }
-                        } else if (typeof data.rateChanged === 'number') {
-                                if (data.rateChanged === 1) {
-                                        data.rateChanged = true;
-                                } else if (data.rateChanged === 0) {
-                                        data.rateChanged = false;
-                                }
-                        }
+			if (typeof data.rateChanged === 'string') {
+				const lowered = data.rateChanged.toLowerCase();
+				if (lowered === 'true') {
+					data.rateChanged = true;
+				} else if (lowered === 'false') {
+					data.rateChanged = false;
+				}
+			} else if (typeof data.rateChanged === 'number') {
+				if (data.rateChanged === 1) {
+					data.rateChanged = true;
+				} else if (data.rateChanged === 0) {
+					data.rateChanged = false;
+				}
+			}
 
-                        if (typeof data.rateChanged !== 'boolean') {
-                                if (typeof data.rate === 'number' && data.rate !== 1000) {
-                                        data.rateChanged = true;
-                                } else {
-                                        delete data.rateChanged;
-                                }
-                        }
+			if (typeof data.rateChanged !== 'boolean') {
+				if (typeof data.rate === 'number' && data.rate !== 1000) {
+					data.rateChanged = true;
+				} else {
+					delete data.rateChanged;
+				}
+			}
 
-                        if (hadRateChanged || 'rateChanged' in data) {
-                                updated = true;
-                        }
-                }
+			if (hadRateChanged || 'rateChanged' in data) {
+				updated = true;
+			}
+		}
 
-                if (data.lastRateChange != null && (typeof data.lastRateChange !== 'number' || Number.isNaN(data.lastRateChange))) {
-                        delete data.lastRateChange;
-                        updated = true;
-                }
+		if (data.lastRateChange != null && (typeof data.lastRateChange !== 'number' || Number.isNaN(data.lastRateChange))) {
+			delete data.lastRateChange;
+			updated = true;
+		}
 
-                if (data.lastRateChangeAt != null) {
-                        delete data.lastRateChangeAt;
-                        updated = true;
-                }
+		if (data.lastRateChangeAt != null) {
+			delete data.lastRateChangeAt;
+			updated = true;
+		}
 
-                if (data.lastRateLossAdjustmentPercent != null) {
-                        if (typeof data.lastRateLossAdjustmentPercent !== 'number' || Number.isNaN(data.lastRateLossAdjustmentPercent)) {
-                                delete data.lastRateLossAdjustmentPercent;
-                                updated = true;
-                        } else if (data.lastRateLossAdjustmentPercent < 0 || data.lastRateLossAdjustmentPercent > 100) {
-                                data.lastRateLossAdjustmentPercent = Math.min(
-                                        Math.max(data.lastRateLossAdjustmentPercent, 0),
-                                        100
-                                );
-                                updated = true;
-                        }
-                }
+		if (data.lastRateLossAdjustmentPercent != null) {
+			if (typeof data.lastRateLossAdjustmentPercent !== 'number' || Number.isNaN(data.lastRateLossAdjustmentPercent)) {
+				delete data.lastRateLossAdjustmentPercent;
+				updated = true;
+			} else if (data.lastRateLossAdjustmentPercent < 0 || data.lastRateLossAdjustmentPercent > 100) {
+				data.lastRateLossAdjustmentPercent = Math.min(
+					Math.max(data.lastRateLossAdjustmentPercent, 0),
+					100
+				);
+				updated = true;
+			}
+		}
 
-                if (data.lastRateChangeGameId != null && typeof data.lastRateChangeGameId !== 'string') {
-                        delete data.lastRateChangeGameId;
-                        updated = true;
-                }
+		if (data.lastRateChangeGameId != null && typeof data.lastRateChangeGameId !== 'string') {
+			delete data.lastRateChangeGameId;
+			updated = true;
+		}
 
-                if (
-                        data.lastGameResult != null &&
-                        data.lastGameResult !== 'win' &&
-                        data.lastGameResult !== 'lose' &&
-                        data.lastGameResult !== 'no-winner' &&
-                        data.lastGameResult !== 'absent'
-                ) {
-                        delete data.lastGameResult;
-                        updated = true;
-                }
+		if (
+			data.lastGameResult != null &&
+			data.lastGameResult !== 'win' &&
+			data.lastGameResult !== 'lose' &&
+			data.lastGameResult !== 'no-winner' &&
+			data.lastGameResult !== 'absent'
+		) {
+			delete data.lastGameResult;
+			updated = true;
+		}
 
-                if (!Array.isArray(data.inventory)) {
-                        data.inventory = [];
-                        updated = true;
-                }
+		if (!Array.isArray(data.inventory)) {
+			data.inventory = [];
+			updated = true;
+		}
 
-                if (data.lastPlayedAt != null && (typeof data.lastPlayedAt !== 'number' || Number.isNaN(data.lastPlayedAt))) {
-                        delete data.lastPlayedAt;
-                        updated = true;
-                }
+		if (data.lastPlayedAt != null && (typeof data.lastPlayedAt !== 'number' || Number.isNaN(data.lastPlayedAt))) {
+			delete data.lastPlayedAt;
+			updated = true;
+		}
 
-                if (data.lastWinAt != null && (typeof data.lastWinAt !== 'number' || Number.isNaN(data.lastWinAt))) {
-                        delete data.lastWinAt;
-                        updated = true;
-                }
-        }
+		if (data.lastWinAt != null && (typeof data.lastWinAt !== 'number' || Number.isNaN(data.lastWinAt))) {
+			delete data.lastWinAt;
+			updated = true;
+		}
+	}
 
-        return { data: target.kazutoriData as EnsuredKazutoriData, updated };
+	return { data: target.kazutoriData as EnsuredKazutoriData, updated };
 }
 
 /**
@@ -298,8 +298,8 @@ export function ensureKazutoriData<T extends KazutoriDataContainer>(target: T): 
  * @public
  */
 export function findRateRank(records: { userId: string; rate: number }[], userId: string): number | undefined {
-        const index = records.findIndex((record) => record.userId === userId);
-        return index >= 0 ? index + 1 : undefined;
+	const index = records.findIndex((record) => record.userId === userId);
+	return index >= 0 ? index + 1 : undefined;
 }
 
 /**
@@ -313,6 +313,6 @@ export function findRateRank(records: { userId: string; rate: number }[], userId
  * @public
  */
 export function formatKazutoriRateForDisplay(rate: number): number {
-        const roundedRate = Math.round(rate);
-        return roundedRate > 10000 ? 9999 : roundedRate;
+	const roundedRate = Math.round(rate);
+	return roundedRate > 10000 ? 9999 : roundedRate;
 }

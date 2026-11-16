@@ -82,15 +82,15 @@ export default class extends Module {
 		if (msg.replyId && includes(msg.extractedText, ['ファクト']) && includes(msg.extractedText, ['チェック'])) {
 			// リモートユーザーの投稿でフォロー関係がない場合は拒否
 			if (msg.replyNote.uri) {
-						const replyUser = await this.ai.api('users/show', {
-							userId: msg.replyNote.userId
-						});
-						if (!replyUser.isFollowed && !replyUser.isFollowing) {
-							msg.reply("私をフォローしていないリモートユーザにはファクトチェックできません！", { visibility: 'specified' });
-							return {
-								reaction: ':mk_hotchicken:'
-							};
-						}
+				const replyUser = await this.ai.api('users/show', {
+					userId: msg.replyNote.userId
+				});
+				if (!replyUser.isFollowed && !replyUser.isFollowing) {
+					msg.reply("私をフォローしていないリモートユーザにはファクトチェックできません！", { visibility: 'specified' });
+					return {
+						reaction: ':mk_hotchicken:'
+					};
+				}
 			}
 
 			// 公開範囲に応じて投稿方法を変更

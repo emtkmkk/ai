@@ -1,0 +1,11 @@
+# 改行コードは LF にそろえる（Windows で checkout しても LF のまま）
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary

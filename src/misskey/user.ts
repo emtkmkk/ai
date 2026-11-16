@@ -20,41 +20,41 @@
  * @internal
  */
 export type User = {
-        /** ユーザーの一意なID */
+	/** ユーザーの一意なID */
 	id: string;
-        /** ユーザーの表示名 */
+	/** ユーザーの表示名 */
 	name: string;
-        /** ユーザー名（`@` なしの ID 文字列） */
+	/** ユーザー名（`@` なしの ID 文字列） */
 	username: string;
-        /** リモートユーザーのホスト名（ローカルユーザーの場合は `null`） */
+	/** リモートユーザーのホスト名（ローカルユーザーの場合は `null`） */
 	host?: string | null;
-        /** 自分がこのユーザーをフォローしているかどうか */
-        isFollowing?: boolean;
-        /** このユーザーが自分をフォローしているかどうか */
-        isFollowed?: boolean;
-        /** このユーザーのリノートをミュートしているかどうか */
-        isRenoteMuted?: boolean;
-        /** このユーザーをブロックしているかどうか */
-        isBlocking?: boolean;
-        /** このユーザーが Bot かどうか */
-        isBot: boolean;
-        /** このユーザーのノート数 */
-        notesCount?: number;
-        /** このユーザーの別名アカウント情報（引っ越し機能用） */
+	/** 自分がこのユーザーをフォローしているかどうか */
+	isFollowing?: boolean;
+	/** このユーザーが自分をフォローしているかどうか */
+	isFollowed?: boolean;
+	/** このユーザーのリノートをミュートしているかどうか */
+	isRenoteMuted?: boolean;
+	/** このユーザーをブロックしているかどうか */
+	isBlocking?: boolean;
+	/** このユーザーが Bot かどうか */
+	isBot: boolean;
+	/** このユーザーのノート数 */
+	notesCount?: number;
+	/** このユーザーの別名アカウント情報（引っ越し機能用） */
 	alsoKnownAs?: any;
-        /**
-         * サーバがこのユーザーの投稿を追跡（配送を受信）している状態かどうか
-         *
-         * @remarks
-         * もこきー独自の拡張フィールド。サーバ内の誰かがフォローしていれば `true`。
-         * ローカルユーザーは常に `true`。
-         */
-        isTracked?: boolean | null;
-        /**
-         * 現在の追跡が途切れずに続いている開始日時（ISO 8601）
-         *
-         * @remarks
-         * もこきー独自の拡張フィールド。ローカルユーザーはアカウント作成日時。
-         */
-        trackedSince?: string | null;
+	/**
+	 * サーバがこのユーザーの投稿を追跡（配送を受信）している状態かどうか
+	 *
+	 * @remarks
+	 * もこきー独自の拡張フィールド。サーバ内の誰かがフォローしていれば `true`。
+	 * ローカルユーザーは常に `true`。
+	 */
+	isTracked?: boolean | null;
+	/**
+	 * 現在の追跡が途切れずに続いている開始日時（ISO 8601）
+	 *
+	 * @remarks
+	 * もこきー独自の拡張フィールド。ローカルユーザーはアカウント作成日時。
+	 */
+	trackedSince?: string | null;
 };

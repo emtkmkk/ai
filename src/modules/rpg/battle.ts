@@ -600,27 +600,27 @@ export function stockRandom(data, skillEffects, rnd: () => number = Math.random)
  */
 export function calculateArpen(data: { lv: number; }, arpen: number, edef: number): number {
 
-		if (!arpen) return 1;
-		const D0   = data.lv * 3.5;
-		const BASE = 3.0;
-		const STEP = 6.0;
+	if (!arpen) return 1;
+	const D0   = data.lv * 3.5;
+	const BASE = 3.0;
+	const STEP = 6.0;
 
-		let perSkillPct = 0;
-		if (edef > 0) {
-			if (edef < D0) {
-				perSkillPct = BASE * (edef / D0);
-			} else {
-				const ratio = edef / D0;
-				const n = Math.floor(Math.log2(ratio));
-				const L = D0 * Math.pow(2, n);
-				const U = L * 2;
-				const tRaw = (edef - L) / (U - L);
-      			const t = Math.max(0, Math.min(1, tRaw));
-				perSkillPct = BASE + (n + t) * STEP;
-			}
+	let perSkillPct = 0;
+	if (edef > 0) {
+		if (edef < D0) {
+			perSkillPct = BASE * (edef / D0);
+		} else {
+			const ratio = edef / D0;
+			const n = Math.floor(Math.log2(ratio));
+			const L = D0 * Math.pow(2, n);
+			const U = L * 2;
+			const tRaw = (edef - L) / (U - L);
+			const t = Math.max(0, Math.min(1, tRaw));
+			perSkillPct = BASE + (n + t) * STEP;
 		}
+	}
 
-		return (1 + (perSkillPct / 100) * ((arpen ?? 0) / 0.12));
+	return (1 + (perSkillPct / 100) * ((arpen ?? 0) / 0.12));
 
 }
 
@@ -637,9 +637,9 @@ export function calculateArpen(data: { lv: number; }, arpen: number, edef: numbe
  * @internal
  */
 export function applySoftCapPow2(raw: number, cap1 = 10, cap2 = 25, gamma = 0.5): number {
-  const a1 = raw <= cap1 ? raw : cap1 + Math.pow(raw - cap1, gamma);
-  const a2 = a1 <= cap2 ? a1 : cap2 + Math.pow(a1 - cap2, gamma);
-  return a2;
+	const a1 = raw <= cap1 ? raw : cap1 + Math.pow(raw - cap1, gamma);
+	const a2 = a1 <= cap2 ? a1 : cap2 + Math.pow(a1 - cap2, gamma);
+	return a2;
 }
 
 /** 毒弱体化ソフトキャップ：第1段階で削れる敵攻撃力の割合（残り 50%） */
@@ -661,21 +661,21 @@ const WEAK_ATK_REDUCTION_TIER_RATIO = 0.5;
  * @internal
  */
 export function applyWeakAtkReduction(enemyAtk0: number, rawReduction: number): number {
-  if (enemyAtk0 <= 0 || rawReduction <= 0) {
-    return Math.max(enemyAtk0, 0);
-  }
-  let remaining = rawReduction;
-  let totalReduced = 0;
-  for (let k = 0; remaining > 0 && totalReduced < enemyAtk0; k++) {
-    const rate = Math.pow(WEAK_ATK_REDUCTION_TIER_RATIO, k);
-    const segmentSize = WEAK_ATK_REDUCTION_FIRST_TIER * rate * enemyAtk0;
-    const effectiveCapacity = segmentSize / rate;
-    const use = Math.min(remaining, effectiveCapacity);
-    totalReduced += use * rate;
-    remaining -= use;
-    if (use <= 0 || k >= 100) {
-      break;
-    }
-  }
-  return Math.max(enemyAtk0 - totalReduced, 0);
+	if (enemyAtk0 <= 0 || rawReduction <= 0) {
+		return Math.max(enemyAtk0, 0);
+	}
+	let remaining = rawReduction;
+	let totalReduced = 0;
+	for (let k = 0; remaining > 0 && totalReduced < enemyAtk0; k++) {
+		const rate = Math.pow(WEAK_ATK_REDUCTION_TIER_RATIO, k);
+		const segmentSize = WEAK_ATK_REDUCTION_FIRST_TIER * rate * enemyAtk0;
+		const effectiveCapacity = segmentSize / rate;
+		const use = Math.min(remaining, effectiveCapacity);
+		totalReduced += use * rate;
+		remaining -= use;
+		if (use <= 0 || k >= 100) {
+			break;
+		}
+	}
+	return Math.max(enemyAtk0 - totalReduced, 0);
 }

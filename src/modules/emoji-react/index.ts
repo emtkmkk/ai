@@ -87,9 +87,9 @@ export default class extends Module {
 		if (typeof word === "string") word = [word];
 		word = word.map(word => katakanaToHiragana(word).toLowerCase());
 		const keywordsInThisNote = tokens.filter(token => token[0] && token[3] !== '人名' && (word as string[]).some(w => {
-				const token0 = katakanaToHiragana(hankakuToZenkaku(token[0])).toLowerCase()
-				return token0.startsWith(w) || token0.endsWith(w);
-			}
+			const token0 = katakanaToHiragana(hankakuToZenkaku(token[0])).toLowerCase()
+			return token0.startsWith(w) || token0.endsWith(w);
+		}
 		));
 		return keywordsInThisNote.length > 0
 	}
@@ -228,17 +228,17 @@ export default class extends Module {
 				const friend = this.ai.lookupFriend(note.user.id);
 				if (friend) {
 					// 一日に反応した数が多ければ、反応率を下げる
-		const today = getDate();
+					const today = getDate();
 
-		if (friend.doc.lastReactAt != today) {
-			friend.doc.todayReactCount = 0;
-			friend.doc.lastReactAt = today;
-		}
-		if (friend.doc.todayReactCount && friend.doc.todayReactCount > 3) {
-			if (Math.random() > 0.7 ** Math.floor((friend.doc.todayReactCount - 2) / 2)) {
-				return;
-			}
-		}
+					if (friend.doc.lastReactAt != today) {
+						friend.doc.todayReactCount = 0;
+						friend.doc.lastReactAt = today;
+					}
+					if (friend.doc.todayReactCount && friend.doc.todayReactCount > 3) {
+						if (Math.random() > 0.7 ** Math.floor((friend.doc.todayReactCount - 2) / 2)) {
+							return;
+						}
+					}
 					friend.doc.todayReactCount = (friend.doc.todayReactCount ?? 0) + 1;
 
 					waitTime = Math.round(waitTime * (1 - (0.002 * Math.min(friend.love, 100))));

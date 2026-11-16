@@ -307,8 +307,8 @@ export default class extends Module {
 		const modeMultiplier = isOpponentWinning ? 1.35 : 1.0;
 		const resultMultiplier =
 			resultType === 'iLose' ? 2.0 :
-			resultType === 'drawn' ? 1.5 :
-			1.0;
+				resultType === 'drawn' ? 1.5 :
+					1.0;
 		return modeMultiplier * resultMultiplier;
 	}
 
@@ -452,12 +452,12 @@ export default class extends Module {
 			const sendReady = () => {
 				this.client!.sendReady(inviteToken, true);
 			};
-		const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, mode: ReversiThinkMode, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number; totalCells: number }, winnerHostOrGuest?: 'host' | 'guest') => {
-			this.onGameEnded(inviteToken, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, mode, stoneDiff, totalOpponentThinkingMs, gameStartedAtMs, boardSnapshot, winnerHostOrGuest);
-			this.cancelGameReconnect(inviteToken);
-			this.client!.closeGame(inviteToken);
-			this.gameSessions.delete(inviteToken);
-		};
+			const onEnded = (resultType: string, opponentUser: User | null, winnerId: string | null, mode: ReversiThinkMode, stoneDiff?: number, totalOpponentThinkingMs?: number, gameStartedAtMs?: number, boardSnapshot?: { botStoneColor: 'black' | 'white' | 'unknown'; blackStones: number; whiteStones: number; totalCells: number }, winnerHostOrGuest?: 'host' | 'guest') => {
+				this.onGameEnded(inviteToken, entry.opponentUserId, entry.replyNoteId, resultType, opponentUser, winnerId, mode, stoneDiff, totalOpponentThinkingMs, gameStartedAtMs, boardSnapshot, winnerHostOrGuest);
+				this.cancelGameReconnect(inviteToken);
+				this.client!.closeGame(inviteToken);
+				this.gameSessions.delete(inviteToken);
+			};
 			const gameUrl = config.reversiServiceApiUrl
 				? `${config.reversiServiceApiUrl}/game/${encodeURIComponent(inviteToken)}`
 				: '';
@@ -891,10 +891,10 @@ export default class extends Module {
 		if (mode != null) {
 			const statKey: keyof DifficultyStats | null =
 				resultType === 'iWon' ? 'wins' :
-				resultType === 'iLose' ? 'losses' :
-				resultType === 'drawn' ? 'draws' :
-				resultType === 'youSurrendered' ? 'surrendered' :
-				resultType === 'timeout' ? 'timeout' : null;
+					resultType === 'iLose' ? 'losses' :
+						resultType === 'drawn' ? 'draws' :
+							resultType === 'youSurrendered' ? 'surrendered' :
+								resultType === 'timeout' ? 'timeout' : null;
 			if (statKey !== null) {
 				this.incrementDifficultyStat(mode, statKey);
 			}
