@@ -2131,263 +2131,252 @@ function applyPreBattleModifiers(b: RaidBattle) {
 }
 
 /**
- * レイド（通常型）の段階3: ターンのループ（アイテム・敵の攻撃・自分の攻撃・勝敗）
+ * レイド（通常型）の 1 ターン分の状態
+ *
+ * @remarks
+ * runRaidTurns の 1 ターンを、まとまりごとの関数に分けたときに、複数のまとまりで読み書きする値をまとめたもの。
+ * 1 つのまとまりでしか使わない値は、その関数の中に置いている。ターンをまたぐ値は RaidBattle にある。
  *
  * @internal
  */
-function runRaidTurns(b: RaidBattle) {
+type RaidTurn = {
+	turnLog: BattleLog;
+	playerHpPercent: number;
+	enemyHpPercent: number;
+	slothFlg: boolean;
+	maxdmg: number | undefined;
+	dmgUp: number;
+	critUp: number;
+	trueDmg: number;
+	defDmgX: number;
+	atkMinRnd: number;
+	atkMaxRnd: number;
+	defMinRnd: number;
+	defMaxRnd: number;
+	predictedDmg: number;
+	endureCount: number;
+	_data: any;
+	actionX: number;
+};
 
-	for (let actionX = 0; actionX < b.plusActionX + 1; actionX++) {
+/**
+ * レイド（通常型）のターン 1: ステータスを戻し、ターン開始時の効果を掛ける（継戦融合武装・怠惰・魔法・スロースタート・バーサク・攻めの守勢・毒・速度アップ）
+ *
+ * @internal
+ */
+function startRaidTurn(b: RaidBattle, t: RaidTurn) {
 
-		/** バフを得た数。行数のコントロールに使用 */
-		const turnLog = b.log.scope();
+	/** バフを得た数。行数のコントロールに使用 */
+	t.turnLog = b.log.scope();
 
-		/** プレイヤーのHP割合 */
-		let playerHpPercent = b.playerHp / (b.playerMaxHp);
-		/** 敵のHP割合 */
-		let enemyHpPercent = 0.5 + 0.5 * ((6 - (b.count - 1)) / 6);
+	/** プレイヤーのHP割合 */
+	t.playerHpPercent = b.playerHp / (b.playerMaxHp);
+	/** 敵のHP割合 */
+	t.enemyHpPercent = 0.5 + 0.5 * ((6 - (b.count - 1)) / 6);
 
-		if (b.skillEffects.tenacious && playerHpPercent < 0.5 && b.isBattle && b.isPhysical) {
-			turnLog.buff(serifs.rpg.skill.tenacious + "\n");
+	if (b.skillEffects.tenacious && t.playerHpPercent < 0.5 && b.isBattle && b.isPhysical) {
+		t.turnLog.buff(serifs.rpg.skill.tenacious + "\n");
 
-			turnLog.verbose(() => `粘スキル効果: 被ダメージ${displayDifference((1 - Math.min((b.skillEffects.tenacious ?? 0) * (1 - playerHpPercent), 0.9)))}\n`);
-		}
+		t.turnLog.verbose(() => `粘スキル効果: 被ダメージ${displayDifference((1 - Math.min((b.skillEffects.tenacious ?? 0) * (1 - t.playerHpPercent), 0.9)))}\n`);
+	}
 
-		b.item = undefined;
-		b.item2 = undefined;
-		b.atk = b._atk;
-		b.def = b._def;
-		b.spd = b._spd;
-		b.enemyAtk = b._enemyAtk;
-		b.enemyDef = b._enemyDef;
-		b.itemBonus = { atk: 0, def: 0 };
-		b.enemyTurnFinished = false;
-		b.enemyAtkX = 1;
-		b.itemBoost = 0;
-		b.itemMinEffect = 0;
+	b.item = undefined;
+	b.item2 = undefined;
+	b.atk = b._atk;
+	b.def = b._def;
+	b.spd = b._spd;
+	b.enemyAtk = b._enemyAtk;
+	b.enemyDef = b._enemyDef;
+	b.itemBonus = { atk: 0, def: 0 };
+	b.enemyTurnFinished = false;
+	b.enemyAtkX = 1;
+	b.itemBoost = 0;
+	b.itemMinEffect = 0;
 
-		if (b.skillEffects.itemAtkStock && b.itemAtkStockNext > 0) {
-			const itemAtkStockGain = Math.floor(b.itemAtkStockNext);
-			if (itemAtkStockGain > 0) {
-				b.itemAtkStock += itemAtkStockGain;
-				turnLog.markBuff();
-				const itemAtkStockRate = Math.max(b.itemAtkStock / (b.lv * 3.5), 0);
-				if (b.verboseLog) {
-					turnLog.add(`継スキル: 累積+${itemAtkStockGain} (${Math.floor(itemAtkStockRate * 100)}%)\n`);
-				} else {
-					turnLog.add(serifs.rpg.skill.itemAtkStock(itemAtkStockRate) + "\n");
-				}
-			}
-			b.itemAtkStockNext = 0;
-		}
-		if (b.skillEffects.itemAtkStock && b.itemAtkStock > 0) {
-			b.atk += b.itemAtkStock;
-		}
-
-		turnLog.verbose(() => `ターン開始時ステータス:\nA: ${formatNumber(b.atk)} (x${formatNumber(b.atk / (b.lv * 3.5))})\nD: ${formatNumber(b.def)} (x${formatNumber(b.def / (b.lv * 3.5))})\nS: ${formatNumber(b.spd)} (${getSpdX(b.spd) * 100}%)\nHP%: ${formatNumber(playerHpPercent * 100)}%\n${b.atkDmgBonus > 1 ? `Dmg: ${displayDifference(b.atkDmgBonus)}\n` : ""}ターン開始時敵ステータス:\nA: x${formatNumber(b.enemyAtk / (b.lv * 3.5))} D: x${formatNumber(b.enemyDef / (b.lv * 3.5))} \nHP%: ${
-formatNumber(enemyHpPercent * 100)}%\n\n`);
-
-		let slothFlg = false;
-
-		if (b.skillEffects.sloth && b.rand("sloth", b.count) < 0.3) {
-			b.atkDmgBonus *= 1.5;
-			b.atk = Math.ceil(b.atk * 0.001);
-			turnLog.buff("怠惰が発動した！このターンは力がでない！\n");
-			slothFlg = true;
-			if (b.verboseLog) turnLog.add(`怠惰: A-99.9% (${formatNumber(b.atk)})\n`);
-		}
-
-		b.checkMagic("TurnStart");
-
-		if (b.skillEffects.slowStart) {
-			const n = (b.skillEffects.slowStart ?? 0)
-			const increment = (600 + 45 * n - 6 * (57.5 - 7.5 * n)) / 15;
-			b.atk = b.atk * (((60 - 10 * n) + (increment * (b.count - 1))) / 100);
-			b.def = b.def * (((60 - 10 * n) + (increment * (b.count - 1))) / 100);
-			turnLog.verbose(() => `お守り効果: AD${displayDifference(((60 - 10 * n) + (increment * (b.count - 1))) / 100)} (${formatNumber(b.atk)} / ${formatNumber(b.def)})\n`);
-		}
-
-		if (b.skillEffects.berserk) {
-			const berserkDmg = Math.min(Math.floor((b.playerMaxHp * Math.min(playerHpPercent * 2, 1)) * (b.skillEffects.berserk ?? 0)), b.playerHp - 1);
-			b.playerHp -= berserkDmg;
-			playerHpPercent = b.playerHp / (b.playerMaxHp);
-			if (berserkDmg > 0) {
-				b.atk = b.atk * (1 + (b.skillEffects.berserk ?? 0) * 1.6);
-				turnLog.buff(serifs.rpg.skill.berserk(berserkDmg) + "\n");
-			}
-			turnLog.verbose(() => `お守り効果: A${displayDifference((1 + (b.skillEffects.berserk ?? 0) * 1.6))} (${formatNumber(b.atk)})\n`);
-		}
-
-		if (b.skillEffects.guardAtkUp && b.totalResistDmg >= 300) {
-			turnLog.markBuff();
-			b.totalResistDmg = Math.min(b.totalResistDmg, 1200)
-			const guardAtkUpX = [0, 1, 2.4, 4.8, 8, 8];
-			turnLog.add(serifs.rpg.skill.guardAtkUp(Math.floor(b.totalResistDmg / 300)) + "\n");
-			b.atk += (b.def * (b.skillEffects.guardAtkUp * guardAtkUpX[Math.floor(b.totalResistDmg / 300)]));
+	if (b.skillEffects.itemAtkStock && b.itemAtkStockNext > 0) {
+		const itemAtkStockGain = Math.floor(b.itemAtkStockNext);
+		if (itemAtkStockGain > 0) {
+			b.itemAtkStock += itemAtkStockGain;
+			t.turnLog.markBuff();
+			const itemAtkStockRate = Math.max(b.itemAtkStock / (b.lv * 3.5), 0);
 			if (b.verboseLog) {
-				turnLog.buff(`勢スキル状態: ${Math.floor(b.totalResistDmg)} / 1200\n`);
-				turnLog.add(`勢スキル効果: A+${formatNumber(b.def * (b.skillEffects.guardAtkUp * guardAtkUpX[Math.floor(b.totalResistDmg / 300)]))} (${formatNumber(b.atk)})\n`);
-			}
-		}
-
-		// 毒属性剣攻撃
-		if (b.skillEffects.weak && b.count > 1) {
-			if (b.isBattle && b.isPhysical) {
-				turnLog.buff(serifs.rpg.skill.weak(b.enemy.dname ?? b.enemy.name) + "\n");
-			}
-			const weakXList = [0, 0.25, 0.5, 1, 1.5, 3.5, 4, 4.5, 5];
-			const weakX = 1 - (1 / (1 + ((b.skillEffects.weak * weakXList[b.count - 1]))))
-			const weakAtkReduction = Math.max(b.enemyAtk * weakX, b.atk * weakX);
-			b.enemyAtk = applyWeakAtkReduction(b.enemyAtk, weakAtkReduction);
-			const arpenX = calculateArpen(b.data, b.skillEffects.weak * weakXList[b.count - 1], b.enemyDef)
-			b.atk = b.atk * arpenX;
-			turnLog.verbose(() => `毒スキル効果: ${displayDifference(1 - weakX)} (x${formatNumber(b.enemyAtk / (b.lv * 3.5))} / x${formatNumber(b.enemyDef / (b.lv * 3.5))})\n`);
-		}
-
-		// spdが低い場合、確率でspdが+1。
-		if (!slothFlg) {
-			if (b.spd === 2 && b.rand("lowSpdUp", b.count) < 0.2) {
-				turnLog.buff(serifs.rpg.spdUp + "\n");
-				b.spd = 3;
-			}
-			if (b.spd === 1 && b.rand("lowSpdUp", b.count) < 0.6) {
-				turnLog.buff(serifs.rpg.spdUp + "\n");
-				b.spd = 2;
-			}
-		}
-
-		// 敵に最大ダメージ制限がある場合、ここで計算
-		/** 1ターンに与えられる最大ダメージ量 */
-		let maxdmg = b.enemy.maxdmg ? b.enemyMaxHp * b.enemy.maxdmg : undefined;
-
-		let dmgUp = 1;
-		let critUp = 0;
-
-		// HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
-		const notLastPowerActive = aggregateTokensEffects(b.data).notLastPower || (b.transcendenceActivated && !b.canAccessBackShop);
-		if (!notLastPowerActive && !slothFlg) {
-			if (playerHpPercent <= (1 / 7) * (1 + (b.skillEffects.haisuiUp ?? 0)) && ((enemyHpPercent * (1 + (b.skillEffects.haisuiUp ?? 0))) - playerHpPercent) >= 0.5) {
-				turnLog.buff(serifs.rpg.haisui + "\n");
-				dmgUp *= (1 + (b.skillEffects.haisuiAtkUp ?? 0));
-				critUp += (b.skillEffects.haisuiCritUp ?? 0)
-				const effect = Math.min((enemyHpPercent - playerHpPercent) * (1 + (b.skillEffects.haisuiUp ?? 0)), 0.95);
-				b.atk = b.atk + Math.round(b.def * effect);
-				b.def = Math.round(b.def * (1 - effect));
-				turnLog.verbose(() => `決死の覚悟: ${[`D->A ${Math.round(effect * 100)}% (${formatNumber(b.atk)} / ${formatNumber(b.def)})\n`, b.skillEffects.haisuiAtkUp ? `与ダメージ${displayDifference((1 + (b.skillEffects.haisuiAtkUp ?? 0)))}` : "", b.skillEffects.haisuiCritUp ? `クリ率${displayDifference((1 + (b.skillEffects.haisuiCritUp ?? 0)))}` : ""].filter(Boolean).join(" ")}\n`);
-			}
-		}
-
-		if (b.enemy.fire && b.skillEffects.water) {
-			dmgUp *= (1 + (b.skillEffects.water ?? 0));
-			turnLog.verbose(() => `水スキル効果: 与ダメージ${displayDifference((1 + (b.skillEffects.water ?? 0)))}\n`);
-		}
-
-		const itemEquip = (0.4 + ((1 - playerHpPercent) * 0.6) + b.itemBoost) * (slothFlg ? 0 : 1);
-		if (b.verboseLog && !(b.count === 1 && b.skillEffects.firstTurnItem)) {
-			turnLog.buff(`アイテム装備率: ${Math.round(Math.min(itemEquip * (1 + (b.skillEffects.itemEquip ?? 0)), 1) * 100)}%\n`);
-		}
-		if (b.verboseLog && b.count === 1 && b.skillEffects.firstTurnDoubleItem) {
-			turnLog.buff(`アイテム二刀流率: ${Math.round(Math.min(itemEquip * (1 + (b.skillEffects.itemEquip ?? 0)), 1) * 100)}%\n`);
-		}
-		if (rpgItems.length && ((b.count === 1 && b.skillEffects.firstTurnItem) || b.rand("item.equip", b.count) < itemEquip * (1 + (b.skillEffects.itemEquip ?? 0)))) {
-			//アイテム
-			turnLog.markBuff();
-			if ((b.count === 1 && b.skillEffects.firstTurnItem)) turnLog.add(serifs.rpg.skill.firstItem);
-			if (b.enemy.pLToR) {
-				let isPlus = b.rand("item.plus", b.count) < 0.5;
-				const items = rpgItems.filter((x) => isPlus ? x.mind > 0 : x.mind < 0);
-				b.item = { ...items[Math.floor(b.rand("item.pick", b.count) * items.length)] };
+				t.turnLog.add(`継スキル: 累積+${itemAtkStockGain} (${Math.floor(itemAtkStockRate * 100)}%)\n`);
 			} else {
-				let types = ["weapon", "armor"];
-				for (let i = 0; i < (b.skillEffects.weaponSelect ?? 0); i++) {
-					types.push("weapon");
-				}
-				for (let i = 0; i < (b.skillEffects.armorSelect ?? 0); i++) {
-					types.push("armor");
-				}
-				if ((b.count !== 1 || b.enemy.pLToR) && !b.skillEffects.lowHpFood && playerHpPercent < 0.95) {
+				t.turnLog.add(serifs.rpg.skill.itemAtkStock(itemAtkStockRate) + "\n");
+			}
+		}
+		b.itemAtkStockNext = 0;
+	}
+	if (b.skillEffects.itemAtkStock && b.itemAtkStock > 0) {
+		b.atk += b.itemAtkStock;
+	}
+
+	t.turnLog.verbose(() => `ターン開始時ステータス:\nA: ${formatNumber(b.atk)} (x${formatNumber(b.atk / (b.lv * 3.5))})\nD: ${formatNumber(b.def)} (x${formatNumber(b.def / (b.lv * 3.5))})\nS: ${formatNumber(b.spd)} (${getSpdX(b.spd) * 100}%)\nHP%: ${formatNumber(t.playerHpPercent * 100)}%\n${b.atkDmgBonus > 1 ? `Dmg: ${displayDifference(b.atkDmgBonus)}\n` : ""}ターン開始時敵ステータス:\nA: x${formatNumber(b.enemyAtk / (b.lv * 3.5))} D: x${formatNumber(b.enemyDef / (b.lv * 3.5))} \nHP%: ${
+formatNumber(t.enemyHpPercent * 100)}%\n\n`);
+
+	t.slothFlg = false;
+
+	if (b.skillEffects.sloth && b.rand("sloth", b.count) < 0.3) {
+		b.atkDmgBonus *= 1.5;
+		b.atk = Math.ceil(b.atk * 0.001);
+		t.turnLog.buff("怠惰が発動した！このターンは力がでない！\n");
+		t.slothFlg = true;
+		if (b.verboseLog) t.turnLog.add(`怠惰: A-99.9% (${formatNumber(b.atk)})\n`);
+	}
+
+	b.checkMagic("TurnStart");
+
+	if (b.skillEffects.slowStart) {
+		const n = (b.skillEffects.slowStart ?? 0)
+		const increment = (600 + 45 * n - 6 * (57.5 - 7.5 * n)) / 15;
+		b.atk = b.atk * (((60 - 10 * n) + (increment * (b.count - 1))) / 100);
+		b.def = b.def * (((60 - 10 * n) + (increment * (b.count - 1))) / 100);
+		t.turnLog.verbose(() => `お守り効果: AD${displayDifference(((60 - 10 * n) + (increment * (b.count - 1))) / 100)} (${formatNumber(b.atk)} / ${formatNumber(b.def)})\n`);
+	}
+
+	if (b.skillEffects.berserk) {
+		const berserkDmg = Math.min(Math.floor((b.playerMaxHp * Math.min(t.playerHpPercent * 2, 1)) * (b.skillEffects.berserk ?? 0)), b.playerHp - 1);
+		b.playerHp -= berserkDmg;
+		t.playerHpPercent = b.playerHp / (b.playerMaxHp);
+		if (berserkDmg > 0) {
+			b.atk = b.atk * (1 + (b.skillEffects.berserk ?? 0) * 1.6);
+			t.turnLog.buff(serifs.rpg.skill.berserk(berserkDmg) + "\n");
+		}
+		t.turnLog.verbose(() => `お守り効果: A${displayDifference((1 + (b.skillEffects.berserk ?? 0) * 1.6))} (${formatNumber(b.atk)})\n`);
+	}
+
+	if (b.skillEffects.guardAtkUp && b.totalResistDmg >= 300) {
+		t.turnLog.markBuff();
+		b.totalResistDmg = Math.min(b.totalResistDmg, 1200)
+		const guardAtkUpX = [0, 1, 2.4, 4.8, 8, 8];
+		t.turnLog.add(serifs.rpg.skill.guardAtkUp(Math.floor(b.totalResistDmg / 300)) + "\n");
+		b.atk += (b.def * (b.skillEffects.guardAtkUp * guardAtkUpX[Math.floor(b.totalResistDmg / 300)]));
+		if (b.verboseLog) {
+			t.turnLog.buff(`勢スキル状態: ${Math.floor(b.totalResistDmg)} / 1200\n`);
+			t.turnLog.add(`勢スキル効果: A+${formatNumber(b.def * (b.skillEffects.guardAtkUp * guardAtkUpX[Math.floor(b.totalResistDmg / 300)]))} (${formatNumber(b.atk)})\n`);
+		}
+	}
+
+	// 毒属性剣攻撃
+	if (b.skillEffects.weak && b.count > 1) {
+		if (b.isBattle && b.isPhysical) {
+			t.turnLog.buff(serifs.rpg.skill.weak(b.enemy.dname ?? b.enemy.name) + "\n");
+		}
+		const weakXList = [0, 0.25, 0.5, 1, 1.5, 3.5, 4, 4.5, 5];
+		const weakX = 1 - (1 / (1 + ((b.skillEffects.weak * weakXList[b.count - 1]))))
+		const weakAtkReduction = Math.max(b.enemyAtk * weakX, b.atk * weakX);
+		b.enemyAtk = applyWeakAtkReduction(b.enemyAtk, weakAtkReduction);
+		const arpenX = calculateArpen(b.data, b.skillEffects.weak * weakXList[b.count - 1], b.enemyDef)
+		b.atk = b.atk * arpenX;
+		t.turnLog.verbose(() => `毒スキル効果: ${displayDifference(1 - weakX)} (x${formatNumber(b.enemyAtk / (b.lv * 3.5))} / x${formatNumber(b.enemyDef / (b.lv * 3.5))})\n`);
+	}
+
+	// spdが低い場合、確率でspdが+1。
+	if (!t.slothFlg) {
+		if (b.spd === 2 && b.rand("lowSpdUp", b.count) < 0.2) {
+			t.turnLog.buff(serifs.rpg.spdUp + "\n");
+			b.spd = 3;
+		}
+		if (b.spd === 1 && b.rand("lowSpdUp", b.count) < 0.6) {
+			t.turnLog.buff(serifs.rpg.spdUp + "\n");
+			b.spd = 2;
+		}
+	}
+}
+
+/**
+ * レイド（通常型）のターン 2: 攻撃前の補正（決死の覚悟・水）とアイテム（装備・強欲・継戦融合武装）と、土・炎の効果
+ *
+ * @internal
+ */
+function prepareRaidTurnAttack(b: RaidBattle, t: RaidTurn) {
+
+	// 敵に最大ダメージ制限がある場合、ここで計算
+	/** 1ターンに与えられる最大ダメージ量 */
+	t.maxdmg = b.enemy.maxdmg ? b.enemyMaxHp * b.enemy.maxdmg : undefined;
+
+	t.dmgUp = 1;
+	t.critUp = 0;
+
+	// HPが1/7以下で相手とのHP差がかなりある場合、決死の覚悟のバフを得る
+	const notLastPowerActive = aggregateTokensEffects(b.data).notLastPower || (b.transcendenceActivated && !b.canAccessBackShop);
+	if (!notLastPowerActive && !t.slothFlg) {
+		if (t.playerHpPercent <= (1 / 7) * (1 + (b.skillEffects.haisuiUp ?? 0)) && ((t.enemyHpPercent * (1 + (b.skillEffects.haisuiUp ?? 0))) - t.playerHpPercent) >= 0.5) {
+			t.turnLog.buff(serifs.rpg.haisui + "\n");
+			t.dmgUp *= (1 + (b.skillEffects.haisuiAtkUp ?? 0));
+			t.critUp += (b.skillEffects.haisuiCritUp ?? 0)
+			const effect = Math.min((t.enemyHpPercent - t.playerHpPercent) * (1 + (b.skillEffects.haisuiUp ?? 0)), 0.95);
+			b.atk = b.atk + Math.round(b.def * effect);
+			b.def = Math.round(b.def * (1 - effect));
+			t.turnLog.verbose(() => `決死の覚悟: ${[`D->A ${Math.round(effect * 100)}% (${formatNumber(b.atk)} / ${formatNumber(b.def)})\n`, b.skillEffects.haisuiAtkUp ? `与ダメージ${displayDifference((1 + (b.skillEffects.haisuiAtkUp ?? 0)))}` : "", b.skillEffects.haisuiCritUp ? `クリ率${displayDifference((1 + (b.skillEffects.haisuiCritUp ?? 0)))}` : ""].filter(Boolean).join(" ")}\n`);
+		}
+	}
+
+	if (b.enemy.fire && b.skillEffects.water) {
+		t.dmgUp *= (1 + (b.skillEffects.water ?? 0));
+		t.turnLog.verbose(() => `水スキル効果: 与ダメージ${displayDifference((1 + (b.skillEffects.water ?? 0)))}\n`);
+	}
+
+	const itemEquip = (0.4 + ((1 - t.playerHpPercent) * 0.6) + b.itemBoost) * (t.slothFlg ? 0 : 1);
+	if (b.verboseLog && !(b.count === 1 && b.skillEffects.firstTurnItem)) {
+		t.turnLog.buff(`アイテム装備率: ${Math.round(Math.min(itemEquip * (1 + (b.skillEffects.itemEquip ?? 0)), 1) * 100)}%\n`);
+	}
+	if (b.verboseLog && b.count === 1 && b.skillEffects.firstTurnDoubleItem) {
+		t.turnLog.buff(`アイテム二刀流率: ${Math.round(Math.min(itemEquip * (1 + (b.skillEffects.itemEquip ?? 0)), 1) * 100)}%\n`);
+	}
+	if (rpgItems.length && ((b.count === 1 && b.skillEffects.firstTurnItem) || b.rand("item.equip", b.count) < itemEquip * (1 + (b.skillEffects.itemEquip ?? 0)))) {
+		//アイテム
+		t.turnLog.markBuff();
+		if ((b.count === 1 && b.skillEffects.firstTurnItem)) t.turnLog.add(serifs.rpg.skill.firstItem);
+		if (b.enemy.pLToR) {
+			let isPlus = b.rand("item.plus", b.count) < 0.5;
+			const items = rpgItems.filter((x) => isPlus ? x.mind > 0 : x.mind < 0);
+			b.item = { ...items[Math.floor(b.rand("item.pick", b.count) * items.length)] };
+		} else {
+			let types = ["weapon", "armor"];
+			for (let i = 0; i < (b.skillEffects.weaponSelect ?? 0); i++) {
+				types.push("weapon");
+			}
+			for (let i = 0; i < (b.skillEffects.armorSelect ?? 0); i++) {
+				types.push("armor");
+			}
+			if ((b.count !== 1 || b.enemy.pLToR) && !b.skillEffects.lowHpFood && t.playerHpPercent < 0.95) {
+				types.push("medicine");
+				types.push("poison");
+				for (let i = 0; i < (b.skillEffects.foodSelect ?? 0); i++) {
 					types.push("medicine");
 					types.push("poison");
-					for (let i = 0; i < (b.skillEffects.foodSelect ?? 0); i++) {
-						types.push("medicine");
-						types.push("poison");
-					}
-				}
-				if ((b.skillEffects.weaponSelect ?? 0) >= 1) {
-					types = ["weapon"]
-				}
-				if ((b.skillEffects.armorSelect ?? 0) >= 1) {
-					types = ["armor"]
-				}
-				if ((b.skillEffects.foodSelect ?? 0) >= 1) {
-					types = ["medicine", "poison"];
-				}
-				if ((b.count !== 1 || b.enemy.pLToR) && b.skillEffects.lowHpFood && playerHpPercent < 0.95 && b.rand("item.lowHpFood", b.count) < b.skillEffects.lowHpFood * playerHpPercent) {
-					if (b.skillEffects.lowHpFood && playerHpPercent < 0.5) turnLog.add(serifs.rpg.skill.lowHpFood);
-					types = ["medicine", "poison"];
-					if (b.rand("item.lowHpFood", b.count) < b.skillEffects.lowHpFood * playerHpPercent) types = ["medicine"];
-				}
-				if (types.includes("poison") && b.rand("item.poisonAvoid", b.count) < (b.skillEffects.poisonAvoid ?? 0)) {
-					types = types.filter((x) => x!== "poison");
-				}
-				const type = types[Math.floor(b.rand("item.type", b.count) * types.length)];
-				const mEffect = Math.max((b.count !== 1 ? 0 : b.skillEffects.firstTurnItemChoice!), b.itemMinEffect);
-				if ((type === "weapon" && !(b.isBattle && b.isPhysical)) || (type === "armor" && b.isTired) || b.enemy.pLToR) {
-					let isPlus = b.rand("item.plus", b.count) < (0.5 + (b.skillEffects.mindMinusAvoid ?? 0) + (b.count === 1 ? b.skillEffects.firstTurnMindMinusAvoid ?? 0 : 0));
-					const items = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind < 0) && (!mEffect || x.mind >= (mEffect * 100)));
-					b.item = { ...items[Math.floor(b.rand("item.pick", b.count) * items.length)] };
-				} else {
-					const items = rpgItems.filter((x) => x.type === type && x.effect > 0 && (!mEffect || x.effect >= (mEffect * 100)));
-					b.item = { ...items[Math.floor(b.rand("item.pick", b.count) * items.length)] };
-				}
-				if (b.skillEffects.greed) {
-					if (!b.data.stockItem) b.data.stockItem = { ...b.item };
-					b.data.stockItem.effect = Math.ceil(b.data.stockItem.effect * (2/3));
-					b.data.stockItem.mind = Math.ceil(b.data.stockItem.mind * (2/3));
-					const match = b.data.stockItem.name.match(/-(\d+)$/);
-					if (match && match.index !== undefined) {
-						const number = parseInt(match[1], 10);
-						const newNumber = number + 1;
-						b.data.stockItem.name = b.data.stockItem.name.slice(0, match.index) + '-' + newNumber;
-					} else {
-						b.data.stockItem.name = b.data.stockItem.name + '-1';
-					}
-					if ((type === "weapon" && !(b.isBattle && b.isPhysical)) || (type === "armor" && b.isTired) || b.enemy.pLToR) {
-						if (b.item.mind <= b.data.stockItem.mind) {
-							b.item = { ...b.data.stockItem };
-						} else {
-							if (type === "weapon" || type === "armor") b.data.stockItem = { ...b.item };
-						}
-					} else {
-						if (b.item.effect <= b.data.stockItem.effect) {
-							b.item = { ...b.data.stockItem };
-						} else {
-							if (type === "weapon" || type === "armor") b.data.stockItem = { ...b.item };
-						}
-					}
-				} else {
-					b.data.stockItem = undefined;
-				}
-				if (b.count === 1 && b.skillEffects.firstTurnDoubleItem && b.rand("item2.equip", b.count) < itemEquip * (1 + (b.skillEffects.itemEquip ?? 0))) {
-					if ((type === "weapon" && !(b.isBattle && b.isPhysical)) || (type === "armor" && b.isTired) || b.enemy.pLToR) {
-						let isPlus = b.rand("item2.plus", b.count) < (0.5 + (b.skillEffects.mindMinusAvoid ?? 0) + (b.count === 1 ? b.skillEffects.firstTurnMindMinusAvoid ?? 0 : 0));
-						const items = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind < 0));
-						b.item2 = { ...items[Math.floor(b.rand("item2.pick", b.count) * items.length)] };
-					} else {
-						const items = rpgItems.filter((x) => x.type === type && x.effect > 0);
-						b.item2 = { ...items[Math.floor(b.rand("item2.pick", b.count) * items.length)] };
-					}
-					b.item.effect = b.item.effect + b.item2.effect;
-					b.item.mind = b.item.mind + b.item2.mind;
-					if (b.item.name === b.item2.name) {
-						b.item.effect = b.item.effect + b.item2.effect;
-						b.item.mind = b.item.mind + b.item2.mind;
-					}
 				}
 			}
-		}
-		if (b.skillEffects.greed) {
-			if (b.data.stockItem && !b.item) {
+			if ((b.skillEffects.weaponSelect ?? 0) >= 1) {
+				types = ["weapon"]
+			}
+			if ((b.skillEffects.armorSelect ?? 0) >= 1) {
+				types = ["armor"]
+			}
+			if ((b.skillEffects.foodSelect ?? 0) >= 1) {
+				types = ["medicine", "poison"];
+			}
+			if ((b.count !== 1 || b.enemy.pLToR) && b.skillEffects.lowHpFood && t.playerHpPercent < 0.95 && b.rand("item.lowHpFood", b.count) < b.skillEffects.lowHpFood * t.playerHpPercent) {
+				if (b.skillEffects.lowHpFood && t.playerHpPercent < 0.5) t.turnLog.add(serifs.rpg.skill.lowHpFood);
+				types = ["medicine", "poison"];
+				if (b.rand("item.lowHpFood", b.count) < b.skillEffects.lowHpFood * t.playerHpPercent) types = ["medicine"];
+			}
+			if (types.includes("poison") && b.rand("item.poisonAvoid", b.count) < (b.skillEffects.poisonAvoid ?? 0)) {
+				types = types.filter((x) => x!== "poison");
+			}
+			const type = types[Math.floor(b.rand("item.type", b.count) * types.length)];
+			const mEffect = Math.max((b.count !== 1 ? 0 : b.skillEffects.firstTurnItemChoice!), b.itemMinEffect);
+			if ((type === "weapon" && !(b.isBattle && b.isPhysical)) || (type === "armor" && b.isTired) || b.enemy.pLToR) {
+				let isPlus = b.rand("item.plus", b.count) < (0.5 + (b.skillEffects.mindMinusAvoid ?? 0) + (b.count === 1 ? b.skillEffects.firstTurnMindMinusAvoid ?? 0 : 0));
+				const items = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind < 0) && (!mEffect || x.mind >= (mEffect * 100)));
+				b.item = { ...items[Math.floor(b.rand("item.pick", b.count) * items.length)] };
+			} else {
+				const items = rpgItems.filter((x) => x.type === type && x.effect > 0 && (!mEffect || x.effect >= (mEffect * 100)));
+				b.item = { ...items[Math.floor(b.rand("item.pick", b.count) * items.length)] };
+			}
+			if (b.skillEffects.greed) {
+				if (!b.data.stockItem) b.data.stockItem = { ...b.item };
 				b.data.stockItem.effect = Math.ceil(b.data.stockItem.effect * (2/3));
 				b.data.stockItem.mind = Math.ceil(b.data.stockItem.mind * (2/3));
 				const match = b.data.stockItem.name.match(/-(\d+)$/);
@@ -2398,299 +2387,665 @@ formatNumber(enemyHpPercent * 100)}%\n\n`);
 				} else {
 					b.data.stockItem.name = b.data.stockItem.name + '-1';
 				}
-				b.item = { ...b.data.stockItem };
+				if ((type === "weapon" && !(b.isBattle && b.isPhysical)) || (type === "armor" && b.isTired) || b.enemy.pLToR) {
+					if (b.item.mind <= b.data.stockItem.mind) {
+						b.item = { ...b.data.stockItem };
+					} else {
+						if (type === "weapon" || type === "armor") b.data.stockItem = { ...b.item };
+					}
+				} else {
+					if (b.item.effect <= b.data.stockItem.effect) {
+						b.item = { ...b.data.stockItem };
+					} else {
+						if (type === "weapon" || type === "armor") b.data.stockItem = { ...b.item };
+					}
+				}
+			} else {
+				b.data.stockItem = undefined;
+			}
+			if (b.count === 1 && b.skillEffects.firstTurnDoubleItem && b.rand("item2.equip", b.count) < itemEquip * (1 + (b.skillEffects.itemEquip ?? 0))) {
+				if ((type === "weapon" && !(b.isBattle && b.isPhysical)) || (type === "armor" && b.isTired) || b.enemy.pLToR) {
+					let isPlus = b.rand("item2.plus", b.count) < (0.5 + (b.skillEffects.mindMinusAvoid ?? 0) + (b.count === 1 ? b.skillEffects.firstTurnMindMinusAvoid ?? 0 : 0));
+					const items = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind < 0));
+					b.item2 = { ...items[Math.floor(b.rand("item2.pick", b.count) * items.length)] };
+				} else {
+					const items = rpgItems.filter((x) => x.type === type && x.effect > 0);
+					b.item2 = { ...items[Math.floor(b.rand("item2.pick", b.count) * items.length)] };
+				}
+				b.item.effect = b.item.effect + b.item2.effect;
+				b.item.mind = b.item.mind + b.item2.mind;
+				if (b.item.name === b.item2.name) {
+					b.item.effect = b.item.effect + b.item2.effect;
+					b.item.mind = b.item.mind + b.item2.mind;
+				}
+			}
+		}
+	}
+	if (b.skillEffects.greed) {
+		if (b.data.stockItem && !b.item) {
+			b.data.stockItem.effect = Math.ceil(b.data.stockItem.effect * (2/3));
+			b.data.stockItem.mind = Math.ceil(b.data.stockItem.mind * (2/3));
+			const match = b.data.stockItem.name.match(/-(\d+)$/);
+			if (match && match.index !== undefined) {
+				const number = parseInt(match[1], 10);
+				const newNumber = number + 1;
+				b.data.stockItem.name = b.data.stockItem.name.slice(0, match.index) + '-' + newNumber;
+			} else {
+				b.data.stockItem.name = b.data.stockItem.name + '-1';
+			}
+			b.item = { ...b.data.stockItem };
+		}
+	} else {
+		b.data.stockItem = undefined;
+	}
+	if (b.item) {
+		const rawEffect = b.item.effect;
+		const rawMind = b.item.mind;
+		const mindMsg = (mind) => {
+			if (mind >= 100) {
+				t.turnLog.add(`${config.rpgHeroName}の気合が特大アップ！\n`);
+			} else if (mind >= 70) {
+				t.turnLog.add(`${config.rpgHeroName}の気合が大アップ！\n`);
+			} else if (mind > 30) {
+				t.turnLog.add(`${config.rpgHeroName}の気合がアップ！\n`);
+			} else if (mind > 0) {
+				t.turnLog.add(`${config.rpgHeroName}の気合が小アップ！\n`);
+			} else if (mind > -50) {
+				t.turnLog.add(`あまり良い気分ではないようだ…\n`);
+			} else {
+				t.turnLog.add(`${config.rpgHeroName}の気合が下がった…\n`);
+			}
+			t.turnLog.verbose(() => `アイテム効果: ${Math.round(b.item.mind)}%${rawMind !== b.item.mind ? ` (${displayDifference(b.item.mind / rawMind)})` : ""} (${formatNumber(b.atk)} / ${formatNumber(b.def)})\n`);
+		};
+		if (b.item.type !== "poison") {
+			b.item.effect = Math.round(b.item.effect * (1 + (b.skillEffects.itemBoost ?? 0)));
+			if (b.item.type === "weapon") b.item.effect = Math.round(b.item.effect * (1 + (b.skillEffects.weaponBoost ?? 0)));
+			if (b.item.type === "armor") b.item.effect = Math.round(b.item.effect * (1 + (b.skillEffects.armorBoost ?? 0)));
+			if (b.item.type === "medicine") b.item.effect = Math.round(b.item.effect * (1 + (b.skillEffects.foodBoost ?? 0)));
+
+		} else {
+			b.item.effect = Math.round(b.item.effect / (1 + (b.skillEffects.itemBoost ?? 0)));
+			b.item.effect = Math.round(b.item.effect / (1 + (b.skillEffects.poisonResist ?? 0)));
+		}
+		if (b.item.mind < 0) {
+			b.item.mind = Math.round(b.item.mind / (1 + (b.skillEffects.itemBoost ?? 0)));
+		} else {
+			b.item.mind = Math.round(b.item.mind * (1 + (b.skillEffects.itemBoost ?? 0)));
+		}
+		switch (b.item.type) {
+			case "weapon":
+				t.turnLog.add(`${b.item.name}を取り出し、装備した！\n`);
+				if (b.item2?.name) {
+					t.turnLog.add(`さらに、${b.item2.name}を取り出し、装備した！\n`);
+				}
+				if (!(b.isBattle && b.isPhysical)) {
+					mindMsg(b.item.mind);
+					if (b.item.mind < 0 && b.isSuper) b.item.mind = b.item.mind / 2;
+					b.itemBonus.atk = b.atk * (b.item.mind * 0.0025);
+					b.itemBonus.def = b.def * (b.item.mind * 0.0025);
+					b.atk = b.atk + b.itemBonus.atk;
+					b.def = b.def + b.itemBonus.def;
+				} else {
+					b.itemBonus.atk = (b.lv * 4) * (b.item.effect * 0.007);
+					b.atk = b.atk + b.itemBonus.atk;
+					if (b.item.effect >= 100) {
+						t.turnLog.add(`${config.rpgHeroName}のパワーが特大アップ！\n`);
+					} else if (b.item.effect >= 70) {
+						t.turnLog.add(`${config.rpgHeroName}のパワーが大アップ！\n`);
+					} else if (b.item.effect > 30) {
+						t.turnLog.add(`${config.rpgHeroName}のパワーがアップ！\n`);
+					} else {
+						t.turnLog.add(`${config.rpgHeroName}のパワーが小アップ！\n`);
+					}
+					t.turnLog.verbose(() => `アイテム効果: ${Math.round(b.item.effect)}%${rawEffect !== b.item.effect ? ` (${displayDifference(b.item.effect / rawEffect)})` : ""} (${formatNumber(b.atk)})\n`);
+				}
+				break;
+			case "armor":
+				t.turnLog.add(`${b.item.name}を取り出し、装備した！\n`);
+				if (b.item2?.name) {
+					t.turnLog.add(`さらに、${b.item2.name}を取り出し、装備した！\n`);
+				}
+				if (b.isTired) {
+					mindMsg(b.item.mind);
+					if (b.item.mind < 0 && b.isSuper) b.item.mind = b.item.mind / 2;
+					b.itemBonus.atk = b.atk * (b.item.mind * 0.0035);
+					b.itemBonus.def = b.def * (b.item.mind * 0.0035);
+					b.atk = b.atk + b.itemBonus.atk;
+					b.def = b.def + b.itemBonus.def;
+					if (b.skillEffects.shieldBash && b.itemBonus.def > 0) {
+						const shieldBashX = 1 - Math.pow(0.5, (b.skillEffects.shieldBash ?? 0));
+						const shieldBashAtk = Math.floor(b.itemBonus.def * shieldBashX);
+						if (shieldBashAtk > 0) {
+							b.itemBonus.atk += shieldBashAtk;
+							b.atk += shieldBashAtk;
+						}
+					}
+				} else {
+					b.itemBonus.def = (b.lv * 4) * (b.item.effect * 0.007);
+					b.def = b.def + b.itemBonus.def;
+					if (b.skillEffects.shieldBash && b.itemBonus.def > 0) {
+						const shieldBashX = 1 - Math.pow(0.5, (b.skillEffects.shieldBash ?? 0));
+						const shieldBashAtk = Math.floor(b.itemBonus.def * shieldBashX);
+						if (shieldBashAtk > 0) {
+							b.itemBonus.atk += shieldBashAtk;
+							b.atk += shieldBashAtk;
+						}
+					}
+					const shieldBashActivated = !!(b.skillEffects.shieldBash && b.itemBonus.atk > 0);
+					if (b.item.effect >= 100) {
+						t.turnLog.add(`${config.rpgHeroName}の${shieldBashActivated ? "パワーと防御" : "防御"}が特大アップ！\n`);
+					} else if (b.item.effect >= 70) {
+						t.turnLog.add(`${config.rpgHeroName}の${shieldBashActivated ? "パワーと防御" : "防御"}が大アップ！\n`);
+					} else if (b.item.effect > 30) {
+						t.turnLog.add(`${config.rpgHeroName}の${shieldBashActivated ? "パワーと防御" : "防御"}がアップ！\n`);
+					} else {
+						t.turnLog.add(`${config.rpgHeroName}の${shieldBashActivated ? "パワーと防御" : "防御"}が小アップ！\n`);
+					}
+					t.turnLog.verbose(() => `アイテム効果: ${Math.round(b.item.effect)}%${rawEffect !== b.item.effect ? ` (${displayDifference(b.item.effect / rawEffect)})` : ""} (${formatNumber(b.def)})\n`);
+				}
+				break;
+			case "medicine":
+				t.turnLog.add(`${b.item.name}を取り出し、食べた！\n`);
+				if (b.enemy.pLToR) {
+					mindMsg(b.item.mind);
+					if (b.item.mind < 0 && b.isSuper) b.item.mind = b.item.mind / 2;
+					b.itemBonus.atk = b.atk * (b.item.mind * 0.0025);
+					b.itemBonus.def = b.def * (b.item.mind * 0.0025);
+					b.atk = b.atk + b.itemBonus.atk;
+					b.def = b.def + b.itemBonus.def;
+				} else {
+					if (b.item.effect > 200) {
+						const overHeal = b.item.effect - 200;
+						mindMsg(overHeal);
+						b.itemBonus.atk = b.atk * (overHeal * 0.0035);
+						b.itemBonus.def = b.def * (overHeal * 0.0035);
+						b.atk = b.atk + b.itemBonus.atk;
+						b.def = b.def + b.itemBonus.def;
+						b.item.effect = 200;
+					}
+					const heal = Math.round(((b.playerMaxHp) - b.playerHp) * (b.item.effect * 0.005));
+					const recovered = b.recoverHpOrBarrier(heal);
+					if (heal > 0) {
+						if (recovered.barrier > 0) {
+							t.turnLog.add(`${Math.floor(recovered.barrier)}ポイントのバリアを獲得！\n`);
+						}
+						if (recovered.healed >= 1) {
+							if (b.item.effect >= 100 && recovered.healed >= 50) {
+								t.turnLog.add(`${config.rpgHeroName}の体力が特大回復！\n${Math.floor(recovered.healed)}ポイント回復した！\n`);
+							} else if (b.item.effect >= 70 && recovered.healed >= 35) {
+								t.turnLog.add(`${config.rpgHeroName}の体力が大回復！\n${Math.floor(recovered.healed)}ポイント回復した！\n`);
+							} else if (b.item.effect > 30 && recovered.healed >= 15) {
+								t.turnLog.add(`${config.rpgHeroName}の体力が回復！\n${Math.floor(recovered.healed)}ポイント回復した！\n`);
+							} else {
+								t.turnLog.add(`${config.rpgHeroName}の体力が小回復！\n${Math.floor(recovered.healed)}ポイント回復した！\n`);
+							}
+						}
+						t.turnLog.verbose(() => `アイテム効果: ${Math.round(b.item.effect)}%${rawEffect !== b.item.effect ? ` (${displayDifference(b.item.effect / rawEffect)})` : ""}\n`);
+					}
+				}
+				if (b.skillEffects.gluttony) {
+					b.atkDmgBonus *= 1.1;
+					t.turnLog.markBuff();
+					if (b.verboseLog) t.turnLog.add(`暴食: A+10% (${formatNumber(b.atk)})\n`);
+				}
+				break;
+			case "poison":
+				t.turnLog.add(`${b.item.name}を取り出し、食べた！\n`);
+				if (b.enemy.pLToR) {
+					mindMsg(b.item.mind);
+					if (b.item.mind < 0 && b.isSuper) b.item.mind = b.item.mind / 2;
+					b.itemBonus.atk = b.atk * (b.item.mind * 0.0025);
+					b.itemBonus.def = b.def * (b.item.mind * 0.0025);
+					b.atk = b.atk + b.itemBonus.atk;
+					b.def = b.def + b.itemBonus.def;
+				} else {
+					const dmg = Math.round(b.playerHp * (b.item.effect * 0.003) * (b.isSuper && !aggregateTokensEffects(b.data).redMode ? 0.5 : 1));
+					b.playerHp -= dmg;
+					if (b.item.effect >= 70 && dmg > 0) {
+						t.turnLog.add(`${config.rpgHeroName}はかなり調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`);
+					} else if (b.item.effect > 30 && dmg > 0) {
+						t.turnLog.add(`${config.rpgHeroName}は調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`);
+					} else {
+						t.turnLog.add(`あまり美味しくなかったようだ…${dmg > 0 ? `\n${dmg}ポイントのダメージを受けた！` : ""}\n`);
+					}
+					t.turnLog.verbose(() => `アイテム効果: ${Math.round(b.item.effect)}%${rawEffect !== b.item.effect ? ` (${displayDifference(b.item.effect / rawEffect)})` : ""}\n`);
+				}
+				if (b.skillEffects.gluttony) {
+					b.atkDmgBonus *= 1.2;
+					t.turnLog.markBuff();
+					if (b.verboseLog) t.turnLog.add(`暴食: A+20% (${formatNumber(b.atk)})\n`);
+				}
+				break;
+			default:
+				break;
+		}
+		if (aggregateTokensEffects(b.data).showItemBonus) {
+			const itemMessage = [`${b.itemBonus.atk > 0 ? `${serifs.rpg.status.atk}+${b.itemBonus.atk.toFixed(0)}` : ""}`, `${b.itemBonus.def > 0 ? `${serifs.rpg.status.def}+${b.itemBonus.def.toFixed(0)}` : ""}`].filter(Boolean).join(" / ");
+			if (itemMessage) {
+				t.turnLog.add(`(${itemMessage})\n`);
+			}
+		}
+	}
+	if (b.skillEffects.itemAtkStock) {
+		const itemAtkGain = Math.max(Math.floor(b.itemBonus.atk ?? 0), 0);
+		if (itemAtkGain > 0) {
+			b.itemAtkStockNext = Math.floor(itemAtkGain * (b.skillEffects.itemAtkStock ?? 0));
+			if (b.verboseLog) {
+				t.turnLog.add(`継スキル: 次ターン累積予定+${b.itemAtkStockNext}\n`);
 			}
 		} else {
-			b.data.stockItem = undefined;
+			b.itemAtkStockNext = 0;
 		}
-		if (b.item) {
-			const rawEffect = b.item.effect;
-			const rawMind = b.item.mind;
-			const mindMsg = (mind) => {
-				if (mind >= 100) {
-					turnLog.add(`${config.rpgHeroName}の気合が特大アップ！\n`);
-				} else if (mind >= 70) {
-					turnLog.add(`${config.rpgHeroName}の気合が大アップ！\n`);
-				} else if (mind > 30) {
-					turnLog.add(`${config.rpgHeroName}の気合がアップ！\n`);
-				} else if (mind > 0) {
-					turnLog.add(`${config.rpgHeroName}の気合が小アップ！\n`);
-				} else if (mind > -50) {
-					turnLog.add(`あまり良い気分ではないようだ…\n`);
-				} else {
-					turnLog.add(`${config.rpgHeroName}の気合が下がった…\n`);
+	}
+	// 土属性剣攻撃
+	if (b.skillEffects.dart && b.isBattle && b.isPhysical && t.maxdmg) {
+		t.turnLog.buff(serifs.rpg.skill.dart + "\n");
+		t.maxdmg = t.maxdmg * (1 + b.skillEffects.dart);
+	}
+
+	t.trueDmg = 0;
+
+	// 炎属性剣攻撃
+	if (b.skillEffects.fire && (b.isBattle && b.isPhysical)) {
+		t.turnLog.buff(serifs.rpg.skill.fire + "\n");
+		t.trueDmg = Math.ceil(Math.min(b.lv, 255) * b.skillEffects.fire);
+		t.turnLog.verbose(() => `火戦闘: Dmg+${Math.ceil(Math.min(b.lv, 255) * b.skillEffects.fire!)}\n`);
+	} else if (b.skillEffects.fire && !(b.isBattle && b.isPhysical)) {
+		// 非戦闘時は、パワーに還元される
+		b.atk = b.atk + b.lv * 3.75 * b.skillEffects.fire;
+		t.turnLog.verbose(() => `火非戦闘: A+${Math.floor(b.lv * 3.75 * b.skillEffects.fire!)} (${formatNumber(b.atk)})\n`);
+	}
+
+	// バフが1つでも付与された場合、改行を追加する
+	t.turnLog.endBuffs();
+}
+
+/**
+ * レイド（通常型）のターン 3: 被ダメージ・乱数幅の計算と、敵の先制攻撃
+ *
+ * @internal
+ */
+function runRaidEnemyFirstStrike(b: RaidBattle, t: RaidTurn) {
+
+	if (b.verboseLog && b.enemy.abort) {
+		t.turnLog.buff(`連続攻撃中断率: ${b.enemy.abort * (1 - (b.skillEffects.abortDown ?? 0)) * 100}%\n`);
+	}
+
+
+	// 敵が中断能力持ちの場合、ここで何回攻撃可能か判定
+	for (let i = 1; i < b.spd; i++) {
+		if (b.enemy.abort && b.rand("abort", b.count) < b.enemy.abort * (1 - (b.skillEffects.abortDown ?? 0))) {
+			b.abort = i;
+			break;
+		}
+	}
+
+	const defMinusMin = b.skillEffects.defDmgUp && b.skillEffects.defDmgUp < 0 ? (1 / (-1 + (b.skillEffects.defDmgUp ?? 0)) * -1) : 1;
+
+	t.defDmgX = Math.max(1 *
+		(Math.max(1 + (b.skillEffects.defDmgUp ?? 0), defMinusMin)) *
+		(b.count === 1 && b.skillEffects.firstTurnResist ? (1 - (b.skillEffects.firstTurnResist ?? 0)) : 1) *
+		(b.count === 2 && b.skillEffects.firstTurnResist && b.skillEffects.firstTurnResist > 1 ? (1 - ((b.skillEffects.firstTurnResist ?? 0) - 1)) : 1) *
+		(1 - Math.min((b.skillEffects.tenacious ?? 0) * (1 - t.playerHpPercent), 0.9)), 0);
+
+	t.atkMinRnd = Math.max(0.2 + (b.skillEffects.atkRndMin ?? 0), 0);
+	t.atkMaxRnd = Math.max(1.6 + (b.skillEffects.atkRndMax ?? 0), 0);
+	t.defMinRnd = Math.max(0.2 + (b.skillEffects.defRndMin ?? 0), 0);
+	t.defMaxRnd = Math.max(1.6 + (b.skillEffects.defRndMax ?? 0), 0);
+
+	/** 予測最大ダメージ */
+	t.predictedDmg = Math.round((b.atk * b.tp * (t.atkMinRnd + t.atkMaxRnd)) * (1 / (((b.enemyDef * (getVal(b.enemy.defx, [b.count]) ?? 3)) + 100) / 100))) * (b.abort || b.spd);
+
+	// 予測最大ダメージは最大ダメージ制限を超えない
+	if (t.maxdmg && t.predictedDmg > t.maxdmg) t.predictedDmg = t.maxdmg;
+
+	t.endureCount = 1 + (b.skillEffects.endureUp ?? 0) * 2;
+
+	t._data = { ...b.data, enemy: b.enemy, count: b.count, fireStack: b.fireStack };
+
+
+	if (t._data.enemy.fire && b.skillEffects.water) {
+		t._data.enemy.fire /= (1 + (b.skillEffects.water ?? 0) * 3);
+	}
+
+	// 敵先制攻撃の処理
+	// spdが1ではない、または戦闘ではない場合は先制攻撃しない
+	if (!b.enemy.spd && !b.enemy.hpmsg && !b.isTired) {
+		/** クリティカルかどうか */
+		const crit = b.rand("enemyCrit", b.count) < (b.enemy.alwaysCrit ? 1 : 0) * (1 - (b.skillEffects.enemyCritDown ?? 0));
+		// 予測最大ダメージが相手のHPの何割かで先制攻撃の確率が判定される
+		if (b.rand("enemyFirst", b.count) < t.predictedDmg / b.enemyHp || (b.count === 3 && b.enemy.fire && (b.data.thirdFire ?? 0) <= 2)) {
+			const rng = (t.defMinRnd + (b.enemy.fixRnd ?? random(b.data, b.startCharge, b.skillEffects, true, () => b.rand("enemyDmg", b.count))) * t.defMaxRnd);
+			const critDmg = 1 + ((b.skillEffects.enemyCritDmgDown ?? 0) * -1);
+			if (b.verboseLog && (t.defDmgX < 0.999 || t.defDmgX > 1.001)) {
+				t.turnLog.buff(`D: ${formatNumber(b.def)} (x${formatNumber(b.def / (b.lv * 3.5))})\n`);
+				t.turnLog.add(`合計被ダメージ: ${displayDifference(t.defDmgX)}\n`);
+			}
+			// 先制攻撃が取りやめになった場合に戻せるよう、炎上スタックとバリアは攻撃確定後に反映する
+			const prevFireStack = b.fireStack;
+			if (t._data.enemy.fire) {
+				b.fireStack += t._data.enemy.fire / 0.15;
+				t._data.fireStack = b.fireStack;
+			}
+			/** ダメージ */
+			let dmg = getEnemyDmg(t._data, b.def, b.tp, 1, crit ? critDmg : false, b.enemyAtk, rng * t.defDmgX, getVal(b.enemy.atkx, [b.count]));
+			let noItemDmg = getEnemyDmg(t._data, b.def - b.itemBonus.def, b.tp, 1, b.enemy.alwaysCrit ? 1 : false, b.enemyAtk, rng * t.defDmgX, getVal(b.enemy.atkx, [b.count]));
+			let normalDmg = getEnemyDmg(t._data, b.lv * 3.75, b.tp, 1, b.enemy.alwaysCrit ? 1 : false, b.enemyAtk, rng * t.defDmgX, getVal(b.enemy.atkx, [b.count]));
+			let addMessage = "";
+			const rawDmg = dmg;
+			let restBarrier = b.sevenFeverBarrier;
+			if (b.sevenFeverBarrier > 0) {
+				const reduced = reduceByBarrier(dmg, b.sevenFeverBarrier);
+				dmg = reduced.reducedDmg;
+				if (reduced.consumed) addMessage += `(バリア: -${Math.round(reduced.consumed * 10) / 10})\n`;
+				if (noItemDmg > 0) {
+					const noItemReduced = reduceByBarrier(noItemDmg, b.sevenFeverBarrier);
+					noItemDmg = noItemReduced.reducedDmg;
 				}
-				turnLog.verbose(() => `アイテム効果: ${Math.round(b.item.mind)}%${rawMind !== b.item.mind ? ` (${displayDifference(b.item.mind / rawMind)})` : ""} (${formatNumber(b.atk)} / ${formatNumber(b.def)})\n`);
-			};
-			if (b.item.type !== "poison") {
-				b.item.effect = Math.round(b.item.effect * (1 + (b.skillEffects.itemBoost ?? 0)));
-				if (b.item.type === "weapon") b.item.effect = Math.round(b.item.effect * (1 + (b.skillEffects.weaponBoost ?? 0)));
-				if (b.item.type === "armor") b.item.effect = Math.round(b.item.effect * (1 + (b.skillEffects.armorBoost ?? 0)));
-				if (b.item.type === "medicine") b.item.effect = Math.round(b.item.effect * (1 + (b.skillEffects.foodBoost ?? 0)));
+				restBarrier = reduced.restBarrier;
+			}
+			// ダメージが負けるほど多くなる場合は、先制攻撃しない
+			if (b.warriorFlg || b.playerHp > dmg || (b.count === 3 && b.enemy.fire && (b.data.thirdFire ?? 0) <= 2)) {
+				b.sevenFeverBarrier = restBarrier;
+				const barrierStatus = b.additionalStatuses.find((status) => status.icon === "🛡️");
+				if (barrierStatus) barrierStatus.value = b.sevenFeverBarrier;
+				const fireStatus = b.additionalStatuses.find((status) => status.icon === serifs.rpg.fire);
+				if (fireStatus) fireStatus.value = b.fireStack;
+				if (normalDmg > rawDmg) {
+					b.totalResistDmg += (normalDmg - rawDmg);
+				}
+				if (aggregateTokensEffects(b.data).showRandom) t.turnLog.add(`⚂ ${Math.floor(rng * 100)}%\n`);
+				if (b.skillEffects.pride) {
+					if (dmg <= (b.playerMaxHp / 10)) {
+						b.atkDmgBonus *= 1.15;
+					}
+					if (dmg >= ((b.playerMaxHp / 10) * 3)) {
+						dmg *= 2;
+					}
+				}
+				b.playerHp -= dmg;
+				t.turnLog.add((crit ? `**${b.enemy.defmsg(dmg)}**` : b.enemy.defmsg(dmg)) + "\n");
+				if (addMessage) t.turnLog.add(addMessage);
+				if (b.itemBonus.def && noItemDmg - dmg > 1) {
+					t.turnLog.add(`(道具効果: -${noItemDmg - dmg})\n`);
+				}
+				if (b.warriorFlg && b.playerHp <= 0) {
+					b.playerHp += dmg;
+					t.turnLog.add(serifs.rpg.warrior.lose + "\n");
+					dmg = 0;
+					b.warriorFlg = false;
+				}
+				if (b.playerHp <= 0 && !b.enemy.notEndure) {
+					t.turnLog.add(serifs.rpg.endure + "\n");
+					b.playerHp = 1;
+				}
+				t.turnLog.add("\n");
+				b.enemyTurnFinished = true;
+				if (b.enemy.fire && b.count > (b.data.thirdFire ?? 0)) b.data.thirdFire = b.count;
+				if (dmg > (b.data.superMuscle ?? 0)) b.data.superMuscle = dmg;
+			} else {
+				b.fireStack = prevFireStack;
+				t._data.fireStack = prevFireStack;
+			}
+		}
+	}
+}
 
+/**
+ * レイド（通常型）のターン 4: 自分の攻撃（全身全霊・活力・戦士・雷と、攻撃回数ぶんのダメージ）
+ *
+ * @internal
+ */
+function runRaidPlayerAttack(b: RaidBattle, t: RaidTurn) {
+
+	b.checkMagic("Attack", {predictedDmg: t.predictedDmg});
+
+	if (b.skillEffects.allForOne || aggregateTokensEffects(b.data).allForOne) {
+		const spdx = getSpdX(b.abort || b.spd);
+		b.atk = b.atk * spdx * (1 + (b.skillEffects.allForOne ?? 0) * 0.1);
+		t.trueDmg = t.trueDmg * spdx * (1 + (b.skillEffects.allForOne ?? 0) * 0.1);
+		if (b.itemBonus?.atk) b.itemBonus.atk = b.itemBonus.atk * spdx * (1 + (b.skillEffects.allForOne ?? 0) * 0.1);
+		b.spd = 1;
+		if (b.verboseLog && spdx > 1) {
+			t.turnLog.buff(`全身全霊: A${displayDifference(spdx)} S=1 (${formatNumber(b.atk)})\n`);
+		}
+	}
+
+	if (b.atkDmgBonus > 1) {
+		b.atk = Math.round(b.atk * b.atkDmgBonus);
+		if (b.itemBonus?.atk) b.itemBonus.atk = b.itemBonus.atk * b.atkDmgBonus;
+		if (b.verboseLog && b.atkDmgBonus > 1) {
+			t.turnLog.buff(`ボーナス: A${displayDifference(b.atkDmgBonus)} (${formatNumber(b.atk)})\n`);
+		}
+	}
+
+	// レイド活力ダメージ上乗せ：当ターンの通常攻撃全ヒットに加算する固定値
+	let raidVitalityDmgBonus = 0;
+	if (b.enemy.power && (b.data.raidVitality ?? 0) >= 1) {
+		const meanRng = t.atkMinRnd + t.atkMaxRnd * 0.5;
+		let sumTurnDmgX = 0;
+		for (let ti = 0; ti < b.spd; ti++) {
+			sumTurnDmgX += (ti < 2 ? 1 : ti < 3 ? 0.5 : ti < 4 ? 0.25 : 0.125);
+		}
+		const sampleHit = getAtkDmg(b.data, b.atk, b.tp, 1, false, b.enemyDef, b.enemyMaxHp, meanRng, getVal(b.enemy.defx, [b.count]));
+		const estimatedTurnDmg = sampleHit * sumTurnDmgX;
+		const remainingTurns = (b.plusActionX + 1) - t.actionX;
+		const projectedTotal = b.totalDmg + estimatedTurnDmg * remainingTurns;
+		const projectedScore = getIndividualRaidScore(b.enemy, projectedTotal);
+		if (projectedScore !== undefined && projectedScore < 5) {
+			const bonus = Math.floor(getIndividualRaidStarDamageThreshold(b.enemy, 3) / b.spd);
+			if (bonus > 1) {
+				b.data.raidVitality -= 1;
+				raidVitalityDmgBonus = bonus;
+				t.turnLog.verbose(() => `レイド活力: 全攻撃+${bonus} (残${b.data.raidVitality})\n`);
+			}
+		}
+	}
+
+	if (b.warriorFlg) {
+		//** クリティカルかどうか */
+		let crit = b.rand("warrior.crit", b.count) < 0.5;
+		const dmg = getAtkDmg(b.data, b.lv * 5, b.tp, 1, crit ? b.warriorCritX : false, b.enemyDef, b.enemyMaxHp, 0.5, getVal(b.enemy.defx, [b.count]));
+		// メッセージの出力
+		t.turnLog.add((crit ? `**${serifs.rpg.warrior.atk(dmg)}**` : serifs.rpg.warrior.atk(dmg)) + "\n");
+		b.totalDmg += dmg;
+		b.warriorTotalDmg += dmg;
+		if (crit) b.warriorCritX += 0.5;
+	}
+
+	const atkMinusMin = b.skillEffects.atkDmgUp && b.skillEffects.atkDmgUp < 0 ? (1 / (-1 + (b.skillEffects.atkDmgUp ?? 0)) * -1) : 1;
+
+	if (b.verboseLog) {
+		t.turnLog.buff(`A: ${formatNumber(b.atk)} (x${formatNumber(b.atk / (b.lv * 3.5))})\n`);
+		t.turnLog.add(`クリティカル率: ${formatNumber((Math.max((t.enemyHpPercent - t.playerHpPercent) * (1 + (b.skillEffects.critUp ?? 0) + t.critUp), 0) + (b.skillEffects.critUpFixed ?? 0)) * 100)}%\n`);
+	}
+
+	// 雷（レイド）: そのターンの合計ダメージを、基本は雷の値の半分（雷で+9%）だけ増やす。
+	// 好感度による行動回数（最低5回とみなす）より実際の行動倍率（段数の減衰を含めた getSpdX）が増えている場合、
+	// 増えた割合の1.5乗だけ効果が上がる（風などで速度を上げる専用構成が、クリティカル重ねの専用構成と並ぶ強さになるよう調整）。
+	// 全身全霊などで行動回数が減っていても、基本の効果は保証する。
+	// 増える合計量は変えずに、何回目の攻撃かに比例した上乗せとして各攻撃に配り、後の攻撃ほど上乗せが大きくなるようにする（連撃感）。
+	const turnDmgXOf = (i: number) => (i < 2 ? 1 : i < 3 ? 0.5 : i < 4 ? 0.25 : 0.125);
+	let thunderStep = 0;
+	if (b.skillEffects.thunder && b.spd > 0) {
+		const baseSpd = Math.max(Math.floor((b.msg.friend.love ?? 0) / 100) + 1, 5);
+		const thunderRate = (b.skillEffects.thunder / 2) * Math.pow(Math.max(1, getSpdX(b.spd) / getSpdX(baseSpd)), 1.5);
+		let totalTurnDmgX = 0;
+		for (let i = 0; i < b.spd; i++) totalTurnDmgX += turnDmgXOf(i);
+		// i 回目（0始まり）の上乗せは thunderStep × (i + 1)。合計が totalTurnDmgX × thunderRate になるよう決める
+		thunderStep = (totalTurnDmgX * thunderRate) / (b.spd * (b.spd + 1) / 2);
+		t.turnLog.verbose(() => `雷戦闘: Dmg+${formatNumber(thunderRate * 100)}%\n`);
+	}
+
+	// 自身攻撃の処理
+	// spdの回数分、以下の処理を繰り返す
+	for (let i = 0; i < b.spd; i++) {
+		const rng = (t.atkMinRnd + random(b.data, b.startCharge, b.skillEffects, false, () => b.rand("atkDmg", b.count)) * t.atkMaxRnd);
+		if (aggregateTokensEffects(b.data).showRandom) t.turnLog.add(`⚂ ${Math.floor(rng * 100)}%\n`);
+		const turnDmgX = turnDmgXOf(i);
+		let dmgBonus = (Math.max(1 + (b.skillEffects.atkDmgUp ?? 0), atkMinusMin)) * t.dmgUp * (turnDmgX + thunderStep * (i + 1));
+		const rawDmgBonus = dmgBonus / turnDmgX;
+		if (b.verboseLog && (rawDmgBonus < 0.999 || rawDmgBonus > 1.001)) {
+			t.turnLog.buff(`合計与ダメージ: ${displayDifference(rawDmgBonus)}\n`);
+		}
+		//** クリティカルかどうか */
+		let crit = b.rand("crit", b.count) < Math.max((t.enemyHpPercent - t.playerHpPercent) * (1 + (b.skillEffects.critUp ?? 0) + t.critUp), 0) + (b.skillEffects.critUpFixed ?? 0);
+		const critDmg = 1 + ((b.skillEffects.critDmgUp ?? 0));
+		if (b.skillEffects.noCrit) {
+			crit = false;
+			const noCritBonus = 1 + (Math.min((Math.max((t.enemyHpPercent - t.playerHpPercent) * (1 + (b.skillEffects.critUp ?? 0) + t.critUp), 0) + (b.skillEffects.critUpFixed ?? 0)), 1) * ((2 * critDmg) - 1));
+			dmgBonus *= noCritBonus
+			if (b.verboseLog && (noCritBonus < 0.999 || noCritBonus > 1.001)) {
+				t.turnLog.buff(`５スキル効果: ${displayDifference(noCritBonus)}\n`);
+			}
+		}
+		/** ダメージ */
+		let dmg = getAtkDmg(b.data, b.atk, b.tp, 1, crit ? critDmg : false, b.enemyDef, b.enemyMaxHp, rng * dmgBonus, getVal(b.enemy.defx, [b.count])) + Math.round(t.trueDmg * turnDmgX);
+		let noItemDmg = getAtkDmg(b.data, b.atk - b.itemBonus.atk, b.tp, 1, crit ? critDmg : false, b.enemyDef, b.enemyMaxHp, rng * dmgBonus, getVal(b.enemy.defx, [b.count])) + Math.round(t.trueDmg * turnDmgX);
+		if (b.sevenFever) {
+			const num = 7 * Math.max(Math.ceil((b.skillEffects.sevenFever || 1) * turnDmgX), 1);
+			dmg = Math.ceil(dmg / num) * num;
+			noItemDmg = Math.ceil(noItemDmg / num) * num;
+		}
+		// 最大ダメージ制限処理
+		if (t.maxdmg && t.maxdmg > 0 && dmg > Math.round(t.maxdmg * (1 / ((b.abort || b.spd) - i)))) {
+			// 最大ダメージ制限を超えるダメージの場合は、ダメージが制限される。
+			dmg = Math.round(t.maxdmg * (1 / ((b.abort || b.spd) - i)));
+			t.maxdmg -= dmg;
+			crit = false;
+		} else if (t.maxdmg && t.maxdmg > 0) {
+			t.maxdmg -= dmg;
+		}
+		if (raidVitalityDmgBonus > 0) {
+			dmg += raidVitalityDmgBonus;
+			noItemDmg += raidVitalityDmgBonus;
+		}
+		// メッセージの出力
+		t.turnLog.add((crit ? `**${b.enemy.atkmsg(dmg)}**` : b.enemy.atkmsg(dmg)) + "\n");
+		b.totalDmg += dmg;
+		if (b.itemBonus.atk && dmg - noItemDmg > 1) {
+			t.turnLog.add(`(道具効果: +${dmg - noItemDmg})\n`);
+		}
+		// 敵のHPが0以下になった場合は、以降の攻撃をキャンセル
+		if (b.enemyHp <= 0) break;
+		// 攻撃が中断される場合
+		if ((i + 1) === b.abort) {
+			if (b.enemy.abortmsg) t.turnLog.add(b.enemy.abortmsg + "\n");
+			break;
+		}
+	}
+
+	b.checkMagic("AfterAttack", {predictedDmg: t.predictedDmg});
+}
+
+/**
+ * レイド（通常型）のターン 5: 勝敗の判定と敵の攻撃、次のターンへの準備
+ *
+ * @returns このターンで戦闘が終わったら true（ターンのループを抜ける）
+ *
+ * @internal
+ */
+function resolveRaidTurn(b: RaidBattle, t: RaidTurn): boolean {
+
+	// 勝利処理
+	if (b.enemyHp <= 0) {
+		t.turnLog.add("\n" + b.enemy.winmsg + "\n\n" + serifs.rpg.win);
+		return true;
+	} else {
+		// 攻撃後発動スキル効果
+		// 氷属性剣攻撃
+		if ((b.isBattle && b.isPhysical && !b.isTired) && b.rand("ice", b.count) < (b.skillEffects.ice ?? 0)) {
+			t.turnLog.add(serifs.rpg.skill.ice(b.enemy.dname ?? b.enemy.name) + `\n`);
+			b.enemyTurnFinished = true;
+		} else if (!(b.isBattle && b.isPhysical && !b.isTired)) {
+			// 非戦闘時は氷の効果はないが、防御に還元される
+			b.def = b.def * (1 + (b.skillEffects.ice ?? 0));
+			if (b.verboseLog && (b.skillEffects.ice ?? 0) > 0) {
+				t.turnLog.buff(`氷非戦闘: D${displayDifference((1 + (b.skillEffects.ice ?? 0)))} (${formatNumber(b.def)})\n`);
+			}
+		}
+		// 光属性剣攻撃
+		if ((b.isBattle && b.isPhysical && !b.isTired) && b.rand("light", b.count) < (b.skillEffects.light ?? 0)) {
+			t.turnLog.add(serifs.rpg.skill.light(b.enemy.dname ?? b.enemy.name) + `\n`);
+			b.enemyAtkX = b.enemyAtkX * 0.5;
+		} else if (!(b.isBattle && b.isPhysical && !b.isTired)) {
+			// 非戦闘時は光の効果はないが、防御に還元される
+			b.def = b.def * (1 + (b.skillEffects.light ?? 0) * 0.5);
+			if (b.verboseLog && (b.skillEffects.light ?? 0) > 0) {
+				t.turnLog.buff(`光非戦闘: D${displayDifference((1 + (b.skillEffects.light ?? 0) * 0.5))} (${formatNumber(b.def)})\n`);
+			}
+		}
+		// 闇属性剣攻撃
+		if (b.enemy.spd && b.enemy.spd >= 2 && b.rand("dark.spd", b.count) < (b.skillEffects.dark ?? 0) * 2) {
+			t.turnLog.add(serifs.rpg.skill.spdDown(b.enemy.dname ?? b.enemy.name) + `\n`);
+			b.enemy.spd = 1;
+		} else if ((b.isBattle && b.isPhysical) && b.enemyHp > 150 && b.rand("dark", b.count) < (b.skillEffects.dark ?? 0)) {
+			const dmg = Math.floor(300 / 2);
+			t.turnLog.add(serifs.rpg.skill.dark(b.enemy.dname ?? b.enemy.name, dmg) + `\n`);
+			b.totalDmg += dmg;
+		} else if (!(b.isBattle && b.isPhysical)) {
+			// 非戦闘時は闇の効果はないが、防御に還元される
+			b.def = b.def * (1 + (b.skillEffects.dark ?? 0) * 0.7);
+			if (b.verboseLog && (b.skillEffects.dark ?? 0) > 0) {
+				t.turnLog.buff(`闇非戦闘: D${displayDifference((1 + (b.skillEffects.dark ?? 0) * 0.7))} (${formatNumber(b.def)})\n`);
+			}
+		}
+
+		if (b.enemy && b.skillEffects.envy) {
+			const targetScore = getIndividualRaidStarDamageThreshold(b.enemy, 5);
+			const rate = (1 - (0.7 * Math.max(1 - (b.totalDmg / targetScore), 0)))
+			if (rate < 1) {
+				b.enemyAtkX = b.enemyAtkX * rate;
+				t.turnLog.verbose(() => `嫉妬: 被ダメージ${displayDifference(rate)}\n`);
 			} else {
-				b.item.effect = Math.round(b.item.effect / (1 + (b.skillEffects.itemBoost ?? 0)));
-				b.item.effect = Math.round(b.item.effect / (1 + (b.skillEffects.poisonResist ?? 0)));
-			}
-			if (b.item.mind < 0) {
-				b.item.mind = Math.round(b.item.mind / (1 + (b.skillEffects.itemBoost ?? 0)));
-			} else {
-				b.item.mind = Math.round(b.item.mind * (1 + (b.skillEffects.itemBoost ?? 0)));
-			}
-			switch (b.item.type) {
-				case "weapon":
-					turnLog.add(`${b.item.name}を取り出し、装備した！\n`);
-					if (b.item2?.name) {
-						turnLog.add(`さらに、${b.item2.name}を取り出し、装備した！\n`);
-					}
-					if (!(b.isBattle && b.isPhysical)) {
-						mindMsg(b.item.mind);
-						if (b.item.mind < 0 && b.isSuper) b.item.mind = b.item.mind / 2;
-						b.itemBonus.atk = b.atk * (b.item.mind * 0.0025);
-						b.itemBonus.def = b.def * (b.item.mind * 0.0025);
-						b.atk = b.atk + b.itemBonus.atk;
-						b.def = b.def + b.itemBonus.def;
-					} else {
-						b.itemBonus.atk = (b.lv * 4) * (b.item.effect * 0.007);
-						b.atk = b.atk + b.itemBonus.atk;
-						if (b.item.effect >= 100) {
-							turnLog.add(`${config.rpgHeroName}のパワーが特大アップ！\n`);
-						} else if (b.item.effect >= 70) {
-							turnLog.add(`${config.rpgHeroName}のパワーが大アップ！\n`);
-						} else if (b.item.effect > 30) {
-							turnLog.add(`${config.rpgHeroName}のパワーがアップ！\n`);
-						} else {
-							turnLog.add(`${config.rpgHeroName}のパワーが小アップ！\n`);
-						}
-						turnLog.verbose(() => `アイテム効果: ${Math.round(b.item.effect)}%${rawEffect !== b.item.effect ? ` (${displayDifference(b.item.effect / rawEffect)})` : ""} (${formatNumber(b.atk)})\n`);
-					}
-					break;
-				case "armor":
-					turnLog.add(`${b.item.name}を取り出し、装備した！\n`);
-					if (b.item2?.name) {
-						turnLog.add(`さらに、${b.item2.name}を取り出し、装備した！\n`);
-					}
-					if (b.isTired) {
-						mindMsg(b.item.mind);
-						if (b.item.mind < 0 && b.isSuper) b.item.mind = b.item.mind / 2;
-						b.itemBonus.atk = b.atk * (b.item.mind * 0.0035);
-						b.itemBonus.def = b.def * (b.item.mind * 0.0035);
-						b.atk = b.atk + b.itemBonus.atk;
-						b.def = b.def + b.itemBonus.def;
-						if (b.skillEffects.shieldBash && b.itemBonus.def > 0) {
-							const shieldBashX = 1 - Math.pow(0.5, (b.skillEffects.shieldBash ?? 0));
-							const shieldBashAtk = Math.floor(b.itemBonus.def * shieldBashX);
-							if (shieldBashAtk > 0) {
-								b.itemBonus.atk += shieldBashAtk;
-								b.atk += shieldBashAtk;
-							}
-						}
-					} else {
-						b.itemBonus.def = (b.lv * 4) * (b.item.effect * 0.007);
-						b.def = b.def + b.itemBonus.def;
-						if (b.skillEffects.shieldBash && b.itemBonus.def > 0) {
-							const shieldBashX = 1 - Math.pow(0.5, (b.skillEffects.shieldBash ?? 0));
-							const shieldBashAtk = Math.floor(b.itemBonus.def * shieldBashX);
-							if (shieldBashAtk > 0) {
-								b.itemBonus.atk += shieldBashAtk;
-								b.atk += shieldBashAtk;
-							}
-						}
-						const shieldBashActivated = !!(b.skillEffects.shieldBash && b.itemBonus.atk > 0);
-						if (b.item.effect >= 100) {
-							turnLog.add(`${config.rpgHeroName}の${shieldBashActivated ? "パワーと防御" : "防御"}が特大アップ！\n`);
-						} else if (b.item.effect >= 70) {
-							turnLog.add(`${config.rpgHeroName}の${shieldBashActivated ? "パワーと防御" : "防御"}が大アップ！\n`);
-						} else if (b.item.effect > 30) {
-							turnLog.add(`${config.rpgHeroName}の${shieldBashActivated ? "パワーと防御" : "防御"}がアップ！\n`);
-						} else {
-							turnLog.add(`${config.rpgHeroName}の${shieldBashActivated ? "パワーと防御" : "防御"}が小アップ！\n`);
-						}
-						turnLog.verbose(() => `アイテム効果: ${Math.round(b.item.effect)}%${rawEffect !== b.item.effect ? ` (${displayDifference(b.item.effect / rawEffect)})` : ""} (${formatNumber(b.def)})\n`);
-					}
-					break;
-				case "medicine":
-					turnLog.add(`${b.item.name}を取り出し、食べた！\n`);
-					if (b.enemy.pLToR) {
-						mindMsg(b.item.mind);
-						if (b.item.mind < 0 && b.isSuper) b.item.mind = b.item.mind / 2;
-						b.itemBonus.atk = b.atk * (b.item.mind * 0.0025);
-						b.itemBonus.def = b.def * (b.item.mind * 0.0025);
-						b.atk = b.atk + b.itemBonus.atk;
-						b.def = b.def + b.itemBonus.def;
-					} else {
-						if (b.item.effect > 200) {
-							const overHeal = b.item.effect - 200;
-							mindMsg(overHeal);
-							b.itemBonus.atk = b.atk * (overHeal * 0.0035);
-							b.itemBonus.def = b.def * (overHeal * 0.0035);
-							b.atk = b.atk + b.itemBonus.atk;
-							b.def = b.def + b.itemBonus.def;
-							b.item.effect = 200;
-						}
-						const heal = Math.round(((b.playerMaxHp) - b.playerHp) * (b.item.effect * 0.005));
-						const recovered = b.recoverHpOrBarrier(heal);
-						if (heal > 0) {
-							if (recovered.barrier > 0) {
-								turnLog.add(`${Math.floor(recovered.barrier)}ポイントのバリアを獲得！\n`);
-							}
-							if (recovered.healed >= 1) {
-								if (b.item.effect >= 100 && recovered.healed >= 50) {
-									turnLog.add(`${config.rpgHeroName}の体力が特大回復！\n${Math.floor(recovered.healed)}ポイント回復した！\n`);
-								} else if (b.item.effect >= 70 && recovered.healed >= 35) {
-									turnLog.add(`${config.rpgHeroName}の体力が大回復！\n${Math.floor(recovered.healed)}ポイント回復した！\n`);
-								} else if (b.item.effect > 30 && recovered.healed >= 15) {
-									turnLog.add(`${config.rpgHeroName}の体力が回復！\n${Math.floor(recovered.healed)}ポイント回復した！\n`);
-								} else {
-									turnLog.add(`${config.rpgHeroName}の体力が小回復！\n${Math.floor(recovered.healed)}ポイント回復した！\n`);
-								}
-							}
-							turnLog.verbose(() => `アイテム効果: ${Math.round(b.item.effect)}%${rawEffect !== b.item.effect ? ` (${displayDifference(b.item.effect / rawEffect)})` : ""}\n`);
-						}
-					}
-					if (b.skillEffects.gluttony) {
-						b.atkDmgBonus *= 1.1;
-						turnLog.markBuff();
-						if (b.verboseLog) turnLog.add(`暴食: A+10% (${formatNumber(b.atk)})\n`);
-					}
-					break;
-				case "poison":
-					turnLog.add(`${b.item.name}を取り出し、食べた！\n`);
-					if (b.enemy.pLToR) {
-						mindMsg(b.item.mind);
-						if (b.item.mind < 0 && b.isSuper) b.item.mind = b.item.mind / 2;
-						b.itemBonus.atk = b.atk * (b.item.mind * 0.0025);
-						b.itemBonus.def = b.def * (b.item.mind * 0.0025);
-						b.atk = b.atk + b.itemBonus.atk;
-						b.def = b.def + b.itemBonus.def;
-					} else {
-						const dmg = Math.round(b.playerHp * (b.item.effect * 0.003) * (b.isSuper && !aggregateTokensEffects(b.data).redMode ? 0.5 : 1));
-						b.playerHp -= dmg;
-						if (b.item.effect >= 70 && dmg > 0) {
-							turnLog.add(`${config.rpgHeroName}はかなり調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`);
-						} else if (b.item.effect > 30 && dmg > 0) {
-							turnLog.add(`${config.rpgHeroName}は調子が悪くなった…\n${dmg}ポイントのダメージを受けた！\n`);
-						} else {
-							turnLog.add(`あまり美味しくなかったようだ…${dmg > 0 ? `\n${dmg}ポイントのダメージを受けた！` : ""}\n`);
-						}
-						turnLog.verbose(() => `アイテム効果: ${Math.round(b.item.effect)}%${rawEffect !== b.item.effect ? ` (${displayDifference(b.item.effect / rawEffect)})` : ""}\n`);
-					}
-					if (b.skillEffects.gluttony) {
-						b.atkDmgBonus *= 1.2;
-						turnLog.markBuff();
-						if (b.verboseLog) turnLog.add(`暴食: A+20% (${formatNumber(b.atk)})\n`);
-					}
-					break;
-				default:
-					break;
-			}
-			if (aggregateTokensEffects(b.data).showItemBonus) {
-				const itemMessage = [`${b.itemBonus.atk > 0 ? `${serifs.rpg.status.atk}+${b.itemBonus.atk.toFixed(0)}` : ""}`, `${b.itemBonus.def > 0 ? `${serifs.rpg.status.def}+${b.itemBonus.def.toFixed(0)}` : ""}`].filter(Boolean).join(" / ");
-				if (itemMessage) {
-					turnLog.add(`(${itemMessage})\n`);
+				const score = b.enemy ? Math.max(Math.log2((b.totalDmg * 20) / (1024 / ((b.enemy.power ?? 30) / 30))) + 1, 1) : undefined;
+				if (score && score > 5) {
+					b.enemyAtkX = b.enemyAtkX * (1 + (score-5) * 0.1);
+					t.turnLog.verbose(() => `嫉妬: 被ダメージ${displayDifference((1 + (score-5) * 0.1))}\n`);
 				}
 			}
 		}
-		if (b.skillEffects.itemAtkStock) {
-			const itemAtkGain = Math.max(Math.floor(b.itemBonus.atk ?? 0), 0);
-			if (itemAtkGain > 0) {
-				b.itemAtkStockNext = Math.floor(itemAtkGain * (b.skillEffects.itemAtkStock ?? 0));
-				if (b.verboseLog) {
-					turnLog.add(`継スキル: 次ターン累積予定+${b.itemAtkStockNext}\n`);
-				}
-			} else {
-				b.itemAtkStockNext = 0;
-			}
-		}
-		// 土属性剣攻撃
-		if (b.skillEffects.dart && b.isBattle && b.isPhysical && maxdmg) {
-			turnLog.buff(serifs.rpg.skill.dart + "\n");
-			maxdmg = maxdmg * (1 + b.skillEffects.dart);
-		}
 
-		let trueDmg = 0;
-
-		// 炎属性剣攻撃
-		if (b.skillEffects.fire && (b.isBattle && b.isPhysical)) {
-			turnLog.buff(serifs.rpg.skill.fire + "\n");
-			trueDmg = Math.ceil(Math.min(b.lv, 255) * b.skillEffects.fire);
-			turnLog.verbose(() => `火戦闘: Dmg+${Math.ceil(Math.min(b.lv, 255) * b.skillEffects.fire!)}\n`);
-		} else if (b.skillEffects.fire && !(b.isBattle && b.isPhysical)) {
-			// 非戦闘時は、パワーに還元される
-			b.atk = b.atk + b.lv * 3.75 * b.skillEffects.fire;
-			turnLog.verbose(() => `火非戦闘: A+${Math.floor(b.lv * 3.75 * b.skillEffects.fire!)} (${formatNumber(b.atk)})\n`);
-		}
-
-		// バフが1つでも付与された場合、改行を追加する
-		turnLog.endBuffs();
-
-		if (b.verboseLog && b.enemy.abort) {
-			turnLog.buff(`連続攻撃中断率: ${b.enemy.abort * (1 - (b.skillEffects.abortDown ?? 0)) * 100}%\n`);
-		}
-
-
-		// 敵が中断能力持ちの場合、ここで何回攻撃可能か判定
-		for (let i = 1; i < b.spd; i++) {
-			if (b.enemy.abort && b.rand("abort", b.count) < b.enemy.abort * (1 - (b.skillEffects.abortDown ?? 0))) {
-				b.abort = i;
-				break;
+		if (b.enemy && b.skillEffects.beginner && b.count <= 4 && b.data.skills?.length && b.data.skills?.length <= 3) {
+			const targetScore = getIndividualRaidStarDamageThreshold(b.enemy, 3);
+			const rate = (1 - ((b.data.skills?.length >= 4 ? 0 : b.data.skills?.length >= 3 ? 0.3 : b.data.skills?.length >= 2 ? 0.6 : 0.9) * Math.max(1 - (b.totalDmg / targetScore), 0)));
+			if (rate < 1) {
+				b.enemyAtkX = b.enemyAtkX * rate;
+				t.turnLog.verbose(() => `わかばの加護: 被ダメージ${displayDifference(rate)}\n`);
 			}
 		}
 
-		const defMinusMin = b.skillEffects.defDmgUp && b.skillEffects.defDmgUp < 0 ? (1 / (-1 + (b.skillEffects.defDmgUp ?? 0)) * -1) : 1;
+		b.checkMagic("Defense", {predictedDmg: t.predictedDmg});
 
-		const defDmgX = Math.max(1 *
-			(Math.max(1 + (b.skillEffects.defDmgUp ?? 0), defMinusMin)) *
-			(b.count === 1 && b.skillEffects.firstTurnResist ? (1 - (b.skillEffects.firstTurnResist ?? 0)) : 1) *
-			(b.count === 2 && b.skillEffects.firstTurnResist && b.skillEffects.firstTurnResist > 1 ? (1 - ((b.skillEffects.firstTurnResist ?? 0) - 1)) : 1) *
-			(1 - Math.min((b.skillEffects.tenacious ?? 0) * (1 - playerHpPercent), 0.9)), 0);
-
-		const atkMinRnd = Math.max(0.2 + (b.skillEffects.atkRndMin ?? 0), 0);
-		const atkMaxRnd = Math.max(1.6 + (b.skillEffects.atkRndMax ?? 0), 0);
-		const defMinRnd = Math.max(0.2 + (b.skillEffects.defRndMin ?? 0), 0);
-		const defMaxRnd = Math.max(1.6 + (b.skillEffects.defRndMax ?? 0), 0);
-
-		/** 予測最大ダメージ */
-		let predictedDmg = Math.round((b.atk * b.tp * (atkMinRnd + atkMaxRnd)) * (1 / (((b.enemyDef * (getVal(b.enemy.defx, [b.count]) ?? 3)) + 100) / 100))) * (b.abort || b.spd);
-
-		// 予測最大ダメージは最大ダメージ制限を超えない
-		if (maxdmg && predictedDmg > maxdmg) predictedDmg = maxdmg;
-
-		let endureCount = 1 + (b.skillEffects.endureUp ?? 0) * 2;
-
-		const _data = { ...b.data, enemy: b.enemy, count: b.count, fireStack: b.fireStack };
-
-
-		if (_data.enemy.fire && b.skillEffects.water) {
-			_data.enemy.fire /= (1 + (b.skillEffects.water ?? 0) * 3);
-		}
-
-		// 敵先制攻撃の処理
-		// spdが1ではない、または戦闘ではない場合は先制攻撃しない
-		if (!b.enemy.spd && !b.enemy.hpmsg && !b.isTired) {
-			/** クリティカルかどうか */
-			const crit = b.rand("enemyCrit", b.count) < (b.enemy.alwaysCrit ? 1 : 0) * (1 - (b.skillEffects.enemyCritDown ?? 0));
-			// 予測最大ダメージが相手のHPの何割かで先制攻撃の確率が判定される
-			if (b.rand("enemyFirst", b.count) < predictedDmg / b.enemyHp || (b.count === 3 && b.enemy.fire && (b.data.thirdFire ?? 0) <= 2)) {
-				const rng = (defMinRnd + (b.enemy.fixRnd ?? random(b.data, b.startCharge, b.skillEffects, true, () => b.rand("enemyDmg", b.count))) * defMaxRnd);
+		// 敵のターンが既に終了していない場合
+		/** 受けた最大ダメージ */
+		let maxDmg = 0;
+		if (!b.enemyTurnFinished) {
+			t.turnLog.add("\n");
+			for (let i = 0; i < (b.enemy.spd ?? 1); i++) {
+				const rng = (t.defMinRnd + (b.enemy.fixRnd ?? random(b.data, b.startCharge, b.skillEffects, true, () => b.rand("enemyDmg", b.count))) * t.defMaxRnd);
+				if (aggregateTokensEffects(b.data).showRandom) t.turnLog.add(`⚂ ${Math.floor(rng * 100)}%\n`);
+				/** クリティカルかどうか */
+				const crit = b.rand("enemyCrit", b.count) < (b.enemy.alwaysCrit ? 1 : 0) * (1 - (b.skillEffects.enemyCritDown ?? 0));
 				const critDmg = 1 + ((b.skillEffects.enemyCritDmgDown ?? 0) * -1);
-				if (b.verboseLog && (defDmgX < 0.999 || defDmgX > 1.001)) {
-					turnLog.buff(`D: ${formatNumber(b.def)} (x${formatNumber(b.def / (b.lv * 3.5))})\n`);
-					turnLog.add(`合計被ダメージ: ${displayDifference(defDmgX)}\n`);
+				if (b.verboseLog && (t.defDmgX < 0.999 || t.defDmgX > 1.001)) {
+					t.turnLog.buff(`D: ${formatNumber(b.def)} (x${formatNumber(b.def / (b.lv * 3.5))})\n`);
+					t.turnLog.add(`合計被ダメージ: ${displayDifference(t.defDmgX)}\n`);
 				}
-				// 先制攻撃が取りやめになった場合に戻せるよう、炎上スタックとバリアは攻撃確定後に反映する
-				const prevFireStack = b.fireStack;
-				if (_data.enemy.fire) {
-					b.fireStack += _data.enemy.fire / 0.15;
-					_data.fireStack = b.fireStack;
+				if (t._data.enemy.fire) {
+					b.fireStack += t._data.enemy.fire / 0.15;
+					t._data.fireStack = b.fireStack;
+					const fireStatus = b.additionalStatuses.find((status) => status.icon === serifs.rpg.fire);
+					if (fireStatus) fireStatus.value = b.fireStack;
 				}
 				/** ダメージ */
-				let dmg = getEnemyDmg(_data, b.def, b.tp, 1, crit ? critDmg : false, b.enemyAtk, rng * defDmgX, getVal(b.enemy.atkx, [b.count]));
-				let noItemDmg = getEnemyDmg(_data, b.def - b.itemBonus.def, b.tp, 1, b.enemy.alwaysCrit ? 1 : false, b.enemyAtk, rng * defDmgX, getVal(b.enemy.atkx, [b.count]));
-				let normalDmg = getEnemyDmg(_data, b.lv * 3.75, b.tp, 1, b.enemy.alwaysCrit ? 1 : false, b.enemyAtk, rng * defDmgX, getVal(b.enemy.atkx, [b.count]));
+				let dmg = getEnemyDmg(t._data, b.def, b.tp, 1, crit ? critDmg : false, b.enemyAtk, rng * t.defDmgX * b.enemyAtkX, getVal(b.enemy.atkx, [b.count]));
+				let noItemDmg = getEnemyDmg(t._data, b.def - b.itemBonus.def, b.tp, 1, crit ? critDmg : false, b.enemyAtk, rng * t.defDmgX * b.enemyAtkX, getVal(b.enemy.atkx, [b.count]));
+				let normalDmg = getEnemyDmg(t._data, b.lv * 3.75, b.tp, 1, b.enemy.alwaysCrit ? 1 : false, b.enemyAtk, rng, getVal(b.enemy.atkx, [b.count]));
 				let addMessage = "";
-				const rawDmg = dmg;
-				let restBarrier = b.sevenFeverBarrier;
+				if (normalDmg > dmg) {
+					b.totalResistDmg += (normalDmg - dmg);
+				}
 				if (b.sevenFeverBarrier > 0) {
 					const reduced = reduceByBarrier(dmg, b.sevenFeverBarrier);
 					dmg = reduced.reducedDmg;
@@ -2699,372 +3054,96 @@ formatNumber(enemyHpPercent * 100)}%\n\n`);
 						const noItemReduced = reduceByBarrier(noItemDmg, b.sevenFeverBarrier);
 						noItemDmg = noItemReduced.reducedDmg;
 					}
-					restBarrier = reduced.restBarrier;
-				}
-				// ダメージが負けるほど多くなる場合は、先制攻撃しない
-				if (b.warriorFlg || b.playerHp > dmg || (b.count === 3 && b.enemy.fire && (b.data.thirdFire ?? 0) <= 2)) {
-					b.sevenFeverBarrier = restBarrier;
+					b.sevenFeverBarrier = reduced.restBarrier;
 					const barrierStatus = b.additionalStatuses.find((status) => status.icon === "🛡️");
 					if (barrierStatus) barrierStatus.value = b.sevenFeverBarrier;
-					const fireStatus = b.additionalStatuses.find((status) => status.icon === serifs.rpg.fire);
-					if (fireStatus) fireStatus.value = b.fireStack;
-					if (normalDmg > rawDmg) {
-						b.totalResistDmg += (normalDmg - rawDmg);
-					}
-					if (aggregateTokensEffects(b.data).showRandom) turnLog.add(`⚂ ${Math.floor(rng * 100)}%\n`);
-					if (b.skillEffects.pride) {
-						if (dmg <= (b.playerMaxHp / 10)) {
-							b.atkDmgBonus *= 1.15;
-						}
-						if (dmg >= ((b.playerMaxHp / 10) * 3)) {
-							dmg *= 2;
-						}
-					}
-					b.playerHp -= dmg;
-					turnLog.add((crit ? `**${b.enemy.defmsg(dmg)}**` : b.enemy.defmsg(dmg)) + "\n");
-					if (addMessage) turnLog.add(addMessage);
-					if (b.itemBonus.def && noItemDmg - dmg > 1) {
-						turnLog.add(`(道具効果: -${noItemDmg - dmg})\n`);
-					}
-					if (b.warriorFlg && b.playerHp <= 0) {
-						b.playerHp += dmg;
-						turnLog.add(serifs.rpg.warrior.lose + "\n");
-						dmg = 0;
-						b.warriorFlg = false;
-					}
-					if (b.playerHp <= 0 && !b.enemy.notEndure) {
-						turnLog.add(serifs.rpg.endure + "\n");
-						b.playerHp = 1;
-					}
-					turnLog.add("\n");
-					b.enemyTurnFinished = true;
-					if (b.enemy.fire && b.count > (b.data.thirdFire ?? 0)) b.data.thirdFire = b.count;
-					if (dmg > (b.data.superMuscle ?? 0)) b.data.superMuscle = dmg;
-				} else {
-					b.fireStack = prevFireStack;
-					_data.fireStack = prevFireStack;
 				}
-			}
-		}
-
-		b.checkMagic("Attack", {predictedDmg});
-
-		if (b.skillEffects.allForOne || aggregateTokensEffects(b.data).allForOne) {
-			const spdx = getSpdX(b.abort || b.spd);
-			b.atk = b.atk * spdx * (1 + (b.skillEffects.allForOne ?? 0) * 0.1);
-			trueDmg = trueDmg * spdx * (1 + (b.skillEffects.allForOne ?? 0) * 0.1);
-			if (b.itemBonus?.atk) b.itemBonus.atk = b.itemBonus.atk * spdx * (1 + (b.skillEffects.allForOne ?? 0) * 0.1);
-			b.spd = 1;
-			if (b.verboseLog && spdx > 1) {
-				turnLog.buff(`全身全霊: A${displayDifference(spdx)} S=1 (${formatNumber(b.atk)})\n`);
-			}
-		}
-
-		if (b.atkDmgBonus > 1) {
-			b.atk = Math.round(b.atk * b.atkDmgBonus);
-			if (b.itemBonus?.atk) b.itemBonus.atk = b.itemBonus.atk * b.atkDmgBonus;
-			if (b.verboseLog && b.atkDmgBonus > 1) {
-				turnLog.buff(`ボーナス: A${displayDifference(b.atkDmgBonus)} (${formatNumber(b.atk)})\n`);
-			}
-		}
-
-		// レイド活力ダメージ上乗せ：当ターンの通常攻撃全ヒットに加算する固定値
-		let raidVitalityDmgBonus = 0;
-		if (b.enemy.power && (b.data.raidVitality ?? 0) >= 1) {
-			const meanRng = atkMinRnd + atkMaxRnd * 0.5;
-			let sumTurnDmgX = 0;
-			for (let ti = 0; ti < b.spd; ti++) {
-				sumTurnDmgX += (ti < 2 ? 1 : ti < 3 ? 0.5 : ti < 4 ? 0.25 : 0.125);
-			}
-			const sampleHit = getAtkDmg(b.data, b.atk, b.tp, 1, false, b.enemyDef, b.enemyMaxHp, meanRng, getVal(b.enemy.defx, [b.count]));
-			const estimatedTurnDmg = sampleHit * sumTurnDmgX;
-			const remainingTurns = (b.plusActionX + 1) - actionX;
-			const projectedTotal = b.totalDmg + estimatedTurnDmg * remainingTurns;
-			const projectedScore = getIndividualRaidScore(b.enemy, projectedTotal);
-			if (projectedScore !== undefined && projectedScore < 5) {
-				const bonus = Math.floor(getIndividualRaidStarDamageThreshold(b.enemy, 3) / b.spd);
-				if (bonus > 1) {
-					b.data.raidVitality -= 1;
-					raidVitalityDmgBonus = bonus;
-					turnLog.verbose(() => `レイド活力: 全攻撃+${bonus} (残${b.data.raidVitality})\n`);
+				if (b.skillEffects.pride) {
+					if (dmg <= (b.playerMaxHp / 10)) {
+						b.atkDmgBonus *= 1.15;
+					}
+					if (dmg >= ((b.playerMaxHp / 10) * 3)) {
+						dmg *= 2;
+					}
 				}
-			}
-		}
-
-		if (b.warriorFlg) {
-			//** クリティカルかどうか */
-			let crit = b.rand("warrior.crit", b.count) < 0.5;
-			const dmg = getAtkDmg(b.data, b.lv * 5, b.tp, 1, crit ? b.warriorCritX : false, b.enemyDef, b.enemyMaxHp, 0.5, getVal(b.enemy.defx, [b.count]));
-			// メッセージの出力
-			turnLog.add((crit ? `**${serifs.rpg.warrior.atk(dmg)}**` : serifs.rpg.warrior.atk(dmg)) + "\n");
-			b.totalDmg += dmg;
-			b.warriorTotalDmg += dmg;
-			if (crit) b.warriorCritX += 0.5;
-		}
-
-		const atkMinusMin = b.skillEffects.atkDmgUp && b.skillEffects.atkDmgUp < 0 ? (1 / (-1 + (b.skillEffects.atkDmgUp ?? 0)) * -1) : 1;
-
-		if (b.verboseLog) {
-			turnLog.buff(`A: ${formatNumber(b.atk)} (x${formatNumber(b.atk / (b.lv * 3.5))})\n`);
-			turnLog.add(`クリティカル率: ${formatNumber((Math.max((enemyHpPercent - playerHpPercent) * (1 + (b.skillEffects.critUp ?? 0) + critUp), 0) + (b.skillEffects.critUpFixed ?? 0)) * 100)}%\n`);
-		}
-
-		// 雷（レイド）: そのターンの合計ダメージを、基本は雷の値の半分（雷で+9%）だけ増やす。
-		// 好感度による行動回数（最低5回とみなす）より実際の行動倍率（段数の減衰を含めた getSpdX）が増えている場合、
-		// 増えた割合の1.5乗だけ効果が上がる（風などで速度を上げる専用構成が、クリティカル重ねの専用構成と並ぶ強さになるよう調整）。
-		// 全身全霊などで行動回数が減っていても、基本の効果は保証する。
-		// 増える合計量は変えずに、何回目の攻撃かに比例した上乗せとして各攻撃に配り、後の攻撃ほど上乗せが大きくなるようにする（連撃感）。
-		const turnDmgXOf = (i: number) => (i < 2 ? 1 : i < 3 ? 0.5 : i < 4 ? 0.25 : 0.125);
-		let thunderStep = 0;
-		if (b.skillEffects.thunder && b.spd > 0) {
-			const baseSpd = Math.max(Math.floor((b.msg.friend.love ?? 0) / 100) + 1, 5);
-			const thunderRate = (b.skillEffects.thunder / 2) * Math.pow(Math.max(1, getSpdX(b.spd) / getSpdX(baseSpd)), 1.5);
-			let totalTurnDmgX = 0;
-			for (let i = 0; i < b.spd; i++) totalTurnDmgX += turnDmgXOf(i);
-			// i 回目（0始まり）の上乗せは thunderStep × (i + 1)。合計が totalTurnDmgX × thunderRate になるよう決める
-			thunderStep = (totalTurnDmgX * thunderRate) / (b.spd * (b.spd + 1) / 2);
-			turnLog.verbose(() => `雷戦闘: Dmg+${formatNumber(thunderRate * 100)}%\n`);
-		}
-
-		// 自身攻撃の処理
-		// spdの回数分、以下の処理を繰り返す
-		for (let i = 0; i < b.spd; i++) {
-			const rng = (atkMinRnd + random(b.data, b.startCharge, b.skillEffects, false, () => b.rand("atkDmg", b.count)) * atkMaxRnd);
-			if (aggregateTokensEffects(b.data).showRandom) turnLog.add(`⚂ ${Math.floor(rng * 100)}%\n`);
-			const turnDmgX = turnDmgXOf(i);
-			let dmgBonus = (Math.max(1 + (b.skillEffects.atkDmgUp ?? 0), atkMinusMin)) * dmgUp * (turnDmgX + thunderStep * (i + 1));
-			const rawDmgBonus = dmgBonus / turnDmgX;
-			if (b.verboseLog && (rawDmgBonus < 0.999 || rawDmgBonus > 1.001)) {
-				turnLog.buff(`合計与ダメージ: ${displayDifference(rawDmgBonus)}\n`);
-			}
-			//** クリティカルかどうか */
-			let crit = b.rand("crit", b.count) < Math.max((enemyHpPercent - playerHpPercent) * (1 + (b.skillEffects.critUp ?? 0) + critUp), 0) + (b.skillEffects.critUpFixed ?? 0);
-			const critDmg = 1 + ((b.skillEffects.critDmgUp ?? 0));
-			if (b.skillEffects.noCrit) {
-				crit = false;
-				const noCritBonus = 1 + (Math.min((Math.max((enemyHpPercent - playerHpPercent) * (1 + (b.skillEffects.critUp ?? 0) + critUp), 0) + (b.skillEffects.critUpFixed ?? 0)), 1) * ((2 * critDmg) - 1));
-				dmgBonus *= noCritBonus
-				if (b.verboseLog && (noCritBonus < 0.999 || noCritBonus > 1.001)) {
-					turnLog.buff(`５スキル効果: ${displayDifference(noCritBonus)}\n`);
+				b.playerHp -= dmg;
+				t.turnLog.add((crit ? `**${b.enemy.defmsg(dmg)}**` : b.enemy.defmsg(dmg)) + "\n");
+				if (addMessage) t.turnLog.add(addMessage);
+				if (b.itemBonus.def && noItemDmg - dmg > 1) {
+					t.turnLog.add(`(道具効果: -${noItemDmg - dmg})\n`);
 				}
+				if (b.warriorFlg && b.playerHp <= 0) {
+					b.playerHp += dmg;
+					t.turnLog.add(serifs.rpg.warrior.lose + "\n");
+					dmg = 0;
+					b.warriorFlg = false;
+				}
+				if (dmg > maxDmg) maxDmg = dmg;
+				if (b.enemy.fire && b.count > (b.data.thirdFire ?? 0)) b.data.thirdFire = b.count;
 			}
-			/** ダメージ */
-			let dmg = getAtkDmg(b.data, b.atk, b.tp, 1, crit ? critDmg : false, b.enemyDef, b.enemyMaxHp, rng * dmgBonus, getVal(b.enemy.defx, [b.count])) + Math.round(trueDmg * turnDmgX);
-			let noItemDmg = getAtkDmg(b.data, b.atk - b.itemBonus.atk, b.tp, 1, crit ? critDmg : false, b.enemyDef, b.enemyMaxHp, rng * dmgBonus, getVal(b.enemy.defx, [b.count])) + Math.round(trueDmg * turnDmgX);
-			if (b.sevenFever) {
-				const num = 7 * Math.max(Math.ceil((b.skillEffects.sevenFever || 1) * turnDmgX), 1);
-				dmg = Math.ceil(dmg / num) * num;
-				noItemDmg = Math.ceil(noItemDmg / num) * num;
+			b.checkMagic("AfterDefense", {predictedDmg: t.predictedDmg});
+			// HPが0で食いしばりが可能な場合、食いしばる
+			const endure = (0.1 + (t.endureCount * 0.1)) - (b.count * 0.05);
+			if (b.verboseLog && b.playerHp <= 0 && !b.enemy.notEndure && endure > 0) {
+				t.turnLog.buff(`食いしばり率: ${formatNumber(endure * 100)}%\n`);
 			}
-			// 最大ダメージ制限処理
-			if (maxdmg && maxdmg > 0 && dmg > Math.round(maxdmg * (1 / ((b.abort || b.spd) - i)))) {
-				// 最大ダメージ制限を超えるダメージの場合は、ダメージが制限される。
-				dmg = Math.round(maxdmg * (1 / ((b.abort || b.spd) - i)));
-				maxdmg -= dmg;
-				crit = false;
-			} else if (maxdmg && maxdmg > 0) {
-				maxdmg -= dmg;
+			if (b.playerHp <= 0 && !b.enemy.notEndure && b.rand("endure", b.count) < endure) {
+				t.turnLog.add(serifs.rpg.endure + "\n");
+				b.playerHp = 1;
+				t.endureCount -= 1;
 			}
-			if (raidVitalityDmgBonus > 0) {
-				dmg += raidVitalityDmgBonus;
-				noItemDmg += raidVitalityDmgBonus;
+			if (b.verboseLog && b.skillEffects.escape && t.actionX + 1 < b.plusActionX && b.playerHp <= 0 && !b.enemy.notEndure) {
+				t.turnLog.buff(`逃スキル: HPが0 ~ ${Math.ceil((b.playerMaxHp) * (b.skillEffects.escape / -16))}で発動\n(現在HP: ${Math.floor(b.playerHp)})\n`);
 			}
-			// メッセージの出力
-			turnLog.add((crit ? `**${b.enemy.atkmsg(dmg)}**` : b.enemy.atkmsg(dmg)) + "\n");
-			b.totalDmg += dmg;
-			if (b.itemBonus.atk && dmg - noItemDmg > 1) {
-				turnLog.add(`(道具効果: +${dmg - noItemDmg})\n`);
+			if (b.skillEffects.escape && t.actionX + 1 < b.plusActionX && b.playerHp <= 0 && b.playerHp >= (b.playerMaxHp) * (b.skillEffects.escape / -16) && !b.enemy.notEndure) {
+				t.turnLog.add("やられそうになったので、\n一旦距離を取り、1ターン分回復に徹した！\n");
+				const heal = Math.ceil((b.playerMaxHp) * (b.skillEffects.escape / 10)) + 1;
+				const recovered = b.recoverHpOrBarrier(heal);
+				if (recovered.healed >= 1) t.turnLog.add(`${Math.floor(recovered.healed)}ポイントの体力を回復！\n`);
+				if (recovered.barrier > 0) t.turnLog.add(`${Math.floor(recovered.barrier)}ポイントのバリアを獲得した！\n`);
+				t.actionX += 1;
+				b.count += 1;
+				b.skillEffects.escape -= 1;
 			}
-			// 敵のHPが0以下になった場合は、以降の攻撃をキャンセル
-			if (b.enemyHp <= 0) break;
-			// 攻撃が中断される場合
-			if ((i + 1) === b.abort) {
-				if (b.enemy.abortmsg) turnLog.add(b.enemy.abortmsg + "\n");
-				break;
-			}
+			if (maxDmg > (b.data.superMuscle ?? 0) && b.playerHp > 0) b.data.superMuscle = maxDmg;
 		}
-
-		b.checkMagic("AfterAttack", {predictedDmg});
-
-		// 勝利処理
-		if (b.enemyHp <= 0) {
-			turnLog.add("\n" + b.enemy.winmsg + "\n\n" + serifs.rpg.win);
-			break;
+		b.checkMagic("TurnEnd", {predictedDmg: t.predictedDmg});
+		// 敗北処理
+		if (b.playerHp <= 0) {
+			t.turnLog.add("\n" + b.enemy.losemsg);
+			return true;
 		} else {
-			// 攻撃後発動スキル効果
-			// 氷属性剣攻撃
-			if ((b.isBattle && b.isPhysical && !b.isTired) && b.rand("ice", b.count) < (b.skillEffects.ice ?? 0)) {
-				turnLog.add(serifs.rpg.skill.ice(b.enemy.dname ?? b.enemy.name) + `\n`);
-				b.enemyTurnFinished = true;
-			} else if (!(b.isBattle && b.isPhysical && !b.isTired)) {
-				// 非戦闘時は氷の効果はないが、防御に還元される
-				b.def = b.def * (1 + (b.skillEffects.ice ?? 0));
-				if (b.verboseLog && (b.skillEffects.ice ?? 0) > 0) {
-					turnLog.buff(`氷非戦闘: D${displayDifference((1 + (b.skillEffects.ice ?? 0)))} (${formatNumber(b.def)})\n`);
-				}
-			}
-			// 光属性剣攻撃
-			if ((b.isBattle && b.isPhysical && !b.isTired) && b.rand("light", b.count) < (b.skillEffects.light ?? 0)) {
-				turnLog.add(serifs.rpg.skill.light(b.enemy.dname ?? b.enemy.name) + `\n`);
-				b.enemyAtkX = b.enemyAtkX * 0.5;
-			} else if (!(b.isBattle && b.isPhysical && !b.isTired)) {
-				// 非戦闘時は光の効果はないが、防御に還元される
-				b.def = b.def * (1 + (b.skillEffects.light ?? 0) * 0.5);
-				if (b.verboseLog && (b.skillEffects.light ?? 0) > 0) {
-					turnLog.buff(`光非戦闘: D${displayDifference((1 + (b.skillEffects.light ?? 0) * 0.5))} (${formatNumber(b.def)})\n`);
-				}
-			}
-			// 闇属性剣攻撃
-			if (b.enemy.spd && b.enemy.spd >= 2 && b.rand("dark.spd", b.count) < (b.skillEffects.dark ?? 0) * 2) {
-				turnLog.add(serifs.rpg.skill.spdDown(b.enemy.dname ?? b.enemy.name) + `\n`);
-				b.enemy.spd = 1;
-			} else if ((b.isBattle && b.isPhysical) && b.enemyHp > 150 && b.rand("dark", b.count) < (b.skillEffects.dark ?? 0)) {
-				const dmg = Math.floor(300 / 2);
-				turnLog.add(serifs.rpg.skill.dark(b.enemy.dname ?? b.enemy.name, dmg) + `\n`);
-				b.totalDmg += dmg;
-			} else if (!(b.isBattle && b.isPhysical)) {
-				// 非戦闘時は闇の効果はないが、防御に還元される
-				b.def = b.def * (1 + (b.skillEffects.dark ?? 0) * 0.7);
-				if (b.verboseLog && (b.skillEffects.dark ?? 0) > 0) {
-					turnLog.buff(`闇非戦闘: D${displayDifference((1 + (b.skillEffects.dark ?? 0) * 0.7))} (${formatNumber(b.def)})\n`);
-				}
-			}
-
-			if (b.enemy && b.skillEffects.envy) {
-				const targetScore = getIndividualRaidStarDamageThreshold(b.enemy, 5);
-				const rate = (1 - (0.7 * Math.max(1 - (b.totalDmg / targetScore), 0)))
-				if (rate < 1) {
-					b.enemyAtkX = b.enemyAtkX * rate;
-					turnLog.verbose(() => `嫉妬: 被ダメージ${displayDifference(rate)}\n`);
-				} else {
-					const score = b.enemy ? Math.max(Math.log2((b.totalDmg * 20) / (1024 / ((b.enemy.power ?? 30) / 30))) + 1, 1) : undefined;
-					if (score && score > 5) {
-						b.enemyAtkX = b.enemyAtkX * (1 + (score-5) * 0.1);
-						turnLog.verbose(() => `嫉妬: 被ダメージ${displayDifference((1 + (score-5) * 0.1))}\n`);
-					}
-				}
-			}
-
-			if (b.enemy && b.skillEffects.beginner && b.count <= 4 && b.data.skills?.length && b.data.skills?.length <= 3) {
-				const targetScore = getIndividualRaidStarDamageThreshold(b.enemy, 3);
-				const rate = (1 - ((b.data.skills?.length >= 4 ? 0 : b.data.skills?.length >= 3 ? 0.3 : b.data.skills?.length >= 2 ? 0.6 : 0.9) * Math.max(1 - (b.totalDmg / targetScore), 0)));
-				if (rate < 1) {
-					b.enemyAtkX = b.enemyAtkX * rate;
-					turnLog.verbose(() => `わかばの加護: 被ダメージ${displayDifference(rate)}\n`);
-				}
-			}
-
-			b.checkMagic("Defense", {predictedDmg});
-
-			// 敵のターンが既に終了していない場合
-			/** 受けた最大ダメージ */
-			let maxDmg = 0;
-			if (!b.enemyTurnFinished) {
-				turnLog.add("\n");
-				for (let i = 0; i < (b.enemy.spd ?? 1); i++) {
-					const rng = (defMinRnd + (b.enemy.fixRnd ?? random(b.data, b.startCharge, b.skillEffects, true, () => b.rand("enemyDmg", b.count))) * defMaxRnd);
-					if (aggregateTokensEffects(b.data).showRandom) turnLog.add(`⚂ ${Math.floor(rng * 100)}%\n`);
-					/** クリティカルかどうか */
-					const crit = b.rand("enemyCrit", b.count) < (b.enemy.alwaysCrit ? 1 : 0) * (1 - (b.skillEffects.enemyCritDown ?? 0));
-					const critDmg = 1 + ((b.skillEffects.enemyCritDmgDown ?? 0) * -1);
-					if (b.verboseLog && (defDmgX < 0.999 || defDmgX > 1.001)) {
-						turnLog.buff(`D: ${formatNumber(b.def)} (x${formatNumber(b.def / (b.lv * 3.5))})\n`);
-						turnLog.add(`合計被ダメージ: ${displayDifference(defDmgX)}\n`);
-					}
-					if (_data.enemy.fire) {
-						b.fireStack += _data.enemy.fire / 0.15;
-						_data.fireStack = b.fireStack;
-						const fireStatus = b.additionalStatuses.find((status) => status.icon === serifs.rpg.fire);
-						if (fireStatus) fireStatus.value = b.fireStack;
-					}
-					/** ダメージ */
-					let dmg = getEnemyDmg(_data, b.def, b.tp, 1, crit ? critDmg : false, b.enemyAtk, rng * defDmgX * b.enemyAtkX, getVal(b.enemy.atkx, [b.count]));
-					let noItemDmg = getEnemyDmg(_data, b.def - b.itemBonus.def, b.tp, 1, crit ? critDmg : false, b.enemyAtk, rng * defDmgX * b.enemyAtkX, getVal(b.enemy.atkx, [b.count]));
-					let normalDmg = getEnemyDmg(_data, b.lv * 3.75, b.tp, 1, b.enemy.alwaysCrit ? 1 : false, b.enemyAtk, rng, getVal(b.enemy.atkx, [b.count]));
-					let addMessage = "";
-					if (normalDmg > dmg) {
-						b.totalResistDmg += (normalDmg - dmg);
-					}
-					if (b.sevenFeverBarrier > 0) {
-						const reduced = reduceByBarrier(dmg, b.sevenFeverBarrier);
-						dmg = reduced.reducedDmg;
-						if (reduced.consumed) addMessage += `(バリア: -${Math.round(reduced.consumed * 10) / 10})\n`;
-						if (noItemDmg > 0) {
-							const noItemReduced = reduceByBarrier(noItemDmg, b.sevenFeverBarrier);
-							noItemDmg = noItemReduced.reducedDmg;
-						}
-						b.sevenFeverBarrier = reduced.restBarrier;
-						const barrierStatus = b.additionalStatuses.find((status) => status.icon === "🛡️");
-						if (barrierStatus) barrierStatus.value = b.sevenFeverBarrier;
-					}
-					if (b.skillEffects.pride) {
-						if (dmg <= (b.playerMaxHp / 10)) {
-							b.atkDmgBonus *= 1.15;
-						}
-						if (dmg >= ((b.playerMaxHp / 10) * 3)) {
-							dmg *= 2;
-						}
-					}
-					b.playerHp -= dmg;
-					turnLog.add((crit ? `**${b.enemy.defmsg(dmg)}**` : b.enemy.defmsg(dmg)) + "\n");
-					if (addMessage) turnLog.add(addMessage);
-					if (b.itemBonus.def && noItemDmg - dmg > 1) {
-						turnLog.add(`(道具効果: -${noItemDmg - dmg})\n`);
-					}
-					if (b.warriorFlg && b.playerHp <= 0) {
-						b.playerHp += dmg;
-						turnLog.add(serifs.rpg.warrior.lose + "\n");
-						dmg = 0;
-						b.warriorFlg = false;
-					}
-					if (dmg > maxDmg) maxDmg = dmg;
-					if (b.enemy.fire && b.count > (b.data.thirdFire ?? 0)) b.data.thirdFire = b.count;
-				}
-				b.checkMagic("AfterDefense", {predictedDmg});
-				// HPが0で食いしばりが可能な場合、食いしばる
-				const endure = (0.1 + (endureCount * 0.1)) - (b.count * 0.05);
-				if (b.verboseLog && b.playerHp <= 0 && !b.enemy.notEndure && endure > 0) {
-					turnLog.buff(`食いしばり率: ${formatNumber(endure * 100)}%\n`);
-				}
-				if (b.playerHp <= 0 && !b.enemy.notEndure && b.rand("endure", b.count) < endure) {
-					turnLog.add(serifs.rpg.endure + "\n");
-					b.playerHp = 1;
-					endureCount -= 1;
-				}
-				if (b.verboseLog && b.skillEffects.escape && actionX + 1 < b.plusActionX && b.playerHp <= 0 && !b.enemy.notEndure) {
-					turnLog.buff(`逃スキル: HPが0 ~ ${Math.ceil((b.playerMaxHp) * (b.skillEffects.escape / -16))}で発動\n(現在HP: ${Math.floor(b.playerHp)})\n`);
-				}
-				if (b.skillEffects.escape && actionX + 1 < b.plusActionX && b.playerHp <= 0 && b.playerHp >= (b.playerMaxHp) * (b.skillEffects.escape / -16) && !b.enemy.notEndure) {
-					turnLog.add("やられそうになったので、\n一旦距離を取り、1ターン分回復に徹した！\n");
-					const heal = Math.ceil((b.playerMaxHp) * (b.skillEffects.escape / 10)) + 1;
-					const recovered = b.recoverHpOrBarrier(heal);
-					if (recovered.healed >= 1) turnLog.add(`${Math.floor(recovered.healed)}ポイントの体力を回復！\n`);
-					if (recovered.barrier > 0) turnLog.add(`${Math.floor(recovered.barrier)}ポイントのバリアを獲得した！\n`);
-					actionX += 1;
-					b.count += 1;
-					b.skillEffects.escape -= 1;
-				}
-				if (maxDmg > (b.data.superMuscle ?? 0) && b.playerHp > 0) b.data.superMuscle = maxDmg;
-			}
-			b.checkMagic("TurnEnd", {predictedDmg});
-			// 敗北処理
-			if (b.playerHp <= 0) {
-				turnLog.add("\n" + b.enemy.losemsg);
-				break;
+			// 決着がつかない場合
+			const chargeStatus = b.additionalStatuses.find((status) => status.icon === "🍀");
+			if (chargeStatus) chargeStatus.value = b.data.charge;
+			const sinStatus = b.additionalStatuses.find((status) => status.icon === "🔺");
+			if (sinStatus) sinStatus.value = (b.atkDmgBonus - 1) * 10;
+			if (t.actionX === b.plusActionX) {
+				t.turnLog.add(showStatusDmg(t._data, b.playerHp, b.totalDmg, b.playerMaxHp, b.me, b.additionalStatuses));
 			} else {
-				// 決着がつかない場合
-				const chargeStatus = b.additionalStatuses.find((status) => status.icon === "🍀");
-				if (chargeStatus) chargeStatus.value = b.data.charge;
-				const sinStatus = b.additionalStatuses.find((status) => status.icon === "🔺");
-				if (sinStatus) sinStatus.value = (b.atkDmgBonus - 1) * 10;
-				if (actionX === b.plusActionX) {
-					turnLog.add(showStatusDmg(_data, b.playerHp, b.totalDmg, b.playerMaxHp, b.me, b.additionalStatuses));
-				} else {
-					turnLog.add(showStatusDmg(_data, b.playerHp, b.totalDmg, b.playerMaxHp, b.me, b.additionalStatuses) + "\n\n");
-				}
-				b.count = b.count + 1;
+				t.turnLog.add(showStatusDmg(t._data, b.playerHp, b.totalDmg, b.playerMaxHp, b.me, b.additionalStatuses) + "\n\n");
 			}
+			b.count = b.count + 1;
 		}
+	}
+	return false;
+}
+
+/**
+ * レイド（通常型）の段階3: ターンのループ（アイテム・敵の攻撃・自分の攻撃・勝敗）
+ *
+ * @internal
+ */
+function runRaidTurns(b: RaidBattle) {
+	for (let actionX = 0; actionX < b.plusActionX + 1; actionX++) {
+		const t = { actionX } as RaidTurn;
+		startRaidTurn(b, t);
+		prepareRaidTurnAttack(b, t);
+		runRaidEnemyFirstStrike(b, t);
+		runRaidPlayerAttack(b, t);
+		if (resolveRaidTurn(b, t)) break;
+		// 逃走などでターンを飛ばした場合（resolveRaidTurn の中で t.actionX を進める）を、ループに戻す
+		actionX = t.actionX;
 	}
 }
 
