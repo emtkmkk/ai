@@ -1,0 +1,694 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`木人の結果（ゴールデン） お守り整備×5 + 雷水入りカスタム 1`] = `
+{
+  "seed 1": [
+    "1回目: 51bf760a7ef6 best=18546 reaction=:mk_hero_9p:",
+    "2回目: 7885c81e001f best=18546 reaction=:mk_hero_9p:",
+  ],
+  "seed 2": [
+    "1回目: 51bf760a7ef6 best=18546 reaction=:mk_hero_9p:",
+    "2回目: 7885c81e001f best=18546 reaction=:mk_hero_9p:",
+  ],
+  "seed 3": [
+    "1回目: 51bf760a7ef6 best=18546 reaction=:mk_hero_9p:",
+    "2回目: 7885c81e001f best=18546 reaction=:mk_hero_9p:",
+  ],
+}
+`;
+
+exports[`木人の結果（ゴールデン） わかば・スキル少なめ 1`] = `
+{
+  "seed 1": [
+    "1回目: bc03015d2a86 best=220 reaction=:mk_hero:",
+    "2回目: 256f573d48ca best=220 reaction=:mk_hero:",
+  ],
+  "seed 2": [
+    "1回目: bc03015d2a86 best=220 reaction=:mk_hero:",
+    "2回目: 256f573d48ca best=220 reaction=:mk_hero:",
+  ],
+  "seed 3": [
+    "1回目: bc03015d2a86 best=220 reaction=:mk_hero:",
+    "2回目: 256f573d48ca best=220 reaction=:mk_hero:",
+  ],
+}
+`;
+
+exports[`木人の結果（ゴールデン） ベテラン5スキル + 究極 1`] = `
+{
+  "seed 1": [
+    "1回目: 12e6b4f2a583 best=6737 reaction=:mk_hero_9p:",
+    "2回目: da2c010d8f35 best=6737 reaction=:mk_hero_9p:",
+  ],
+  "seed 2": [
+    "1回目: 12e6b4f2a583 best=6737 reaction=:mk_hero_9p:",
+    "2回目: da2c010d8f35 best=6737 reaction=:mk_hero_9p:",
+  ],
+  "seed 3": [
+    "1回目: 12e6b4f2a583 best=6737 reaction=:mk_hero_9p:",
+    "2回目: da2c010d8f35 best=6737 reaction=:mk_hero_9p:",
+  ],
+}
+`;
+
+exports[`木人の結果（ゴールデン） 天国か地獄か・不運チャージ + しあわせのお守り 1`] = `
+{
+  "seed 1": [
+    "1回目: a532aa3155bb best=393 reaction=:mk_hero:",
+    "2回目: 4f40e4308b32 best=393 reaction=:mk_hero:",
+  ],
+  "seed 2": [
+    "1回目: a532aa3155bb best=393 reaction=:mk_hero:",
+    "2回目: 4f40e4308b32 best=393 reaction=:mk_hero:",
+  ],
+  "seed 3": [
+    "1回目: a532aa3155bb best=393 reaction=:mk_hero:",
+    "2回目: 4f40e4308b32 best=393 reaction=:mk_hero:",
+  ],
+}
+`;
+
+exports[`木人の結果（ゴールデン） 武器型 + 超越（覚醒変更 朱） 1`] = `
+{
+  "seed 1": [
+    "1回目: ca2c3d148fd7 best=6923 reaction=:mk_hero_9p:",
+    "2回目: ca61069eeb10 best=6923 reaction=:mk_hero_9p:",
+  ],
+  "seed 2": [
+    "1回目: ca2c3d148fd7 best=6923 reaction=:mk_hero_9p:",
+    "2回目: ca61069eeb10 best=6923 reaction=:mk_hero_9p:",
+  ],
+  "seed 3": [
+    "1回目: ca2c3d148fd7 best=6923 reaction=:mk_hero_9p:",
+    "2回目: ca61069eeb10 best=6923 reaction=:mk_hero_9p:",
+  ],
+}
+`;
+
+exports[`木人の結果（ゴールデン） 罪スキル + 食べ物型 1`] = `
+{
+  "seed 1": [
+    "1回目: 19ff795bc037 best=964 reaction=:mk_hero:",
+    "2回目: ffc7f098bcba best=964 reaction=:mk_hero:",
+  ],
+  "seed 2": [
+    "1回目: 19ff795bc037 best=964 reaction=:mk_hero:",
+    "2回目: ffc7f098bcba best=964 reaction=:mk_hero:",
+  ],
+  "seed 3": [
+    "1回目: 19ff795bc037 best=964 reaction=:mk_hero:",
+    "2回目: ffc7f098bcba best=964 reaction=:mk_hero:",
+  ],
+}
+`;
+
+exports[`木人の結果（ゴールデン） 詳細ログ: お守り整備×5 + 雷水入りカスタム 1`] = `
+{
+  "seed 1": [
+    "1回目: 51bf760a7ef6 best=18546 reaction=:mk_hero_9p:",
+  ],
+  "seed 2": [
+    "1回目: 51bf760a7ef6 best=18546 reaction=:mk_hero_9p:",
+  ],
+  "seed 3": [
+    "1回目: 51bf760a7ef6 best=18546 reaction=:mk_hero_9p:",
+  ],
+}
+`;
+
+exports[`木人の結果（ゴールデン） 詳細ログ: わかば・スキル少なめ 1`] = `
+{
+  "seed 1": [
+    "1回目: bc03015d2a86 best=220 reaction=:mk_hero:",
+  ],
+  "seed 2": [
+    "1回目: bc03015d2a86 best=220 reaction=:mk_hero:",
+  ],
+  "seed 3": [
+    "1回目: bc03015d2a86 best=220 reaction=:mk_hero:",
+  ],
+}
+`;
+
+exports[`木人の結果（ゴールデン） 詳細ログ: ベテラン5スキル + 究極 1`] = `
+{
+  "seed 1": [
+    "1回目: 12e6b4f2a583 best=6737 reaction=:mk_hero_9p:",
+  ],
+  "seed 2": [
+    "1回目: 12e6b4f2a583 best=6737 reaction=:mk_hero_9p:",
+  ],
+  "seed 3": [
+    "1回目: 12e6b4f2a583 best=6737 reaction=:mk_hero_9p:",
+  ],
+}
+`;
+
+exports[`木人の結果（ゴールデン） 詳細ログ: 天国か地獄か・不運チャージ + しあわせのお守り 1`] = `
+{
+  "seed 1": [
+    "1回目: a532aa3155bb best=393 reaction=:mk_hero:",
+  ],
+  "seed 2": [
+    "1回目: a532aa3155bb best=393 reaction=:mk_hero:",
+  ],
+  "seed 3": [
+    "1回目: a532aa3155bb best=393 reaction=:mk_hero:",
+  ],
+}
+`;
+
+exports[`木人の結果（ゴールデン） 詳細ログ: 武器型 + 超越（覚醒変更 朱） 1`] = `
+{
+  "seed 1": [
+    "1回目: ca2c3d148fd7 best=6923 reaction=:mk_hero_9p:",
+  ],
+  "seed 2": [
+    "1回目: ca2c3d148fd7 best=6923 reaction=:mk_hero_9p:",
+  ],
+  "seed 3": [
+    "1回目: ca2c3d148fd7 best=6923 reaction=:mk_hero_9p:",
+  ],
+}
+`;
+
+exports[`木人の結果（ゴールデン） 詳細ログ: 罪スキル + 食べ物型 1`] = `
+{
+  "seed 1": [
+    "1回目: 19ff795bc037 best=964 reaction=:mk_hero:",
+  ],
+  "seed 2": [
+    "1回目: 19ff795bc037 best=964 reaction=:mk_hero:",
+  ],
+  "seed 3": [
+    "1回目: 19ff795bc037 best=964 reaction=:mk_hero:",
+  ],
+}
+`;
+
+exports[`木人の結果（ゴールデン） 詳細ログ: 謎のお守り（発動しやすい状態） 1`] = `
+{
+  "seed 1": [
+    "1回目: ea9d20f9f550 best=1020 reaction=:mk_hero:",
+  ],
+  "seed 2": [
+    "1回目: ea9d20f9f550 best=1020 reaction=:mk_hero:",
+  ],
+  "seed 3": [
+    "1回目: ea9d20f9f550 best=1020 reaction=:mk_hero:",
+  ],
+}
+`;
+
+exports[`木人の結果（ゴールデン） 詳細ログ: ７フィーバー×5 + バーサク等 1`] = `
+{
+  "seed 1": [
+    "1回目: e4a528da26d7 best=516 reaction=:mk_hero:",
+  ],
+  "seed 2": [
+    "1回目: e4a528da26d7 best=516 reaction=:mk_hero:",
+  ],
+  "seed 3": [
+    "1回目: e4a528da26d7 best=516 reaction=:mk_hero:",
+  ],
+}
+`;
+
+exports[`木人の結果（ゴールデン） 謎のお守り（発動しやすい状態） 1`] = `
+{
+  "seed 1": [
+    "1回目: ea9d20f9f550 best=1020 reaction=:mk_hero:",
+    "2回目: 0b1b96f88270 best=1020 reaction=:mk_hero:",
+  ],
+  "seed 2": [
+    "1回目: ea9d20f9f550 best=1020 reaction=:mk_hero:",
+    "2回目: 0b1b96f88270 best=1020 reaction=:mk_hero:",
+  ],
+  "seed 3": [
+    "1回目: ea9d20f9f550 best=1020 reaction=:mk_hero:",
+    "2回目: 0b1b96f88270 best=1020 reaction=:mk_hero:",
+  ],
+}
+`;
+
+exports[`木人の結果（ゴールデン） ７フィーバー×5 + バーサク等 1`] = `
+{
+  "seed 1": [
+    "1回目: e4a528da26d7 best=516 reaction=:mk_hero:",
+    "2回目: c8cdafa43dac best=516 reaction=:mk_hero:",
+  ],
+  "seed 2": [
+    "1回目: e4a528da26d7 best=516 reaction=:mk_hero:",
+    "2回目: c8cdafa43dac best=516 reaction=:mk_hero:",
+  ],
+  "seed 3": [
+    "1回目: e4a528da26d7 best=516 reaction=:mk_hero:",
+    "2回目: c8cdafa43dac best=516 reaction=:mk_hero:",
+  ],
+}
+`;
+
+exports[`通常戦闘の結果（ゴールデン） Lv が低いプレイヤー（序盤の敵） 1`] = `
+{
+  "seed 1": [
+    "1回目: e87c7fed3760 {"lv":6,"atk":29,"def":20,"exp":0,"coin":0,"enemy":":mk_catchicken:","count":2,"hp":195,"ehp":7,"winCount":0,"clearHistory":0,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "2回目: 49cdaa2bd94f {"lv":7,"atk":33,"def":23,"exp":0,"coin":0,"enemy":null,"count":1,"hp":255,"ehp":126,"winCount":1,"clearHistory":1,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: dec38037b80c {"lv":8,"atk":40,"def":23,"exp":0,"coin":0,"enemy":":mk_senryu_kun:","count":2,"hp":232,"ehp":87,"winCount":1,"clearHistory":1,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: a7cb854a21c2 {"lv":9,"atk":44,"def":26,"exp":0,"coin":0,"enemy":null,"count":1,"hp":261,"ehp":137,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "5回目: 8b3ee01b14b5 {"lv":9,"atk":44,"def":26,"exp":0,"coin":0,"enemy":null,"count":1,"hp":261,"ehp":137,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=confused",
+    "6回目: b42cef84296c {"lv":10,"atk":46,"def":31,"exp":0,"coin":0,"enemy":":mk_tatsu:","count":2,"hp":254,"ehp":53,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+  "seed 2": [
+    "1回目: 1baaf40517d7 {"lv":6,"atk":23,"def":24,"exp":0,"coin":0,"enemy":null,"count":1,"hp":252,"ehp":123,"winCount":1,"clearHistory":1,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "2回目: 1b75ac921ee6 {"lv":7,"atk":23,"def":32,"exp":0,"coin":0,"enemy":":mk_hero_8p:","count":2,"hp":207,"ehp":53,"winCount":1,"clearHistory":1,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: 57cf791450ca {"lv":8,"atk":27,"def":35,"exp":0,"coin":0,"enemy":null,"count":1,"hp":258,"ehp":134,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: b0673e14f844 {"lv":9,"atk":30,"def":39,"exp":0,"coin":0,"enemy":":mk_fly_sliver:","count":2,"hp":139,"ehp":104,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "5回目: 8b3ee01b14b5 {"lv":9,"atk":30,"def":39,"exp":0,"coin":0,"enemy":":mk_fly_sliver:","count":2,"hp":139,"ehp":104,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=confused",
+    "6回目: 114bf5ced7f9 {"lv":10,"atk":33,"def":43,"exp":0,"coin":0,"enemy":null,"count":1,"hp":264,"ehp":145,"winCount":3,"clearHistory":3,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+  "seed 3": [
+    "1回目: 4c67e5b005ff {"lv":6,"atk":22,"def":25,"exp":0,"coin":0,"enemy":":mk_catchicken:","count":2,"hp":216,"ehp":38,"winCount":0,"clearHistory":0,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "2回目: f0c66c306c59 {"lv":7,"atk":26,"def":30,"exp":0,"coin":0,"enemy":null,"count":1,"hp":255,"ehp":126,"winCount":1,"clearHistory":1,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: 6e59a12b7656 {"lv":8,"atk":29,"def":34,"exp":0,"coin":0,"enemy":":mk_senryu_kun:","count":2,"hp":224,"ehp":6,"winCount":1,"clearHistory":1,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: 061490403cfc {"lv":9,"atk":34,"def":36,"exp":0,"coin":0,"enemy":null,"count":1,"hp":261,"ehp":137,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "5回目: 8b3ee01b14b5 {"lv":9,"atk":34,"def":36,"exp":0,"coin":0,"enemy":null,"count":1,"hp":261,"ehp":137,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=confused",
+    "6回目: 6e48e71e7d1f {"lv":10,"atk":39,"def":39,"exp":0,"coin":0,"enemy":null,"count":1,"hp":264,"ehp":145,"winCount":3,"clearHistory":3,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+}
+`;
+
+exports[`通常戦闘の結果（ゴールデン） Lv150: お守り整備×5 + 雷水入りカスタム 1`] = `
+{
+  "seed 1": [
+    "1回目: a0689eb40ceb {"lv":151,"atk":573,"def":574,"exp":0,"coin":0,"enemy":":mk_senryu_kun:","count":2,"hp":671,"ehp":15,"winCount":0,"clearHistory":0,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: 00d480927e08 {"lv":152,"atk":576,"def":578,"exp":0,"coin":0,"enemy":null,"count":1,"hp":690,"ehp":561,"winCount":1,"clearHistory":1,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "3回目: e8da123aa6e6 {"lv":153,"atk":578,"def":583,"exp":0,"coin":0,"enemy":null,"count":1,"hp":693,"ehp":569,"winCount":2,"clearHistory":2,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "4回目: d4025ed5df5d {"lv":154,"atk":580,"def":588,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":577,"winCount":3,"clearHistory":3,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "5回目: 8b3ee01b14b5 {"lv":154,"atk":580,"def":588,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":577,"winCount":3,"clearHistory":3,"superCount":200,"charge":0,"bestScore":null} reaction=confused",
+    "6回目: 0f10a3d13117 {"lv":155,"atk":580,"def":595,"exp":0,"coin":0,"enemy":null,"count":1,"hp":565,"ehp":580,"winCount":3,"clearHistory":4,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+  ],
+  "seed 2": [
+    "1回目: 5ee4eb1015be {"lv":151,"atk":577,"def":570,"exp":0,"coin":0,"enemy":null,"count":1,"hp":687,"ehp":558,"winCount":1,"clearHistory":1,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: 7624c7c6d4f3 {"lv":152,"atk":581,"def":575,"exp":0,"coin":0,"enemy":null,"count":1,"hp":690,"ehp":566,"winCount":2,"clearHistory":2,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "3回目: f7192a975e7c {"lv":153,"atk":583,"def":580,"exp":0,"coin":0,"enemy":":mk_senryu_kun:","count":2,"hp":650,"ehp":15,"winCount":2,"clearHistory":2,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "4回目: 04ceb65e4369 {"lv":154,"atk":587,"def":583,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":577,"winCount":3,"clearHistory":3,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "5回目: 8b3ee01b14b5 {"lv":154,"atk":587,"def":583,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":577,"winCount":3,"clearHistory":3,"superCount":200,"charge":0,"bestScore":null} reaction=confused",
+    "6回目: 8727ded50e4e {"lv":155,"atk":592,"def":585,"exp":0,"coin":0,"enemy":null,"count":1,"hp":565,"ehp":580,"winCount":3,"clearHistory":4,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+  ],
+  "seed 3": [
+    "1回目: 4d970fd3f360 {"lv":151,"atk":574,"def":573,"exp":0,"coin":0,"enemy":null,"count":1,"hp":687,"ehp":558,"winCount":1,"clearHistory":1,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: cb11f2122bea {"lv":152,"atk":578,"def":576,"exp":0,"coin":0,"enemy":":mk_senryu_kun:","count":2,"hp":658,"ehp":15,"winCount":1,"clearHistory":1,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "3回目: 44d2ae07405f {"lv":153,"atk":583,"def":578,"exp":0,"coin":0,"enemy":null,"count":1,"hp":693,"ehp":569,"winCount":2,"clearHistory":2,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "4回目: d8cacc67767d {"lv":154,"atk":587,"def":581,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":577,"winCount":3,"clearHistory":3,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "5回目: 8b3ee01b14b5 {"lv":154,"atk":587,"def":581,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":577,"winCount":3,"clearHistory":3,"superCount":200,"charge":0,"bestScore":null} reaction=confused",
+    "6回目: ba391322e284 {"lv":155,"atk":591,"def":584,"exp":0,"coin":0,"enemy":"もこチキはTLの巡回","count":2,"hp":690,"ehp":15,"winCount":3,"clearHistory":3,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+  ],
+}
+`;
+
+exports[`通常戦闘の結果（ゴールデン） Lv150: わかば・スキル少なめ 1`] = `
+{
+  "seed 1": [
+    "1回目: f4b783a3c3f2 {"lv":151,"atk":575,"def":572,"exp":0,"coin":0,"enemy":null,"count":1,"hp":687,"ehp":558,"winCount":1,"clearHistory":1,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "2回目: 5b6d67cd517d {"lv":152,"atk":577,"def":577,"exp":0,"coin":0,"enemy":"もこチキは猛勉強","count":2,"hp":419,"ehp":48,"winCount":1,"clearHistory":1,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: bb95121c609e {"lv":153,"atk":581,"def":580,"exp":0,"coin":0,"enemy":null,"count":1,"hp":693,"ehp":569,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: 341036d0ef35 {"lv":154,"atk":583,"def":585,"exp":0,"coin":0,"enemy":":mk_tatsu:","count":2,"hp":662,"ehp":112,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "5回目: 8b3ee01b14b5 {"lv":154,"atk":583,"def":585,"exp":0,"coin":0,"enemy":":mk_tatsu:","count":2,"hp":662,"ehp":112,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=confused",
+    "6回目: 6c93c1b53c7a {"lv":155,"atk":586,"def":589,"exp":0,"coin":0,"enemy":":mk_tatsu:","count":3,"hp":514,"ehp":82,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+  "seed 2": [
+    "1回目: 1c212eab5555 {"lv":151,"atk":576,"def":572,"exp":0,"coin":0,"enemy":null,"count":1,"hp":687,"ehp":558,"winCount":1,"clearHistory":1,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "2回目: 420609d378bb {"lv":152,"atk":583,"def":572,"exp":0,"coin":0,"enemy":":mk_catchicken:","count":2,"hp":585,"ehp":121,"winCount":1,"clearHistory":1,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: 42195f3bcffd {"lv":153,"atk":587,"def":576,"exp":0,"coin":0,"enemy":null,"count":1,"hp":693,"ehp":569,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: 23d7c9dd0ba5 {"lv":154,"atk":591,"def":580,"exp":0,"coin":0,"enemy":"もこチキはTLの巡回","count":2,"hp":625,"ehp":210,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "5回目: 8b3ee01b14b5 {"lv":154,"atk":591,"def":580,"exp":0,"coin":0,"enemy":"もこチキはTLの巡回","count":2,"hp":625,"ehp":210,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=confused",
+    "6回目: 52d272ffdb32 {"lv":155,"atk":591,"def":588,"exp":0,"coin":0,"enemy":"もこチキはTLの巡回","count":3,"hp":573,"ehp":21,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+  "seed 3": [
+    "1回目: b8356a52760e {"lv":151,"atk":572,"def":575,"exp":0,"coin":0,"enemy":":mk_catchicken:","count":2,"hp":609,"ehp":73,"winCount":0,"clearHistory":0,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "2回目: c84f270329d0 {"lv":152,"atk":574,"def":580,"exp":0,"coin":0,"enemy":null,"count":1,"hp":690,"ehp":561,"winCount":1,"clearHistory":1,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: b3c3d6696317 {"lv":153,"atk":579,"def":583,"exp":0,"coin":0,"enemy":null,"count":1,"hp":693,"ehp":569,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: e7493d108e3b {"lv":154,"atk":584,"def":585,"exp":0,"coin":0,"enemy":"もこチキは猛勉強","count":2,"hp":441,"ehp":170,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "5回目: 8b3ee01b14b5 {"lv":154,"atk":584,"def":585,"exp":0,"coin":0,"enemy":"もこチキは猛勉強","count":2,"hp":441,"ehp":170,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=confused",
+    "6回目: 631e612038a2 {"lv":155,"atk":586,"def":590,"exp":0,"coin":0,"enemy":null,"count":1,"hp":699,"ehp":580,"winCount":3,"clearHistory":3,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+}
+`;
+
+exports[`通常戦闘の結果（ゴールデン） Lv150: ベテラン5スキル + 究極 1`] = `
+{
+  "seed 1": [
+    "1回目: 15bfa5f1e429 {"lv":151,"atk":575,"def":572,"exp":0,"coin":0,"enemy":null,"count":1,"hp":687,"ehp":558,"winCount":1,"clearHistory":1,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: 0bc507212fe4 {"lv":152,"atk":578,"def":577,"exp":0,"coin":0,"enemy":null,"count":1,"hp":690,"ehp":566,"winCount":2,"clearHistory":2,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "3回目: 43f9a508df09 {"lv":153,"atk":582,"def":580,"exp":0,"coin":0,"enemy":null,"count":1,"hp":693,"ehp":574,"winCount":3,"clearHistory":3,"superCount":200,"charge":0.5122506297193468,"bestScore":null} reaction=:mk_hero_9p:",
+    "4回目: 4eafc767d60d {"lv":154,"atk":589,"def":583,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":582,"winCount":4,"clearHistory":4,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "5回目: 8b3ee01b14b5 {"lv":154,"atk":589,"def":583,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":582,"winCount":4,"clearHistory":4,"superCount":200,"charge":0,"bestScore":null} reaction=confused",
+    "6回目: 97c09014c92a {"lv":155,"atk":589,"def":590,"exp":0,"coin":0,"enemy":null,"count":1,"hp":699,"ehp":590,"winCount":5,"clearHistory":5,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+  ],
+  "seed 2": [
+    "1回目: 6073fb6595f1 {"lv":151,"atk":572,"def":575,"exp":0,"coin":0,"enemy":null,"count":1,"hp":687,"ehp":558,"winCount":1,"clearHistory":1,"superCount":200,"charge":1.3351143640466034,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: b19e5f0f984c {"lv":152,"atk":572,"def":582,"exp":0,"coin":0,"enemy":null,"count":1,"hp":690,"ehp":566,"winCount":2,"clearHistory":2,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "3回目: 7412806b7adf {"lv":153,"atk":579,"def":582,"exp":0,"coin":0,"enemy":null,"count":1,"hp":693,"ehp":574,"winCount":3,"clearHistory":3,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "4回目: fbc5884f2864 {"lv":154,"atk":586,"def":582,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":582,"winCount":4,"clearHistory":4,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "5回目: 8b3ee01b14b5 {"lv":154,"atk":586,"def":582,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":582,"winCount":4,"clearHistory":4,"superCount":200,"charge":0,"bestScore":null} reaction=confused",
+    "6回目: dae0f3c3cbd1 {"lv":155,"atk":589,"def":586,"exp":0,"coin":0,"enemy":null,"count":1,"hp":699,"ehp":590,"winCount":5,"clearHistory":5,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+  ],
+  "seed 3": [
+    "1回目: 5d04ac7e43ec {"lv":151,"atk":572,"def":575,"exp":0,"coin":0,"enemy":null,"count":1,"hp":687,"ehp":558,"winCount":1,"clearHistory":1,"superCount":200,"charge":0.5711844176985323,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: f043e0032da9 {"lv":152,"atk":577,"def":577,"exp":0,"coin":0,"enemy":null,"count":1,"hp":690,"ehp":566,"winCount":2,"clearHistory":2,"superCount":200,"charge":0.9687327316523309,"bestScore":null} reaction=:mk_hero_9p:",
+    "3回目: 144349891a4d {"lv":153,"atk":580,"def":581,"exp":0,"coin":0,"enemy":null,"count":1,"hp":693,"ehp":574,"winCount":3,"clearHistory":3,"superCount":200,"charge":0.9714037289330941,"bestScore":null} reaction=:mk_hero_9p:",
+    "4回目: fa4fc7e6beff {"lv":154,"atk":583,"def":585,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":582,"winCount":4,"clearHistory":4,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "5回目: 8b3ee01b14b5 {"lv":154,"atk":583,"def":585,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":582,"winCount":4,"clearHistory":4,"superCount":200,"charge":0,"bestScore":null} reaction=confused",
+    "6回目: d89d3f147ccd {"lv":155,"atk":589,"def":587,"exp":0,"coin":0,"enemy":null,"count":1,"hp":699,"ehp":590,"winCount":5,"clearHistory":5,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+  ],
+}
+`;
+
+exports[`通常戦闘の結果（ゴールデン） Lv150: 天国か地獄か・不運チャージ + しあわせのお守り 1`] = `
+{
+  "seed 1": [
+    "1回目: d849b5c93f66 {"lv":151,"atk":579,"def":570,"exp":0,"coin":0,"enemy":null,"count":1,"hp":687,"ehp":558,"winCount":1,"clearHistory":1,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "2回目: 3de529c0ed1f {"lv":152,"atk":581,"def":575,"exp":0,"coin":0,"enemy":null,"count":1,"hp":690,"ehp":566,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: 98cc2a1faf48 {"lv":153,"atk":585,"def":578,"exp":0,"coin":0,"enemy":"もこチキは猛勉強","count":2,"hp":576,"ehp":88,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: 548e9340465d {"lv":154,"atk":590,"def":580,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":577,"winCount":3,"clearHistory":3,"superCount":0,"charge":0.3952543023042381,"bestScore":null} reaction=:mk_hero:",
+    "5回目: 8b3ee01b14b5 {"lv":154,"atk":590,"def":580,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":577,"winCount":3,"clearHistory":3,"superCount":0,"charge":0.3952543023042381,"bestScore":null} reaction=confused",
+    "6回目: 427442be889c {"lv":155,"atk":590,"def":591,"exp":0,"coin":0,"enemy":null,"count":1,"hp":699,"ehp":585,"winCount":4,"clearHistory":4,"superCount":0,"charge":1.2588292483025003,"bestScore":null} reaction=:mk_hero:",
+  ],
+  "seed 2": [
+    "1回目: 4a15f19a16c9 {"lv":151,"atk":570,"def":578,"exp":0,"coin":0,"enemy":":nisemokochiki_mzh:","count":2,"hp":501,"ehp":73,"winCount":0,"clearHistory":0,"superCount":0,"charge":1.3351143640466034,"bestScore":null} reaction=:mk_hero:",
+    "2回目: 19cc829bc2af {"lv":152,"atk":570,"def":587,"exp":0,"coin":0,"enemy":null,"count":1,"hp":690,"ehp":561,"winCount":1,"clearHistory":1,"superCount":0,"charge":1.8375092910193092,"bestScore":null} reaction=:mk_hero:",
+    "3回目: f65fec0af9e2 {"lv":153,"atk":572,"def":592,"exp":0,"coin":0,"enemy":":mk_hero_8p:","count":2,"hp":560,"ehp":201,"winCount":1,"clearHistory":1,"superCount":0,"charge":1.4321485553252864,"bestScore":null} reaction=:mk_hero:",
+    "4回目: ecae17ad8d32 {"lv":154,"atk":572,"def":600,"exp":0,"coin":0,"enemy":":mk_hero_8p:","count":3,"hp":405,"ehp":50,"winCount":1,"clearHistory":1,"superCount":0,"charge":1.7090930411272016,"bestScore":null} reaction=:mk_hero:",
+    "5回目: 8b3ee01b14b5 {"lv":154,"atk":572,"def":600,"exp":0,"coin":0,"enemy":":mk_hero_8p:","count":3,"hp":405,"ehp":50,"winCount":1,"clearHistory":1,"superCount":0,"charge":1.7090930411272016,"bestScore":null} reaction=confused",
+    "6回目: 18b219883d64 {"lv":155,"atk":576,"def":603,"exp":0,"coin":0,"enemy":null,"count":1,"hp":699,"ehp":575,"winCount":2,"clearHistory":2,"superCount":0,"charge":1.5278855304584533,"bestScore":null} reaction=:mk_hero:",
+  ],
+  "seed 3": [
+    "1回目: c1d9759789c6 {"lv":151,"atk":570,"def":577,"exp":0,"coin":0,"enemy":null,"count":1,"hp":687,"ehp":558,"winCount":1,"clearHistory":1,"superCount":0,"charge":0.02654085075482726,"bestScore":null} reaction=:mk_hero:",
+    "2回目: 47f5de0edcc9 {"lv":152,"atk":578,"def":577,"exp":0,"coin":0,"enemy":":mk_tatsu:","count":2,"hp":682,"ehp":138,"winCount":1,"clearHistory":1,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: 2c6788cdd337 {"lv":153,"atk":581,"def":581,"exp":0,"coin":0,"enemy":":mk_tatsu:","count":3,"hp":564,"ehp":57,"winCount":1,"clearHistory":1,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: e89d47ef24ed {"lv":154,"atk":585,"def":584,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":572,"winCount":2,"clearHistory":2,"superCount":0,"charge":1.416560432408005,"bestScore":null} reaction=:mk_hero:",
+    "5回目: 8b3ee01b14b5 {"lv":154,"atk":585,"def":584,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":572,"winCount":2,"clearHistory":2,"superCount":0,"charge":1.416560432408005,"bestScore":null} reaction=confused",
+    "6回目: a31b226fc0cd {"lv":155,"atk":589,"def":587,"exp":0,"coin":0,"enemy":":mk_senryu_kun:","count":2,"hp":644,"ehp":15,"winCount":2,"clearHistory":2,"superCount":0,"charge":1.2115605025319087,"bestScore":null} reaction=:mk_hero:",
+  ],
+}
+`;
+
+exports[`通常戦闘の結果（ゴールデン） Lv150: 武器型 + 超越（覚醒変更 朱） 1`] = `
+{
+  "seed 1": [
+    "1回目: 70e99ae1007f {"lv":151,"atk":573,"def":574,"exp":0,"coin":0,"enemy":null,"count":1,"hp":687,"ehp":558,"winCount":1,"clearHistory":1,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: 218d7dbcbf9b {"lv":152,"atk":575,"def":579,"exp":0,"coin":0,"enemy":"もこチキは猛勉強","count":2,"hp":580,"ehp":48,"winCount":1,"clearHistory":1,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "3回目: af5bba327a66 {"lv":153,"atk":578,"def":584,"exp":0,"coin":0,"enemy":null,"count":1,"hp":693,"ehp":569,"winCount":2,"clearHistory":2,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "4回目: d78697a7be63 {"lv":154,"atk":582,"def":587,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":577,"winCount":3,"clearHistory":3,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "5回目: 8b3ee01b14b5 {"lv":154,"atk":582,"def":587,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":577,"winCount":3,"clearHistory":3,"superCount":200,"charge":0,"bestScore":null} reaction=confused",
+    "6回目: 98c9cb1393ff {"lv":155,"atk":582,"def":596,"exp":0,"coin":0,"enemy":null,"count":1,"hp":699,"ehp":585,"winCount":4,"clearHistory":4,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+  ],
+  "seed 2": [
+    "1回目: 7f7f4ca3a517 {"lv":151,"atk":576,"def":572,"exp":0,"coin":0,"enemy":null,"count":1,"hp":687,"ehp":558,"winCount":1,"clearHistory":1,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: e4af7f5b52d0 {"lv":152,"atk":581,"def":574,"exp":0,"coin":0,"enemy":":mk_hero_8p:","count":2,"hp":647,"ehp":420,"winCount":1,"clearHistory":1,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "3回目: 729b7bbdf3af {"lv":153,"atk":586,"def":576,"exp":0,"coin":0,"enemy":":mk_hero_8p:","count":3,"hp":593,"ehp":119,"winCount":1,"clearHistory":1,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "4回目: 5c0e5162f12a {"lv":154,"atk":591,"def":579,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":572,"winCount":2,"clearHistory":2,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "5回目: 8b3ee01b14b5 {"lv":154,"atk":591,"def":579,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":572,"winCount":2,"clearHistory":2,"superCount":200,"charge":0,"bestScore":null} reaction=confused",
+    "6回目: 5a5be93cefa1 {"lv":155,"atk":594,"def":585,"exp":0,"coin":0,"enemy":null,"count":1,"hp":565,"ehp":575,"winCount":2,"clearHistory":3,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+  ],
+  "seed 3": [
+    "1回目: d011d99481a5 {"lv":151,"atk":572,"def":576,"exp":0,"coin":0,"enemy":null,"count":1,"hp":687,"ehp":558,"winCount":1,"clearHistory":1,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: a7cd694b76e0 {"lv":152,"atk":574,"def":581,"exp":0,"coin":0,"enemy":null,"count":1,"hp":690,"ehp":566,"winCount":2,"clearHistory":2,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "3回目: 53d2c00b71b4 {"lv":153,"atk":574,"def":588,"exp":0,"coin":0,"enemy":null,"count":1,"hp":693,"ehp":574,"winCount":3,"clearHistory":3,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "4回目: c0d35bd5f02c {"lv":154,"atk":577,"def":592,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":582,"winCount":4,"clearHistory":4,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "5回目: 8b3ee01b14b5 {"lv":154,"atk":577,"def":592,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":582,"winCount":4,"clearHistory":4,"superCount":200,"charge":0,"bestScore":null} reaction=confused",
+    "6回目: 2b191f12d5ac {"lv":155,"atk":584,"def":592,"exp":0,"coin":0,"enemy":"もこチキは猛勉強","count":2,"hp":587,"ehp":48,"winCount":4,"clearHistory":4,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+  ],
+}
+`;
+
+exports[`通常戦闘の結果（ゴールデン） Lv150: 罪スキル + 食べ物型 1`] = `
+{
+  "seed 1": [
+    "1回目: d0e63bb6df23 {"lv":151,"atk":577,"def":570,"exp":0,"coin":0,"enemy":null,"count":1,"hp":687,"ehp":558,"winCount":1,"clearHistory":1,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "2回目: 3e5809223cef {"lv":152,"atk":582,"def":574,"exp":0,"coin":0,"enemy":"もこチキはTLの巡回","count":2,"hp":669,"ehp":86,"winCount":1,"clearHistory":1,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: 55ad4cb227a4 {"lv":153,"atk":589,"def":574,"exp":0,"coin":0,"enemy":null,"count":1,"hp":693,"ehp":569,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: c642eb3e8f16 {"lv":154,"atk":589,"def":581,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":577,"winCount":3,"clearHistory":3,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "5回目: 8b3ee01b14b5 {"lv":154,"atk":589,"def":581,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":577,"winCount":3,"clearHistory":3,"superCount":0,"charge":0,"bestScore":null} reaction=confused",
+    "6回目: c725ac400604 {"lv":155,"atk":593,"def":586,"exp":0,"coin":0,"enemy":":mk_ojousamachicken:","count":2,"hp":606,"ehp":230,"winCount":3,"clearHistory":3,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+  "seed 2": [
+    "1回目: 58fcb89306cf {"lv":151,"atk":577,"def":570,"exp":0,"coin":0,"enemy":null,"count":1,"hp":687,"ehp":558,"winCount":1,"clearHistory":1,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "2回目: abdad3957868 {"lv":152,"atk":582,"def":572,"exp":0,"coin":0,"enemy":"もこチキは猛勉強","count":2,"hp":637,"ehp":48,"winCount":1,"clearHistory":1,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: fd83e35ba236 {"lv":153,"atk":587,"def":574,"exp":0,"coin":0,"enemy":null,"count":1,"hp":693,"ehp":569,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: 61271bd4bff5 {"lv":154,"atk":589,"def":579,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":577,"winCount":3,"clearHistory":3,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "5回目: 8b3ee01b14b5 {"lv":154,"atk":589,"def":579,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":577,"winCount":3,"clearHistory":3,"superCount":0,"charge":0,"bestScore":null} reaction=confused",
+    "6回目: c074ad0807cc {"lv":155,"atk":595,"def":583,"exp":0,"coin":0,"enemy":":mk_tatsu:","count":2,"hp":671,"ehp":90,"winCount":3,"clearHistory":3,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+  "seed 3": [
+    "1回目: 844dbc5b9c36 {"lv":151,"atk":570,"def":577,"exp":0,"coin":0,"enemy":null,"count":1,"hp":687,"ehp":558,"winCount":1,"clearHistory":1,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "2回目: 47707de15ee4 {"lv":152,"atk":570,"def":584,"exp":0,"coin":0,"enemy":null,"count":1,"hp":690,"ehp":566,"winCount":2,"clearHistory":2,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "3回目: 593aa3449fd9 {"lv":153,"atk":575,"def":587,"exp":0,"coin":0,"enemy":":mk_senryu_kun:","count":2,"hp":617,"ehp":56,"winCount":2,"clearHistory":2,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: 09f6eea3dac4 {"lv":154,"atk":578,"def":591,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":577,"winCount":3,"clearHistory":3,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "5回目: 8b3ee01b14b5 {"lv":154,"atk":578,"def":591,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":577,"winCount":3,"clearHistory":3,"superCount":1,"charge":0,"bestScore":null} reaction=confused",
+    "6回目: dc9fe6fc66fe {"lv":155,"atk":584,"def":594,"exp":0,"coin":0,"enemy":"もこチキは猛勉強","count":2,"hp":456,"ehp":48,"winCount":3,"clearHistory":3,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+}
+`;
+
+exports[`通常戦闘の結果（ゴールデン） Lv150: 謎のお守り（発動しやすい状態） 1`] = `
+{
+  "seed 1": [
+    "1回目: 4825dc6df179 {"lv":151,"atk":573,"def":574,"exp":0,"coin":0,"enemy":null,"count":1,"hp":687,"ehp":558,"winCount":1,"clearHistory":1,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "2回目: 04cfce51edd8 {"lv":152,"atk":576,"def":578,"exp":0,"coin":0,"enemy":null,"count":1,"hp":690,"ehp":566,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: c412be2f74a1 {"lv":153,"atk":581,"def":580,"exp":0,"coin":0,"enemy":"もこチキはTLの巡回","count":2,"hp":639,"ehp":72,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: cc09cf55cc1d {"lv":154,"atk":585,"def":583,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":577,"winCount":3,"clearHistory":3,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "5回目: 8b3ee01b14b5 {"lv":154,"atk":585,"def":583,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":577,"winCount":3,"clearHistory":3,"superCount":0,"charge":0,"bestScore":null} reaction=confused",
+    "6回目: e808773a6956 {"lv":155,"atk":589,"def":587,"exp":0,"coin":0,"enemy":null,"count":1,"hp":699,"ehp":585,"winCount":4,"clearHistory":4,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+  "seed 2": [
+    "1回目: 314dd4ae026a {"lv":151,"atk":572,"def":575,"exp":0,"coin":0,"enemy":null,"count":1,"hp":687,"ehp":558,"winCount":1,"clearHistory":1,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "2回目: 27581a05e2cd {"lv":152,"atk":572,"def":582,"exp":0,"coin":0,"enemy":":mk_senryu_kun:","count":2,"hp":673,"ehp":15,"winCount":1,"clearHistory":1,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: 4fdec4e3d33f {"lv":153,"atk":572,"def":589,"exp":0,"coin":0,"enemy":null,"count":1,"hp":693,"ehp":569,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: b67edaf5b955 {"lv":154,"atk":575,"def":594,"exp":0,"coin":0,"enemy":":mk_tatsu:","count":2,"hp":652,"ehp":37,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "5回目: 8b3ee01b14b5 {"lv":154,"atk":575,"def":594,"exp":0,"coin":0,"enemy":":mk_tatsu:","count":2,"hp":652,"ehp":37,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=confused",
+    "6回目: 630939fbf9c0 {"lv":155,"atk":578,"def":598,"exp":0,"coin":0,"enemy":null,"count":1,"hp":699,"ehp":580,"winCount":3,"clearHistory":3,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+  "seed 3": [
+    "1回目: ad3aad61bc37 {"lv":151,"atk":573,"def":574,"exp":0,"coin":0,"enemy":null,"count":1,"hp":687,"ehp":558,"winCount":1,"clearHistory":1,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "2回目: a84afe74f5a4 {"lv":152,"atk":576,"def":578,"exp":0,"coin":0,"enemy":null,"count":1,"hp":690,"ehp":566,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: 41cab9ff97d9 {"lv":153,"atk":578,"def":583,"exp":0,"coin":0,"enemy":null,"count":1,"hp":693,"ehp":574,"winCount":3,"clearHistory":3,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "4回目: 2937a8937a86 {"lv":154,"atk":581,"def":587,"exp":0,"coin":0,"enemy":"もこチキは猛勉強","count":2,"hp":512,"ehp":48,"winCount":3,"clearHistory":3,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "5回目: 8b3ee01b14b5 {"lv":154,"atk":581,"def":587,"exp":0,"coin":0,"enemy":"もこチキは猛勉強","count":2,"hp":512,"ehp":48,"winCount":3,"clearHistory":3,"superCount":1,"charge":0,"bestScore":null} reaction=confused",
+    "6回目: d9c06ba203ef {"lv":155,"atk":584,"def":592,"exp":0,"coin":0,"enemy":null,"count":1,"hp":699,"ehp":585,"winCount":4,"clearHistory":4,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+}
+`;
+
+exports[`通常戦闘の結果（ゴールデン） Lv150: ７フィーバー×5 + バーサク等 1`] = `
+{
+  "seed 1": [
+    "1回目: df0c686530f8 {"lv":151,"atk":573,"def":574,"exp":0,"coin":0,"enemy":null,"count":1,"hp":687,"ehp":558,"winCount":1,"clearHistory":1,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "2回目: 8a62f9968004 {"lv":152,"atk":576,"def":579,"exp":0,"coin":0,"enemy":null,"count":1,"hp":690,"ehp":566,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: 6436da452b6b {"lv":153,"atk":576,"def":588,"exp":0,"coin":0,"enemy":null,"count":1,"hp":693,"ehp":574,"winCount":3,"clearHistory":3,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: 2fad8c2ad4ed {"lv":154,"atk":583,"def":588,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":582,"winCount":4,"clearHistory":4,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "5回目: 8b3ee01b14b5 {"lv":154,"atk":583,"def":588,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":582,"winCount":4,"clearHistory":4,"superCount":0,"charge":0,"bestScore":null} reaction=confused",
+    "6回目: e66e78ac365a {"lv":155,"atk":590,"def":590,"exp":0,"coin":0,"enemy":null,"count":1,"hp":699,"ehp":590,"winCount":5,"clearHistory":5,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+  "seed 2": [
+    "1回目: d990d500609b {"lv":151,"atk":570,"def":577,"exp":0,"coin":0,"enemy":null,"count":1,"hp":687,"ehp":558,"winCount":1,"clearHistory":1,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "2回目: 0f37ca255b19 {"lv":152,"atk":574,"def":582,"exp":0,"coin":0,"enemy":null,"count":1,"hp":690,"ehp":566,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: 14c806f5d513 {"lv":153,"atk":578,"def":585,"exp":0,"coin":0,"enemy":":mk_hero_8p:","count":2,"hp":524,"ehp":429,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: 37f74dd6c030 {"lv":154,"atk":583,"def":588,"exp":0,"coin":0,"enemy":":mk_hero_8p:","count":3,"hp":506,"ehp":352,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "5回目: 8b3ee01b14b5 {"lv":154,"atk":583,"def":588,"exp":0,"coin":0,"enemy":":mk_hero_8p:","count":3,"hp":506,"ehp":352,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=confused",
+    "6回目: 7d0a7c3fca41 {"lv":155,"atk":586,"def":592,"exp":0,"coin":0,"enemy":":mk_hero_8p:","count":4,"hp":274,"ehp":221,"winCount":2,"clearHistory":2,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+  "seed 3": [
+    "1回目: d2f5a36d63bf {"lv":151,"atk":573,"def":574,"exp":0,"coin":0,"enemy":null,"count":1,"hp":687,"ehp":558,"winCount":1,"clearHistory":1,"superCount":0,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "2回目: 095e51e8878b {"lv":152,"atk":573,"def":581,"exp":0,"coin":0,"enemy":null,"count":1,"hp":690,"ehp":566,"winCount":2,"clearHistory":2,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "3回目: 6cf1bffc944c {"lv":153,"atk":575,"def":586,"exp":0,"coin":0,"enemy":null,"count":1,"hp":693,"ehp":574,"winCount":3,"clearHistory":3,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: 6f7dfa743955 {"lv":154,"atk":580,"def":588,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":582,"winCount":4,"clearHistory":4,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "5回目: 8b3ee01b14b5 {"lv":154,"atk":580,"def":588,"exp":0,"coin":0,"enemy":null,"count":1,"hp":696,"ehp":582,"winCount":4,"clearHistory":4,"superCount":1,"charge":0,"bestScore":null} reaction=confused",
+    "6回目: 421814440b27 {"lv":155,"atk":583,"def":593,"exp":0,"coin":0,"enemy":"もこチキは猛勉強","count":2,"hp":419,"ehp":71,"winCount":4,"clearHistory":4,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+}
+`;
+
+exports[`通常戦闘の結果（ゴールデン） お守り整備×5 + 雷水入りカスタム 1`] = `
+{
+  "seed 1": [
+    "1回目: 8516a437c6ab {"lv":601,"atk":2283,"def":2284,"exp":0,"coin":0,"enemy":":mk_senryu_kun:","count":2,"hp":986,"ehp":15,"winCount":0,"clearHistory":0,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: 17afd0f5f922 {"lv":602,"atk":2286,"def":2288,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1911,"winCount":1,"clearHistory":1,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "3回目: a3fc324bcbe8 {"lv":603,"atk":2291,"def":2290,"exp":0,"coin":0,"enemy":":mk_hero_8p:","count":2,"hp":865,"ehp":1221,"winCount":1,"clearHistory":1,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "4回目: 14226aa1e2a0 {"lv":604,"atk":2299,"def":2290,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1922,"winCount":2,"clearHistory":2,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+  ],
+  "seed 2": [
+    "1回目: 18246a2a79fc {"lv":601,"atk":2287,"def":2280,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1908,"winCount":1,"clearHistory":1,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: 248e82a847ed {"lv":602,"atk":2291,"def":2285,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1916,"winCount":2,"clearHistory":2,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "3回目: 1bb07bc74471 {"lv":603,"atk":2293,"def":2290,"exp":0,"coin":0,"enemy":":mk_senryu_kun:","count":2,"hp":958,"ehp":15,"winCount":2,"clearHistory":2,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "4回目: 9651a3150d66 {"lv":604,"atk":2297,"def":2293,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1927,"winCount":3,"clearHistory":3,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+  ],
+  "seed 3": [
+    "1回目: d92fda7af2d2 {"lv":601,"atk":2284,"def":2283,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1908,"winCount":1,"clearHistory":1,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: c107345274ec {"lv":602,"atk":2288,"def":2286,"exp":0,"coin":0,"enemy":":mk_senryu_kun:","count":2,"hp":970,"ehp":15,"winCount":1,"clearHistory":1,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "3回目: 457fd11838bd {"lv":603,"atk":2293,"def":2288,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1919,"winCount":2,"clearHistory":2,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "4回目: 5dd9321792d4 {"lv":604,"atk":2297,"def":2291,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1927,"winCount":3,"clearHistory":3,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+  ],
+}
+`;
+
+exports[`通常戦闘の結果（ゴールデン） わかば・スキル少なめ 1`] = `
+{
+  "seed 1": [
+    "1回目: 0e9b515d8b56 {"lv":601,"atk":2284,"def":2283,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1908,"winCount":1,"clearHistory":1,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: fef0cfe602e1 {"lv":602,"atk":2288,"def":2286,"exp":0,"coin":0,"enemy":":mk_senryu_kun:","count":2,"hp":930,"ehp":193,"winCount":1,"clearHistory":1,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: 459200d5b2bc {"lv":603,"atk":2292,"def":2289,"exp":0,"coin":0,"enemy":":mk_senryu_kun:","count":3,"hp":880,"ehp":63,"winCount":1,"clearHistory":1,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: bc0e9ef53d7f {"lv":604,"atk":2296,"def":2292,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1922,"winCount":2,"clearHistory":2,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+  "seed 2": [
+    "1回目: e2180d1deca8 {"lv":601,"atk":2282,"def":2285,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1908,"winCount":1,"clearHistory":1,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: 4c125430ec82 {"lv":602,"atk":2282,"def":2292,"exp":0,"coin":0,"enemy":":mk_fly_sliver:","count":2,"hp":873,"ehp":46,"winCount":1,"clearHistory":1,"superCount":1,"charge":0.005232128314673901,"bestScore":null} reaction=:mk_hero:",
+    "3回目: c770911f9a19 {"lv":603,"atk":2284,"def":2297,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1919,"winCount":2,"clearHistory":2,"superCount":1,"charge":0.6115019025908075,"bestScore":null} reaction=:mk_hero:",
+    "4回目: b8c3f9b8dc58 {"lv":604,"atk":2288,"def":2301,"exp":0,"coin":0,"enemy":"もこチキは猛勉強","count":2,"hp":704,"ehp":66,"winCount":2,"clearHistory":2,"superCount":1,"charge":1.0105029911279015,"bestScore":null} reaction=:mk_hero:",
+  ],
+  "seed 3": [
+    "1回目: cdd371e62dba {"lv":601,"atk":2282,"def":2285,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1908,"winCount":1,"clearHistory":1,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: a9d60436434c {"lv":602,"atk":2287,"def":2287,"exp":0,"coin":0,"enemy":":kirin_mkchicken:","count":2,"hp":886,"ehp":121,"winCount":1,"clearHistory":1,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: 1f5ddc87f7b5 {"lv":603,"atk":2292,"def":2290,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1919,"winCount":2,"clearHistory":2,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: 9221b3b9ecf9 {"lv":604,"atk":2299,"def":2290,"exp":0,"coin":0,"enemy":":mk_fly_sliver:","count":2,"hp":801,"ehp":161,"winCount":2,"clearHistory":2,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+}
+`;
+
+exports[`通常戦闘の結果（ゴールデン） ベテラン5スキル + 究極 1`] = `
+{
+  "seed 1": [
+    "1回目: ec40cc668e17 {"lv":601,"atk":2285,"def":2282,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1908,"winCount":1,"clearHistory":1,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: 74df2d867a1f {"lv":602,"atk":2288,"def":2287,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1916,"winCount":2,"clearHistory":2,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "3回目: 5c4b38510450 {"lv":603,"atk":2292,"def":2290,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1924,"winCount":3,"clearHistory":3,"superCount":200,"charge":0.5122506297193468,"bestScore":null} reaction=:mk_hero_9p:",
+    "4回目: 6b4657642b16 {"lv":604,"atk":2299,"def":2293,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1932,"winCount":4,"clearHistory":4,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+  ],
+  "seed 2": [
+    "1回目: 6ce11a0de538 {"lv":601,"atk":2282,"def":2285,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1908,"winCount":1,"clearHistory":1,"superCount":200,"charge":1.3351143640466034,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: adcde5b76046 {"lv":602,"atk":2282,"def":2292,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1916,"winCount":2,"clearHistory":2,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "3回目: 54c590819a68 {"lv":603,"atk":2289,"def":2292,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1924,"winCount":3,"clearHistory":3,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "4回目: a41a6be70810 {"lv":604,"atk":2296,"def":2292,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1932,"winCount":4,"clearHistory":4,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+  ],
+  "seed 3": [
+    "1回目: 2dcdf893e06d {"lv":601,"atk":2282,"def":2285,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1908,"winCount":1,"clearHistory":1,"superCount":200,"charge":0.5711844176985323,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: 2f42b0a61eb7 {"lv":602,"atk":2287,"def":2287,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1916,"winCount":2,"clearHistory":2,"superCount":200,"charge":0.9687327316523309,"bestScore":null} reaction=:mk_hero_9p:",
+    "3回目: 2e63ac558b17 {"lv":603,"atk":2290,"def":2291,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1924,"winCount":3,"clearHistory":3,"superCount":200,"charge":0.9714037289330941,"bestScore":null} reaction=:mk_hero_9p:",
+    "4回目: b3a9136b22f5 {"lv":604,"atk":2293,"def":2295,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1932,"winCount":4,"clearHistory":4,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+  ],
+}
+`;
+
+exports[`通常戦闘の結果（ゴールデン） 天国か地獄か・不運チャージ + しあわせのお守り 1`] = `
+{
+  "seed 1": [
+    "1回目: cafcc897d623 {"lv":601,"atk":2284,"def":2283,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1908,"winCount":1,"clearHistory":1,"superCount":1,"charge":0.43779299408197403,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: 9f6c56f75eb2 {"lv":602,"atk":2290,"def":2285,"exp":0,"coin":0,"enemy":":mk_senryu_kun:","count":2,"hp":979,"ehp":15,"winCount":1,"clearHistory":1,"superCount":1,"charge":0.08757472890905127,"bestScore":null} reaction=:mk_hero:",
+    "3回目: 36a4ce9e42c8 {"lv":603,"atk":2295,"def":2289,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1919,"winCount":2,"clearHistory":2,"superCount":1,"charge":0.347573500857537,"bestScore":null} reaction=:mk_hero:",
+    "4回目: 54fc821d2a4f {"lv":604,"atk":2301,"def":2291,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1927,"winCount":3,"clearHistory":3,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+  "seed 2": [
+    "1回目: ac60714a7d41 {"lv":601,"atk":2286,"def":2282,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1908,"winCount":1,"clearHistory":1,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: e5e4a5c22085 {"lv":602,"atk":2294,"def":2282,"exp":0,"coin":0,"enemy":":mk_hero_8p:","count":2,"hp":973,"ehp":1782,"winCount":1,"clearHistory":1,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: dde56328dde2 {"lv":603,"atk":2294,"def":2289,"exp":0,"coin":0,"enemy":":mk_hero_8p:","count":3,"hp":853,"ehp":1617,"winCount":1,"clearHistory":1,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: 93b4c9ed81b6 {"lv":604,"atk":2297,"def":2294,"exp":0,"coin":0,"enemy":":mk_hero_8p:","count":4,"hp":638,"ehp":1583,"winCount":1,"clearHistory":1,"superCount":1,"charge":1.6978577361442149,"bestScore":null} reaction=:mk_hero:",
+  ],
+  "seed 3": [
+    "1回目: c193a36b941e {"lv":601,"atk":2283,"def":2286,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1908,"winCount":1,"clearHistory":1,"superCount":1,"charge":0.03763916436582804,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: 1ee67dc50828 {"lv":602,"atk":2288,"def":2289,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1916,"winCount":2,"clearHistory":2,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: 6200970e0ba5 {"lv":603,"atk":2291,"def":2293,"exp":0,"coin":0,"enemy":"もこチキはTLの巡回","count":2,"hp":965,"ehp":15,"winCount":2,"clearHistory":2,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: adc790204903 {"lv":604,"atk":2294,"def":2297,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1927,"winCount":3,"clearHistory":3,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+}
+`;
+
+exports[`通常戦闘の結果（ゴールデン） 武器型 + 超越（覚醒変更 朱） 1`] = `
+{
+  "seed 1": [
+    "1回目: 9f3e238b1a5f {"lv":601,"atk":2283,"def":2284,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1908,"winCount":1,"clearHistory":1,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: 7e49feb56fc8 {"lv":602,"atk":2286,"def":2289,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1916,"winCount":2,"clearHistory":2,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "3回目: 23cf26f34431 {"lv":603,"atk":2291,"def":2291,"exp":0,"coin":0,"enemy":"もこチキはTLの巡回","count":2,"hp":978,"ehp":15,"winCount":2,"clearHistory":2,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "4回目: 0df26a722041 {"lv":604,"atk":2293,"def":2296,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1927,"winCount":3,"clearHistory":3,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+  ],
+  "seed 2": [
+    "1回目: 98cb6be87461 {"lv":601,"atk":2286,"def":2282,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1908,"winCount":1,"clearHistory":1,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: 07b1304cff75 {"lv":602,"atk":2290,"def":2287,"exp":0,"coin":0,"enemy":":mk_hero_8p:","count":2,"hp":972,"ehp":1711,"winCount":1,"clearHistory":1,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "3回目: 7e788563d105 {"lv":603,"atk":2294,"def":2290,"exp":0,"coin":0,"enemy":":mk_hero_8p:","count":3,"hp":903,"ehp":983,"winCount":1,"clearHistory":1,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "4回目: 3a7a276ae5bb {"lv":604,"atk":2296,"def":2296,"exp":0,"coin":0,"enemy":":mk_hero_8p:","count":4,"hp":818,"ehp":149,"winCount":1,"clearHistory":1,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+  ],
+  "seed 3": [
+    "1回目: b5abc1ad5063 {"lv":601,"atk":2282,"def":2286,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1908,"winCount":1,"clearHistory":1,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: a35fa5e58267 {"lv":602,"atk":2284,"def":2291,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1916,"winCount":2,"clearHistory":2,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "3回目: fb03e5c9091f {"lv":603,"atk":2284,"def":2298,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1924,"winCount":3,"clearHistory":3,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "4回目: 31bd80da71ec {"lv":604,"atk":2287,"def":2302,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1932,"winCount":4,"clearHistory":4,"superCount":200,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+  ],
+}
+`;
+
+exports[`通常戦闘の結果（ゴールデン） 罪スキル + 食べ物型 1`] = `
+{
+  "seed 1": [
+    "1回目: ce00823aca04 {"lv":601,"atk":2288,"def":2280,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1908,"winCount":1,"clearHistory":1,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: c84a54768269 {"lv":602,"atk":2293,"def":2284,"exp":0,"coin":0,"enemy":"もこチキはTLの巡回","count":2,"hp":981,"ehp":84,"winCount":1,"clearHistory":1,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: 7dbba5766a9d {"lv":603,"atk":2300,"def":2284,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1919,"winCount":2,"clearHistory":2,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: efe335b04b6a {"lv":604,"atk":2300,"def":2291,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1927,"winCount":3,"clearHistory":3,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+  "seed 2": [
+    "1回目: bccb045b4c34 {"lv":601,"atk":2282,"def":2285,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1908,"winCount":1,"clearHistory":1,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: fbd894ad687e {"lv":602,"atk":2287,"def":2287,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1916,"winCount":2,"clearHistory":2,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: bb4336f6b17e {"lv":603,"atk":2291,"def":2290,"exp":0,"coin":0,"enemy":"もこチキはTLの巡回","count":2,"hp":977,"ehp":15,"winCount":2,"clearHistory":2,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: 77045818aa85 {"lv":604,"atk":2293,"def":2295,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1927,"winCount":3,"clearHistory":3,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+  "seed 3": [
+    "1回目: 0a2261c1c72c {"lv":601,"atk":2283,"def":2284,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1908,"winCount":1,"clearHistory":1,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: c7a694244012 {"lv":602,"atk":2287,"def":2287,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1916,"winCount":2,"clearHistory":2,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: cac99c4171f5 {"lv":603,"atk":2294,"def":2287,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1924,"winCount":3,"clearHistory":3,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: a28437cf7914 {"lv":604,"atk":2298,"def":2290,"exp":0,"coin":0,"enemy":":mk_ojousamachicken:","count":2,"hp":971,"ehp":160,"winCount":3,"clearHistory":3,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+}
+`;
+
+exports[`通常戦闘の結果（ゴールデン） 謎のお守り（発動しやすい状態） 1`] = `
+{
+  "seed 1": [
+    "1回目: 276ce30a1098 {"lv":601,"atk":2284,"def":2283,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1908,"winCount":1,"clearHistory":1,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: ea51cb77c124 {"lv":602,"atk":2290,"def":2285,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1916,"winCount":2,"clearHistory":2,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: 33b70b08f095 {"lv":603,"atk":2294,"def":2288,"exp":0,"coin":0,"enemy":"もこチキは猛勉強","count":2,"hp":918,"ehp":48,"winCount":2,"clearHistory":2,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: 5f5a2f7473db {"lv":604,"atk":2299,"def":2290,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1927,"winCount":3,"clearHistory":3,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+  "seed 2": [
+    "1回目: d8439e650e82 {"lv":601,"atk":2282,"def":2285,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1908,"winCount":1,"clearHistory":1,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: 10e0aa636a13 {"lv":602,"atk":2286,"def":2288,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1916,"winCount":2,"clearHistory":2,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: 504cf990d87a {"lv":603,"atk":2293,"def":2288,"exp":0,"coin":0,"enemy":"もこチキはTLの巡回","count":2,"hp":942,"ehp":60,"winCount":2,"clearHistory":2,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: bd1e2c39732b {"lv":604,"atk":2296,"def":2292,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1927,"winCount":3,"clearHistory":3,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+  "seed 3": [
+    "1回目: 6829375f6ea6 {"lv":601,"atk":2282,"def":2285,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1908,"winCount":1,"clearHistory":1,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: 3cd4c96157fc {"lv":602,"atk":2287,"def":2288,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1916,"winCount":2,"clearHistory":2,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: 9102fa2a0b48 {"lv":603,"atk":2291,"def":2291,"exp":0,"coin":0,"enemy":"もこチキはTLの巡回","count":2,"hp":956,"ehp":15,"winCount":2,"clearHistory":2,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: 94605ada2494 {"lv":604,"atk":2296,"def":2294,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1927,"winCount":3,"clearHistory":3,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+}
+`;
+
+exports[`通常戦闘の結果（ゴールデン） ７フィーバー×5 + バーサク等 1`] = `
+{
+  "seed 1": [
+    "1回目: c526dfb8b41d {"lv":601,"atk":2284,"def":2284,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1908,"winCount":1,"clearHistory":1,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: f1cb1722db4f {"lv":602,"atk":2288,"def":2287,"exp":0,"coin":0,"enemy":":mk_fly_sliver:","count":2,"hp":912,"ehp":112,"winCount":1,"clearHistory":1,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: 7741c7f32b0b {"lv":603,"atk":2292,"def":2290,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1919,"winCount":2,"clearHistory":2,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: 9360f2a4d9ac {"lv":604,"atk":2294,"def":2296,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1927,"winCount":3,"clearHistory":3,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+  "seed 2": [
+    "1回目: 85383131a8aa {"lv":601,"atk":2280,"def":2287,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1908,"winCount":1,"clearHistory":1,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: 27a4f4774210 {"lv":602,"atk":2285,"def":2289,"exp":0,"coin":0,"enemy":":mk_catchicken:","count":2,"hp":915,"ehp":44,"winCount":1,"clearHistory":1,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: f918131321a1 {"lv":603,"atk":2287,"def":2294,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1919,"winCount":2,"clearHistory":2,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: ccdf882e591d {"lv":604,"atk":2291,"def":2297,"exp":0,"coin":0,"enemy":"もこチキは猛勉強","count":2,"hp":813,"ehp":48,"winCount":2,"clearHistory":2,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+  "seed 3": [
+    "1回目: 6b7cbd316e82 {"lv":601,"atk":2283,"def":2284,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1908,"winCount":1,"clearHistory":1,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: a31ae9cfb3d2 {"lv":602,"atk":2286,"def":2288,"exp":0,"coin":0,"enemy":":mk_fly_sliver:","count":2,"hp":830,"ehp":117,"winCount":1,"clearHistory":1,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "3回目: 2ec7ad62917a {"lv":603,"atk":2290,"def":2291,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1919,"winCount":2,"clearHistory":2,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+    "4回目: d194e2803507 {"lv":604,"atk":2297,"def":2291,"exp":0,"coin":0,"enemy":":mk_tatsu:","count":2,"hp":979,"ehp":181,"winCount":2,"clearHistory":2,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero:",
+  ],
+}
+`;
