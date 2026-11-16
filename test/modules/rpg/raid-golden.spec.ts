@@ -74,28 +74,55 @@ const buildData = (b: Build) => {
 
 const hash = (text: string) => crypto.createHash("sha1").update(text).digest("hex").slice(0, 12);
 
+/** 1構成について、全ボス × seed 1〜3 の結果をまとめる */
+const runBuild = async (build: Build, options: { verbose?: boolean } = {}) => {
+	const results: Record<string, string> = {};
+	for (const enemy of raidEnemys) {
+		for (const seed of [1, 2, 3]) {
+			const runs = await simulateRaidBattle({ userId: "user-a", username: "a", data: buildData(build), love: build.love ?? 300 }, enemy, { postCount: 40, random: seeded(seed), verbose: options.verbose });
+			const r = runs[0];
+			results[`${enemy.name} #${seed}`] = r ? `${r.totalDmg} / ${r.count}ターン / ${hash(r.log)}` : "失敗";
+		}
+	}
+	return results;
+};
+
+const WEDNESDAY = new Date(2026, 8, 9, 12); // 2026/9/9 = 水曜日（調子補正が曜日と週で決まる日）
+const SATURDAY = new Date(2026, 8, 12, 12); // 2026/9/12 = 土曜日（調子補正が 1 に固定される日）
+
+beforeAll(() => {
+	jest.useFakeTimers({ doNotFake: ["nextTick", "setImmediate", "queueMicrotask"] });
+	jest.setSystemTime(WEDNESDAY);
+	jest.spyOn(console, "log").mockImplementation(() => {});
+	skillCalculate(ai, true);
+	raidInstall(ai, { name: "rpg", log: () => {} } as any, new loki("test").addCollection<any>("raids") as any);
+});
+afterAll(() => {
+	jest.useRealTimers();
+	jest.restoreAllMocks();
+});
+
 describe("レイドの戦闘結果（ゴールデン）", () => {
-	beforeAll(() => {
-		jest.useFakeTimers({ doNotFake: ["nextTick", "setImmediate", "queueMicrotask"] });
-		jest.setSystemTime(new Date(2026, 8, 9, 12)); // 2026/9/9 = 水曜日
-		jest.spyOn(console, "log").mockImplementation(() => {});
-		skillCalculate(ai, true);
-		raidInstall(ai, { name: "rpg", log: () => {} } as any, new loki("test").addCollection<any>("raids") as any);
-	});
-	afterAll(() => {
-		jest.useRealTimers();
-		jest.restoreAllMocks();
-	});
+	beforeEach(() => jest.setSystemTime(WEDNESDAY));
 
 	test.each(builds)("%s", async (_name, build) => {
-		const results: Record<string, string> = {};
-		for (const enemy of raidEnemys) {
-			for (const seed of [1, 2, 3]) {
-				const runs = await simulateRaidBattle({ userId: "user-a", username: "a", data: buildData(build), love: build.love ?? 300 }, enemy, { postCount: 40, random: seeded(seed) });
-				const r = runs[0];
-				results[`${enemy.name} #${seed}`] = r ? `${r.totalDmg} / ${r.count}ターン / ${hash(r.log)}` : "失敗";
-			}
-		}
-		expect(results).toMatchSnapshot();
+		expect(await runBuild(build)).toMatchSnapshot();
+	});
+});
+
+describe("レイドの戦闘結果（ゴールデン・詳細ログ）", () => {
+	beforeEach(() => jest.setSystemTime(WEDNESDAY));
+
+	// 詳細ログ（-v）でしか通らない分岐が多いので、ログのハッシュで固定する
+	test.each(builds)("%s", async (_name, build) => {
+		expect(await runBuild(build, { verbose: true })).toMatchSnapshot();
+	});
+});
+
+describe("レイドの戦闘結果（ゴールデン・土曜日）", () => {
+	beforeEach(() => jest.setSystemTime(SATURDAY));
+
+	test.each(builds)("%s", async (_name, build) => {
+		expect(await runBuild(build, { verbose: true })).toMatchSnapshot();
 	});
 });

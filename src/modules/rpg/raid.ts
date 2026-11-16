@@ -31,6 +31,7 @@ import { acct } from '@/utils/acct';
 import * as seedrandom from 'seedrandom';
 import config from '@/config';
 import { createRaidRandom, RaidRandom } from './raid-random';
+import type { SkillEffect } from './skill-data';
 
 type RaidAdditionalStatus = {
 	icon: string;
@@ -1038,6 +1039,8 @@ export type RaidSimulationOptions = {
 	seedPostId?: string;
 	/** 試算に使うデータを書き換える（構成を変えて試す用。元のデータは書き換わらない） */
 	modifyData?: (data: any) => void;
+	/** 詳細ログ（参加返信に `-v` を付けたとき）を出す */
+	verbose?: boolean;
 };
 
 /** 試行1回分の結果 */
@@ -1112,7 +1115,7 @@ export async function simulateRaidBattle(player: RaidSimulationPlayer, enemyOrNa
 			user: { id: player.userId, username: player.username ?? "", host: player.host ?? null },
 			extractedText: "",
 			text: "",
-			includes: () => false,
+			includes: (words: string[]) => !!options.verbose && words.includes("-v"),
 			reply: async (text: string) => {
 				replies.push(text);
 				return { id: undefined };
@@ -1392,7 +1395,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string, op
 	if (msg.includes(['-v'])) verboseLog = true;
 	const colorData = colors.map((x) => x.unlock(data));
 	// 所持しているスキル効果を読み込み
-	let skillEffects: any = aggregateSkillsEffects(data, enemy.skillX ?? 1);
+	let skillEffects: SkillEffect = aggregateSkillsEffects(data, enemy.skillX ?? 1);
 
 	const skillsStr = getSkillsShortName(data);
 
@@ -1631,26 +1634,6 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string, op
 		buff += 1;
 		const vitalityNote = (raidVitalityState.moodUsed > 0) ? ` (レイド活力-${raidVitalityState.moodUsed})` : '';
 		message += `調子補正: AD${displayDifference((0.75 + bonusX))} (${formatNumber(atk)} / ${formatNumber(def)})${vitalityNote}\n`;
-	}
-
-	if (false && data.raidAdjust > 0 && bonusX < 1 && skillEffects.pride) {
-		if (rand("raidAdjust") < 0.8) {
-			atk = Math.round(atk * (1 / (1 + (data.raidAdjust * 0.0005))));
-			def = Math.round(def * (1 / (1 + (data.raidAdjust * 0.0005))));
-			if (verboseLog) {
-				buff += 1;
-				message += `連勝補正: AD${displayDifference((1 / (1 + (data.raidAdjust * 0.0005))))} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
-			}
-		}
-	} else {
-		if (false && data.raidAdjust > 0 && bonusX < 1 && rand("raidAdjust") < 0.9) {
-			atk = Math.round(atk * (1 / (1 + (data.raidAdjust * 0.001))));
-			def = Math.round(def * (1 / (1 + (data.raidAdjust * 0.001))));
-			if (verboseLog) {
-				buff += 1;
-				message += `連勝補正: AD${displayDifference((1 / (1 + (data.raidAdjust * 0.001))))} (${formatNumber(atk)} / ${formatNumber(def)})\n`;
-			}
-		}
 	}
 
 	// 魔法処理の為の関数
@@ -1911,7 +1894,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string, op
 			data.superCount = (data.superCount ?? 0) + 1;
 			if (verboseLog) {
 				buff += 1;
-				message += `朱覚醒: クリ率固定+8% クリダメ+35%\n(${formatNumber(skillEffects.critUpFixed * 100)}% / ${formatNumber(skillEffects.atkDmgUp * 100)}%)`;
+				message += `朱覚醒: クリ率固定+8% クリダメ+35%\n(${formatNumber(skillEffects.critUpFixed * 100)}% / ${formatNumber(skillEffects.atkDmgUp! * 100)}%)`;
 			}
 		} else if (aggregateTokensEffects(data).blueMode) {
 			skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.4
@@ -2369,7 +2352,7 @@ formatNumber(enemyHpPercent * 100)}%\n\n`;
          			types = types.filter((x) => x!== "poison");
 				}
 				const type = types[Math.floor(rand("item.type", count) * types.length)];
-				const mEffect = Math.max((count !== 1 ? 0 : skillEffects.firstTurnItemChoice), itemMinEffect);
+				const mEffect = Math.max((count !== 1 ? 0 : skillEffects.firstTurnItemChoice!), itemMinEffect);
 				if ((type === "weapon" && !(isBattle && isPhysical)) || (type === "armor" && isTired) || enemy.pLToR) {
 					let isPlus = rand("item.plus", count) < (0.5 + (skillEffects.mindMinusAvoid ?? 0) + (count === 1 ? skillEffects.firstTurnMindMinusAvoid ?? 0 : 0));
 					const items = rpgItems.filter((x) => x.type === type && (isPlus ? x.mind > 0 : x.mind < 0) && (!mEffect || x.mind >= (mEffect * 100)));
