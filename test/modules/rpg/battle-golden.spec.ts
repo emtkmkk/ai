@@ -93,8 +93,18 @@ afterAll(() => {
 	jest.restoreAllMocks();
 });
 
+/** {@link playNormal} のオプション */
+type PlayNormalOptions = {
+	/** 送るコマンド（既定 "RPG"） */
+	command?: string;
+	/** 毎回のプレイの直前にデータを書き換える（ステータスを固定したい場合など） */
+	beforePlay?: (data: any, index: number) => void;
+	/** 毎回のプレイの返信とデータを受け取る（内容を個別に確かめたい場合） */
+	onPlayed?: (text: string, data: any, index: number) => void;
+};
+
 /** 通常戦闘を、時間帯を 6 時間ずつ進めながら続けてプレイする（戦闘が複数回にまたがる場合も通る） */
-const playNormal = async (build: Build, seed: number, plays = 4) => {
+const playNormal = async (build: Build, seed: number, plays = 4, options: PlayNormalOptions = {}) => {
 	const ai = createAi();
 	const rpg: any = new Rpg();
 	rpg.ai = ai;
@@ -104,10 +114,12 @@ const playNormal = async (build: Build, seed: number, plays = 4) => {
 	try {
 		for (let i = 0; i < plays; i++) {
 			jest.setSystemTime(new Date(2026, 8, 9, 8 + i * 6));
+			options.beforePlay?.(player.data(), i);
 			const before = player.replies.length;
-			const res = await rpg.handleNormalCommands(player.message("RPG"));
+			const res = await rpg.handleNormalCommands(player.message(options.command ?? "RPG"));
 			const text = player.replies.slice(before).join("\n---\n");
 			if (process.env.PEEK) process.stdout.write(`\n=====\n${text}\n`);
+			options.onPlayed?.(text, player.data(), i);
 			results.push(`${i + 1}回目: ${hash(text)} ${JSON.stringify(summarize(player.data()))} reaction=${res?.reaction ?? null}`);
 		}
 	} finally {
@@ -157,6 +169,59 @@ describe("通常戦闘の結果（ゴールデン）", () => {
 		const results: Record<string, string[]> = {};
 		const build: Build = { skills: [], love: 50, extra: { lv: 5, atk: 20, def: 20 } };
 		for (const seed of [1, 2, 3]) results[`seed ${seed}`] = await playNormal(build, seed, 6);
+		expect(results).toMatchSnapshot();
+	});
+});
+
+/** 旅モードのテストで使うステージ（内部の endress の値。表示上のステージは +1） */
+const STAGE = 159;
+
+describe("旅モード ステージ160: [７７７貫強] お守り [気７貫]", () => {
+	/** スキル: ７フィーバー！×3・防御貫通・強敵と戦うのが好き / お守り: 気合で頑張る・７フィーバー！・防御貫通 の合成 */
+	const build: Build = {
+		skills: ["７フィーバー！", "７フィーバー！", "７フィーバー！", "防御貫通+10%", "強敵と戦うのが好き"],
+		amulet: ["気合で頑張る", "７フィーバー！", "防御貫通+10%"],
+		love: 300,
+		// ステージ160 = 内部の endress が 159（表示は「ステージ⭐60」）。
+		// ステージ200（endress 199）では乱数 12 通り中 2 通りで負けたので、確実に勝てるところまで下げている。
+		// maxEndress が 99 以上なので、負けてもステージは下がらない。
+		extra: { lv: 600, atk: 7777, def: 5000, endress: STAGE, maxEndress: 199 },
+	};
+	/** ７フィーバー！の数（スキル 3 + お守り 1） */
+	const SEVEN_FEVER_COUNT = 4;
+	/** 1 つあたりの効果量（パワー 7777 の「7777」。Lv 600・防御 5000 には 7 を含めない） */
+	const SEVEN_FEVER_PER_SKILL = 7777;
+
+	// 毎回のプレイ前にステータスを戻し、７フィーバー！が毎回 1 つあたり +7777% になるようにする
+	const beforePlay = (data: any) => {
+		data.lv = 600;
+		data.atk = 7777;
+		data.def = 5000;
+	};
+
+	test.each([1, 2, 3])("乱数 %i: 旅の敵と戦い、７フィーバー！が毎回 +7777% × 4 で発動し、負けずにステージを進める", async (seed) => {
+		const texts: string[] = [];
+		const stages: number[] = [];
+		await playNormal(build, seed, 4, { command: "RPG 旅", beforePlay, onPlayed: (text, data) => { texts.push(text); stages.push(data.endress); } });
+
+		for (const text of texts) {
+			// 旅の敵（ステージ⭐ 以降）と戦っている
+			expect(text).toMatch(/旅の途中 \(ステージ⭐\d+\)/);
+			// 修行の成果ではなく、７フィーバー！が 1 つあたり +7777% で発動している
+			expect(text).toContain(`スキル「７フィーバー！」発動！\nステータス+${SEVEN_FEVER_PER_SKILL * SEVEN_FEVER_COUNT}%！`);
+			expect(text).not.toContain("修行の成果ボーナス！");
+			// 大きな倍率でも数値が壊れていない
+			expect(text).not.toMatch(/NaN|Infinity|undefined/);
+			// 負けていない
+			expect(text).not.toContain("疲れてしまった");
+		}
+		// 4 回のプレイのうちに少なくとも 1 回勝って、ステージが進んでいる
+		expect(Math.max(...stages)).toBeGreaterThan(STAGE);
+	});
+
+	test("結果（ゴールデン）", async () => {
+		const results: Record<string, string[]> = {};
+		for (const seed of [1, 2, 3]) results[`seed ${seed}`] = await playNormal(build, seed, 4, { command: "RPG 旅", beforePlay });
 		expect(results).toMatchSnapshot();
 	});
 });

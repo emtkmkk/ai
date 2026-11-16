@@ -1,5 +1,28 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`旅モード ステージ160: [７７７貫強] お守り [気７貫] 結果（ゴールデン） 1`] = `
+{
+  "seed 1": [
+    "1回目: 5a7a1b253763 {"lv":601,"atk":7777,"def":5007,"exp":0,"coin":0,"enemy":"旅モード","count":2,"hp":924,"ehp":134,"winCount":0,"clearHistory":0,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: 2f61d5b5737d {"lv":601,"atk":7777,"def":5007,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1908,"winCount":1,"clearHistory":1,"superCount":2,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "3回目: 7df5d192d8fc {"lv":601,"atk":7777,"def":5007,"exp":0,"coin":0,"enemy":"旅モード","count":2,"hp":919,"ehp":107,"winCount":1,"clearHistory":1,"superCount":3,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "4回目: 0433424be79b {"lv":601,"atk":7777,"def":5007,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1913,"winCount":2,"clearHistory":1,"superCount":4,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+  ],
+  "seed 2": [
+    "1回目: 6430a4efe060 {"lv":601,"atk":7777,"def":5009,"exp":0,"coin":0,"enemy":"旅モード","count":2,"hp":783,"ehp":82,"winCount":0,"clearHistory":0,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: 67eb404ab7ce {"lv":601,"atk":7777,"def":5007,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1908,"winCount":1,"clearHistory":1,"superCount":2,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "3回目: 382ff4621d85 {"lv":601,"atk":7777,"def":5007,"exp":0,"coin":0,"enemy":"旅モード","count":2,"hp":966,"ehp":65,"winCount":1,"clearHistory":1,"superCount":3,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "4回目: f04f118e029b {"lv":601,"atk":7777,"def":5007,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1913,"winCount":2,"clearHistory":1,"superCount":4,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+  ],
+  "seed 3": [
+    "1回目: 803e554350bd {"lv":601,"atk":7777,"def":5007,"exp":0,"coin":0,"enemy":"旅モード","count":2,"hp":914,"ehp":115,"winCount":0,"clearHistory":0,"superCount":1,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "2回目: 99cd6aeada3c {"lv":601,"atk":7777,"def":5007,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1908,"winCount":1,"clearHistory":1,"superCount":2,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "3回目: a2b2a8df5457 {"lv":601,"atk":7777,"def":5007,"exp":0,"coin":0,"enemy":"旅モード","count":2,"hp":865,"ehp":109,"winCount":1,"clearHistory":1,"superCount":3,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+    "4回目: c3c6106c2777 {"lv":601,"atk":7777,"def":5008,"exp":0,"coin":0,"enemy":null,"count":1,"hp":1002,"ehp":1913,"winCount":2,"clearHistory":1,"superCount":4,"charge":0,"bestScore":null} reaction=:mk_hero_9p:",
+  ],
+}
+`;
+
 exports[`木人の結果（ゴールデン） お守り整備×5 + 雷水入りカスタム 1`] = `
 {
   "seed 1": [
