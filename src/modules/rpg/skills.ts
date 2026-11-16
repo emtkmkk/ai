@@ -22,6 +22,7 @@ import { SkillEffect, Skill, skills, skillBorders, ultimateAmulet, isKazutoriMas
 import { deepClone, getColor } from './utils';
 import { renderEffectDisplay } from './effect-display';
 import { ensureKazutoriMasterHistory, getKazutoriMasterBonus } from './battle';
+import { applyHyperModeEffects, applySuperColorModeEffects, getSuperColorMode } from './super-mode';
 
 /** スキル名ごとの所持人数マップ（skillCalculate で更新） */
 export let skillNameCountMap = new Map();
@@ -622,22 +623,8 @@ export function getTotalEffectString(data: any, skillX = 1, _ai?: 藍, msg?: Mes
 
 	// 覚醒変更の札・超覚醒の札による補正（レイドでの効果に合わせる）
 	if (isSuper) {
-		if (tokens.redMode) {
-			skillEffects.critUpFixed = (skillEffects.critUpFixed ?? 0) + 0.08
-			skillEffects.critDmgUp = Math.max((skillEffects.critDmgUp ?? 0), 0.35)
-		} else if (tokens.blueMode) {
-			skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.4
-		} else if (tokens.yellowMode) {
-			skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.2
-		} else if (tokens.greenMode) {
-			skillEffects.itemEquip = ((1 + (skillEffects.itemEquip ?? 0)) * 1.4) - 1;
-			skillEffects.itemBoost = ((1 + (skillEffects.itemBoost ?? 0)) * 1.4) - 1;
-			skillEffects.mindMinusAvoid = ((1 + (skillEffects.mindMinusAvoid ?? 0)) * 1.4) - 1;
-			skillEffects.poisonAvoid = ((1 + (skillEffects.poisonAvoid ?? 0)) * 1.4) - 1;
-		}
-		if (tokens.hyperMode) {
-			skillEffects.postXUp = (skillEffects.postXUp ?? 0) + 0.015
-		}
+		applySuperColorModeEffects(skillEffects, getSuperColorMode(tokens));
+		applyHyperModeEffects(skillEffects, tokens);
 	}
 
 	// 数取りの達人: 戦闘時と同じく、数取りの直近の参加・勝利から効果量を出す

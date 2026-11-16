@@ -32,6 +32,7 @@ import * as seedrandom from 'seedrandom';
 import config from '@/config';
 import { createRaidRandom, RaidRandom } from './raid-random';
 import type { SkillEffect } from './skill-data';
+import { applyHyperModeEffects, applySuperColorModeEffects, getSuperColorMode } from './super-mode';
 
 type RaidAdditionalStatus = {
 	icon: string;
@@ -1445,9 +1446,7 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string, op
 	let rawTp;
 	let continuousBonusX;
 
-	if (isSuper && aggregateTokensEffects(data).hyperMode) {
-		skillEffects.postXUp = (skillEffects.postXUp ?? 0) + 0.015
-	}
+	if (isSuper) applyHyperModeEffects(skillEffects, aggregateTokensEffects(data));
 	const superBonusPost = (isSuper && !aggregateTokensEffects(data).hyperMode ? 200 : 0)
 	// 敵が forcePostCount を持っている場合、投稿数は固定
 	if (enemy.forcePostCount) {
@@ -1887,40 +1886,35 @@ export async function getTotalDmg(msg, enemy: RaidEnemy, raidPostId?: string, op
 				message += `覚醒: S+${up} (${formatNumber(spd)} (${getSpdX(spd) * 100}%))\n`;
 			}
 		}
-		if (aggregateTokensEffects(data).redMode) {
-			skillEffects.critUpFixed = (skillEffects.critUpFixed ?? 0) + 0.08
-			skillEffects.critDmgUp = Math.max((skillEffects.critDmgUp ?? 0), 0.35)
+		// 覚醒変更の札：スキル効果の補正は共通の関数で行い、ここではメッセージと行動回数を扱う
+		const superColorMode = getSuperColorMode(aggregateTokensEffects(data));
+		applySuperColorModeEffects(skillEffects, superColorMode);
+		if (superColorMode === 'red') {
 			if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`クリティカル性能アップ！\n${customStr}`) + `\n`;
 			data.superCount = (data.superCount ?? 0) + 1;
 			if (verboseLog) {
 				buff += 1;
-				message += `朱覚醒: クリ率固定+8% クリダメ+35%\n(${formatNumber(skillEffects.critUpFixed * 100)}% / ${formatNumber(skillEffects.atkDmgUp! * 100)}%)`;
+				message += `朱覚醒: クリ率固定+8% クリダメ+35%\n(${formatNumber(skillEffects.critUpFixed! * 100)}% / ${formatNumber(skillEffects.atkDmgUp! * 100)}%)`;
 			}
-		} else if (aggregateTokensEffects(data).blueMode) {
-			skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.4
+		} else if (superColorMode === 'blue') {
 			if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`ダメージカット+40%！\n${customStr}`) + `\n`;
 			if (verboseLog) {
 				buff += 1;
-				message += `蒼覚醒: 被ダメージ-40% (${formatNumber(skillEffects.defDmgUp * 100)}%)\n`;
+				message += `蒼覚醒: 被ダメージ-40% (${formatNumber(skillEffects.defDmgUp! * 100)}%)\n`;
 			}
-		} else if (aggregateTokensEffects(data).yellowMode) {
+		} else if (superColorMode === 'yellow') {
 			const up = Math.max(spd + 1, Math.round(getSpd(getSpdX(spd) * 1.1))) - spd;
 			spd = spd + up;
-			skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.2
 			if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`行動回数+${up}！\nダメージカット+20%！\n${customStr}`) + `\n`;
 			if (verboseLog) {
 				buff += 1;
-				message += `橙覚醒: S+${up} 被ダメージ-20%\n(${formatNumber(spd)} (${getSpdX(spd) * 100}%) / ${formatNumber(skillEffects.defDmgUp * 100)}%)\n`;
+				message += `橙覚醒: S+${up} 被ダメージ-20%\n(${formatNumber(spd)} (${getSpdX(spd) * 100}%) / ${formatNumber(skillEffects.defDmgUp! * 100)}%)\n`;
 			}
-		} else if (aggregateTokensEffects(data).greenMode) {
-			skillEffects.itemEquip = ((1 + (skillEffects.itemEquip ?? 0)) * 1.4) - 1;
-			skillEffects.itemBoost = ((1 + (skillEffects.itemBoost ?? 0)) * 1.4) - 1;
-			skillEffects.mindMinusAvoid = ((1 + (skillEffects.mindMinusAvoid ?? 0)) * 1.4) - 1;
-			skillEffects.poisonAvoid = ((1 + (skillEffects.poisonAvoid ?? 0)) * 1.4) - 1;
+		} else if (superColorMode === 'green') {
 			if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`全アイテム効果+40%！\n${customStr}`) + `\n`;
 			if (verboseLog) {
 				buff += 1;
-				message += `翠覚醒: アイテム効果+40%\n(${formatNumber(skillEffects.itemEquip * 100)}% / ${formatNumber(skillEffects.itemBoost * 100)}% / ${formatNumber(skillEffects.mindMinusAvoid * 100)}% / ${formatNumber(skillEffects.poisonAvoid * 100)}%)\n`;
+				message += `翠覚醒: アイテム効果+40%\n(${formatNumber(skillEffects.itemEquip! * 100)}% / ${formatNumber(skillEffects.itemBoost! * 100)}% / ${formatNumber(skillEffects.mindMinusAvoid! * 100)}% / ${formatNumber(skillEffects.poisonAvoid! * 100)}%)\n`;
 			}
 		}
 	}

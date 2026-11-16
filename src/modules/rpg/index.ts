@@ -30,6 +30,8 @@ import Friend from '@/friend';
 import type { FriendDoc } from '@/friend';
 import config from '@/config';
 import * as loki from 'lokijs';
+import { applyHyperModeEffects, applySuperColorModeEffects, getSuperColorMode } from './super-mode';
+import type { SuperColorMode } from './super-mode';
 
 type List = {
         id: string;
@@ -140,6 +142,14 @@ const FIX_OVERRIDE_KEYS: {
 	itemMedal: { type: "int", min: 0 },
 	rerollOrb: { type: "int", min: 0 },
 	lastPlayedLv: { type: "int", min: 0 },
+};
+
+/** 通常戦闘で覚醒変更の札が発動したときのメッセージ（覚醒時の共通メッセージの前に付く） */
+const SUPER_COLOR_MODE_MESSAGES: Record<SuperColorMode, string> = {
+	red: 'クリティカル性能アップ！',
+	blue: 'ダメージカット+40%！',
+	yellow: '行動回数+1！\nダメージカット+20%！',
+	green: '全アイテム効果+40%！',
 };
 
 export default class extends Module {
@@ -1396,9 +1406,7 @@ export default class extends Module {
 		postCount = applyKazutoriMasterPostCountFloor(postCount, msg, skillEffects);
 		postCount += superBonusPost;
 
-		if (isSuper && aggregateTokensEffects(data).hyperMode) {
-			skillEffects.postXUp = (skillEffects.postXUp ?? 0) + 0.015
-		}
+		if (isSuper) applyHyperModeEffects(skillEffects, aggregateTokensEffects(data));
 
 		// 投稿数に応じてステータス倍率を得る
 		// 連続プレイの場合は倍率アップ
@@ -1416,20 +1424,10 @@ export default class extends Module {
 
 		if (isSuper) {
 			if (!aggregateTokensEffects(data).notSuperSpeedUp) spd += 2;
-			if (aggregateTokensEffects(data).redMode) {
-				skillEffects.critUpFixed = (skillEffects.critUpFixed ?? 0) + 0.08
-				skillEffects.critDmgUp = Math.max((skillEffects.critDmgUp ?? 0), 0.4)
-			} else if (aggregateTokensEffects(data).blueMode) {
-				skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.4
-			} else if (aggregateTokensEffects(data).yellowMode) {
-				spd += 1
-				skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.2
-			} else if (aggregateTokensEffects(data).greenMode) {
-				skillEffects.itemEquip = ((1 + (skillEffects.itemEquip ?? 0)) * 1.4) - 1;
-				skillEffects.itemBoost = ((1 + (skillEffects.itemBoost ?? 0)) * 1.4) - 1;
-				skillEffects.mindMinusAvoid = ((1 + (skillEffects.mindMinusAvoid ?? 0)) * 1.4) - 1;
-				skillEffects.poisonAvoid = ((1 + (skillEffects.poisonAvoid ?? 0)) * 1.4) - 1;
-			}
+			const superColorMode = getSuperColorMode(aggregateTokensEffects(data));
+			// NOTE: 木人だけ朱覚醒のクリティカルダメージの下限が 0.4（ほかは 0.35）
+			applySuperColorModeEffects(skillEffects, superColorMode, { redCritDmgFloor: 0.4 });
+			if (superColorMode === 'yellow') spd += 1;
 		}
 
 		message += [
@@ -1767,9 +1765,7 @@ export default class extends Module {
 		}
 
 		// 覚醒 + hyperMode 札の場合は postXUp を上昇（投稿数加算の代わり）
-		if (isSuper && aggregateTokensEffects(data).hyperMode) {
-			skillEffects.postXUp = (skillEffects.postXUp ?? 0) + 0.015
-		}
+		if (isSuper) applyHyperModeEffects(skillEffects, aggregateTokensEffects(data));
 
 		/** ステータス倍率（投稿数に応じた倍率。postXUp でさらに上乗せ） */
 		let tp = getPostX(postCount) * (1 + ((skillEffects.postXUp ?? 0) * Math.min((postCount - superBonusPost) / 20, 10)));
@@ -1972,24 +1968,12 @@ export default class extends Module {
 				customStr += "投稿数による能力上昇量がアップ！"
 			}
 			if (!aggregateTokensEffects(data).notSuperSpeedUp) spd += 2;
-			if (aggregateTokensEffects(data).redMode) {
-				skillEffects.critUpFixed = (skillEffects.critUpFixed ?? 0) + 0.08
-				skillEffects.critDmgUp = Math.max((skillEffects.critDmgUp ?? 0), 0.35)
-				if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`クリティカル性能アップ！\n${customStr}`) + `\n`;
-			} else if (aggregateTokensEffects(data).blueMode) {
-				skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.4
-				if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`ダメージカット+40%！\n${customStr}`) + `\n`;
-			} else if (aggregateTokensEffects(data).yellowMode) {
-				spd += 1
-				skillEffects.defDmgUp = (skillEffects.defDmgUp ?? 0) - 0.2
-				if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`行動回数+1！\nダメージカット+20%！\n${customStr}`) + `\n`;
-			} else if (aggregateTokensEffects(data).greenMode) {
-				skillEffects.itemEquip = ((1 + (skillEffects.itemEquip ?? 0)) * 1.4) - 1;
-				skillEffects.itemBoost = ((1 + (skillEffects.itemBoost ?? 0)) * 1.4) - 1;
-				skillEffects.mindMinusAvoid = ((1 + (skillEffects.mindMinusAvoid ?? 0)) * 1.4) - 1;
-				skillEffects.poisonAvoid = ((1 + (skillEffects.poisonAvoid ?? 0)) * 1.4) - 1;
-				if (!color.alwaysSuper) message += serifs.rpg.customSuper(me,`全アイテム効果+40%！\n${customStr}`) + `\n`;
-			}
+			// 覚醒変更の札：スキル効果の補正は共通の関数で行い、ここではメッセージと行動回数を扱う
+			const superColorMode = getSuperColorMode(aggregateTokensEffects(data));
+			applySuperColorModeEffects(skillEffects, superColorMode);
+			if (superColorMode === 'yellow') spd += 1;
+			const superColorMessage = superColorMode && SUPER_COLOR_MODE_MESSAGES[superColorMode];
+			if (superColorMessage && !color.alwaysSuper) message += serifs.rpg.customSuper(me, `${superColorMessage}\n${customStr}`) + `\n`;
 
 		}
 
