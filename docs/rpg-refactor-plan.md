@@ -68,11 +68,15 @@
 - **完了条件**: 器用さ・仕上げの式が 1 か所にしかない。
 - **結果**: `contest.ts` に、効果ごとの補正の表 `CONTEST_STEPS`（値・発動条件・掛け方・戦闘ログの見出し・確認表示の見出し・発動しなかったときの行）と、計算する `computeContestStats` を作った。`getTotalDmg3` と `getHatogurumaEffectString` は結果の行を並べるだけになった。効果を足すときは表に 1 件足す。テストは `hatoguruma.spec.ts`（器用さ・仕上げに関わる効果を 1 つずつ通る 10 構成 + 代表 8 構成、確認表示 ×1・×3 倍と、鳩車レイドの結果）。
 
-### 1-3. 戦闘ログの書き方をまとめる
+### 1-3. 戦闘ログの書き方をまとめる（完了）
 
 - `buff += 1` と `if (buff > 0) message += "\n"` の組み合わせ（raid.ts で約 120 か所）を、ログ用の小さなクラスにまとめる。
   - `log.buff(text)`（バフの行を足す）、`log.verbose(text)`（詳細ログのときだけ足す）、`log.endSection()`（バフが 1 行でもあれば改行）
 - **完了条件**: `getTotalDmg` の中に `buff` の数え方を手で書いた箇所が残っていない。
+- **結果**: `battle-log.ts` に `BattleLog`（`add`・`buff`・`verbose`・`markBuff`・`endBuffs`・`resetBuffs`・`scope`）を作り、`getTotalDmg` の `message` / `buff`（232 か所）を置き換えた。
+  - ターンのループでは、外側と別にバフを数えていた（同じ名前の `buff` を宣言し直していた）ので、`log.scope()` で作る `turnLog` を使う。どの `buff` がどちらを指すかは型チェッカーで判定して書き換えた（ループの外で作った関数がターン中に呼ばれても、外側を数える）。
+  - `log.verbose(() => 文字列)` は関数で渡し、詳細ログのときだけ文字列を作る（元の `if (verboseLog)` と同じく、詳細ログでないときは式を評価しない）。
+  - `getTotalDmg2`・`getTotalDmg3`・通常戦闘はまだ。1-4 以降で関数を分けるときに合わせて使う。
 
 ### 1-4. getTotalDmg の状態をまとめて、段階ごとの関数に分ける
 
