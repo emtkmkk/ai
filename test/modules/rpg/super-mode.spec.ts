@@ -28,12 +28,6 @@ describe("applySuperColorModeEffects", () => {
 		expect(e.critDmgUp).toBe(0.5);
 	});
 
-	test("朱: 下限を指定できる（木人は 40%）", () => {
-		const e: SkillEffect = {};
-		applySuperColorModeEffects(e, "red", { redCritDmgFloor: 0.4 });
-		expect(e.critDmgUp).toBe(0.4);
-	});
-
 	test("蒼・橙: 被ダメージを 40% / 20% 減らす", () => {
 		const blue: SkillEffect = { defDmgUp: -0.1 };
 		applySuperColorModeEffects(blue, "blue");

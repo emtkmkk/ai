@@ -41,21 +41,20 @@ export function getSuperColorMode(tokens: Record<string, any>): SuperColorMode |
  * 覚醒変更の札による補正をスキル効果に反映する（直接書き換える）
  *
  * @remarks
- * - 朱: クリティカル率（固定）+8%、クリティカルダメージを下限まで引き上げ
+ * - 朱: クリティカル率（固定）+8%、クリティカルダメージを下限（{@link RED_MODE_CRIT_DMG_FLOOR}）まで引き上げ
  * - 蒼: 被ダメージ -40%
  * - 橙: 被ダメージ -20%（行動回数の増加は呼び出し側）
  * - 翠: アイテムの装備率・効果量・気合低下回避・毒回避 ×1.4
  *
  * @param e 書き換えるスキル効果
  * @param mode 覚醒変更の種類（{@link getSuperColorMode}）。null なら何もしない
- * @param options.redCritDmgFloor 朱覚醒のクリティカルダメージの下限（既定 {@link RED_MODE_CRIT_DMG_FLOOR}）
  * @internal
  */
-export function applySuperColorModeEffects(e: SkillEffect, mode: SuperColorMode | null, options: { redCritDmgFloor?: number } = {}): void {
+export function applySuperColorModeEffects(e: SkillEffect, mode: SuperColorMode | null): void {
 	switch (mode) {
 		case 'red':
 			e.critUpFixed = (e.critUpFixed ?? 0) + 0.08;
-			e.critDmgUp = Math.max((e.critDmgUp ?? 0), options.redCritDmgFloor ?? RED_MODE_CRIT_DMG_FLOOR);
+			e.critDmgUp = Math.max((e.critDmgUp ?? 0), RED_MODE_CRIT_DMG_FLOOR);
 			break;
 		case 'blue':
 			e.defDmgUp = (e.defDmgUp ?? 0) - 0.4;
