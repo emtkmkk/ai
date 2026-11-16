@@ -88,6 +88,13 @@
   4. `finishRaidBattle` — 勝利判定・戦士マーク・結果の文章・返り値
 - 字下げがずれているところ（`let maxdmg` など）もここで直す。
 - **完了条件**: `getTotalDmg` 本体が、これらを順番に呼ぶだけになる。どの関数も数百行以内。
+- **結果（完了）**: getTotalDmg（1,975 行）を、次の関数に分けた。いちばん長い関数は 189 行（useRaidItem）。
+  - 段階: `prepareRaidBattle` → `applyPreBattleModifiers` → `runRaidTurns` → `finishRaidAttacks` → `recordRaidResult`
+  - 戦闘前: `computeRaidStatus` → `setupRaidMagic` → `setupRaidHp` → `applyRaidSuperAndWarrior` → `applyRaidSkillModifiers`
+  - 1 ターン: `startRaidTurn` → `prepareRaidTurnAttack`（`applyRaidDesperation` → `chooseRaidItem` → `useRaidItem` → `applyRaidTurnElements`）→ `runRaidEnemyFirstStrike` → `runRaidPlayerAttack` → `resolveRaidTurn`
+  - 状態: 戦闘全体は `RaidBattle`（b）、1 ターンは `RaidTurn`（t）、戦闘前のまとまりをまたぐ値は `RaidPreBattle`（pre）。1 つの関数でしか使わない値は、その関数の中に残している。
+  - 変数の参照の書き換えと型は、型チェッカーで判定・生成した。ループ変数 `actionX` は、逃走でターンを飛ばすときに書き換わるので、`resolveRaidTurn` のあとで書き戻す（この経路のテストを追加し、分割前のコードでも同じ結果になることを確かめた）。
+  - 名前の付け直し（`_atk` などの分かりにくい名前）や、1 か所でしか使わない値の整理は、1-5 でスキル効果を定義に移すときに合わせて行う。
 
 ### 1-5. 条件付きの倍率をスキル定義（データ）にする
 

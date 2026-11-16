@@ -1656,11 +1656,25 @@ async function prepareRaidBattle(b: RaidBattle) {
 }
 
 /**
- * レイド（通常型）の段階2: ステータスと敵ステータスの計算・調子補正・魔法・体力・戦闘前に掛かるスキル効果
+ * レイド（通常型）の戦闘前の補正で、複数のまとまりをまたぐ値
+ *
+ * @remarks
+ * applyPreBattleModifiers を、まとまりごとの関数に分けたときに使う。戦闘全体で使う値は RaidBattle にある。
  *
  * @internal
  */
-function applyPreBattleModifiers(b: RaidBattle) {
+type RaidPreBattle = {
+	raidVitalityState: RaidVitalityState;
+	playerHpPercent: number;
+	addBarrier: (value: number) => number;
+};
+
+/**
+ * レイド（通常型）の戦闘前 1: ステータスと敵ステータスの計算・運命・調子補正
+ *
+ * @internal
+ */
+function computeRaidStatus(b: RaidBattle, pre: RaidPreBattle) {
 
 	// ここで残りのステータスを計算しなおす
 	({ atk: b.atk, def: b.def, spd: b.spd } = calculateStats(b.data, b.msg, b.skillEffects, b.color, 0.2));
@@ -1690,10 +1704,10 @@ function applyPreBattleModifiers(b: RaidBattle) {
 	const day = new Date().getDay();
 	const kazutoriMasterBonus = getKazutoriMasterBonus(b.msg, b.skillEffects);
 	const baseBonusX = (day === 6 || day === 0 || b.stockRandomResult.activate || kazutoriMasterBonus.raidBonusFixed ? 1 : (Math.floor(seedrandom("" + b.msg.user.id + Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) + ai.account.id)() * 5 + day) % 5) * 0.25);
-	const raidVitalityState = createRaidVitalityState(b.data);
-	let bonusX = applyRaidVitalityMood(raidVitalityState, baseBonusX);
-	if (raidVitalityState.moodUsed > 0) {
-		b.data.raidVitality = Math.max(0, (b.data.raidVitality ?? 0) - raidVitalityState.moodUsed);
+	pre.raidVitalityState = createRaidVitalityState(b.data);
+	let bonusX = applyRaidVitalityMood(pre.raidVitalityState, baseBonusX);
+	if (pre.raidVitalityState.moodUsed > 0) {
+		b.data.raidVitality = Math.max(0, (b.data.raidVitality ?? 0) - pre.raidVitalityState.moodUsed);
 	}
 	bonusX += (b.rand("mood.jackpot") < 0.01 ? 0.3 : 0) + (b.rand("mood.jackpot") < 0.01 ? 0.3 : 0);
 	// 1%でさらに +0.3 を加算（複数回当たる可能性あり）
@@ -1704,9 +1718,17 @@ function applyPreBattleModifiers(b: RaidBattle) {
 	b.def = Math.round(b.def * (0.75 + bonusX));
 	if (b.verboseLog) {
 		b.log.markBuff();
-		const vitalityNote = (raidVitalityState.moodUsed > 0) ? ` (レイド活力-${raidVitalityState.moodUsed})` : '';
+		const vitalityNote = (pre.raidVitalityState.moodUsed > 0) ? ` (レイド活力-${pre.raidVitalityState.moodUsed})` : '';
 		b.log.add(`調子補正: AD${displayDifference((0.75 + bonusX))} (${formatNumber(b.atk)} / ${formatNumber(b.def)})${vitalityNote}\n`);
 	}
+}
+
+/**
+ * レイド（通常型）の戦闘前 2: 魔法の発動処理（b.checkMagic）を用意する
+ *
+ * @internal
+ */
+function setupRaidMagic(b: RaidBattle, pre: RaidPreBattle) {
 
 	// 魔法処理の為の関数
 	b.checkMagic = (phase: string, argTriggerData: Record<string, unknown> = {}) => {
@@ -1719,7 +1741,7 @@ function applyPreBattleModifiers(b: RaidBattle) {
 			eAtk: b.enemyAtk,
 			eDef: b.enemyDef,
 			hp: b.playerHp,
-			hpp: playerHpPercent,
+			hpp: pre.playerHpPercent,
 			debuff: b.enemy?.fire,
 			predictedDmg: (argTriggerData?.predictedDmg) ?? 0,
 		};
@@ -1838,6 +1860,14 @@ function applyPreBattleModifiers(b: RaidBattle) {
 			}
 		}
 	};
+}
+
+/**
+ * レイド（通常型）の戦闘前 3: 体力・バリア・アイテムの初期値と、戦闘の種類（戦闘・物理・疲労）
+ *
+ * @internal
+ */
+function setupRaidHp(b: RaidBattle, pre: RaidPreBattle) {
 
 	/** 敵の最大HP */
 	b.enemyMaxHp = 100000;
@@ -1851,12 +1881,12 @@ function applyPreBattleModifiers(b: RaidBattle) {
 	let bonusMaxHp = 100 + Math.min(b.maxLv * 3, 765);
 	/** プレイヤーの最大HP */
 	b.playerMaxHp = Math.max(Math.round(bonusMaxHp * b.rand("maxHp")), rawMaxHp);
-	b.playerMaxHp = applyRaidVitalityHp(raidVitalityState, b.playerMaxHp, rawMaxHp, bonusMaxHp);
-	finalizeRaidVitalityHpConsumption(b.data, raidVitalityState);
+	b.playerMaxHp = applyRaidVitalityHp(pre.raidVitalityState, b.playerMaxHp, rawMaxHp, bonusMaxHp);
+	finalizeRaidVitalityHpConsumption(b.data, pre.raidVitalityState);
 	/** プレイヤーのHP */
 	b.playerHp = (b.playerMaxHp);
 	/** プレイヤーのHP割合 */
-	let playerHpPercent = b.playerHp / (b.playerMaxHp);
+	pre.playerHpPercent = b.playerHp / (b.playerMaxHp);
 	/** 敵のHP割合 */
 	let enemyHpPercent = 1;
 	/** アイテムによって増加したステータス */
@@ -1868,7 +1898,7 @@ function applyPreBattleModifiers(b: RaidBattle) {
 	b.sevenFeverBarrier = 0;
 	b.fireStack = 0;
 	b.additionalStatuses = [];
-	const addBarrier = (value: number) => {
+	pre.addBarrier = (value: number) => {
 		if (value <= 0) return 0;
 		b.sevenFeverBarrier += value;
 		const barrierStatus = b.additionalStatuses.find((status) => status.icon === "🛡️");
@@ -1893,7 +1923,7 @@ function applyPreBattleModifiers(b: RaidBattle) {
 			healed += toOne;
 			remain -= toOne;
 		}
-		const barrier = remain > 0 ? addBarrier(remain) : 0;
+		const barrier = remain > 0 ? pre.addBarrier(remain) : 0;
 		return { healed, barrier };
 	};
 	b.itemAtkStock = 0;
@@ -1911,6 +1941,14 @@ function applyPreBattleModifiers(b: RaidBattle) {
 	if (b.verboseLog && (b.isBattle || b.isPhysical || b.isTired)) {
 		b.log.buff(`属性: ${[b.isBattle ? "戦闘" : "", b.isPhysical ? "物理" : "", b.isTired ? "疲れ" : ""].filter(Boolean).join(", ")}\n`);
 	}
+}
+
+/**
+ * レイド（通常型）の戦闘前 4: 憤怒・おおみそか・覚醒・戦士マークと、開始時の魔法
+ *
+ * @internal
+ */
+function applyRaidSuperAndWarrior(b: RaidBattle, pre: RaidPreBattle) {
 
 	b.totalDmg = 0;
 
@@ -1984,6 +2022,14 @@ function applyPreBattleModifiers(b: RaidBattle) {
 	}
 
 	b.checkMagic("Start");
+}
+
+/**
+ * レイド（通常型）の戦闘前 5: 戦闘前に掛かるスキル効果（天国か地獄か・７フィーバー・風・遂・土・非戦闘時・強敵・断・貫・速・守・お守り）と、ターン開始時に戻すステータスの保存・超越
+ *
+ * @internal
+ */
+function applyRaidSkillModifiers(b: RaidBattle, pre: RaidPreBattle) {
 
 	// 天国か地獄か：60%で天国（ADアップ）、40%で地獄（ADダウン）
 	if (b.skillEffects.heavenOrHell) {
@@ -2009,7 +2055,7 @@ function applyPreBattleModifiers(b: RaidBattle) {
 	}
 	if (b.sevenFever) {
 		const defBonus = 7 * (b.skillEffects.sevenFever ?? 1);
-		addBarrier(normalizeSevenFeverBarrierGain(b.sevenFever));
+		pre.addBarrier(normalizeSevenFeverBarrierGain(b.sevenFever));
 		b.log.buff(serifs.rpg.skill.sevenFeverRaid(Math.floor(b.sevenFeverBarrier)) + "\n");
 		b.def = Math.ceil(b.def * (1 + (defBonus / 100)) / 7) * 7;
 		b.log.verbose(() => `７スキル効果: D${displayDifference((1 + (defBonus / 100)))} / バリア+${Math.floor(b.sevenFeverBarrier)} (${formatNumber(b.atk)} / ${formatNumber(b.def)})\n`);
@@ -2124,10 +2170,24 @@ function applyPreBattleModifiers(b: RaidBattle) {
 	if (b.skillEffects.transcendence && b.playerHp > 1) {
 		const convertedHp = b.playerHp - 1;
 		b.playerHp = 1;
-		addBarrier(convertedHp);
+		pre.addBarrier(convertedHp);
 		b.transcendenceActivated = true;
 		b.log.buff(`超越のお守りが発動した！\n体力${Math.floor(convertedHp)}ポイントがバリアに変換された！\n`);
 	}
+}
+
+/**
+ * レイド（通常型）の段階2: ステータスと敵ステータスの計算・調子補正・魔法・体力・戦闘前に掛かるスキル効果
+ *
+ * @internal
+ */
+function applyPreBattleModifiers(b: RaidBattle) {
+	const pre = {} as RaidPreBattle;
+	computeRaidStatus(b, pre);
+	setupRaidMagic(b, pre);
+	setupRaidHp(b, pre);
+	applyRaidSuperAndWarrior(b, pre);
+	applyRaidSkillModifiers(b, pre);
 }
 
 /**
@@ -2285,11 +2345,11 @@ formatNumber(t.enemyHpPercent * 100)}%\n\n`);
 }
 
 /**
- * レイド（通常型）のターン 2: 攻撃前の補正（決死の覚悟・水）とアイテム（装備・強欲・継戦融合武装）と、土・炎の効果
+ * レイド（通常型）のターン 2-1: 最大ダメージ制限の計算と、決死の覚悟・水（炎の敵）
  *
  * @internal
  */
-function prepareRaidTurnAttack(b: RaidBattle, t: RaidTurn) {
+function applyRaidDesperation(b: RaidBattle, t: RaidTurn) {
 
 	// 敵に最大ダメージ制限がある場合、ここで計算
 	/** 1ターンに与えられる最大ダメージ量 */
@@ -2316,6 +2376,14 @@ function prepareRaidTurnAttack(b: RaidBattle, t: RaidTurn) {
 		t.dmgUp *= (1 + (b.skillEffects.water ?? 0));
 		t.turnLog.verbose(() => `水スキル効果: 与ダメージ${displayDifference((1 + (b.skillEffects.water ?? 0)))}\n`);
 	}
+}
+
+/**
+ * レイド（通常型）のターン 2-2: 装備するアイテムを選ぶ（装備率・アイテムの種類・強欲）
+ *
+ * @internal
+ */
+function chooseRaidItem(b: RaidBattle, t: RaidTurn) {
 
 	const itemEquip = (0.4 + ((1 - t.playerHpPercent) * 0.6) + b.itemBoost) * (t.slothFlg ? 0 : 1);
 	if (b.verboseLog && !(b.count === 1 && b.skillEffects.firstTurnItem)) {
@@ -2438,6 +2506,14 @@ function prepareRaidTurnAttack(b: RaidBattle, t: RaidTurn) {
 	} else {
 		b.data.stockItem = undefined;
 	}
+}
+
+/**
+ * レイド（通常型）のターン 2-3: 選んだアイテムの効果（武器・防具・食べ物・毒など）
+ *
+ * @internal
+ */
+function useRaidItem(b: RaidBattle, t: RaidTurn) {
 	if (b.item) {
 		const rawEffect = b.item.effect;
 		const rawMind = b.item.mind;
@@ -2626,6 +2702,14 @@ function prepareRaidTurnAttack(b: RaidBattle, t: RaidTurn) {
 			}
 		}
 	}
+}
+
+/**
+ * レイド（通常型）のターン 2-4: 継戦融合武装の持ち越し・土・炎
+ *
+ * @internal
+ */
+function applyRaidTurnElements(b: RaidBattle, t: RaidTurn) {
 	if (b.skillEffects.itemAtkStock) {
 		const itemAtkGain = Math.max(Math.floor(b.itemBonus.atk ?? 0), 0);
 		if (itemAtkGain > 0) {
@@ -2658,6 +2742,18 @@ function prepareRaidTurnAttack(b: RaidBattle, t: RaidTurn) {
 
 	// バフが1つでも付与された場合、改行を追加する
 	t.turnLog.endBuffs();
+}
+
+/**
+ * レイド（通常型）のターン 2: 攻撃前の補正（決死の覚悟・水）とアイテム（装備・強欲・継戦融合武装）と、土・炎の効果
+ *
+ * @internal
+ */
+function prepareRaidTurnAttack(b: RaidBattle, t: RaidTurn) {
+	applyRaidDesperation(b, t);
+	chooseRaidItem(b, t);
+	useRaidItem(b, t);
+	applyRaidTurnElements(b, t);
 }
 
 /**
