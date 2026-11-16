@@ -33,6 +33,7 @@ import config from '@/config';
 import { createRaidRandom, RaidRandom } from './raid-random';
 import type { SkillEffect } from './skill-data';
 import { applyHyperModeEffects, applySuperColorModeEffects, getSuperColorMode } from './super-mode';
+import { computeContestStats } from './contest';
 
 type RaidAdditionalStatus = {
 	icon: string;
@@ -3712,152 +3713,25 @@ export async function getTotalDmg3(msg, enemy: RaidEnemy, options: RaidDamageOpt
 
 	const showInfo = data.lv >= 170;
 
-	// 所持しているスキル１つ度に、器用さ＋３
-	dex += (data.skills?.length ?? 0) * 3;
+	// 器用さ・仕上げ（確認表示と同じ計算。contest.ts）
+	const contest = computeContestStats(skillEffects, data, !!color.reverseStatus);
+	dex = contest.baseDex;
 
 	if (verboseLog) {
 		buff += 1;
 		message += `基本器用さ: ${dex}\n`;
 	}
 
-	if ((data.hatogurumaExp ?? 0) > 1) {
+	// 発動した補正の行と、Lv170 以上なら発動しなかった補正の「なし」などの行を出す
+	for (const step of contest.steps) {
+		if (!step.active && !showInfo) continue;
+		if (step.battleLine === undefined) continue;
 		buff += 1;
-		const expBonus = Math.min(0.3, data.hatogurumaExp / 100);
-		message += `経験 器用さ+${Math.round(expBonus * 100)}%` + `\n`;
-		dex = dex * (1 + expBonus);
+		message += step.battleLine + `\n`;
 	}
 
-	const atkDmgUp = (skillEffects.atkDmgUp ?? 0) - (skillEffects.defDmgUp ?? 0);
-	const atkUp    = (skillEffects.atkUp    ?? 0) - (skillEffects.defUp    ?? 0);
-
-	const atkX =
-		(atkDmgUp && atkDmgUp > 0 ? (1 / (1 + (atkDmgUp ?? 0))) : 1) *
-		(atkUp && atkUp > 0 ? (1 / (1 + (atkUp ?? 0))) : 1) *
-		(color.reverseStatus ? (0.75 + (data.atk / ((data.atk + data.def) || 1)) * 0.5) : (0.75 + (data.def / ((data.atk + data.def) || 1)) * 0.5))
-
-	if (atkX < 1) {
-		buff += 1;
-		message += `有り余るパワー 器用さ-${Math.floor((1 - atkX) * 100)}%` + `\n`;
-		dex = dex * atkX;
-	} else if (showInfo) {
-		buff += 1;
-		message += `パワー 適切` + `\n`;
-	}
-
-	if (skillEffects.notBattleBonusAtk >= 0.7) {
-		buff += 1;
-		message += `気性穏やか 器用さ+${Math.round(skillEffects.notBattleBonusAtk * 100)}%` + `\n`;
-		dex = dex * (1 + (skillEffects.notBattleBonusAtk ?? 0));
-	} else if (skillEffects.notBattleBonusAtk > 0) {
-		buff += 1;
-		message += `テキパキこなす 器用さ+${Math.round(skillEffects.notBattleBonusAtk * 100)}%` + `\n`;
-		dex = dex * (1 + (skillEffects.notBattleBonusAtk ?? 0));
-	} else if (showInfo && !skillEffects.notBattleBonusAtk) {
-		buff += 1;
-		message += `テキパキこなすまたは気性穏やか なし` + `\n`;
-	}
-
-	if ((skillEffects.notBattleBonusAtk ?? 0) < 0) {
-		buff += 1;
-		message += `気性が荒い 器用さ-${Math.min(25, Math.floor((skillEffects.notBattleBonusAtk * -1) * 100))}%` + `\n`;
-		dex = dex * Math.max(0.75, (1 + skillEffects.notBattleBonusAtk));
-	}
-
-	if (skillEffects.notBattleBonusDef > 0) {
-		buff += 1;
-		message += `疲れにくい 器用さ+${Math.ceil(skillEffects.notBattleBonusDef * 25)}%` + `\n`;
-		dex = dex * (1 + ((skillEffects.notBattleBonusDef ?? 0) / 4));
-	} else if (showInfo) {
-		buff += 1;
-		message += `疲れにくい なし` + `\n`;
-	}
-
-	if (skillEffects.noAmuletAtkUp > 0) {
-		buff += 1;
-		message += `かるわざ 器用さ+${Math.ceil(skillEffects.noAmuletAtkUp * 200)}%` + `\n`;
-		dex = dex * (1 + ((skillEffects.noAmuletAtkUp ?? 0) * 2));
-	} else if (showInfo) {
-		buff += 1;
-		message += `かるわざ なし` + `\n`;
-	}
-
-	if (skillEffects.plusActionX > 0) {
-		buff += 1;
-		message += `高速RPG 器用さ+${Math.ceil(skillEffects.plusActionX * 8)}%` + `\n`;
-		dex = dex * (1 + ((skillEffects.plusActionX ?? 0) * 0.08));
-	} else if (showInfo) {
-		buff += 1;
-		message += `高速RPG なし` + `\n`;
-	}
-
-	if (skillEffects.atkRndMin > 0) {
-		buff += 1;
-		message += `安定感 器用さ+${Math.ceil(skillEffects.atkRndMin * 20)}%` + `\n`;
-		dex = dex * (1 + ((skillEffects.atkRndMin ?? 0) / 5));
-	} else if (showInfo) {
-		buff += 1;
-		message += `安定感 なし` + `\n`;
-	}
-
-	if (skillEffects.firstTurnItem > 0) {
-		buff += 1;
-		message += `準備を怠らない 器用さ+10%` + `\n`;
-		dex = dex * 1.1;
-	} else if (showInfo) {
-		buff += 1;
-		message += `準備を怠らない なし` + `\n`;
-	}
-
-	if (skillEffects.itemBoost > 0) {
-		buff += 1;
-		message += `道具効果量 器用さ+${Math.ceil(skillEffects.itemBoost * (100/5))}%` + `\n`;
-		dex = dex * (1 + ((skillEffects.itemBoost ?? 0) / 5));
-	} else if (showInfo) {
-		buff += 1;
-		message += `道具効果量 なし` + `\n`;
-	}
-
-	if (skillEffects.mindMinusAvoid > 0) {
-		buff += 1;
-		message += `道具の選択が上手い 器用さ+${Math.ceil(skillEffects.mindMinusAvoid * (100/3))}%` + `\n`;
-		dex = dex * (1 + ((skillEffects.mindMinusAvoid ?? 0) / 3));
-	} else if (showInfo) {
-		buff += 1;
-		message += `道具の選択が上手い なし` + `\n`;
-	}
-
-	if (skillEffects.amuletPower > 1) {
-		buff += 1;
-		message += `お守りパワー 器用さ+${Math.ceil((skillEffects.amuletPower-1) * 3)}%` + `\n`;
-		dex = dex * (1 + ((skillEffects.amuletPower-1) * 0.03));
-	}
-
-	if (skillEffects.abortDown > 0) {
-		buff += 1;
-		message += `連続攻撃完遂率上昇 仕上げ+${Math.ceil(skillEffects.abortDown * 25)}%` + `\n`;
-		fix += Math.floor(skillEffects.abortDown / 4)
-	} else if (showInfo) {
-		buff += 1;
-		message += `連続攻撃完遂率上昇 なし` + `\n`;
-	}
-
-	if (skillEffects.tenacious > 0) {
-		buff += 1;
-		message += `粘り強さ 仕上げ+${Math.ceil(skillEffects.tenacious * 25)}%` + `\n`;
-		fix += Math.floor(skillEffects.tenacious / 4)
-	} else if (showInfo) {
-		buff += 1;
-		message += `粘り強さ なし` + `\n`;
-	}
-
-	if (skillEffects.endureUp > 0) {
-		buff += 1;
-		message += `気合で頑張る 仕上げ+${Math.ceil(skillEffects.endureUp * 15)}%` + `\n`;
-		fix += Math.floor(skillEffects.endureUp * 0.15)
-	} else if (showInfo) {
-		buff += 1;
-		message += `気合で頑張る なし` + `\n`;
-	}
+	dex = contest.dex;
+	fix = contest.fix;
 
 	// バフが1つでも付与された場合、改行を追加する
 	if (buff > 0) message += "\n";
