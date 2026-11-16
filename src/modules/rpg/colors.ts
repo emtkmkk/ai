@@ -16,7 +16,7 @@ import Message from "@/message";
 import Module from "@/module";
 import serifs from "@/serifs";
 
-type Color = {
+export type Color = {
 	/** 色のID ユニークでなければならない */
 	id: number;
 	/** 見た目 絵文字などを指定 */
