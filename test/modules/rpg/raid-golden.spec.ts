@@ -135,6 +135,28 @@ describe("７フィーバー！の 7 の固定処理（レイド）", () => {
 	});
 });
 
+describe("負けそうなら逃げる（体力が 0 付近になったら 1 ターン飛ばして回復する）", () => {
+	beforeEach(() => jest.setSystemTime(WEDNESDAY));
+
+	// 防御の低い構成で、逃走が起きる組み合わせ（ボス・乱数）を選んである。
+	// 調子補正はユーザー ID から決まるので、ユーザー ID（simulate の "user-a"）を変えると組み合わせも変わる。
+	const cases: [string, number, number, number, string, number][] = [
+		["Lv60・:nisemokochiki_mzh: #4（7 ターン）", 60, 200, 30, ":nisemokochiki_mzh:", 4],
+		["Lv60・:mk_lovechicken: #5", 60, 200, 30, ":mk_lovechicken:", 5],
+		["Lv100・:mk_tatsu: #10", 100, 300, 60, ":mk_tatsu:", 10],
+		["Lv100・:mk_giga:（スキル効果3倍） #3", 100, 300, 60, ":mk_giga:", 3],
+		["Lv150・:mk_crystal: #3", 150, 500, 80, ":mk_crystal:", 3],
+	];
+
+	test.each(cases)("%s", async (_name, lv, atk, def, enemyName, seed) => {
+		const enemy = raidEnemys.find((e) => e.name === enemyName)!;
+		const r = await simulate({ skills: ["負けそうなら逃げる", "パワーアップ"], love: 100, extra: { lv, atk, def } }, enemy, seed);
+		expect(r).toBeDefined();
+		expect(r!.log).toContain("一旦距離を取り、1ターン分回復に徹した！");
+		expect({ summary: summary(r), ...nonEmpty(extractRaidDamages(r!.log)) }).toMatchSnapshot();
+	});
+});
+
 describe("レイドの戦闘結果（ゴールデン・詳細ログ）", () => {
 	beforeEach(() => jest.setSystemTime(WEDNESDAY));
 
