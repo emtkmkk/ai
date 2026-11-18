@@ -557,15 +557,17 @@ function finish(raid: Raid) {
 		results.push(`${score && scoreRaw ? `\n評価: ${"★".repeat(score)}\n★${Math.floor(scoreRaw)} ${Math.floor((scoreRaw % 1) * 8) !== 0 ? `$[bg.color=ffff90 ${":blank:".repeat(Math.floor((scoreRaw % 1) * 8))}]` : ""}$[bg.color=ff9090 ${":blank:".repeat(8 - Math.floor((scoreRaw % 1) * 8))}] ★${Math.floor(scoreRaw) + 1}` : ""}`);
 	}
 
-	// 討伐隊の評判値によるコインボーナス（直近13回の評価スコアの平均から算出）
+	// 討伐隊の評判値によるコインボーナス（直近13回の評価スコア（★12 上限）の平均から算出）
 	let bonusCoin = 1;
 
 	if (rpgData) {
-		if (score && raid.enemy.power) {
+		if (score && scoreRaw && raid.enemy.power) {
 			if (!rpgData.raidReputations) {
 				rpgData.raidReputations = [];
 			}
-			const sum1 = rpgData.raidReputations.length > 0 ? rpgData.raidReputations.reduce((acc, cur) => acc + cur, 0) : 0;
+			// 評判値の計算に使う星の値は 12 を上限とする（保存する値はそのまま）
+			const REPUTATION_STAR_MAX = 12;
+			const sum1 = rpgData.raidReputations.length > 0 ? rpgData.raidReputations.reduce((acc, cur) => acc + Math.min(cur, REPUTATION_STAR_MAX), 0) : 0;
 			const reputation1 = rpgData.raidReputations.length > 0 ? sum1 / rpgData.raidReputations.length : 0;
 
 			rpgData.raidReputations.unshift(scoreRaw);
@@ -574,7 +576,7 @@ function finish(raid: Raid) {
 				rpgData.raidReputations.pop();
 			}
 
-			const sum2 = rpgData.raidReputations.reduce((acc, cur) => acc + cur, 0);
+			const sum2 = rpgData.raidReputations.reduce((acc, cur) => acc + Math.min(cur, REPUTATION_STAR_MAX), 0);
 			const reputation2 = sum2 / rpgData.raidReputations.length;
 
 			// 評判値が高いほどコイン倍率アップ（1〜11 の範囲）
